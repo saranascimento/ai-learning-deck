@@ -1,0 +1,49 @@
+.deck {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  padding: var(--space-xl);
+  text-align: center;
+
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(2rem);
+  transition:
+    opacity var(--transition-duration-slide) var(--transition-easing),
+    transform var(--transition-duration-slide) var(--transition-easing),
+    visibility 0s linear var(--transition-duration-slide);
+}
+
+.slide--active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0);
+  transition:
+    opacity var(--transition-duration-slide) var(--transition-easing),
+    transform var(--transition-duration-slide) var(--transition-easing),
+    visibility 0s linear 0s;
+}
+
+.slide--exit-left {
+  transform: translateX(-2rem);
+}
+
+.slide__content {
+  width: 100%;
+  max-width: var(--content-max-width);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+}

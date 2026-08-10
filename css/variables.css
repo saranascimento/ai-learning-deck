@@ -1,0 +1,35 @@
+:root {
+  /* Cores */
+  --color-bg: #0f1115;
+  --color-surface: #161922;
+  --color-text: #f5f6f8;
+  --color-text-muted: #9aa0ab;
+  --color-accent: #5b8cff;
+  --color-accent-soft: rgba(91, 140, 255, 0.15);
+  --color-border: #262b36;
+
+  /* Tipografia */
+  --font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-size-title: clamp(2.5rem, 5vw, 5rem);
+  --font-size-subtitle: clamp(1.25rem, 2.2vw, 2rem);
+  --font-size-body: clamp(1.1rem, 1.6vw, 1.5rem);
+  --font-size-small: clamp(0.9rem, 1.1vw, 1.1rem);
+  --line-height-heading: 1.15;
+  --line-height-body: 1.5;
+
+  /* Espaçamento */
+  --space-xs: 0.5rem;
+  --space-sm: 1rem;
+  --space-md: 2rem;
+  --space-lg: 4rem;
+  --space-xl: 6vw;
+
+  /* Layout */
+  --content-max-width: 60rem;
+  --progress-bar-height: 3px;
+
+  /* Transições */
+  --transition-duration-slide: 500ms;
+  --transition-duration-fragment: 350ms;
+  --transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
+}

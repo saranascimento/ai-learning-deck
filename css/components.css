@@ -1,0 +1,57 @@
+.progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--progress-bar-height);
+  display: flex;
+  z-index: 20;
+}
+
+.progress-bar__segment {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  transition: background-color var(--transition-duration-fragment) var(--transition-easing);
+}
+
+.progress-bar__segment.is-filled {
+  background: var(--segment-accent, var(--color-accent));
+}
+
+.deck-nav {
+  position: fixed;
+  right: var(--space-md);
+  bottom: var(--space-md);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  z-index: 10;
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-size: 1.2rem;
+  transition:
+    background var(--transition-duration-fragment) var(--transition-easing),
+    transform var(--transition-duration-fragment) var(--transition-easing),
+    opacity var(--transition-duration-fragment) var(--transition-easing);
+}
+
+.nav-btn:hover:not(:disabled) {
+  background: var(--color-accent-soft);
+  transform: translateY(-2px);
+}
+
+.nav-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}

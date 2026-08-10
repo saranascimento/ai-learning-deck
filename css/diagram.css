@@ -1,0 +1,58 @@
+/* Suporte genérico a revelação progressiva (fragments) */
+[data-fragment] {
+  opacity: 0;
+  transform: translateY(0.75rem);
+  transition:
+    opacity var(--transition-duration-fragment) var(--transition-easing),
+    transform var(--transition-duration-fragment) var(--transition-easing);
+}
+
+[data-fragment].is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Blocos de construção de diagrama em HTML/CSS */
+.diagram {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.diagram-node {
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  font-size: var(--font-size-body);
+  min-width: 8rem;
+}
+
+.diagram-node--accent {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.diagram-connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 2px;
+  background: var(--color-border);
+  position: relative;
+}
+
+.diagram-connector::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 7px solid var(--color-border);
+}
