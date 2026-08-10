@@ -21,10 +21,13 @@
     nextBtn.addEventListener("click", () => deck.next());
     prevBtn.addEventListener("click", () => deck.prev());
 
-    deck.onChange((state) => {
+    const syncButtons = (state) => {
       prevBtn.disabled = !state.canGoPrev;
       nextBtn.disabled = !state.canGoNext;
-    });
+    };
+
+    deck.onChange(syncButtons);
+    syncButtons(deck.getState());
   }
 
   App.initNavigation = initNavigation;

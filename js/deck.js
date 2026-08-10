@@ -29,6 +29,7 @@
         total: this.total,
         canGoNext: this.currentIndex < this.total - 1 || this._hasHiddenFragments(),
         canGoPrev: this.currentIndex > 0 || this._hasRevealedFragments(),
+        progressRatio: this._getProgressRatio(),
       };
     }
 
@@ -74,6 +75,21 @@
 
     _hasRevealedFragments() {
       return this.revealedCount[this.currentIndex] > 0;
+    }
+
+    // Progresso conta cada fragment revelado e cada troca de slide como uma
+    // "etapa" — só chega a 100% no último fragment do último slide.
+    _getProgressRatio() {
+      const totalFragments = this.fragmentsPerSlide.reduce((sum, fragments) => sum + fragments.length, 0);
+      const totalSteps = totalFragments + (this.total - 1);
+      if (totalSteps <= 0) return 1;
+
+      const fragmentsBeforeCurrent = this.fragmentsPerSlide
+        .slice(0, this.currentIndex)
+        .reduce((sum, fragments) => sum + fragments.length, 0);
+      const stepsSoFar = fragmentsBeforeCurrent + this.currentIndex + this.revealedCount[this.currentIndex];
+
+      return stepsSoFar / totalSteps;
     }
 
     _goTo(index, direction) {

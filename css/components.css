@@ -4,18 +4,30 @@
   left: 0;
   right: 0;
   height: var(--progress-bar-height);
-  display: flex;
+  background: rgba(255, 255, 255, 0.06);
   z-index: 20;
 }
 
-.progress-bar__segment {
-  flex: 1;
-  background: rgba(255, 255, 255, 0.06);
-  transition: background-color var(--transition-duration-fragment) var(--transition-easing);
+.progress-bar__fill {
+  position: absolute;
+  inset: 0;
+  width: 0%;
+  background: var(--color-accent);
+  transition: width var(--transition-duration-slide) var(--transition-easing);
 }
 
-.progress-bar__segment.is-filled {
-  background: var(--segment-accent, var(--color-accent));
+.home-link {
+  position: fixed;
+  top: var(--space-md);
+  left: var(--space-md);
+  z-index: 20;
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+  transition: color var(--transition-duration-fragment) var(--transition-easing);
+}
+
+.home-link:hover {
+  color: var(--color-text);
 }
 
 .deck-nav {

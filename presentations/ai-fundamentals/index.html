@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Fundamentals — Papo de IA</title>
+
+    <link rel="stylesheet" href="../../css/reset.css" />
+    <link rel="stylesheet" href="../../css/variables.css" />
+    <link rel="stylesheet" href="../../css/base.css" />
+    <link rel="stylesheet" href="../../css/layout.css" />
+    <link rel="stylesheet" href="../../css/components.css" />
+    <link rel="stylesheet" href="../../css/diagram.css" />
+  </head>
+  <body>
+    <main class="deck" id="deck">
+      <!-- Slide 1: título/texto simples -->
+      <section class="slide" data-slide>
+        <div class="slide__content">
+          <h1>Slide placeholder 1</h1>
+          <p>Texto de apoio para validar tipografia e transição básica.</p>
+        </div>
+      </section>
+
+      <!-- Slide 2: lista com fragments -->
+      <section class="slide" data-slide>
+        <div class="slide__content">
+          <h2>Slide placeholder 2</h2>
+          <h1>Revelação progressiva</h1>
+          <ul style="display: flex; flex-direction: column; gap: var(--space-sm); text-align: left">
+            <li data-fragment>Primeiro ponto aparece ao avançar</li>
+            <li data-fragment>Segundo ponto aparece em seguida</li>
+            <li data-fragment>Terceiro ponto fecha a sequência</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Slide 3: diagrama HTML/CSS com fragments -->
+      <section class="slide" data-slide>
+        <div class="slide__content">
+          <h2>Slide placeholder 3</h2>
+          <h1>Diagrama</h1>
+          <div class="diagram">
+            <div class="diagram-node diagram-node--accent" data-fragment>Etapa A</div>
+            <div class="diagram-connector" data-fragment></div>
+            <div class="diagram-node" data-fragment>Etapa B</div>
+            <div class="diagram-connector" data-fragment></div>
+            <div class="diagram-node" data-fragment>Etapa C</div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div class="progress-bar" id="progressBar" aria-hidden="true"></div>
+
+    <a class="home-link" href="../../index.html" aria-label="Voltar para Papo de IA">← Papo de IA</a>
+
+    <nav class="deck-nav" aria-label="Navegação da apresentação">
+      <button class="nav-btn" data-nav="prev" aria-label="Slide anterior">‹</button>
+      <button class="nav-btn" data-nav="next" aria-label="Próximo slide">›</button>
+    </nav>
+
+    <script src="../../js/fragments.js"></script>
+    <script src="../../js/deck.js"></script>
+    <script src="../../js/navigation.js"></script>
+    <script src="../../js/progressBar.js"></script>
+    <script src="../../js/main.js"></script>
+  </body>
+</html>
