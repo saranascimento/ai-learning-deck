@@ -1,0 +1,344 @@
+# Roadmap Senior — Visão macro
+
+> Estrutura macro (Epics → Stories) **aprovada em 2026-09-03**. Fonte da verdade da
+> hierarquia. O detalhamento Task-a-Task acontece na Fase 2, um Epic por vez.
+>
+> **Fase 2 em andamento** — Epic 01 · Programming Foundations aprovado (2026-09-03),
+> ver `01-programming-foundations.md`. Progresso completo no fim deste arquivo.
+>
+> Registro completo da decisão (contexto, análise, arquitetura técnica): `../PLAN.md`.
+
+Modelo mental: **Área → Módulo → Conceito** na interface; **Epic → Story → Task**
+internamente (compatível com Jira). Numeração = ordem recomendada de estudo.
+
+---
+
+## Epics (ordem de estudo global)
+
+```
+ROADMAP SENIOR
+├── 01 · Programming Foundations        (novo — extraído de "Design & Fundamentals")
+├── 02 · Testing & Quality Engineering  (novo — promovido da Story "Testing")
+├── 03 · Software Craft
+├── 04 · Software Design                (novo — extraído de "Design & Fundamentals")
+├── 05 · Platform Engineering
+├── 06 · Architecture & System Design
+└── 07 · AI Engineering
+```
+
+**Por que essa ordem**
+
+1. **Programming Foundations** — abstração, encapsulamento, coupling/cohesion, memória
+   e runtime, tipos, funções puras, estruturas de dados, complexidade, async,
+   concorrência. Pré-requisito de tudo. *(Fase 2 aprovada: 8 Stories, 79 Tasks.)*
+2. **Testing & Quality Engineering** — saber testar antes de refatorar (Craft) e antes
+   de confiar em qualquer design. A 1ª Story só exige "sei escrever uma função".
+3. **Software Craft** — disciplina diária de escrever e mudar código com segurança.
+   Depende de Foundations; Refactoring `Requires` Testing.
+4. **Software Design** — estrutura no nível de classe/módulo/domínio (OOD, SOLID,
+   patterns, DDD). Depende de Foundations.
+5. **Platform Engineering** — o substrato de execução: web, APIs, dados, segurança,
+   ops, cloud. Pouca dependência conceitual, muito volume.
+6. **Architecture & System Design** — sistemas que escalam, distribuem e evoluem.
+   `Requires` Platform + Software Design.
+7. **AI Engineering** — a especialização. `Requires` Platform; "Production AI"
+   `Requires` Architecture/Resilience. Pode ser antecipado por quem já atua na área
+   (só depende de Platform).
+
+---
+
+## Stories por Epic
+
+### 01 · Programming Foundations
+
+> **Fase 2 aprovada em 2026-09-03.** Detalhamento Task-a-Task: `01-programming-foundations.md`.
+> 8 Stories · 79 Tasks (77 originais preservadas — 76 aqui + `Composition over
+> Inheritance` realocada ao Epic 04; +7 novas: 6 em `Memory & Runtime`, `Closure`).
+
+| # | Story | Tasks | Notas |
+|---|---|---|---|
+| 01 | Programming Fundamentals | 11 | **canônico**: Abstraction, Encapsulation, Information Hiding, Interface, Contract, Inheritance, Polymorphism, Composition, Coupling, Cohesion, Separation of Concerns |
+| 02 | Memory & Runtime | 6 | *(nova)* **canônico**: Memory, Value vs Reference, Stack vs Heap, Call Stack, Garbage Collection, Memory Leak · Requires: Programming Fundamentals |
+| 03 | Type Systems | 10 | **canônico**: Static/Dynamic, Strong/Weak, Type Inference, Type Safety, Nominal/Structural Typing, Generics, Union/Intersection Types, Type Narrowing · Requires: Programming Fundamentals |
+| 04 | Functional Programming | 12 | **canônico**: Declarative/Imperative, First-Class Functions, Closure, Side Effects, Pure Functions, Referential Transparency, Immutability, HOF, Function Composition, Map/Filter/Reduce · Requires: Programming Fundamentals |
+| 05 | Data Structures | 10 | **canônico**: Array, Linked List, Stack, Queue, Hash Table, Set, Tree, BST, Heap, Graph · Requires: Programming Fundamentals; Type Systems/Generics |
+| 06 | Algorithms & Complexity | 9 | **canônico**: Time/Space Complexity, Big O, Common Time Complexities *(O(1)…O(n²) consolidadas, cada uma subtópico)*, Linear/Binary Search, Sorting Fundamentals, Recursion, Memoization · Requires: Data Structures; Memory & Runtime/Call Stack |
+| 07 | Asynchronous Programming | 9 | **canônico**: Sync/Async *(agnóstico)*, Blocking/Non-Blocking *(agnóstico)*, Callback, Task Queue, Event Loop, Microtask Queue, Promise, Async/Await · `Call Stack` = revisita de Memory & Runtime · Requires: Programming Fundamentals; FP/First-Class Functions + Closure; Memory & Runtime/Call Stack |
+| 08 | Concurrency | 12 | **canônico**: Concurrency/Parallelism, Process, Thread, Shared State, Race Condition, Critical Section, Atomic Operation, Mutex, Semaphore, Deadlock, Starvation, Thread Safety · Requires: Asynchronous Programming; Memory & Runtime |
+
+Racional: vocabulário de paradigma (01) → como o programa existe em memória e executa
+(02) → tipos formalizam contratos (03) → pureza/imutabilidade usadas em todo o resto
+(04) → estruturas de dados (05) → analisar algoritmos sobre elas (06) → modelo
+assíncrono de execução (07) → concorrência, o superconjunto difícil (08).
+`Memory & Runtime` é Story 02 porque `Call Stack` é pré-requisito de `Recursion`
+(06) e `Event Loop` (07).
+
+**Duplicatas resolvidas nesta Epic** (canônico aqui; vira revisita/removido nas Fases
+2 dos Epics 03 e 06):
+- `Coupling` / `Cohesion` / `Separation of Concerns` — eram Tasks em Software Craft e Architecture.
+- `Pure Functions` / `Side Effects` / `Immutability` — eram Tasks em Software Craft / "Clean Code".
+- `Composition over Inheritance` — mecanismo `Composition` fica aqui; heurística consolida no Epic 04.
+
+**Colisões de nome a desambiguar**: `Composition` (01) ≠ `Function Composition` (04) ·
+`Stack` ADT (05) ≠ `Call Stack` (02) · `Queue` ADT (05) ≠ `Task Queue` (07) ·
+`Atomic Operation` (08) ≠ ACID `Atomicity` (Platform) · `Concurrency` (08) ≠ `Asynchronous` (07).
+
+*SUGESTÕES de Task* (não incluídas): FP → `Currying`, `Functor/Monad (intuição)`,
+`Lazy Evaluation`; Algorithms → `Divide and Conquer`, `Dynamic Programming`,
+`Graph Traversal (BFS/DFS)`; Concurrency → `Context Switch`, `Thread Pool`,
+`Actor Model`; Type Systems → `Variance`, `Algebraic Data Types`; Memory & Runtime →
+`Stack Overflow`, `Boxing/Unboxing`. Lista completa no arquivo do Epic.
+
+### 02 · Testing & Quality Engineering
+
+| # | Story | Notas |
+|---|---|---|
+| 01 | Testing Fundamentals | **canônico**: Unit/Integration/E2E, AAA, Given-When-Then |
+| 02 | Test Doubles | **canônico**: Mock, Stub, Spy, Fake · Requires: Testing Fundamentals |
+| 03 | Test-Driven Development | Requires: Testing Fundamentals |
+| 04 | Testing Strategy | Test Pyramid, Isolation, Testability, Regression, Contract Testing, Flaky Tests |
+| 05 | Debugging | Reproduction, Hypothesis-Driven, Stack Trace, Binary Search Debugging, Bisect, RCA · Requires: Software Craft / Git (para Bisect) |
+
+Racional: o que é um teste e os níveis → dublês → TDD (usa tudo acima) → estratégia
+(onde investir) → debugging como diagnóstico (fecha o Epic; `Bisect` consolida a
+duplicata Git/Debugging).
+
+*SUGESTÃO de Story:* `Non-Functional Testing` (load, stress, performance, security).
+
+### 03 · Software Craft
+
+| # | Story | Notas |
+|---|---|---|
+| 01 | Clean Code | Naming, Functions, Function Arguments, Guard Clauses, Comments, Magic Numbers |
+| 02 | Design Heuristics | DRY, KISS, YAGNI, Least Astonishment — movido de "Clean Code" |
+| 03 | Code Smells | Requires: Clean Code, Design Heuristics |
+| 04 | Refactoring | Requires: Code Smells, Testing & Quality Engineering |
+| 05 | Error Handling | |
+| 06 | Code Review | |
+| 07 | Dependency & Version Management | Technical Debt, Legacy Code, SemVer, Deprecation, Backward Compatibility, Incremental Migration — renomeado de "Codebase Maintainability" |
+| 08 | Git | |
+| 09 | Engineering Documentation | **canônico**: README, ADR, RFC, Changelog, Runbook |
+
+Racional: legibilidade → heurísticas → reconhecer código ruim → corrigir com segurança
+(exige testes) → lidar com falha → colaboração → manter codebase vivo → dominar o
+histórico → comunicar decisões.
+
+*SUGESTÃO de Story:* `Build & Tooling` (build systems, linters/formatters, pre-commit,
+monorepo × polyrepo).
+
+### 04 · Software Design
+
+| # | Story | Notas |
+|---|---|---|
+| 01 | Object-Oriented Design | Requires: Programming Foundations / Programming Fundamentals |
+| 02 | SOLID | **canônico**: SRP, OCP, LSP, ISP, DIP · Requires: OOD |
+| 03 | Design Principles | CQS, Encapsulate What Varies, Program to an Interface, Least Knowledge; consolida "Composition over Inheritance" · Requires: SOLID |
+| 04 | Dependency Injection & IoC | **canônico**: DI, IoC, Constructor Injection, DI Container, Service Locator · Requires: SOLID / DIP |
+| 05 | Creational Patterns | Requires: Design Principles |
+| 06 | Structural Patterns | Requires: Creational Patterns |
+| 07 | Behavioral Patterns | Requires: Structural Patterns |
+| 08 | Enterprise & Application Patterns | Repository, Service Layer, Data Mapper, Active Record, Unit of Work, Specification, DTO · Requires: Dependency Injection & IoC, Platform / Database Fundamentals |
+| 09 | Domain Modeling | **canônico**: Entity, Value Object, Aggregate, Aggregate Root, Bounded Context, Ubiquitous Language, Context Mapping · Requires: OOD |
+
+Racional: vocabulário OOD → SOLID (precisa de OOD) → princípios adicionais → DI/IoC
+(precisa de DIP) → padrões GoF na ordem clássica (creational → structural → behavioral)
+→ padrões de aplicação/persistência (precisam de DI + banco) → Domain Modeling como
+capstone e ponte para Architecture.
+
+> `Enterprise & Application Patterns` (08) depende de Platform / Database Fundamentals —
+> adiar essa Story até terminar Platform, ou vê-la só conceitualmente aqui.
+> `Domain Modeling` (09) é `Requires` de Architecture / Architectural Styles.
+
+### 05 · Platform Engineering
+
+| # | Story | Notas |
+|---|---|---|
+| 01 | Web Fundamentals | **canônico**: HTTP, TLS, DNS, TCP/UDP, CORS, Cookies, Sessions, WebSocket, SSE |
+| 02 | API Fundamentals | Requires: Web Fundamentals |
+| 03 | GraphQL | Requires: API Fundamentals (N+1 → Requires DB Performance) |
+| 04 | Database Fundamentals | **canônico**: SQL, JOIN, Schema, Keys, Constraints |
+| 05 | Database Design | Requires: Database Fundamentals |
+| 06 | Database Transactions | **canônico**: ACID, Isolation Levels · Requires: Database Fundamentals |
+| 07 | Database Performance | **canônico**: Index, Query Plan, N+1 Query Problem, Connection Pool · Requires: Database Design |
+| 08 | NoSQL | Requires: Database Design |
+| 09 | Caching | **canônico**: Cache-Aside, Read/Write-Through, Write-Behind, Eviction, LRU, TTL, Invalidation, Redis, HTTP Cache, CDN · Requires: Web Fundamentals, Database Fundamentals |
+| 10 | Authentication | **canônico**: Session vs Token, JWT, OAuth 2.0, OIDC, MFA · Requires: Web Fundamentals |
+| 11 | Authorization | **canônico**: RBAC, ABAC, Least Privilege, Resource Ownership · Requires: Authentication |
+| 12 | Application Security | Requires: Authentication, Authorization, Web Fundamentals |
+| 13 | Observability | **canônico**: Logging, Metrics, Tracing, OpenTelemetry, Alerting |
+| 14 | Performance Engineering | **canônico**: Latency, Throughput, CPU vs I/O bound, Profiling, Benchmarking, Debounce, Throttle · Requires: Observability |
+| 15 | Reliability Engineering | **canônico**: SLI, SLO, SLA, Error Budget, MTTR, Postmortem · Requires: Observability |
+| 16 | Containers | **canônico**: Container, Docker, Image, Registry, Multi-Stage Build |
+| 17 | CI/CD | Requires: Containers |
+| 18 | Cloud Fundamentals | IaaS/PaaS/SaaS, Region/AZ, Compute, Storage, Serverless · Requires: Containers |
+| 19 | Cloud Networking | VPC, Subnet, CIDR, Security Group, NAT · Requires: Web Fundamentals |
+| 20 | Cloud Security | IAM, Policy, Service Account, Secret Manager · Requires: Authorization, Cloud Fundamentals |
+| 21 | Kubernetes Fundamentals | Requires: Containers, Cloud Networking |
+
+Racional: protocolo web → REST → GraphQL (contraste) → banco relacional
+(fundamentos → modelagem → transações → performance) → NoSQL → caching → auth → authz
+→ segurança → observabilidade → performance/confiabilidade → containers → CI/CD →
+cloud → rede → segurança de cloud → Kubernetes.
+
+*SUGESTÃO de Story:* `Infrastructure as Code` (Terraform, state, drift, módulos).
+
+### 06 · Architecture & System Design
+
+| # | Story | Notas |
+|---|---|---|
+| 01 | Architecture Fundamentals | Architecture vs Design, Characteristics, Constraints, Trade-offs (Coupling/Cohesion → Requires Foundations) |
+| 02 | Architectural Styles | Requires: Architecture Fundamentals, Software Design / Domain Modeling |
+| 03 | System Design Fundamentals | Functional/NFR, Capacity Estimation, Bottlenecks, SPOF |
+| 04 | Scalability | **canônico**: Vertical/Horizontal Scaling, Load Balancing, Auto Scaling, Statelessness, Backpressure |
+| 05 | Caching at Scale | Distributed Cache, Cache Stampede, cache coherence · Requires: Platform / Caching, Scalability |
+| 06 | Availability & Reliability | **canônico**: Fault Tolerance, Redundancy, Failover, Graceful Degradation, RTO, RPO · Requires: Scalability |
+| 07 | Distributed Systems Fundamentals | **canônico**: Partial Failure, Network Partition, Consistency (distributed), CAP, PACELC, Consensus, Leader Election |
+| 08 | Data Distribution | **canônico**: Replication, Partitioning, Sharding, Consistent Hashing · Requires: Distributed Systems Fundamentals |
+| 09 | Service Communication | Sync/Async, RPC, gRPC, Service Discovery, API Gateway, Reverse Proxy, Service Mesh · Requires: Architectural Styles |
+| 10 | Messaging | **canônico**: Message Queue/Broker, Pub/Sub, Delivery Semantics, Ordering, Dead Letter Queue · Requires: Service Communication |
+| 11 | Resilience Patterns | **canônico**: Timeout, Retry, Backoff, Jitter, Circuit Breaker, Bulkhead, Rate Limiting, Idempotency · Requires: Distributed Systems Fundamentals, Messaging |
+| 12 | Distributed Transactions | 2PC, Saga, Choreography, Orchestration, Outbox · Requires: Messaging, Resilience Patterns |
+| 13 | Data & Architecture Patterns | CQRS, Event Sourcing, Materialized View, CDC, Database per Service · Requires: Messaging, Data Distribution |
+| 14 | Architecture Evolution | Evolutionary Architecture, Fitness Functions, Strangler Fig, Migration Strategy, Build vs Buy (ADR/Tech Debt → Requires Software Craft) |
+
+Racional: fundamentos → estilos → como atacar um problema de system design → escalar
+um sistema único → cache em escala → disponibilidade → distribuição (CAP, consenso) →
+distribuir dados → comunicação entre serviços → mensageria → resiliência → transações
+distribuídas → padrões de dados avançados → evoluir arquitetura (capstone).
+
+### 07 · AI Engineering
+
+| # | Story | Notas |
+|---|---|---|
+| 01 | AI Fundamentals | **canônico**: AI, ML, Deep Learning, Training, Inference, Parameters · *resources:* harness, ai-fundamentals |
+| 02 | Language Models | **canônico**: LLM, Transformer, Token, Tokenization, Context Window, Attention, Autoregressive Generation · Requires: AI Fundamentals |
+| 03 | Model Inference | Temperature, Top-P/Top-K, Max Tokens, Stop Sequence, Streaming, Seed · Requires: Language Models · *resources:* harness |
+| 04 | Prompt Engineering | **canônico**: Prompt, System/User Prompt, Instruction Hierarchy, Zero/Few-Shot, In-Context Learning, Template · Requires: Model Inference |
+| 05 | Structured Generation | Structured Output, JSON, Schema-Constrained, Output Validation/Parsing, Retry on Invalid · Requires: Prompt Engineering |
+| 06 | Context Engineering | **canônico**: Context, Assembly/Ordering/Compression, Budget/Overflow, Context Rot · Requires: Prompt Engineering · *resources:* harness |
+| 07 | Embeddings | **canônico**: Embedding, Vector, Embedding Space, Cosine Similarity, Dot Product, Euclidean Distance |
+| 08 | Vector Search | **canônico**: k-NN, ANN, Vector Index, HNSW, Vector Database · Requires: Embeddings |
+| 09 | Chunking | Chunk Size/Overlap, Fixed/Recursive/Semantic Chunking |
+| 10 | Retrieval | **canônico**: Semantic/Keyword Search, BM25, Dense/Sparse, Hybrid Search, Reranking · Requires: Vector Search, Chunking |
+| 11 | RAG | RAG Pipeline, Query Transformation, Grounding, Source Attribution, RAG Eval · Requires: Retrieval, Context Engineering |
+| 12 | Tool Calling | **canônico**: Tool, Function Calling, Tool Schema/Selection/Arguments/Result, Error Handling, Execution Loop · Requires: Structured Generation |
+| 13 | MCP | Requires: Tool Calling |
+| 14 | Agent Fundamentals | **canônico**: AI Agent, Agentic System/Workflow, Agent Loop, Planning/Acting/Observation/Reflection, ReAct, HITL · Requires: Tool Calling, Context Engineering · *resources:* harness |
+| 15 | Agent Orchestration | Workflow, Router, Sequential/Parallel/Conditional, Agent State, Termination · Requires: Agent Fundamentals |
+| 16 | AI Memory | Short/Long-Term, Conversation/Semantic/Episodic Memory, Memory vs Context · Requires: Agent Fundamentals, Context Engineering |
+| 17 | Multi-Agent Systems | **canônico**: Agent Role/Delegation/Communication, Supervisor Pattern, Agent Handoff, Coordination · Requires: Agent Orchestration |
+| 18 | Model Routing | **canônico**: Model Router, Static/Dynamic Routing, Capability/Cost/Latency-Based, Model Fallback · Requires: Model Inference |
+| 19 | AI Evaluation | Evals, Golden Dataset, Offline/Online, LLM-as-a-Judge, Faithfulness, Answer Relevance, Retrieval Precision/Recall · Requires: RAG, Agent Fundamentals |
+| 20 | AI Safety & Guardrails | **canônico**: Guardrails (I/O), Hallucination, Prompt Injection, Jailbreak, Data Leakage, PII, Least Privilege for Tools, Human Approval · Requires: Tool Calling, RAG, Agent Fundamentals · *resources:* harness |
+| 21 | AI Observability | LLM Tracing, Prompt Logging, Token/Cost/Latency Tracking, Tool/Retrieval Tracing · Requires: Platform / Observability |
+| 22 | Model Adaptation | Fine-Tuning, SFT, Instruction Tuning, LoRA, PEFT, Distillation, Quantization, RAG vs Fine-Tuning · Requires: AI Fundamentals, RAG |
+| 23 | Production AI | *revisita*: Model Latency, TTFT, Token Budget, Semantic Cache, Rate Limiting, Model Fallback, Retry Strategy, Prompt/Model Versioning, Evaluation in CI/CD · Requires: AI Evaluation, AI Observability, Architecture / Resilience Patterns |
+
+Racional: o que é IA/ML/inferência → como um LLM funciona → controles de inferência →
+prompting → saída estruturada → context engineering → embeddings → busca vetorial →
+chunking → retrieval → RAG → tool calling → MCP → agentes → orquestração → memória →
+multi-agente → roteamento → avaliação → segurança/guardrails → observabilidade de IA →
+adaptação de modelo → Production AI (capstone de revisita).
+
+*SUGESTÃO de Story:* `Responsible AI & Governance` (bias, fairness, transparência,
+governança de dados); `LLM Cost Engineering` (prompt caching, batching, model sizing).
+
+---
+
+## Dependências de alto nível
+
+```
+Programming Foundations ──▶ (todos os demais Epics)
+Testing & Quality ──▶ Software Craft / Refactoring
+Software Craft ──▶ Architecture / Architecture Evolution (ADR, Tech Debt)
+             └──▶ Testing & Quality / Debugging (Bisect ⟵ Git)
+Software Design / Domain Modeling ──▶ Architecture / Architectural Styles
+Software Design / Enterprise Patterns ⟵ Requires ── Platform / Database Fundamentals
+Platform Engineering ──▶ Architecture & System Design (Epic inteiro)
+                    └──▶ AI Engineering (APIs, Observability, Caching)
+Architecture / Resilience Patterns ──▶ AI Engineering / Production AI
+Platform / Observability ──▶ AI Engineering / AI Observability
+```
+
+### Conceitos transversais — lar canônico × revisita
+
+| Conceito | Canônico | Revisitado em (com `Requires`) |
+|---|---|---|
+| Coupling / Cohesion / SoC | Programming Foundations / Programming Fundamentals | Software Craft; Software Design; Architecture Fundamentals |
+| Abstraction / Encapsulation / Interface / Contract / Polymorphism | Programming Foundations / Programming Fundamentals | Software Design / OOD, SOLID |
+| Pure Functions / Immutability / Side Effects / Referential Transparency | Programming Foundations / Functional Programming | AI (determinismo) — removido de Software Craft / Clean Code |
+| Closure / Higher-Order Functions / Function Composition | Programming Foundations / Functional Programming | Async / Callback; Frontend (SUGESTÃO) |
+| Memory / Value vs Reference / Stack vs Heap / Call Stack / GC / Memory Leak | Programming Foundations / Memory & Runtime | Async / Event Loop; Concurrency; Platform / Performance; Frontend (SUGESTÃO) |
+| Type Safety / Structural Typing / Generics | Programming Foundations / Type Systems | Software Design (Program to an Interface, DIP) |
+| Hash Table / Tree / BST / Graph / Queue | Programming Foundations / Data Structures | Architecture (Consistent Hashing, Message Queue); Platform (índices); AI (HNSW) |
+| Big O / Common Time Complexities / Recursion / Memoization / Binary Search | Programming Foundations / Algorithms & Complexity | todo o roadmap; Testing & Quality (Binary Search Debugging, Git Bisect); Platform / Caching |
+| Process / Thread / Race Condition / Deadlock / Atomic Operation / Shared State | Programming Foundations / Concurrency | Platform (Containers, DB locking/isolation); Architecture (Stateless Systems, consensus) |
+| Retry / Timeout / Backoff / Circuit Breaker / Idempotency | Architecture / Resilience Patterns | Platform / API; AI / Tool Calling; AI / Production AI |
+| Caching (patterns) | Platform / Caching | Architecture / Caching at Scale; AI / Production AI (Semantic Cache) |
+| Latency / Throughput | Platform / Performance Engineering | Architecture / System Design Fundamentals |
+| Consistency (ACID) | Platform / Database Transactions | colide de nome com Distributed Consistency — sentido diferente |
+| Consistency (distributed) / Eventual Consistency | Architecture / Distributed Systems Fundamentals | Architecture / Messaging; Architecture / Data Patterns |
+| Least Privilege | Platform / Authorization | Platform / Cloud Security; AI / Safety & Guardrails |
+| Observability (logs/metrics/traces) | Platform / Observability | AI / AI Observability; Architecture / Reliability |
+| ADR / Technical Debt / Backward Compatibility | Software Craft | Architecture / Architecture Evolution |
+| N+1 | Platform / Database Performance | Platform / GraphQL (DataLoader) |
+| Guardrail / Validation / Gate · Retry / Repair / Fallback | AI / Safety & Guardrails + AI / Agent Fundamentals | deck `harness` como resource |
+
+---
+
+## Mudanças estruturais vs. arquivos `roadmap/*.md` originais
+
+| # | Mudança | Justificativa |
+|---|---|---|
+| 1 | `Design & Fundamentals` → **`Programming Foundations`** + **`Software Design`** | misturava mecânica de linguagem com design — pré-requisitos e cadência diferentes |
+| 2 | Story `Testing` → **Epic `Testing & Quality Engineering`** | 17 tasks; pré-requisito de Refactoring e de confiança em design |
+| 3 | `Debugging` movido Software Craft → Testing & Quality | diagnóstico de qualidade, não escrita de código |
+| 4 | `Clean Code` → `Clean Code` + `Design Heuristics` | DRY/KISS/YAGNI são heurísticas de design, não legibilidade |
+| 5 | `Codebase Maintainability` → `Dependency & Version Management` | nome preciso; evita colisão com o "Dependency Management" de Software Design |
+| 6 | `Architecture / Caching Architecture` → slim `Caching at Scale` | ~90% era duplicata de Platform / Caching |
+| 7 | AI Engineering reordenado (temático → pedagógico); `Production AI` = revisita | ordem original agrupava por tema, não por dependência |
+| 8 | `Domain Modeling` = capstone de Software Design e ponte para Architecture | Bounded Context / Context Mapping são pré-requisito de microservices |
+
+---
+
+## SUGESTÕES — lacunas (não adicionar sem aprovação)
+
+**Epics ausentes:**
+- **Frontend Engineering** — rendering do browser, DOM, componentes, state management,
+  performance de rendering, acessibilidade, bundling.
+- **Engineering Leadership & Communication** — mentoria, conduzir RFCs, estimativa,
+  fatiamento de escopo, comunicação com stakeholders, incident command.
+- **Data Engineering** — batch × stream, ETL/ELT, data warehouse/lake, Airflow/Spark.
+
+**Stories ausentes:** ver seção de cada Epic acima
+(`Non-Functional Testing`, `Build & Tooling`, `Infrastructure as Code`,
+`Responsible AI & Governance`, `LLM Cost Engineering`).
+`Memory & Runtime` — **aprovada** na Fase 2 do Epic 01 (Story 02).
+
+---
+
+## Estado / próximas fases
+
+| Fase | Escopo | Estado |
+|---|---|---|
+| **Fase 1** | Epics → Stories, ordem, racional, sobreposições, dependências de alto nível | ✅ Aprovada 2026-09-03 |
+| **Fase 2** | Detalhamento Epic por Epic: ordenar Tasks, `Requires` por Task, canônico × revisita, consolidar duplicatas, SUGESTÕES de Task | 🔄 Em andamento — uma rodada por Epic, com aprovação |
+| **Fase 3** | Implementação visual: `data/roadmap.js`, navegação Área → Módulo → Conceito, identidade visual da referência | ⏳ Bloqueada pela Fase 2 |
+
+### Fase 2 — progresso por Epic
+
+| Epic | Estado | Arquivo |
+|---|---|---|
+| 01 · Programming Foundations | ✅ **Aprovado 2026-09-03** — 8 Stories, 79 Tasks | `01-programming-foundations.md` |
+| 02 · Testing & Quality Engineering | ⏳ Não iniciado | — |
+| 03 · Software Craft | ⏳ Não iniciado | — |
+| 04 · Software Design | ⏳ Não iniciado | — |
+| 05 · Platform Engineering | ⏳ Não iniciado | — |
+| 06 · Architecture & System Design | ⏳ Não iniciado | — |
+| 07 · AI Engineering | ⏳ Não iniciado | — |
+
+Os arquivos `roadmap/software-craft.md`, `design-e-fundamentals.md`,
+`architecture-e-system-design.md`, `ai-engineering.md`, `platform-engineering.md`
+mantêm a estrutura **antiga** e serão substituídos/reorganizados durante a Fase 2.
+`design-e-fundamentals.md` já foi consumido pelo Epic 01 (Stories de fundamentos) —
+o restante alimenta o Epic 04.
