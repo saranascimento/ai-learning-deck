@@ -11,7 +11,8 @@ representa o roadmap de estudo para nível Senior Software Engineer.
 | 2026-09-03 | Fase 1 | Arquitetura macro (Epics → Stories, ordem pedagógica, sobreposições, dependências de alto nível) **aprovada**. Estrutura de referência: `roadmap/00-overview.md`. |
 | 2026-09-03 | Fase 2 · Epic 01 | `Programming Foundations` **aprovado**: 8 Stories, 79 Tasks, `Requires` por Task, canônico × revisita, duplicatas resolvidas. Detalhe: `roadmap/01-programming-foundations.md`. Inclui Story nova `Memory & Runtime` (02), `Closure` promovida, `O(1)…O(n²)` consolidadas em `Common Time Complexities`. |
 | 2026-09-03 | Fase 2 · Epic 02 | `Testing & Quality Engineering` **aprovado**: 5 Stories, 31 Tasks. Detalhe: `roadmap/02-testing-quality-engineering.md`. 24 Tasks originais + 7 novas (`Assertion`, `Test Fixture`, `Test Runner`, `Dummy`, `Red-Green-Refactor`, `Code Coverage`, `Property-Based Testing`). `Git Bisect` canônico aqui (Epic 03/Git → revisita). `Requires` revisados: ordem de estudo ≠ dependência conceitual; sem ciclo (TDD não `Requires` Refactoring). |
-| — | Fase 2 · Epics 03–07 | Não iniciados. Um Epic por vez, cada rodada com aprovação. |
+| 2026-09-05 | Fase 2 · Epic 03 | `Software Craft` **aprovado**: 9 Stories, 61 Tasks. Detalhe: `roadmap/03-software-craft.md`. Removidas `Pure Functions`/`Side Effects`/`Immutability` (canônico Epic 01); `Git Bisect` não-canônico (`revisitOf` Epic 02/Debugging); 3 correções de `Requires` aplicadas (`Inline Function`, `Legacy Code`, `Merge Conflicts`); Tasks guarda-chuva novas: `Refactoring`, `Code Review`, `Errors vs Exceptions`; consolidação `Review Dimensions` (5 Tasks → 1, `subtopics`). |
+| — | Fase 2 · Epics 04–07 | Não iniciados. Um Epic por vez, cada rodada com aprovação. |
 | — | Fase 3 · 1ª versão | **Próximo passo.** Home com os 7 Epics + navegação completa (Área → Módulo → Conceito) apenas para os Epics 01 e 02. |
 
 > A cópia de trabalho original deste plano vive em
@@ -152,6 +153,10 @@ verdade da estrutura.
   Programming Fundamentals · **Memory & Runtime** · Type Systems · Functional
   Programming · Data Structures · Algorithms & Complexity · Asynchronous Programming ·
   Concurrency.
+- Epic 03 · Software Craft → **`roadmap/03-software-craft.md`** (aprovado
+  2026-09-05: 9 Stories, 61 Tasks). Ordem final das Stories: Clean Code · Design
+  Heuristics · Code Smells · Refactoring · Error Handling · Code Review ·
+  Dependency & Version Management · Git · Engineering Documentation.
 
 ---
 
@@ -218,7 +223,7 @@ contextual, consolidar duplicatas Task-a-Task, registrar SUGESTÕES de Task.
 |---|---|---|
 | 01 · Programming Foundations | ✅ Concluído 2026-09-03 — 8 Stories, 79 Tasks | `roadmap/01-programming-foundations.md` |
 | 02 · Testing & Quality Engineering | ✅ Concluído 2026-09-03 — 5 Stories, 31 Tasks | `roadmap/02-testing-quality-engineering.md` |
-| 03 · Software Craft | ⏳ Não iniciado — herda: remover `Pure Functions/Side Effects/Immutability` de Clean Code (canônico Epic 01); `Bisect` → revisita de `Git Bisect` (Epic 02); `Refactoring` referenciado como pointer pelo `Red-Green-Refactor` (Epic 02), sem `Requires` reverso | — |
+| 03 · Software Craft | ✅ Concluído 2026-09-05 — 9 Stories, 61 Tasks | `roadmap/03-software-craft.md` |
 | 04 · Software Design | ⏳ Não iniciado — herda: recebe `Composition over Inheritance` (heurística) do Epic 01; `Dependency Injection & IoC` = aplicação de `Testability` (Epic 02) | — |
 | 05 · Platform Engineering | ⏳ Não iniciado — herda: `API Contract` revisita `Contract Testing` (Epic 02); `CI-CD` revisita `Test Runner`/`Code Coverage`/`Test Isolation`; `Reliability Engineering` revisita `Root Cause Analysis` | — |
 | 06 · Architecture & System Design | ⏳ Não iniciado — herda: `Coupling/Cohesion/SoC` viram `[R]` do Epic 01; `Service Communication` revisita `Contract Testing` (Epic 02) | — |

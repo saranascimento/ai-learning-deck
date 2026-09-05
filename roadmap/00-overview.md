@@ -4,10 +4,11 @@
 > hierarquia. O detalhamento Task-a-Task acontece na Fase 2, um Epic por vez.
 >
 > **Fase 2 em andamento** — Epics 01 · Programming Foundations e 02 · Testing & Quality
-> Engineering concluídos (2026-09-03), ver `01-programming-foundations.md` e
-> `02-testing-quality-engineering.md`. Progresso completo no fim deste arquivo.
+> Engineering concluídos (2026-09-03) e 03 · Software Craft concluído (2026-09-05), ver
+> `01-programming-foundations.md`, `02-testing-quality-engineering.md` e
+> `03-software-craft.md`. Progresso completo no fim deste arquivo.
 > **Próximo**: Fase 3 — 1ª versão visual (7 Epics na Home + navegação completa só para
-> os Epics 01 e 02).
+> os Epics 01, 02 e 03).
 >
 > Registro completo da decisão (contexto, análise, arquitetura técnica): `../PLAN.md`.
 
@@ -39,7 +40,8 @@ ROADMAP SENIOR
    *(Fase 2 aprovada: 5 Stories, 31 Tasks. Inclui a Story `Debugging`, movida de
    Software Craft.)*
 3. **Software Craft** — disciplina diária de escrever e mudar código com segurança.
-   Depende de Foundations; Refactoring `Requires` Testing.
+   Depende de Foundations; Refactoring `Requires` Testing. *(Fase 2 aprovada: 9
+   Stories, 61 Tasks.)*
 4. **Software Design** — estrutura no nível de classe/módulo/domínio (OOD, SOLID,
    patterns, DDD). Depende de Foundations.
 5. **Platform Engineering** — o substrato de execução: web, APIs, dados, segurança,
@@ -132,30 +134,52 @@ Contract` ≠ `Contract` (Epic 01) · `Stack Trace` ≠ `Call Stack` ≠ `Stack`
 
 ### 03 · Software Craft
 
-| # | Story | Notas |
-|---|---|---|
-| 01 | Clean Code | Naming, Functions, Function Arguments, Guard Clauses, Comments, Magic Numbers · *Fase 2: remover `Pure Functions`/`Side Effects`/`Immutability` (canônico no Epic 01)* |
-| 02 | Design Heuristics | DRY, KISS, YAGNI, Least Astonishment — movido de "Clean Code" |
-| 03 | Code Smells | Requires: Clean Code, Design Heuristics |
-| 04 | Refactoring | Requires: Code Smells, Testing & Quality Engineering |
-| 05 | Error Handling | |
-| 06 | Code Review | |
-| 07 | Dependency & Version Management | Technical Debt, Legacy Code, SemVer, Deprecation, Backward Compatibility, Incremental Migration — renomeado de "Codebase Maintainability" |
-| 08 | Git | *Fase 2: `Bisect` vira revisita/referência de Testing & Quality / Debugging / Git Bisect (canônico no Epic 02)* |
-| 09 | Engineering Documentation | **canônico**: README, ADR, RFC, Changelog, Runbook |
+> **Fase 2 aprovada em 2026-09-05.** Detalhamento Task-a-Task: `03-software-craft.md`.
+> 9 Stories · 61 Tasks. Removidas de `Clean Code`: `Pure Functions`, `Side Effects`,
+> `Immutability` (canônico no Epic 01 / Functional Programming). `Bisect` (Story `Git`)
+> deixa de ser canônico — vira revisita de `Testing & Quality Engineering / Debugging /
+> Git Bisect`. Tasks guarda-chuva novas: `Refactoring`, `Code Review`, `Errors vs
+> Exceptions`. Consolidação: 5 Tasks "Review for X" → 1 Task `Review Dimensions` com
+> `subtopics`.
+
+| # | Story | Tasks | Notas |
+|---|---|---|---|
+| 01 | Clean Code | 6 | **canônico**: Naming, Functions, Function Arguments, Guard Clauses, Comments, Magic Numbers |
+| 02 | Design Heuristics | 4 | **canônico**: DRY, KISS, YAGNI, Principle of Least Astonishment · paralela a Clean Code |
+| 03 | Code Smells | 6 | **canônico**: Duplicate Code, Long Method, Long Parameter List, Large Class, Feature Envy, Primitive Obsession · Requires: Clean Code, Design Heuristics |
+| 04 | Refactoring | 11 | **canônico**: Refactoring (guarda-chuva), Extract Function, Extract Variable, Rename, Inline Function, Extract Class, Move Function, Replace Nested Conditional with Guard Clauses, Replace Conditional with Polymorphism, Introduce Parameter Object, Refactoring with Tests · Requires: Code Smells; Testing & Quality Engineering |
+| 05 | Error Handling | 7 | **canônico**: Errors vs Exceptions (guarda-chuva), Exceptions, Error Propagation, Custom Errors, Fail Fast, Result Pattern, Error Boundaries |
+| 06 | Code Review | 4 | **canônico**: Code Review (guarda-chuva), Review Dimensions *(subtopics: Correctness, Readability, Maintainability, Testability, Security)*, Review Scope, Giving & Receiving Feedback · Requires: Clean Code |
+| 07 | Dependency & Version Management | 7 | **canônico**: Technical Debt, Legacy Code, Semantic Versioning, Backward Compatibility, Deprecation, Dependency Management, Incremental Migration — renomeado de "Codebase Maintainability" |
+| 08 | Git | 11 | **canônico**: Commit, Merge, Rebase, Interactive Rebase, Merge Conflicts, Cherry-pick, Revert, Reset, Reflog, Branching Strategies · `Git Bisect` **[R]** revisita de Testing & Quality Engineering / Debugging (não-canônico) |
+| 09 | Engineering Documentation | 5 | **canônico**: README, Changelog, ADR, RFC, Runbook |
 
 Racional: legibilidade → heurísticas → reconhecer código ruim → corrigir com segurança
 (exige testes) → lidar com falha → colaboração → manter codebase vivo → dominar o
 histórico → comunicar decisões.
 
-**Pendências herdadas para a Fase 2 do Epic 03**: remover de `Clean Code` as Tasks
-`Pure Functions` / `Side Effects` / `Immutability` (canônico no Epic 01 / Functional
-Programming); converter `Bisect` (Story `Git`) em revisita de `Git Bisect` (Epic 02);
-`Refactoring` referenciado como *pointer* pelo passo "refactor" de `Red-Green-Refactor`
-(Epic 02), sem `Requires` reverso.
+**Duplicatas resolvidas nesta Epic** (canônico em outra Epic já aprovada; vira
+revisita/removido aqui):
+- `Pure Functions` / `Side Effects` / `Immutability` — canônico em Programming
+  Foundations / Functional Programming; removidas de `Clean Code`.
+- `Git Bisect` — canônico em Testing & Quality Engineering / Debugging; a Task
+  `Git Bisect` em `Git` é `canonical: false` + `revisitOf`, mesmo padrão de `Call
+  Stack` em Asynchronous Programming (Epic 01).
 
-*SUGESTÃO de Story:* `Build & Tooling` (build systems, linters/formatters, pre-commit,
-monorepo × polyrepo).
+**Colisões de nome a desambiguar**: `Guard Clauses` (Clean Code) ≠ `Type Narrowing`
+(Epic 01) · `Duplicate Code` (smell) ≠ `DRY` (heurística) · trio intencional
+`Long Parameter List` / `Function Arguments` / `Introduce Parameter Object` ·
+`Speculative Generality` (não incluída) ≈ `YAGNI` · `Replace Magic Number with
+Constant` (não incluída) ≠ `Magic Numbers` · `Squash` (não incluído) ≠ `Interactive
+Rebase` · `Review Dimensions` ≠ `Testability` (Epic 02) · `API Documentation` (não
+incluída) ≠ `Comments` · `Git Bisect` (canônico no Epic 02) ≠ `Git Bisect` (aqui,
+revisita). Lista completa com distinções: `03-software-craft.md`.
+
+*SUGESTÕES de Task* (não incluídas): `Dead Code`, `Shotgun Surgery` / `Divergent
+Change`, `Data Clumps`, `Speculative Generality` (Code Smells); `API Documentation`
+(Platform, futuro). *SUGESTÃO de Story:* `Build & Tooling` (build systems,
+linters/formatters, pre-commit, monorepo × polyrepo). Lista completa no arquivo do
+Epic.
 
 ### 04 · Software Design
 
@@ -286,6 +310,8 @@ Testing & Quality / Testability ──▶ Software Design / Dependency Injection
 Testing & Quality / Contract Testing ──▶ Platform / API ; Architecture / Service Communication
 Testing & Quality / Regression Testing ──▶ AI Engineering / Regression Evaluation
 Software Craft ──▶ Architecture / Architecture Evolution (ADR, Tech Debt)
+Software Craft / Error Boundaries ──▶ Architecture / Resilience Patterns   (futuro, sem Requires ainda)
+Software Craft / Runbook ──▶ Platform / Reliability Engineering            (futuro, sem Requires ainda)
 Software Design / Domain Modeling ──▶ Architecture / Architectural Styles
 Software Design / Enterprise Patterns ⟵ Requires ── Platform / Database Fundamentals
 Platform Engineering ──▶ Architecture & System Design (Epic inteiro)
@@ -370,7 +396,7 @@ Platform / Observability ──▶ AI Engineering / AI Observability
 |---|---|---|
 | 01 · Programming Foundations | ✅ **Concluído 2026-09-03** — 8 Stories, 79 Tasks | `01-programming-foundations.md` |
 | 02 · Testing & Quality Engineering | ✅ **Concluído 2026-09-03** — 5 Stories, 31 Tasks | `02-testing-quality-engineering.md` |
-| 03 · Software Craft | ⏳ Não iniciado | — |
+| 03 · Software Craft | ✅ **Concluído 2026-09-05** — 9 Stories, 61 Tasks | `03-software-craft.md` |
 | 04 · Software Design | ⏳ Não iniciado | — |
 | 05 · Platform Engineering | ⏳ Não iniciado | — |
 | 06 · Architecture & System Design | ⏳ Não iniciado | — |
@@ -380,17 +406,18 @@ Platform / Observability ──▶ AI Engineering / AI Observability
 
 Implementar a primeira versão navegável do roadmap:
 - **Home**: os 7 Epics como cards coloridos (Fase 1).
-- **Navegação completa** (Área → Módulo → Conceito) **apenas para os Epics 01 e 02**
+- **Navegação completa** (Área → Módulo → Conceito) **para os Epics 01, 02 e 03**
   — os únicos com detalhamento Task-a-Task aprovado.
-- Epics 03–07: card na Home, mas sem drill-down de Stories/Tasks até a Fase 2
+- Epics 04–07: card na Home, mas sem drill-down de Stories/Tasks até a Fase 2
   correspondente.
 
 Arquitetura técnica de referência: `../PLAN.md` (Anexo).
 
 ### Arquivos originais
 
-`roadmap/software-craft.md`, `architecture-e-system-design.md`, `ai-engineering.md`,
-`platform-engineering.md` mantêm a estrutura **antiga** e serão reorganizados nas
-próximas rodadas da Fase 2. `design-e-fundamentals.md` já foi consumido pelos Epics
-01 e 04 (fundamentos → Epic 01; design/patterns/DDD → Epic 04). `software-craft.md`
-já teve as Stories `Testing` e `Debugging` extraídas para o Epic 02.
+`architecture-e-system-design.md`, `ai-engineering.md`, `platform-engineering.md`
+mantêm a estrutura **antiga** e serão reorganizados nas próximas rodadas da Fase 2.
+`design-e-fundamentals.md` já foi consumido pelos Epics 01 e 04 (fundamentos → Epic
+01; design/patterns/DDD → Epic 04). `software-craft.md` já foi totalmente consumido
+pelo Epic 03 (Stories `Testing` e `Debugging` extraídas antes para o Epic 02; as
+demais Stories detalhadas em `03-software-craft.md`).
