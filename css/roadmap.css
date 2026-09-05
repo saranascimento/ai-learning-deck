@@ -1,0 +1,449 @@
+/*
+ * Roadmap Senior — layout navegável (Home → Área → Módulo → Conceito).
+ * Herda os tokens de css/variables.css (tema dark). Carregado só por index.html;
+ * os decks continuam usando layout/components/diagram.css.
+ */
+
+/* O reset trava o scroll para os decks (viewport fixo). O roadmap precisa rolar. */
+html,
+body {
+  height: auto;
+  min-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+:root {
+  --epic-color: var(--color-accent);
+  --radius-card: 0.9rem;
+  --radius-row: 0.6rem;
+  --rm-max-width: 77.5rem; /* 1240px */
+  --rm-gutter: 4.5rem; /* 72px */
+
+  /* Status de estudo — preparado, usado quando App.config.progressEnabled */
+  --status-todo: var(--color-text-muted);
+  --status-studying: #e0a458;
+  --status-done: #57c98a;
+}
+
+.roadmap {
+  max-width: var(--rm-max-width);
+  margin: 0 auto;
+  padding: clamp(2rem, 6vw, 4rem) var(--rm-gutter) 5rem;
+  min-height: 100vh;
+}
+
+.roadmap:focus {
+  outline: none;
+}
+
+.view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  animation: rm-fade var(--transition-duration-fragment) var(--transition-easing);
+}
+
+@keyframes rm-fade {
+  from {
+    opacity: 0;
+    transform: translateY(0.4rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---- masthead (Home) ------------------------------------------------------ */
+.masthead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-md);
+}
+
+.masthead__title {
+  font-size: clamp(2rem, 4vw, 3rem);
+}
+
+.masthead__subtitle {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+/* ---- grid de Áreas ------------------------------------------------------ */
+.area-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-md);
+}
+
+.area-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: var(--space-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-top: 3px solid var(--epic-color);
+  border-radius: var(--radius-card);
+}
+
+.area-card--structuring {
+  opacity: 0.72;
+}
+
+.area-card__kicker {
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  font-weight: 600;
+  color: var(--epic-color);
+}
+
+.area-card__title {
+  font-size: var(--font-size-subtitle);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+a.area-card__title--link:hover {
+  color: var(--epic-color);
+}
+
+.area-card__desc {
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+  line-height: var(--line-height-body);
+}
+
+.area-card__badge {
+  align-self: flex-start;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  margin-top: 0.2rem;
+}
+
+.area-card__foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-sm);
+  margin-top: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.area-card__more {
+  font-size: var(--font-size-small);
+  font-weight: 600;
+  color: var(--epic-color);
+}
+
+.area-card__count {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+/* ---- listas numeradas (Módulos / Conceitos) --------------------------- */
+.track {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-top: 0.3rem;
+}
+
+.track--page {
+  gap: 0.3rem;
+  margin-top: var(--space-sm);
+}
+
+.track__row {
+  display: grid;
+  grid-template-columns: 2.1rem 1fr auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.6rem;
+  border-radius: var(--radius-row);
+  color: var(--color-text);
+  transition: background var(--transition-duration-fragment) var(--transition-easing);
+}
+
+a.track__row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.track__row--static {
+  grid-template-columns: 2.1rem 1fr;
+  color: var(--color-text-muted);
+}
+
+.track__num {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.track__title {
+  font-size: var(--font-size-small);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.track__meta {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.track__arrow {
+  color: var(--color-text-muted);
+  transition: color var(--transition-duration-fragment) var(--transition-easing);
+}
+
+a.track__row:hover .track__arrow {
+  color: var(--epic-color);
+}
+
+.track__chips {
+  display: inline-flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+/* ---- breadcrumb ------------------------------------------------------- */
+.crumbs {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.crumbs__link {
+  color: var(--color-text-muted);
+}
+
+.crumbs__link:hover {
+  color: var(--color-text);
+}
+
+.crumbs__here {
+  color: var(--color-text);
+}
+
+.crumbs__sep {
+  opacity: 0.5;
+}
+
+/* ---- cabeçalho de página (Área / Módulo / Conceito) ------------------ */
+.page-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.page-head__kicker {
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  font-weight: 600;
+  color: var(--epic-color);
+}
+
+.page-head__title {
+  font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+}
+
+.page-head__desc {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-body);
+  max-width: 46rem;
+}
+
+.page-head__meta {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+/* ---- chips de marcador ---------------------------------------------- */
+.markers {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-top: 0.3rem;
+}
+
+.chip {
+  font-size: 0.66rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.chip--c {
+  border-color: color-mix(in srgb, var(--epic-color) 55%, var(--color-border));
+  color: var(--epic-color);
+}
+
+.chip--r {
+  border-style: dashed;
+}
+
+.chip--new {
+  border-color: color-mix(in srgb, var(--status-done) 55%, var(--color-border));
+  color: var(--status-done);
+}
+
+.chip--x {
+  border-color: color-mix(in srgb, var(--status-studying) 55%, var(--color-border));
+  color: var(--status-studying);
+}
+
+/* ---- blocos de detalhe (campos) ---------------------------------- */
+.detail-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.field__label {
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.field__body {
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-body);
+}
+
+.field__body p {
+  font-size: var(--font-size-small);
+  color: var(--color-text);
+}
+
+.taglist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.taglist__item {
+  font-size: 0.78rem;
+  padding: 0.25rem 0.55rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-row);
+  color: var(--color-text);
+}
+
+.taglist__item a {
+  color: var(--epic-color);
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+/* ---- placeholder de conteúdo futuro ---------------------------- */
+.placeholder-card {
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-card);
+  padding: var(--space-md);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  font-style: italic;
+}
+
+/* ---- navegação sequencial entre Conceitos -------------------- */
+.task-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--font-size-small);
+}
+
+.task-nav__link {
+  color: var(--color-text-muted);
+}
+
+.task-nav__link:hover {
+  color: var(--epic-color);
+}
+
+.task-nav__link--next {
+  text-align: right;
+  margin-left: auto;
+}
+
+/* ---- decks preservados (rodapé discreto da Home) ------------- */
+.home-decks {
+  margin-top: var(--space-lg);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--color-border);
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.home-decks__links a {
+  color: var(--color-text-muted);
+}
+
+.home-decks__links a:hover {
+  color: var(--color-text);
+}
+
+/* ---- responsivo ------------------------------------------------ */
+@media (max-width: 64rem) {
+  .area-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 34rem) {
+  .area-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 30rem) {
+  :root {
+    --rm-gutter: 1.25rem;
+  }
+  .track__row {
+    grid-template-columns: 1.8rem 1fr auto;
+  }
+  .track__meta {
+    display: none;
+  }
+  .area-card__foot {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+}

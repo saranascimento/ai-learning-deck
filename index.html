@@ -3,24 +3,25 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Papo de IA</title>
+    <title>Roadmap Senior</title>
 
     <link rel="stylesheet" href="css/reset.css" />
     <link rel="stylesheet" href="css/variables.css" />
     <link rel="stylesheet" href="css/base.css" />
-    <link rel="stylesheet" href="css/home.css" />
+    <link rel="stylesheet" href="css/roadmap.css" />
   </head>
   <body>
-    <main class="home">
-      <div class="home__intro">
-        <h1>Papo de IA</h1>
-        <p class="home__subtitle">Entendendo IA, uma camada por vez.</p>
-      </div>
+    <main class="roadmap" id="app" aria-live="polite"></main>
 
-      <div class="catalog" id="catalog"></div>
-    </main>
-
+    <!-- catálogo de decks (resources) — preservado, não protagonista -->
     <script src="data/presentations.js"></script>
-    <script src="js/home.js"></script>
+    <!-- árvore Epic → Story → Task (Área → Módulo → Conceito) -->
+    <script src="data/roadmap.js"></script>
+
+    <script src="js/roadmap/data.js"></script>
+    <script src="js/roadmap/progress.js"></script>
+    <script src="js/roadmap/router.js"></script>
+    <script src="js/roadmap/views.js"></script>
+    <script src="js/roadmap/app.js"></script>
   </body>
 </html>
