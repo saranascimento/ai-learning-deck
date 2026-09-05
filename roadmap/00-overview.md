@@ -4,11 +4,12 @@
 > hierarquia. O detalhamento Task-a-Task acontece na Fase 2, um Epic por vez.
 >
 > **Fase 2 em andamento** — Epics 01 · Programming Foundations e 02 · Testing & Quality
-> Engineering concluídos (2026-09-03) e 03 · Software Craft concluído (2026-09-05), ver
-> `01-programming-foundations.md`, `02-testing-quality-engineering.md` e
-> `03-software-craft.md`. Progresso completo no fim deste arquivo.
+> Engineering concluídos (2026-09-03), 03 · Software Craft e 04 · Software Design
+> concluídos (2026-09-05), ver `01-programming-foundations.md`,
+> `02-testing-quality-engineering.md`, `03-software-craft.md` e `04-software-design.md`.
+> Progresso completo no fim deste arquivo.
 > **Próximo**: Fase 3 — 1ª versão visual (7 Epics na Home + navegação completa só para
-> os Epics 01, 02 e 03).
+> os Epics 01–04).
 >
 > Registro completo da decisão (contexto, análise, arquitetura técnica): `../PLAN.md`.
 
@@ -43,7 +44,7 @@ ROADMAP SENIOR
    Depende de Foundations; Refactoring `Requires` Testing. *(Fase 2 aprovada: 9
    Stories, 61 Tasks.)*
 4. **Software Design** — estrutura no nível de classe/módulo/domínio (OOD, SOLID,
-   patterns, DDD). Depende de Foundations.
+   patterns, DDD). Depende de Foundations. *(Fase 2 aprovada: 9 Stories, 56 Tasks.)*
 5. **Platform Engineering** — o substrato de execução: web, APIs, dados, segurança,
    ops, cloud. Pouca dependência conceitual, muito volume.
 6. **Architecture & System Design** — sistemas que escalam, distribuem e evoluem.
@@ -183,25 +184,52 @@ Epic.
 
 ### 04 · Software Design
 
-| # | Story | Notas |
-|---|---|---|
-| 01 | Object-Oriented Design | Requires: Programming Foundations / Programming Fundamentals |
-| 02 | SOLID | **canônico**: SRP, OCP, LSP, ISP, DIP · Requires: OOD |
-| 03 | Design Principles | CQS, Encapsulate What Varies, Program to an Interface, Least Knowledge; consolida "Composition over Inheritance" · Requires: SOLID |
-| 04 | Dependency Injection & IoC | **canônico**: DI, IoC, Constructor Injection, DI Container, Service Locator · Requires: SOLID / DIP |
-| 05 | Creational Patterns | Requires: Design Principles |
-| 06 | Structural Patterns | Requires: Creational Patterns |
-| 07 | Behavioral Patterns | Requires: Structural Patterns |
-| 08 | Enterprise & Application Patterns | Repository, Service Layer, Data Mapper, Active Record, Unit of Work, Specification, DTO · Requires: Dependency Injection & IoC, Platform / Database Fundamentals |
-| 09 | Domain Modeling | **canônico**: Entity, Value Object, Aggregate, Aggregate Root, Bounded Context, Ubiquitous Language, Context Mapping · Requires: OOD |
+> **Fase 2 aprovada em 2026-09-05.** Detalhamento Task-a-Task: `04-software-design.md`.
+> 9 Stories · 56 Tasks (versão enxuta — Structural 7→5, Behavioral 11→5; patterns
+> retirados viram SUGESTÃO). `Composition over Inheritance` consolidada aqui como Task
+> única (heurística realocada do Epic 01). `Law of Demeter` + `Principle of Least
+> Knowledge` = 1 Task. `Entity`/`Value Object` **canônicos em Object-Oriented Design**;
+> `Domain Modeling` os revisita com framing DDD (`canonical: false` + `revisitOf`).
 
-Racional: vocabulário OOD → SOLID (precisa de OOD) → princípios adicionais → DI/IoC
-(precisa de DIP) → padrões GoF na ordem clássica (creational → structural → behavioral)
-→ padrões de aplicação/persistência (precisam de DI + banco) → Domain Modeling como
-capstone e ponte para Architecture.
+| # | Story | Tasks | Notas |
+|---|---|---|---|
+| 01 | Object-Oriented Design | 9 | **canônico**: Object vs Class, Identity, Entity, Value Object, Mutable vs Immutable Objects, Tell Don't Ask, Law of Demeter (Least Knowledge), Anemic/Rich Domain Model · Requires: Programming Foundations / Programming Fundamentals |
+| 02 | SOLID | 5 | **canônico**: SRP, OCP, LSP, ISP, DIP · LSP/ISP/DIP revisitam Inheritance/Polymorphism/Interface (Epic 01) · Requires: Object-Oriented Design |
+| 03 | Design Principles | 4 | **canônico**: CQS, Encapsulate What Varies, Program to an Interface, Composition over Inheritance *(heurística realocada do Epic 01)* · Requires: SOLID |
+| 04 | Dependency Injection & IoC | 5 | **canônico**: IoC, Dependency Injection, Constructor Injection, DI Container, Service Locator · `Dependency Injection` revisita Testability (Epic 02) · Requires: SOLID / DIP |
+| 05 | Creational Patterns | 5 | **canônico**: Factory Method, Abstract Factory, Builder, Prototype, Singleton · Requires: Design Principles |
+| 06 | Structural Patterns | 5 | **canônico**: Adapter, Decorator, Facade, Proxy, Composite · Requires: Design Principles *(não Creational Patterns)* · SUGESTÃO: Bridge, Flyweight |
+| 07 | Behavioral Patterns | 5 | **canônico**: Strategy, Observer, Command, State, Template Method · Requires: Design Principles *(não Structural Patterns)* · SUGESTÃO: Chain of Responsibility *(Advanced/Optional — retomar no Epic 05)*, Iterator, Mediator, Memento, Visitor, Interpreter |
+| 08 | Enterprise & Application Patterns | 7 | **canônico**: Repository, Data Mapper, Active Record, Unit of Work, Service Layer, Specification, DTO · Requires: Dependency Injection & IoC *(+ pendência futura: Platform / Database Fundamentals, sem Requires formal)* |
+| 09 | Domain Modeling | 11 | **canônico**: Domain, Domain Model, Ubiquitous Language, Aggregate, Aggregate Root, Domain Service, Domain Event, Bounded Context, Context Mapping · `Entity`/`Value Object` = revisita de OOD (`canonical: false`) · Requires: Object-Oriented Design |
+
+Racional: vocabulário OOD → SOLID (precisa de OOD) → princípios de design → DI/IoC
+(precisa de DIP) → catálogos GoF (Creational · Structural · Behavioral — apresentados
+na ordem clássica, mas **sem cadeia de `Requires` entre as famílias**: as três só
+`Requires` Design Principles) → padrões de aplicação/persistência → Domain Modeling
+como capstone e ponte para Architecture.
+
+**Duplicatas resolvidas nesta Epic**:
+- `Composition over Inheritance` — mecanismo `Composition` canônico no Epic 01; a
+  heurística é Task única aqui (`Design Principles`).
+- `Entity` / `Value Object` — canônico em `Object-Oriented Design`; `Domain Modeling`
+  revisita (`canonical: false` + `revisitOf`), mesmo padrão de `Git Bisect` (Epic 03).
+- `Law of Demeter` = `Principle of Least Knowledge` — 1 Task só, em OOD.
+- Excluídas como Task própria: `Principle of Least Astonishment` (canônico no Epic 03),
+  `High Cohesion / Low Coupling` (canônico Epic 01), `Dependency`, `Dependency
+  Inversion` (= DIP), `Dependency Graph`.
+
+**Colisões a desambiguar**: `Command` (pattern) ≠ `Command-Query Separation` ·
+`Domain Service` ≠ `Service Layer` · `Composition` (Epic 01) ≠ `Composition over
+Inheritance` · `Entity`/`Value Object` canônico (OOD) ≠ revisita (Domain Modeling).
+
+*SUGESTÕES de Task* (não incluídas): `Bridge`, `Flyweight`, `Chain of Responsibility`
+*(Advanced/Optional — retomar na Fase 2 do Epic 05 · Platform, relação com middleware)*,
+`Iterator`, `Mediator`, `Memento`, `Visitor`, `Interpreter`, `Modularity` /
+`Encapsulation Boundaries`. Lista completa no arquivo do Epic.
 
 > `Enterprise & Application Patterns` (08) depende de Platform / Database Fundamentals —
-> adiar essa Story até terminar Platform, ou vê-la só conceitualmente aqui.
+> `Requires` formal fica pendente até a Fase 2 do Epic 05.
 > `Domain Modeling` (09) é `Requires` de Architecture / Architectural Styles.
 
 ### 05 · Platform Engineering
@@ -326,6 +354,7 @@ Platform / Observability ──▶ AI Engineering / AI Observability
 |---|---|---|
 | Coupling / Cohesion / SoC | Programming Foundations / Programming Fundamentals | Software Craft; Software Design; Architecture Fundamentals |
 | Abstraction / Encapsulation / Interface / Contract / Polymorphism | Programming Foundations / Programming Fundamentals | Software Design / OOD, SOLID |
+| Entity / Value Object / Identity | Software Design / Object-Oriented Design | Software Design / Domain Modeling (framing DDD, `canonical: false`); Architecture (futuro) |
 | Pure Functions / Immutability / Side Effects / Referential Transparency | Programming Foundations / Functional Programming | AI (determinismo) — removido de Software Craft / Clean Code |
 | Closure / Higher-Order Functions / Function Composition | Programming Foundations / Functional Programming | Async / Callback; Frontend (SUGESTÃO) |
 | Memory / Value vs Reference / Stack vs Heap / Call Stack / GC / Memory Leak | Programming Foundations / Memory & Runtime | Async / Event Loop; Concurrency; Platform / Performance; Frontend (SUGESTÃO) |
@@ -388,7 +417,7 @@ Platform / Observability ──▶ AI Engineering / AI Observability
 |---|---|---|
 | **Fase 1** | Epics → Stories, ordem, racional, sobreposições, dependências de alto nível | ✅ Aprovada 2026-09-03 |
 | **Fase 2** | Detalhamento Epic por Epic: ordenar Tasks, `Requires` por Task, canônico × revisita, consolidar duplicatas, SUGESTÕES de Task | 🔄 Em andamento — uma rodada por Epic, com aprovação |
-| **Fase 3** | Implementação visual: `data/roadmap.js`, navegação Área → Módulo → Conceito, identidade visual da referência | 🔜 Próximo passo — 1ª versão: 7 Epics na Home + navegação completa apenas para os Epics 01 e 02 |
+| **Fase 3** | Implementação visual: `data/roadmap.js`, navegação Área → Módulo → Conceito, identidade visual da referência | 🔜 Próximo passo — 1ª versão: 7 Epics na Home + navegação completa para os Epics com Fase 2 concluída (01–04) |
 
 ### Fase 2 — progresso por Epic
 
@@ -397,7 +426,7 @@ Platform / Observability ──▶ AI Engineering / AI Observability
 | 01 · Programming Foundations | ✅ **Concluído 2026-09-03** — 8 Stories, 79 Tasks | `01-programming-foundations.md` |
 | 02 · Testing & Quality Engineering | ✅ **Concluído 2026-09-03** — 5 Stories, 31 Tasks | `02-testing-quality-engineering.md` |
 | 03 · Software Craft | ✅ **Concluído 2026-09-05** — 9 Stories, 61 Tasks | `03-software-craft.md` |
-| 04 · Software Design | ⏳ Não iniciado | — |
+| 04 · Software Design | ✅ **Concluído 2026-09-05** — 9 Stories, 56 Tasks | `04-software-design.md` |
 | 05 · Platform Engineering | ⏳ Não iniciado | — |
 | 06 · Architecture & System Design | ⏳ Não iniciado | — |
 | 07 · AI Engineering | ⏳ Não iniciado | — |
@@ -406,9 +435,9 @@ Platform / Observability ──▶ AI Engineering / AI Observability
 
 Implementar a primeira versão navegável do roadmap:
 - **Home**: os 7 Epics como cards coloridos (Fase 1).
-- **Navegação completa** (Área → Módulo → Conceito) **para os Epics 01, 02 e 03**
+- **Navegação completa** (Área → Módulo → Conceito) **para os Epics 01–04**
   — os únicos com detalhamento Task-a-Task aprovado.
-- Epics 04–07: card na Home, mas sem drill-down de Stories/Tasks até a Fase 2
+- Epics 05–07: card na Home, mas sem drill-down de Stories/Tasks até a Fase 2
   correspondente.
 
 Arquitetura técnica de referência: `../PLAN.md` (Anexo).
@@ -417,7 +446,8 @@ Arquitetura técnica de referência: `../PLAN.md` (Anexo).
 
 `architecture-e-system-design.md`, `ai-engineering.md`, `platform-engineering.md`
 mantêm a estrutura **antiga** e serão reorganizados nas próximas rodadas da Fase 2.
-`design-e-fundamentals.md` já foi consumido pelos Epics 01 e 04 (fundamentos → Epic
-01; design/patterns/DDD → Epic 04). `software-craft.md` já foi totalmente consumido
+`design-e-fundamentals.md` já foi **totalmente consumido** (fundamentos de linguagem →
+Epic 01, detalhados em `01-programming-foundations.md`; design/patterns/DDD → Epic 04,
+detalhados em `04-software-design.md`). `software-craft.md` já foi totalmente consumido
 pelo Epic 03 (Stories `Testing` e `Debugging` extraídas antes para o Epic 02; as
 demais Stories detalhadas em `03-software-craft.md`).

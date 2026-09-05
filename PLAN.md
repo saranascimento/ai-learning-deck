@@ -12,8 +12,9 @@ representa o roadmap de estudo para nível Senior Software Engineer.
 | 2026-09-03 | Fase 2 · Epic 01 | `Programming Foundations` **aprovado**: 8 Stories, 79 Tasks, `Requires` por Task, canônico × revisita, duplicatas resolvidas. Detalhe: `roadmap/01-programming-foundations.md`. Inclui Story nova `Memory & Runtime` (02), `Closure` promovida, `O(1)…O(n²)` consolidadas em `Common Time Complexities`. |
 | 2026-09-03 | Fase 2 · Epic 02 | `Testing & Quality Engineering` **aprovado**: 5 Stories, 31 Tasks. Detalhe: `roadmap/02-testing-quality-engineering.md`. 24 Tasks originais + 7 novas (`Assertion`, `Test Fixture`, `Test Runner`, `Dummy`, `Red-Green-Refactor`, `Code Coverage`, `Property-Based Testing`). `Git Bisect` canônico aqui (Epic 03/Git → revisita). `Requires` revisados: ordem de estudo ≠ dependência conceitual; sem ciclo (TDD não `Requires` Refactoring). |
 | 2026-09-05 | Fase 2 · Epic 03 | `Software Craft` **aprovado**: 9 Stories, 61 Tasks. Detalhe: `roadmap/03-software-craft.md`. Removidas `Pure Functions`/`Side Effects`/`Immutability` (canônico Epic 01); `Git Bisect` não-canônico (`revisitOf` Epic 02/Debugging); 3 correções de `Requires` aplicadas (`Inline Function`, `Legacy Code`, `Merge Conflicts`); Tasks guarda-chuva novas: `Refactoring`, `Code Review`, `Errors vs Exceptions`; consolidação `Review Dimensions` (5 Tasks → 1, `subtopics`). |
-| — | Fase 2 · Epics 04–07 | Não iniciados. Um Epic por vez, cada rodada com aprovação. |
-| — | Fase 3 · 1ª versão | **Próximo passo.** Home com os 7 Epics + navegação completa (Área → Módulo → Conceito) apenas para os Epics 01 e 02. |
+| 2026-09-05 | Fase 2 · Epic 04 | `Software Design` **aprovado**: 9 Stories, 56 Tasks. Detalhe: `roadmap/04-software-design.md`. Versão enxuta dos catálogos GoF (`Structural` 7→5, `Behavioral` 11→5; patterns retirados → SUGESTÃO). `Chain of Responsibility` fica como Advanced/Optional p/ reconsiderar no Epic 05 (middleware). `Law of Demeter` + `Principle of Least Knowledge` = 1 Task. `Composition over Inheritance` recebido do Epic 01. `Entity`/`Value Object` canônicos em OOD, revisita (`canonical: false` + `revisitOf`) em Domain Modeling. Sem cadeia `Requires` Creational→Structural→Behavioral. Excluídas: `Principle of Least Astonishment`, `High Cohesion/Low Coupling`, `Dependency`, `Dependency Inversion`, `Dependency Graph`. |
+| — | Fase 2 · Epics 05–07 | Não iniciados. Um Epic por vez, cada rodada com aprovação. |
+| — | Fase 3 · 1ª versão | **Próximo passo.** Home com os 7 Epics + navegação completa (Área → Módulo → Conceito) para os Epics com Fase 2 concluída (01–04). |
 
 > A cópia de trabalho original deste plano vive em
 > `~/.claude/plans/quero-transformar-este-projeto-mellow-spring.md`.
@@ -79,7 +80,7 @@ Decisões tomadas pelo usuário:
 | `Dependency Management` | Story em Software Craft **e** Story em Design & F. | Mesmo nome, assuntos diferentes (semver/deps × DI/IoC) | Renomear: `Dependency & Version Management` (Craft) e `Dependency Injection & IoC` (Design) |
 | `Composition over Inheritance` / `Favor Composition over Inheritance` | 2 Tasks no mesmo Epic | Duplicado | **Fase 2 · Epic 01**: mecanismo `Composition` canônico em Programming Fundamentals; heurística realocada ao Epic 04 (consolidar lá) |
 | `Dependency Inversion` (task) × `DIP` (SOLID) | 2 Tasks no mesmo Epic | Duplicado | Canônico em **SOLID / DIP**; a outra referencia |
-| `Entity`, `Value Object` | `Object-Oriented Design` **e** `Domain Modeling` | Duplicado | Canônico em **Domain Modeling**; consolidar da OOD |
+| `Entity`, `Value Object` | `Object-Oriented Design` **e** `Domain Modeling` | Duplicado | ✅ **Fase 2 · Epic 04**: canônico em **Object-Oriented Design** (mecânica geral de identidade); `Domain Modeling` revisita com framing DDD (`canonical: false` + `revisitOf`). *(Inverte a proposta original da Fase 1 — mudança aprovada explicitamente.)* |
 | `Bisect` / `Git Bisect` | `Git` **e** `Debugging` | Duplicado | ✅ **Fase 2 · Epic 02**: canônico `Git Bisect` em Testing & Quality / Debugging, `Requires: Epic 03 / Git` (forward-ref aceita). Epic 03 / Git terá revisita/referência |
 | `Caching` (patterns) | Story inteira em Platform **e** em Architecture | ~90% duplicado | Canônico em **Platform / Caching**; Architecture mantém slim **Caching at Scale** com `Requires` |
 | `CDN` / `CDN Architecture` | Platform/Caching **e** Architecture/Caching | Duplicado | Canônico Platform; Architecture referencia |
@@ -157,6 +158,11 @@ verdade da estrutura.
   2026-09-05: 9 Stories, 61 Tasks). Ordem final das Stories: Clean Code · Design
   Heuristics · Code Smells · Refactoring · Error Handling · Code Review ·
   Dependency & Version Management · Git · Engineering Documentation.
+- Epic 04 · Software Design → **`roadmap/04-software-design.md`** (aprovado
+  2026-09-05: 9 Stories, 56 Tasks). Ordem das Stories: Object-Oriented Design ·
+  SOLID · Design Principles · Dependency Injection & IoC · Creational Patterns ·
+  Structural Patterns · Behavioral Patterns · Enterprise & Application Patterns ·
+  Domain Modeling.
 
 ---
 
@@ -168,7 +174,7 @@ Testing & Quality ──▶ Software Craft / Refactoring
 Software Craft ──▶ Architecture / Architecture Evolution   (ADR, Tech Debt)
              └──▶ Testing & Quality / Debugging            (Bisect ⟵ Git)
 Software Design / Domain Modeling ──▶ Architecture / Architectural Styles
-Software Design / Enterprise Patterns ⟵ Requires ── Platform / Database Fundamentals
+Software Design / Enterprise Patterns ⟵ Requires ── Platform / Database Fundamentals   (pendente até a Fase 2 do Epic 05 — sem Requires formal ainda)
 Platform Engineering ──▶ Architecture & System Design      (Epic inteiro)
                     └──▶ AI Engineering                     (APIs, Observability, Caching)
 Architecture / Resilience Patterns ──▶ AI Engineering / Production AI
@@ -224,18 +230,18 @@ contextual, consolidar duplicatas Task-a-Task, registrar SUGESTÕES de Task.
 | 01 · Programming Foundations | ✅ Concluído 2026-09-03 — 8 Stories, 79 Tasks | `roadmap/01-programming-foundations.md` |
 | 02 · Testing & Quality Engineering | ✅ Concluído 2026-09-03 — 5 Stories, 31 Tasks | `roadmap/02-testing-quality-engineering.md` |
 | 03 · Software Craft | ✅ Concluído 2026-09-05 — 9 Stories, 61 Tasks | `roadmap/03-software-craft.md` |
-| 04 · Software Design | ⏳ Não iniciado — herda: recebe `Composition over Inheritance` (heurística) do Epic 01; `Dependency Injection & IoC` = aplicação de `Testability` (Epic 02) | — |
+| 04 · Software Design | ✅ Concluído 2026-09-05 — 9 Stories, 56 Tasks | `roadmap/04-software-design.md` |
 | 05 · Platform Engineering | ⏳ Não iniciado — herda: `API Contract` revisita `Contract Testing` (Epic 02); `CI-CD` revisita `Test Runner`/`Code Coverage`/`Test Isolation`; `Reliability Engineering` revisita `Root Cause Analysis` | — |
 | 06 · Architecture & System Design | ⏳ Não iniciado — herda: `Coupling/Cohesion/SoC` viram `[R]` do Epic 01; `Service Communication` revisita `Contract Testing` (Epic 02) | — |
 | 07 · AI Engineering | ⏳ Não iniciado — herda: `AI Evaluation` revisita `Test Doubles`/`Regression Testing` (Epic 02) | — |
 
 **Fase 3 — Implementação visual · 1ª versão** (próximo passo):
 - Home com os **7 Epics** como cards coloridos.
-- Navegação completa **Área → Módulo → Conceito apenas para os Epics 01 e 02**
-  (os únicos com Fase 2 concluída).
-- Epics 03–07: card na Home, sem drill-down até a Fase 2 correspondente.
-- Converter `roadmap/01-*.md` e `roadmap/02-*.md` em `data/roadmap.js`; construir
-  router por hash + views; preparar (sem ativar) o modelo de progresso.
+- Navegação completa **Área → Módulo → Conceito para os Epics com Fase 2
+  concluída (01–04)**.
+- Epics 05–07: card na Home, sem drill-down até a Fase 2 correspondente.
+- Converter `roadmap/0N-*.md` em `data/roadmap.js`; construir router por hash +
+  views; preparar (sem ativar) o modelo de progresso.
 - Arquitetura de referência: Anexo abaixo.
 
 ---
