@@ -3,8 +3,11 @@
 > Estrutura macro (Epics → Stories) **aprovada em 2026-09-03**. Fonte da verdade da
 > hierarquia. O detalhamento Task-a-Task acontece na Fase 2, um Epic por vez.
 >
-> **Fase 2 em andamento** — Epic 01 · Programming Foundations aprovado (2026-09-03),
-> ver `01-programming-foundations.md`. Progresso completo no fim deste arquivo.
+> **Fase 2 em andamento** — Epics 01 · Programming Foundations e 02 · Testing & Quality
+> Engineering concluídos (2026-09-03), ver `01-programming-foundations.md` e
+> `02-testing-quality-engineering.md`. Progresso completo no fim deste arquivo.
+> **Próximo**: Fase 3 — 1ª versão visual (7 Epics na Home + navegação completa só para
+> os Epics 01 e 02).
 >
 > Registro completo da decisão (contexto, análise, arquitetura técnica): `../PLAN.md`.
 
@@ -33,6 +36,8 @@ ROADMAP SENIOR
    concorrência. Pré-requisito de tudo. *(Fase 2 aprovada: 8 Stories, 79 Tasks.)*
 2. **Testing & Quality Engineering** — saber testar antes de refatorar (Craft) e antes
    de confiar em qualquer design. A 1ª Story só exige "sei escrever uma função".
+   *(Fase 2 aprovada: 5 Stories, 31 Tasks. Inclui a Story `Debugging`, movida de
+   Software Craft.)*
 3. **Software Craft** — disciplina diária de escrever e mudar código com segurança.
    Depende de Foundations; Refactoring `Requires` Testing.
 4. **Software Design** — estrutura no nível de classe/módulo/domínio (OOD, SOLID,
@@ -91,37 +96,63 @@ assíncrono de execução (07) → concorrência, o superconjunto difícil (08).
 
 ### 02 · Testing & Quality Engineering
 
-| # | Story | Notas |
-|---|---|---|
-| 01 | Testing Fundamentals | **canônico**: Unit/Integration/E2E, AAA, Given-When-Then |
-| 02 | Test Doubles | **canônico**: Mock, Stub, Spy, Fake · Requires: Testing Fundamentals |
-| 03 | Test-Driven Development | Requires: Testing Fundamentals |
-| 04 | Testing Strategy | Test Pyramid, Isolation, Testability, Regression, Contract Testing, Flaky Tests |
-| 05 | Debugging | Reproduction, Hypothesis-Driven, Stack Trace, Binary Search Debugging, Bisect, RCA · Requires: Software Craft / Git (para Bisect) |
+> **Fase 2 aprovada em 2026-09-03.** Detalhamento Task-a-Task: `02-testing-quality-engineering.md`.
+> 5 Stories · 31 Tasks (24 originais preservadas + 7 novas: `Assertion`, `Test Fixture`,
+> `Test Runner`, `Dummy`, `Red-Green-Refactor`, `Code Coverage`, `Property-Based Testing`).
 
-Racional: o que é um teste e os níveis → dublês → TDD (usa tudo acima) → estratégia
-(onde investir) → debugging como diagnóstico (fecha o Epic; `Bisect` consolida a
-duplicata Git/Debugging).
+| # | Story | Tasks | Notas |
+|---|---|---|---|
+| 01 | Testing Fundamentals | 8 | **canônico**: Unit/Integration/E2E Testing, Assertion, Arrange-Act-Assert, Given-When-Then, Test Fixture, Test Runner · Requires: Epic 01 / Programming Fundamentals |
+| 02 | Test Doubles | 6 | **canônico**: Test Doubles, Dummy, Stub, Fake, Spy, Mock · Dummy/Stub/Fake/Spy/Mock dependem **só** de `Test Doubles` · Requires: Testing Fundamentals; Epic 01 / Interface |
+| 03 | Test-Driven Development | 2 | **canônico**: Test-Driven Development, Red-Green-Refactor · Requires: Testing Fundamentals · *sem `Requires` para Epic 03 / Refactoring (evita ciclo)* |
+| 04 | Testing Strategy | 8 | **canônico**: Test Pyramid, Code Coverage, Testability, Test Isolation, Flaky Tests, Regression Testing, Property-Based Testing, Contract Testing · Requires: Testing Fundamentals, Test Doubles |
+| 05 | Debugging | 7 | **canônico**: Reproduction, Hypothesis-Driven Debugging, Stack Trace, Breakpoints, Binary Search Debugging, Git Bisect, Root Cause Analysis · Requires: Testing Fundamentals; Epic 01 / Call Stack; Epic 01 / Binary Search |
+
+Racional (ordem de estudo, **não** cadeia de `Requires`): fundamentos (escrever *um*
+teste) → dublês (isolar a unidade) → TDD (disciplina que dirige o design) → estratégia
+(onde investir esforço) → debugging (diagnóstico quando um teste falha; fecha o Epic e
+liga a Platform / Reliability Engineering).
+
+**Duplicata resolvida**: `Git Bisect` é **canônico aqui** (Story 05); na Fase 2 do
+Epic 03 a Task `Bisect` da Story `Git` vira revisita/referência a esta Task.
+**Forward-reference aceita**: `Git Bisect` `Requires` `Epic 03 / Git` (Git não depende
+de nada do Epic 02 — acíclico).
+
+**Colisões a desambiguar**: `Assertion` (teste) ≠ `assert`/invariante em runtime ·
+`Fake` ≠ `Fake Model` (AI) · `Mock` preciso ≠ "mock" coloquial · `Code Coverage` ≠
+"test coverage" coloquial · `Integration Testing` ≠ `Continuous Integration` ·
+`Regression Testing` ≠ `Regression Evaluation` (AI) · `Contract Testing` ≠ `API
+Contract` ≠ `Contract` (Epic 01) · `Stack Trace` ≠ `Call Stack` ≠ `Stack` ADT.
 
 *SUGESTÃO de Story:* `Non-Functional Testing` (load, stress, performance, security).
+*SUGESTÕES de Task* (não incluídas): `BDD`, `Snapshot Testing`, `Mutation Testing`,
+`Test Case`/`Test Suite`, `Seam`, `Mocking Framework`, `Testing Trophy`,
+`Debugger (ferramenta)`, `Logging for Debugging`, `Rubber Duck`, `git blame`,
+`Observability-Driven Debugging`. Lista completa no arquivo do Epic.
 
 ### 03 · Software Craft
 
 | # | Story | Notas |
 |---|---|---|
-| 01 | Clean Code | Naming, Functions, Function Arguments, Guard Clauses, Comments, Magic Numbers |
+| 01 | Clean Code | Naming, Functions, Function Arguments, Guard Clauses, Comments, Magic Numbers · *Fase 2: remover `Pure Functions`/`Side Effects`/`Immutability` (canônico no Epic 01)* |
 | 02 | Design Heuristics | DRY, KISS, YAGNI, Least Astonishment — movido de "Clean Code" |
 | 03 | Code Smells | Requires: Clean Code, Design Heuristics |
 | 04 | Refactoring | Requires: Code Smells, Testing & Quality Engineering |
 | 05 | Error Handling | |
 | 06 | Code Review | |
 | 07 | Dependency & Version Management | Technical Debt, Legacy Code, SemVer, Deprecation, Backward Compatibility, Incremental Migration — renomeado de "Codebase Maintainability" |
-| 08 | Git | |
+| 08 | Git | *Fase 2: `Bisect` vira revisita/referência de Testing & Quality / Debugging / Git Bisect (canônico no Epic 02)* |
 | 09 | Engineering Documentation | **canônico**: README, ADR, RFC, Changelog, Runbook |
 
 Racional: legibilidade → heurísticas → reconhecer código ruim → corrigir com segurança
 (exige testes) → lidar com falha → colaboração → manter codebase vivo → dominar o
 histórico → comunicar decisões.
+
+**Pendências herdadas para a Fase 2 do Epic 03**: remover de `Clean Code` as Tasks
+`Pure Functions` / `Side Effects` / `Immutability` (canônico no Epic 01 / Functional
+Programming); converter `Bisect` (Story `Git`) em revisita de `Git Bisect` (Epic 02);
+`Refactoring` referenciado como *pointer* pelo passo "refactor" de `Red-Green-Refactor`
+(Epic 02), sem `Requires` reverso.
 
 *SUGESTÃO de Story:* `Build & Tooling` (build systems, linters/formatters, pre-commit,
 monorepo × polyrepo).
@@ -250,8 +281,11 @@ governança de dados); `LLM Cost Engineering` (prompt caching, batching, model s
 ```
 Programming Foundations ──▶ (todos os demais Epics)
 Testing & Quality ──▶ Software Craft / Refactoring
+Testing & Quality / Debugging / Git Bisect ⟵ Requires ── Software Craft / Git  (forward-ref aceita, acíclico)
+Testing & Quality / Testability ──▶ Software Design / Dependency Injection & IoC
+Testing & Quality / Contract Testing ──▶ Platform / API ; Architecture / Service Communication
+Testing & Quality / Regression Testing ──▶ AI Engineering / Regression Evaluation
 Software Craft ──▶ Architecture / Architecture Evolution (ADR, Tech Debt)
-             └──▶ Testing & Quality / Debugging (Bisect ⟵ Git)
 Software Design / Domain Modeling ──▶ Architecture / Architectural Styles
 Software Design / Enterprise Patterns ⟵ Requires ── Platform / Database Fundamentals
 Platform Engineering ──▶ Architecture & System Design (Epic inteiro)
@@ -273,6 +307,11 @@ Platform / Observability ──▶ AI Engineering / AI Observability
 | Hash Table / Tree / BST / Graph / Queue | Programming Foundations / Data Structures | Architecture (Consistent Hashing, Message Queue); Platform (índices); AI (HNSW) |
 | Big O / Common Time Complexities / Recursion / Memoization / Binary Search | Programming Foundations / Algorithms & Complexity | todo o roadmap; Testing & Quality (Binary Search Debugging, Git Bisect); Platform / Caching |
 | Process / Thread / Race Condition / Deadlock / Atomic Operation / Shared State | Programming Foundations / Concurrency | Platform (Containers, DB locking/isolation); Architecture (Stateless Systems, consensus) |
+| Unit / Integration / E2E Testing · Assertion / Test Fixture / Test Runner · AAA / GWT | Testing & Quality / Testing Fundamentals | AI / AI Evaluation (offline eval); Platform / CI-CD |
+| Test Doubles · Dummy / Stub / Fake / Spy / Mock | Testing & Quality / Test Doubles | AI / AI Evaluation (mocking de LLM); deck `harness` ("Fake Model") |
+| TDD / Red-Green-Refactor | Testing & Quality / Test-Driven Development | Software Craft / Refactoring (passo "refactor" — pointer, não Requires) |
+| Test Pyramid / Code Coverage / Testability / Test Isolation / Flaky Tests / Regression Testing / Property-Based Testing / Contract Testing | Testing & Quality / Testing Strategy | Software Design (DI); Platform / CI-CD; Platform / API; Architecture / Service Communication; AI / Regression Evaluation |
+| Reproduction / Hypothesis-Driven Debugging / Stack Trace / Breakpoints / Binary Search Debugging / Git Bisect / Root Cause Analysis | Testing & Quality / Debugging | Platform / Reliability Engineering (Postmortem); Software Craft / Git (`Bisect` → referência) |
 | Retry / Timeout / Backoff / Circuit Breaker / Idempotency | Architecture / Resilience Patterns | Platform / API; AI / Tool Calling; AI / Production AI |
 | Caching (patterns) | Platform / Caching | Architecture / Caching at Scale; AI / Production AI (Semantic Cache) |
 | Latency / Throughput | Platform / Performance Engineering | Architecture / System Design Fundamentals |
@@ -323,22 +362,35 @@ Platform / Observability ──▶ AI Engineering / AI Observability
 |---|---|---|
 | **Fase 1** | Epics → Stories, ordem, racional, sobreposições, dependências de alto nível | ✅ Aprovada 2026-09-03 |
 | **Fase 2** | Detalhamento Epic por Epic: ordenar Tasks, `Requires` por Task, canônico × revisita, consolidar duplicatas, SUGESTÕES de Task | 🔄 Em andamento — uma rodada por Epic, com aprovação |
-| **Fase 3** | Implementação visual: `data/roadmap.js`, navegação Área → Módulo → Conceito, identidade visual da referência | ⏳ Bloqueada pela Fase 2 |
+| **Fase 3** | Implementação visual: `data/roadmap.js`, navegação Área → Módulo → Conceito, identidade visual da referência | 🔜 Próximo passo — 1ª versão: 7 Epics na Home + navegação completa apenas para os Epics 01 e 02 |
 
 ### Fase 2 — progresso por Epic
 
 | Epic | Estado | Arquivo |
 |---|---|---|
-| 01 · Programming Foundations | ✅ **Aprovado 2026-09-03** — 8 Stories, 79 Tasks | `01-programming-foundations.md` |
-| 02 · Testing & Quality Engineering | ⏳ Não iniciado | — |
+| 01 · Programming Foundations | ✅ **Concluído 2026-09-03** — 8 Stories, 79 Tasks | `01-programming-foundations.md` |
+| 02 · Testing & Quality Engineering | ✅ **Concluído 2026-09-03** — 5 Stories, 31 Tasks | `02-testing-quality-engineering.md` |
 | 03 · Software Craft | ⏳ Não iniciado | — |
 | 04 · Software Design | ⏳ Não iniciado | — |
 | 05 · Platform Engineering | ⏳ Não iniciado | — |
 | 06 · Architecture & System Design | ⏳ Não iniciado | — |
 | 07 · AI Engineering | ⏳ Não iniciado | — |
 
-Os arquivos `roadmap/software-craft.md`, `design-e-fundamentals.md`,
-`architecture-e-system-design.md`, `ai-engineering.md`, `platform-engineering.md`
-mantêm a estrutura **antiga** e serão substituídos/reorganizados durante a Fase 2.
-`design-e-fundamentals.md` já foi consumido pelo Epic 01 (Stories de fundamentos) —
-o restante alimenta o Epic 04.
+### Próximo passo — Fase 3, 1ª versão visual
+
+Implementar a primeira versão navegável do roadmap:
+- **Home**: os 7 Epics como cards coloridos (Fase 1).
+- **Navegação completa** (Área → Módulo → Conceito) **apenas para os Epics 01 e 02**
+  — os únicos com detalhamento Task-a-Task aprovado.
+- Epics 03–07: card na Home, mas sem drill-down de Stories/Tasks até a Fase 2
+  correspondente.
+
+Arquitetura técnica de referência: `../PLAN.md` (Anexo).
+
+### Arquivos originais
+
+`roadmap/software-craft.md`, `architecture-e-system-design.md`, `ai-engineering.md`,
+`platform-engineering.md` mantêm a estrutura **antiga** e serão reorganizados nas
+próximas rodadas da Fase 2. `design-e-fundamentals.md` já foi consumido pelos Epics
+01 e 04 (fundamentos → Epic 01; design/patterns/DDD → Epic 04). `software-craft.md`
+já teve as Stories `Testing` e `Debugging` extraídas para o Epic 02.
