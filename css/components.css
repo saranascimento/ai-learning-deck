@@ -67,3 +67,135 @@
   opacity: 0.3;
   cursor: default;
 }
+
+/* Comparação lado a lado ("A vs B") */
+.compare {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: var(--space-md);
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.compare__side {
+  flex: 1;
+  min-width: 14rem;
+  max-width: 20rem;
+  padding: var(--space-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.compare__side--accent {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.compare__title {
+  font-size: var(--font-size-subtitle);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.compare__caption {
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+  font-style: italic;
+  text-align: center;
+}
+
+.compare__vs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+}
+
+/* Relação inline entre dois termos (≠, →, =) */
+.relation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  font-size: var(--font-size-subtitle);
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.relation__operator {
+  color: var(--color-accent);
+}
+
+/* Texto de apoio em itálico, usado como legenda/intuição de um termo */
+.quote {
+  font-style: italic;
+  color: var(--color-text-muted);
+}
+
+/* Bloco de exemplo (texto monoespaçado) */
+.example-box {
+  width: 100%;
+  max-width: 34rem;
+  padding: var(--space-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  text-align: left;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-body);
+  color: var(--color-text-muted);
+  white-space: pre-wrap;
+}
+
+.example-box strong {
+  color: var(--color-text);
+}
+
+/* Pergunta mental: âncora curta abaixo da definição de um Concept */
+.mental-question {
+  position: relative;
+  margin-top: var(--space-xs);
+  padding-top: var(--space-sm);
+  font-size: var(--font-size-small);
+  font-style: italic;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.mental-question::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2.5rem;
+  height: 1px;
+  background: var(--color-border);
+}
+
+/* Par de opções de um slide Question (ex.: SIM / NÃO) */
+.options {
+  display: flex;
+  gap: var(--space-lg);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.options__item {
+  padding: var(--space-xs) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font-size: var(--font-size-small);
+  font-weight: 600;
+  color: var(--color-text-muted);
+}

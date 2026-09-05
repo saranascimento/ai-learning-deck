@@ -15,5 +15,12 @@
       cta: "Iniciar apresentação",
       url: "presentations/ai-fundamentals/index.html",
     },
+    {
+      id: "harness",
+      title: "Por baixo do Harness",
+      description: "Os conceitos de IA por trás das abstrações que usamos no dia a dia.",
+      cta: "Iniciar apresentação",
+      url: "presentations/harness/index.html",
+    },
   ];
 })();

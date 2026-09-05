@@ -56,3 +56,89 @@
   border-bottom: 5px solid transparent;
   border-left: 7px solid var(--color-border);
 }
+
+/* Variante vertical do diagrama (fluxos de cima para baixo) */
+.diagram--vertical {
+  flex-direction: column;
+}
+
+.diagram-step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.diagram-connector--vertical {
+  width: 2px;
+  height: 2.5rem;
+}
+
+.diagram-connector--vertical::after {
+  right: auto;
+  top: auto;
+  left: 50%;
+  bottom: -1px;
+  transform: translateX(-50%);
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 7px solid var(--color-border);
+  border-bottom: none;
+}
+
+.diagram-step__label {
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.diagram-node--muted {
+  opacity: 0.45;
+}
+
+/*
+ * Mapa do Harness: geometria fixa reaproveitada em todas as aparições.
+ * 3 colunas de largura IGUAL sempre, mesmo que um ramo tenha mais filhos
+ * que os outros — o ramo mais raso só deixa espaço vazio abaixo, nunca
+ * fica mais largo/estreito que os demais.
+ */
+/* O mapa completo tem até 3 níveis de profundidade — nós e conectores
+   compactos para caber na faixa "principal" sem estourar o slide. */
+.harness-map {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.harness-map .diagram-node {
+  padding: var(--space-xs) var(--space-sm);
+  font-size: var(--font-size-small);
+  min-width: 6rem;
+}
+
+.harness-map .diagram-connector--vertical {
+  height: 1.25rem;
+}
+
+.harness-map__branches {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: var(--space-md);
+  row-gap: var(--space-xs);
+  width: 100%;
+  align-items: start;
+}
+
+.harness-map__branch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+/* Nó/conector já "conhecidos" na narrativa, mas ainda não revelados nesta
+   aparição do mapa — reservam a posição final sem ocupar peso visual. */
+.diagram-node--hidden,
+.diagram-connector--hidden {
+  visibility: hidden;
+}

@@ -1,0 +1,759 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Por baixo do Harness — Papo de IA</title>
+
+    <link rel="stylesheet" href="../../css/reset.css" />
+    <link rel="stylesheet" href="../../css/variables.css" />
+    <link rel="stylesheet" href="../../css/base.css" />
+    <link rel="stylesheet" href="../../css/layout.css" />
+    <link rel="stylesheet" href="../../css/components.css" />
+    <link rel="stylesheet" href="../../css/diagram.css" />
+  </head>
+  <body>
+    <main class="deck" id="deck">
+      <!-- 1. Capa (exceção justificada) -->
+      <section class="slide" data-slide data-template="cover">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Papo de IA</h2></div>
+          <div class="slide__main">
+            <h1>Por baixo do Harness</h1>
+            <p class="quote">Os conceitos de IA por trás das abstrações que usamos no dia a dia.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. Mapa (semente) -->
+      <section class="slide" data-slide data-template="map">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Mapa</h2></div>
+          <div class="slide__context">
+            <p>Vocês já usam um Harness no trabalho.</p>
+            <p data-fragment>Se tirarmos os nomes das abstrações e perguntarmos qual problema cada peça resolve — conseguimos reconstruí-lo?</p>
+          </div>
+          <div class="slide__main">
+            <div class="diagram diagram--vertical" data-fragment>
+              <div class="diagram-node diagram-node--accent">Harness</div>
+              <div class="diagram-connector diagram-connector--vertical"></div>
+              <div class="diagram-node diagram-node--muted">???</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. Conceito: Harness -->
+      <section class="slide" data-slide data-template="concept">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Conceito</h2></div>
+          <div class="slide__main">
+            <h1>Harness</h1>
+            <p class="quote">uma camada que coordena a utilização do modelo e de outras capacidades do sistema</p>
+            <p class="quote" data-fragment>o termo não tem uma definição única na indústria — aqui ele é um modelo mental para o que o nosso sistema está coordenando</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. Mapa: Harness -> 3 ramos -->
+      <section class="slide" data-slide data-template="map">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Mapa</h2></div>
+          <div class="slide__context">
+            <p>Três responsabilidades úteis para entender o que ele coordena:</p>
+          </div>
+          <div class="slide__main">
+            <div class="harness-map">
+              <div class="diagram-node diagram-node--accent">Harness</div>
+              <div class="diagram-connector diagram-connector--vertical"></div>
+              <div class="harness-map__branches">
+                <div class="harness-map__branch">
+                  <div class="diagram-node" data-fragment>Workflow</div>
+                  <div class="diagram-connector diagram-connector--vertical diagram-connector--hidden"></div>
+                  <div class="diagram-node diagram-node--hidden">State</div>
+                </div>
+                <div class="harness-map__branch">
+                  <div class="diagram-node" data-fragment>Model</div>
+                  <div class="diagram-connector diagram-connector--vertical diagram-connector--hidden"></div>
+                  <div class="diagram-node diagram-node--hidden">Model Abstraction</div>
+                  <div class="diagram-connector diagram-connector--vertical diagram-connector--hidden"></div>
+                  <div class="diagram">
+                    <div class="diagram-node diagram-node--hidden">Fake Model</div>
+                    <div class="diagram-node diagram-node--hidden">LLM real</div>
+                  </div>
+                </div>
+                <div class="harness-map__branch">
+                  <div class="diagram-node" data-fragment>Controle</div>
+                  <div class="diagram-connector diagram-connector--vertical diagram-connector--hidden"></div>
+                  <div class="diagram">
+                    <div class="diagram-node diagram-node--hidden">Guardrail</div>
+                    <div class="diagram-node diagram-node--hidden">Validation</div>
+                    <div class="diagram-node diagram-node--hidden">Gate</div>
+                  </div>
+                  <div class="diagram-connector diagram-connector--vertical diagram-connector--hidden"></div>
+                  <div class="diagram">
+                    <div class="diagram-node diagram-node--hidden">Retry</div>
+                    <div class="diagram-node diagram-node--hidden">Repair</div>
+                    <div class="diagram-node diagram-node--hidden">Fallback</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. Pergunta: Workflow/State -->
+      <section class="slide" data-slide data-template="question">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Pergunta</h2></div>
+          <div class="slide__context">
+            <p>Uma execução tem várias etapas.</p>
+            <p data-fragment>A etapa seguinte precisa saber o que já aconteceu.</p>
+          </div>
+          <div class="slide__main">
+            <h1 data-fragment>Como carregamos a situação atual da execução?</h1>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. Conceito: Workflow + State -->
+      <section class="slide" data-slide data-template="concept">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Conceito</h2></div>
+          <div class="slide__main">
+            <h1>Workflow</h1>
+            <p class="quote">a sequência de etapas que define como o processo é executado</p>
+            <h1 data-fragment>State</h1>
+            <p class="quote" data-fragment>os dados que representam a situação atual da execução</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. Pergunta: Model Abstraction -->
+      <section class="slide" data-slide data-template="question">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Pergunta</h2></div>
+          <div class="slide__context">
+            <p>Em testes, queremos comportamento previsível — sem depender de uma chamada real ao LLM.</p>
+          </div>
+          <div class="slide__main">
+            <h1 data-fragment>Se trocarmos o LLM real por um Fake Model, precisamos reescrever o Workflow?</h1>
+          </div>
+          <div class="slide__footer">
+            <div class="options" data-fragment>
+              <span class="options__item">SIM</span>
+              <span class="options__item">NÃO</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 8. Conceito: Model Abstraction -->
+      <section class="slide" data-slide data-template="concept">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Conceito</h2></div>
+          <div class="slide__main">
+            <h1>Model Abstraction</h1>
+            <p class="quote">uma interface criada pelo sistema para usar modelos sem que o resto do código dependa de uma implementação específica</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 9. Comparação: Fake Model x LLM real -->
+      <section class="slide" data-slide data-template="comparison">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Comparação</h2></div>
+          <div class="slide__main">
+            <div class="compare">
+              <div class="compare__side" data-fragment>
+                <span class="compare__title">Fake Model</span>
+                <span class="compare__caption">comportamento controlado e simulado</span>
+              </div>
+              <span class="compare__vs">×</span>
+              <div class="compare__side compare__side--accent" data-fragment>
+                <span class="compare__title">LLM real</span>
+                <span class="compare__caption">Inference real, com possível variabilidade</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 10. Pergunta: Training ou Inference? -->
+      <section class="slide" data-slide data-template="question">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Pergunta</h2></div>
+          <div class="slide__context">
+            <div class="diagram diagram--vertical">
+              <div class="diagram-node diagram-node--muted">Harness → Model</div>
+              <div class="diagram-connector diagram-connector--vertical"></div>
+              <div class="diagram-node diagram-node--accent">LLM</div>
+            </div>
+          </div>
+          <div class="slide__main">
+            <h1 data-fragment>Quando o Harness chama o LLM, ele está aprendendo ou usando algo que já foi aprendido?</h1>
+          </div>
+        </div>
+      </section>
+
+      <!-- 11. Comparação: Training x Inference -->
+      <section class="slide" data-slide data-template="comparison">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Comparação</h2></div>
+          <div class="slide__main">
+            <div class="compare">
+              <div class="compare__side" data-fragment>
+                <span class="compare__title">Training</span>
+                <span class="compare__caption">ajusta o modelo</span>
+              </div>
+              <span class="compare__vs">×</span>
+              <div class="compare__side compare__side--accent" data-fragment>
+                <span class="compare__title">Inference</span>
+                <span class="compare__caption">usa o modelo já treinado</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 12. Comparação: Antes / Agora -->
+      <section class="slide" data-slide data-template="comparison">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Comparação</h2></div>
+          <div class="slide__main">
+            <div class="compare">
+              <div class="compare__side" data-fragment>
+                <span class="compare__title">Antes</span>
+                <div class="diagram diagram--vertical">
+                  <div class="diagram-node">dados</div>
+                  <div class="diagram-connector diagram-connector--vertical"></div>
+                  <div class="diagram-node">Training</div>
+                  <div class="diagram-connector diagram-connector--vertical"></div>
+                  <div class="diagram-node">modelo treinado</div>
+                </div>
+                <span class="compare__caption">(ajustando os Parameters)</span>
+              </div>
+              <span class="compare__vs">→</span>
+              <div class="compare__side compare__side--accent" data-fragment>
+                <span class="compare__title">Agora</span>
+                <div class="diagram diagram--vertical">
+                  <div class="diagram-node">Harness</div>
+                  <div class="diagram-connector diagram-connector--vertical"></div>
+                  <div class="diagram-node">LLM</div>
+                  <div class="diagram-connector diagram-connector--vertical"></div>
+                  <div class="diagram-node">Inference</div>
+                </div>
+                <span class="compare__caption">(usando os Parameters)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 13. Pergunta: analogia da cozinha -->
+      <section class="slide" data-slide data-template="question">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Pergunta</h2></div>
+          <div class="slide__context">
+            <p>Você entra em uma cozinha.</p>
+            <p data-fragment>Sente cheiro de bolo. Há uma forma suja. Existem migalhas.</p>
+            <p data-fragment>Mas o bolo não está lá.</p>
+          </div>
+          <div class="slide__main">
+            <h1 data-fragment>O que provavelmente aconteceu?</h1>
+          </div>
+        </div>
+      </section>
+
+      <!-- 14. Conceito: Inferência (revelação da analogia) -->
+      <section class="slide" data-slide data-template="concept">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Conceito</h2></div>
+          <div class="slide__context">
+            <p>Vocês concluíram isso a partir de sinais e do que já sabiam — sem ver o bolo sendo feito.</p>
+          </div>
+          <div class="slide__main">
+            <h1 data-fragment>Inferência</h1>
+            <p class="quote" data-fragment>em Machine Learning, Inference é a execução de um modelo já treinado para produzir uma saída a partir de uma entrada</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 15. Pergunta: contexto ausente -->
+      <section class="slide" data-slide data-template="question">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Pergunta</h2></div>
+          <div class="slide__main">
+            <h1>Qual é o prazo?</h1>
+            <div class="example-box" data-fragment><strong>Política:</strong>
+solicitações podem ser feitas
+em até 30 dias.
+
+<strong>Pergunta:</strong>
+qual é o prazo?</div>
+          </div>
+          <div class="slide__footer">
+            <p class="mental-question" data-fragment>vocês ficaram mais inteligentes ou receberam a informação necessária?</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 16. Conceito: Context -->
+      <section class="slide" data-slide data-template="concept">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Conceito</h2></div>
+          <div class="slide__main">
+            <h1>Context</h1>
+            <p class="quote">o conjunto de informações disponíveis ao modelo durante uma determinada Inference</p>
+            <div class="diagram diagram--vertical" data-fragment>
+              <div class="diagram">
+                <div class="diagram-node">User Prompt</div>
+                <div class="diagram-node">System Instructions</div>
+                <div class="diagram-node">outras informações</div>
+              </div>
+              <div class="diagram-connector diagram-connector--vertical"></div>
+              <div class="diagram-node diagram-node--accent">Context</div>
+              <div class="diagram-connector diagram-connector--vertical"></div>
+              <div class="diagram-node">LLM</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 17. Pergunta: Training x Context -->
+      <section class="slide" data-slide data-template="question">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Pergunta</h2></div>
+          <div class="slide__context">
+            <p>Colocamos um documento interno no Context.</p>
+          </div>
+          <div class="slide__main">
+            <h1 data-fragment>Treinamos o modelo com esse documento?</h1>
+          </div>
+          <div class="slide__footer">
+            <div class="options" data-fragment>
+              <span class="options__item">SIM</span>
+              <span class="options__item">NÃO</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 18. Comparação: Training x Context -->
+      <section class="slide" data-slide data-template="comparison">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Comparação</h2></div>
+          <div class="slide__context">
+            <p>Não necessariamente.</p>
+          </div>
+          <div class="slide__main">
+            <div class="compare">
+              <div class="compare__side" data-fragment>
+                <span class="compare__title">Training</span>
+                <span class="compare__caption">altera / ajusta o modelo</span>
+              </div>
+              <span class="compare__vs">×</span>
+              <div class="compare__side compare__side--accent" data-fragment>
+                <span class="compare__title">Context</span>
+                <span class="compare__caption">disponibiliza informação para aquela execução</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 19. Conceito: Token -->
+      <section class="slide" data-slide data-template="concept">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Conceito</h2></div>
+          <div class="slide__main">
+            <h1>Token</h1>
+            <p class="quote">unidade de texto processada pelo modelo — palavra, parte de palavra, pontuação ou outro fragmento</p>
+            <div class="diagram" data-fragment>
+              <div class="diagram-node">Texto</div>
+              <div class="diagram-connector"></div>
+              <div class="diagram-node diagram-node--accent">Tokens</div>
+              <div class="diagram-connector"></div>
+              <div class="diagram-node">LLM</div>
+              <div class="diagram-connector"></div>
+              <div class="diagram-node diagram-node--accent">Tokens</div>
+              <div class="diagram-connector"></div>
+              <div class="diagram-node">Texto</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 20. Conceito: Context Window -->
+      <section class="slide" data-slide data-template="concept">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Conceito</h2></div>
+          <div class="slide__main">
+            <h1>Context Window</h1>
+            <p class="quote">o limite de tokens que o modelo consegue considerar em uma execução</p>
+          </div>
+          <div class="slide__footer">
+            <p class="mental-question">"quanto pode caber?"</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 21. Pergunta -> Conceito: Variabilidade -->
+      <section class="slide" data-slide data-template="question">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Pergunta</h2></div>
+          <div class="slide__main">
+            <h1>Mesma entrada + mesmo LLM = exatamente a mesma resposta?</h1>
+            <p class="quote" data-fragment>a geração acontece token a token — cada token é escolhido entre opções possíveis</p>
+          </div>
+          <div class="slide__footer">
+            <p class="mental-question" data-fragment>Variabilidade: a mesma entrada pode produzir respostas diferentes</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 22. Pergunta: ponte para Controle -->
+      <section class="slide" data-slide data-template="question">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Pergunta</h2></div>
+          <div class="slide__context">
+            <div class="relation">
+              <span>resposta diferente</span>
+              <span class="relation__operator">≠</span>
+              <span>necessariamente inválida</span>
+            </div>
+          </div>
+          <div class="slide__main">
+            <h1 data-fragment>Se a saída pode variar, como o Harness mantém controle sobre a execução?</h1>
+          </div>
+        </div>
+      </section>
+
+      <!-- 23. Pergunta: reabre Controle -->
+      <section class="slide" data-slide data-template="question">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Pergunta</h2></div>
+          <div class="slide__context">
+            <div class="diagram diagram--vertical">
+              <div class="diagram-node diagram-node--muted">Harness</div>
+              <div class="diagram-connector diagram-connector--vertical"></div>
+              <div class="diagram-node diagram-node--accent">Controle</div>
+            </div>
+          </div>
+          <div class="slide__main">
+            <h1 data-fragment>O que existe aqui dentro?</h1>
+          </div>
+        </div>
+      </section>
+
+      <!-- 24. Conceito: Guardrail -->
+      <section class="slide" data-slide data-template="concept">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Conceito</h2></div>
+          <div class="slide__context">
+            <p>Uma recomendação apresentada como evidência de um incidente precisa estar sustentada pelo contexto fornecido.</p>
+            <p data-fragment>Como mantemos o comportamento do sistema dentro desse limite?</p>
+          </div>
+          <div class="slide__main">
+            <h1 data-fragment>Guardrail</h1>
+            <p class="quote" data-fragment>mecanismo usado para manter o comportamento de um sistema de IA dentro de limites ou regras definidos</p>
+            <p data-fragment>não é necessariamente um Prompt — e não tem uma implementação universal</p>
+          </div>
+          <div class="slide__footer">
+            <p class="mental-question" data-fragment>"estamos dentro dos limites?"</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 25. Conceito: Validation -->
+      <section class="slide" data-slide data-template="concept">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Conceito</h2></div>
+          <div class="slide__context">
+            <p>Temos uma expectativa ou regra.</p>
+            <p data-fragment>Como verificamos se o resultado realmente atende a ela?</p>
+          </div>
+          <div class="slide__main">
+            <h1 data-fragment>Validation</h1>
+            <p class="quote" data-fragment>processo de verificar se uma entrada, saída ou estado atende às condições esperadas</p>
+          </div>
+          <div class="slide__footer">
+            <p class="mental-question" data-fragment>"isso atende ao que esperávamos?"</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 26. Conceito: Gate -->
+      <section class="slide" data-slide data-template="concept">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Conceito</h2></div>
+          <div class="slide__context">
+            <p>A validação produziu um resultado.</p>
+            <p data-fragment>A execução pode avançar?</p>
+          </div>
+          <div class="slide__main">
+            <h1 data-fragment>Gate</h1>
+            <p class="quote" data-fragment>mecanismo que decide se uma execução pode avançar, com base em uma condição ou resultado</p>
+          </div>
+          <div class="slide__footer">
+            <p class="mental-question" data-fragment>"podemos avançar?"</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 27. Comparação: Guardrail x Validation x Gate -->
+      <section class="slide" data-slide data-template="comparison">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Comparação</h2></div>
+          <div class="slide__main">
+            <div class="compare">
+              <div class="compare__side" data-fragment>
+                <span class="compare__title">Guardrail</span>
+                <span class="compare__caption">limites de comportamento</span>
+              </div>
+              <div class="compare__side" data-fragment>
+                <span class="compare__title">Validation</span>
+                <span class="compare__caption">verifica uma condição</span>
+              </div>
+              <div class="compare__side compare__side--accent" data-fragment>
+                <span class="compare__title">Gate</span>
+                <span class="compare__caption">decide a progressão</span>
+              </div>
+            </div>
+          </div>
+          <div class="slide__footer">
+            <p class="mental-question" data-fragment>não precisam existir sempre como três componentes separados</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 28. Conceito: Retry -->
+      <section class="slide" data-slide data-template="concept">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Conceito</h2></div>
+          <div class="slide__context">
+            <p>A operação falhou.</p>
+            <p data-fragment>Tentamos de novo?</p>
+          </div>
+          <div class="slide__main">
+            <h1 data-fragment>Retry</h1>
+            <p class="quote" data-fragment>executar novamente uma operação quando existe possibilidade razoável de uma nova tentativa funcionar</p>
+            <p data-fragment>nem toda falha é retryable — e sem limite, tentaríamos para sempre</p>
+          </div>
+          <div class="slide__footer">
+            <p class="mental-question" data-fragment>"vale tentar novamente?"</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 29. Conceito: Repair -->
+      <section class="slide" data-slide data-template="concept">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Conceito</h2></div>
+          <div class="slide__context">
+            <p>E se repetir exatamente a mesma coisa não resolver — mas o resultado puder ser corrigido?</p>
+          </div>
+          <div class="slide__main">
+            <h1 data-fragment>Repair</h1>
+            <p class="quote" data-fragment>tentar corrigir algo inválido antes de continuar</p>
+            <div class="relation" data-fragment>
+              <span>Retry</span>
+              <span class="relation__operator">≠</span>
+              <span>Repair</span>
+            </div>
+          </div>
+          <div class="slide__footer">
+            <p class="mental-question" data-fragment>"podemos corrigir?"</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 30. Conceito: Fallback -->
+      <section class="slide" data-slide data-template="concept">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Conceito</h2></div>
+          <div class="slide__context">
+            <p>A estratégia principal não conseguiu produzir o resultado necessário.</p>
+            <p data-fragment>Existe um plano B?</p>
+          </div>
+          <div class="slide__main">
+            <h1 data-fragment>Fallback</h1>
+            <p class="quote" data-fragment>alternativa utilizada quando a estratégia principal não consegue produzir o resultado esperado</p>
+          </div>
+          <div class="slide__footer">
+            <p class="mental-question" data-fragment>"qual é a alternativa?"</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 31. Mapa: Controle expandido -->
+      <section class="slide" data-slide data-template="map">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Mapa</h2></div>
+          <div class="slide__main">
+            <div class="harness-map">
+              <div class="diagram-node diagram-node--muted">Harness</div>
+              <div class="diagram-connector diagram-connector--vertical"></div>
+              <div class="harness-map__branches">
+                <div class="harness-map__branch">
+                  <div class="diagram-node diagram-node--muted">Workflow</div>
+                  <div class="diagram-connector diagram-connector--vertical"></div>
+                  <div class="diagram-node diagram-node--muted">State</div>
+                </div>
+                <div class="harness-map__branch">
+                  <div class="diagram-node diagram-node--muted">Model</div>
+                  <div class="diagram-connector diagram-connector--vertical"></div>
+                  <div class="diagram-node diagram-node--muted">Model Abstraction</div>
+                  <div class="diagram-connector diagram-connector--vertical"></div>
+                  <div class="diagram">
+                    <div class="diagram-node diagram-node--muted">Fake Model</div>
+                    <div class="diagram-node diagram-node--muted">LLM real</div>
+                  </div>
+                </div>
+                <div class="harness-map__branch">
+                  <div class="diagram-node diagram-node--accent">Controle</div>
+                  <div class="diagram-connector diagram-connector--vertical" data-fragment></div>
+                  <div class="diagram">
+                    <div class="diagram-node diagram-node--accent" data-fragment>Guardrail</div>
+                    <div class="diagram-node diagram-node--accent" data-fragment>Validation</div>
+                    <div class="diagram-node diagram-node--accent" data-fragment>Gate</div>
+                  </div>
+                  <div class="diagram-connector diagram-connector--vertical" data-fragment></div>
+                  <div class="diagram">
+                    <div class="diagram-node diagram-node--accent" data-fragment>Retry</div>
+                    <div class="diagram-node diagram-node--accent" data-fragment>Repair</div>
+                    <div class="diagram-node diagram-node--accent" data-fragment>Fallback</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="slide__footer">
+            <p class="mental-question" data-fragment>isso organiza os conceitos — não significa que todo Harness tenha essa arquitetura</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 32. Mapa: tudo revelado -->
+      <section class="slide" data-slide data-template="map">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Mapa</h2></div>
+          <div class="slide__context">
+            <p>O mapa que construímos</p>
+          </div>
+          <div class="slide__main">
+            <div class="harness-map">
+              <div class="diagram-node diagram-node--accent">Harness</div>
+              <div class="diagram-connector diagram-connector--vertical"></div>
+              <div class="harness-map__branches">
+                <div class="harness-map__branch">
+                  <div class="diagram-node">Workflow</div>
+                  <div class="diagram-connector diagram-connector--vertical"></div>
+                  <div class="diagram-node">State</div>
+                </div>
+                <div class="harness-map__branch">
+                  <div class="diagram-node">Model</div>
+                  <div class="diagram-connector diagram-connector--vertical"></div>
+                  <div class="diagram-node">Model Abstraction</div>
+                  <div class="diagram-connector diagram-connector--vertical"></div>
+                  <div class="diagram">
+                    <div class="diagram-node">Fake Model</div>
+                    <div class="diagram-node">LLM real</div>
+                  </div>
+                </div>
+                <div class="harness-map__branch">
+                  <div class="diagram-node">Controle</div>
+                  <div class="diagram-connector diagram-connector--vertical"></div>
+                  <div class="diagram">
+                    <div class="diagram-node">Guardrail</div>
+                    <div class="diagram-node">Validation</div>
+                    <div class="diagram-node">Gate</div>
+                  </div>
+                  <div class="diagram-connector diagram-connector--vertical"></div>
+                  <div class="diagram">
+                    <div class="diagram-node">Retry</div>
+                    <div class="diagram-node">Repair</div>
+                    <div class="diagram-node">Fallback</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 33. Mapa: fluxo de execução -->
+      <section class="slide" data-slide data-template="map">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Mapa</h2></div>
+          <div class="slide__context">
+            <p>Por dentro de uma única chamada ao LLM</p>
+          </div>
+          <div class="slide__main">
+            <div class="diagram diagram--vertical">
+              <div class="diagram-node" data-fragment>LLM → Inference</div>
+              <div class="diagram-connector diagram-connector--vertical" data-fragment></div>
+              <div class="diagram-node diagram-node--accent" data-fragment>Context</div>
+              <div class="diagram-connector diagram-connector--vertical" data-fragment></div>
+              <div class="diagram-node" data-fragment>Tokens → Response → Variabilidade</div>
+            </div>
+          </div>
+          <div class="slide__footer">
+            <p class="mental-question" data-fragment>antes de tudo isso: dados → Training → Parameters · Context Window: quanto pode caber</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 34. Learning Gate 1-3 -->
+      <section class="slide" data-slide data-template="question">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Pergunta</h2></div>
+          <div class="slide__context">
+            <p>Vamos testar o mapa</p>
+          </div>
+          <div class="slide__main">
+            <p data-fragment>1. Quando o Harness chama o LLM, é Training ou Inference?</p>
+            <p data-fragment>2. Colocamos uma informação interna no Context. O modelo aprendeu isso permanentemente?</p>
+            <p data-fragment>3. O LLM respondeu. O Workflow pode automaticamente continuar?</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 35. Learning Gate 4-6 -->
+      <section class="slide" data-slide data-template="question">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__label"><h2>Pergunta</h2></div>
+          <div class="slide__main">
+            <p data-fragment>4. Guardrail, Validation e Gate são três nomes para a mesma coisa?</p>
+            <p data-fragment>5. A resposta não passou na validação. Retry e Repair significam fazer a mesma coisa?</p>
+            <p data-fragment>6. Todo Harness precisa implementar obrigatoriamente todas essas peças?</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 36. Fechamento (exceção justificada) -->
+      <section class="slide" data-slide data-template="cover">
+        <div class="slide__content slide__content--harness">
+          <div class="slide__context">
+            <p>O Harness deixa de ser uma coleção de abstrações prontas.</p>
+          </div>
+          <div class="slide__main">
+            <h1 data-fragment>Ele vira os problemas de engenharia que fizeram essas abstrações existirem</h1>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div class="progress-bar" id="progressBar" aria-hidden="true"></div>
+
+    <a class="home-link" href="../../index.html" aria-label="Voltar para Papo de IA">← Papo de IA</a>
+
+    <nav class="deck-nav" aria-label="Navegação da apresentação">
+      <button class="nav-btn" data-nav="prev" aria-label="Slide anterior">‹</button>
+      <button class="nav-btn" data-nav="next" aria-label="Próximo slide">›</button>
+    </nav>
+
+    <script src="../../js/navigation.js"></script>
+  </body>
+</html>

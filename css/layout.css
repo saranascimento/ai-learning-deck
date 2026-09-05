@@ -47,3 +47,61 @@
   align-items: center;
   gap: var(--space-sm);
 }
+
+/*
+ * Grid específico do deck harness: 4 faixas fixas (label, contexto, principal,
+ * rodapé). A faixa "principal" é a única flexível (1fr) — todo o resto tem
+ * altura reservada e fixa, presente ou não, para que o elemento dominante de
+ * qualquer slide sempre pouse na mesma posição vertical, independente de
+ * quanto texto de apoio existe antes dele. Modificador aplicado junto de
+ * .slide__content — não altera o contrato padrão usado pelos demais decks
+ * (ex.: ai-fundamentals), que continuam com o flex acima.
+ */
+.slide__content--harness {
+  display: grid;
+  grid-template-areas:
+    "label"
+    "context"
+    "main"
+    "footer";
+  grid-template-rows: 2.25rem 6rem 1fr 4rem;
+  row-gap: var(--space-sm);
+  height: min(76vh, 42rem);
+  justify-items: center;
+}
+
+.slide__label {
+  grid-area: label;
+  align-self: start;
+}
+
+.slide__context {
+  grid-area: context;
+  align-self: end;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+  text-align: center;
+}
+
+.slide__main {
+  grid-area: main;
+  align-self: center;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  text-align: center;
+}
+
+.slide__footer {
+  grid-area: footer;
+  align-self: start;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+}
