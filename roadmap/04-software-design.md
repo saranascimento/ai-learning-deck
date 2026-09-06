@@ -2,9 +2,14 @@
 
 > **Estado: APROVADO (Fase 2 · Epic 04 — 2026-09-05).** As 6 decisões abaixo
 > e a ressalva sobre `Chain of Responsibility` foram **aprovadas**. Incorporado
-> a `00-overview.md`, `PLAN.md` e `data/roadmap.js` em 2026-09-05. O Epic 05 ·
-> Platform Engineering segue **não iniciado** — abrir sua Fase 2 é um passo
-> futuro separado, não uma consequência automática desta aprovação.
+> a `00-overview.md`, `PLAN.md` e `data/roadmap.js` em 2026-09-05.
+>
+> **Atualização 2026-09-05 (Fase 2 · Epic 05 · Platform Engineering — FROZEN):**
+> a pendência da decisão 6 foi resolvida — `Enterprise & Application Patterns`
+> passou a `Requires: Platform / Database Fundamentals` (formal, grafo acíclico).
+> A ressalva do `Chain of Responsibility` foi retomada: ancorada pela Task nova
+> `Platform / API Fundamentals / Middleware / Request Pipeline`; o pattern
+> **continua SUGESTÃO aqui**, não foi promovido nem movido.
 >
 > Base: Stories `Object-Oriented Design`, `SOLID`, `Additional Design
 > Principles`, `Dependency Management`, `Creational Design Patterns`,
@@ -249,11 +254,10 @@ Command) → `State` (par com Strategy) → `Template Method`.
 
 ## Story 08 · Enterprise & Application Patterns
 
-`Requires` (Story): `Dependency Injection & IoC`. Depende conceitualmente também
-de `Platform / Database Fundamentals` (Epic 05, ainda não aprovado) — **sem
-`Requires` formal por ora**, mesmo padrão de "forward-ref sem `Requires` ainda"
-usado no Epic 03 (`Error Boundaries`, `Runbook`). A pendência será resolvida na
-Fase 2 do Epic 05.
+`Requires` (Story): `Dependency Injection & IoC`, **`Platform / Database
+Fundamentals`** — **`Requires` formalizado na Fase 2 do Epic 05 (2026-09-05)**,
+quando `Database Fundamentals` foi confirmada como Story 04 daquele Epic. Grafo
+acíclico (nenhuma Task do Epic 05 tem `Requires` de volta para o Epic 04).
 
 | # | Task | Requires | Notas |
 |---|---|---|---|
@@ -357,7 +361,7 @@ Software Design / SOLID / DIP ──▶ Dependency Injection & IoC ──▶ Ent
 Software Design / Object-Oriented Design ──▶ Domain Modeling
 
 Software Design / Domain Modeling / Bounded Context, Context Mapping ──▶ Architecture / Architectural Styles   (Epic 06, futuro)
-Software Design / Enterprise & Application Patterns ⟵ Requires ── Platform / Database Fundamentals   (Epic 05, futuro — sem Requires formal ainda)
+Software Design / Enterprise & Application Patterns ⟵ Requires ── Platform / Database Fundamentals   (formalizado 2026-09-05 na Fase 2 do Epic 05 — grafo acíclico)
 
 SEM cadeia: Creational Patterns ↛ Structural Patterns ↛ Behavioral Patterns
 (ordem de estudo, não dependência — as três só Requires Design Principles).
@@ -415,14 +419,16 @@ SEM cadeia: Creational Patterns ↛ Structural Patterns ↛ Behavioral Patterns
    Low Coupling`, `Dependency`, `Dependency Inversion` e `Dependency Graph`
    como Tasks próprias, pelos motivos das seções "Colisões" e "Duplicatas".
 6. **Aprovado**: `Enterprise & Application Patterns` permanece nesta Epic,
-   detalhada agora. O `Requires` a `Platform / Database Fundamentals` fica como
-   pendência futura (sem `Requires` formal), a ser resolvida quando a Fase 2 do
-   Epic 05 · Platform for estruturada.
+   detalhada agora. O `Requires` a `Platform / Database Fundamentals` ficou como
+   pendência futura — **resolvido em 2026-09-05**: a Fase 2 do Epic 05 confirmou
+   `Database Fundamentals` como Story 04 e formalizou o `Requires` (grafo acíclico).
 
 **Ressalva aprovada — `Chain of Responsibility`:** não entra nas 56 Tasks, mas
 fica **explicitamente preservado** como sugestão destacada (Advanced / Optional)
-na Story `Behavioral Patterns`, para reconsideração na Fase 2 do Epic 05 ·
-Platform — principalmente pela relação com *middleware*.
+na Story `Behavioral Patterns`. **Retomada na Fase 2 do Epic 05 (2026-09-05):** o
+conceito é ancorado pela Task nova `Platform / API Fundamentals / Middleware /
+Request Pipeline`, que cita a relação; o pattern **continua SUGESTÃO aqui no
+Epic 04** (não foi promovido a Task, não foi movido para Platform).
 
 ---
 
@@ -454,6 +460,7 @@ Platform — principalmente pela relação com *middleware*.
 - `data/roadmap.js` atualizado — Epic 04 passa de `status: "structuring"` para
   navegável, com as 9 Stories e 56 Tasks descritas acima.
 
-A Fase 2 do **Epic 05 · Platform Engineering** continua **não iniciada** — é um
-passo futuro separado, com sua própria rodada de aprovação. Nenhum commit foi
-feito ainda; esta consolidação aguarda revisão visual antes de commitar.
+A Fase 2 do **Epic 05 · Platform Engineering** foi concluída / FROZEN em
+2026-09-05 (`05-platform-engineering.md`), formalizando a dependência de
+`Enterprise & Application Patterns` para `Platform / Database Fundamentals` e
+retomando a ressalva do `Chain of Responsibility` (ver blockquote do topo).

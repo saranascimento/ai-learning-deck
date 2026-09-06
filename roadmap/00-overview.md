@@ -5,11 +5,12 @@
 >
 > **Fase 2 em andamento** — Epics 01 · Programming Foundations e 02 · Testing & Quality
 > Engineering concluídos (2026-09-03), 03 · Software Craft e 04 · Software Design
-> concluídos (2026-09-05), ver `01-programming-foundations.md`,
-> `02-testing-quality-engineering.md`, `03-software-craft.md` e `04-software-design.md`.
+> concluídos (2026-09-05), 05 · Platform Engineering concluído / **FROZEN**
+> (2026-09-05), ver `01-programming-foundations.md`, `02-testing-quality-engineering.md`,
+> `03-software-craft.md`, `04-software-design.md` e `05-platform-engineering.md`.
 > Progresso completo no fim deste arquivo.
 > **Próximo**: Fase 3 — 1ª versão visual (7 Epics na Home + navegação completa só para
-> os Epics 01–04).
+> os Epics 01–05).
 >
 > Registro completo da decisão (contexto, análise, arquitetura técnica): `../PLAN.md`.
 
@@ -46,7 +47,8 @@ ROADMAP SENIOR
 4. **Software Design** — estrutura no nível de classe/módulo/domínio (OOD, SOLID,
    patterns, DDD). Depende de Foundations. *(Fase 2 aprovada: 9 Stories, 56 Tasks.)*
 5. **Platform Engineering** — o substrato de execução: web, APIs, dados, segurança,
-   ops, cloud. Pouca dependência conceitual, muito volume.
+   ops, cloud. Pouca dependência conceitual, muito volume. *(Fase 2 aprovada / FROZEN:
+   21 Stories, 187 Tasks.)*
 6. **Architecture & System Design** — sistemas que escalam, distribuem e evoluem.
    `Requires` Platform + Software Design.
 7. **AI Engineering** — a especialização. `Requires` Platform; "Production AI"
@@ -228,40 +230,68 @@ Inheritance` · `Entity`/`Value Object` canônico (OOD) ≠ revisita (Domain Mod
 `Iterator`, `Mediator`, `Memento`, `Visitor`, `Interpreter`, `Modularity` /
 `Encapsulation Boundaries`. Lista completa no arquivo do Epic.
 
-> `Enterprise & Application Patterns` (08) depende de Platform / Database Fundamentals —
-> `Requires` formal fica pendente até a Fase 2 do Epic 05.
+> `Enterprise & Application Patterns` (08) `Requires: Platform / Database Fundamentals`
+> — **dependência formalizada na Fase 2 do Epic 05 (2026-09-05)**; grafo acíclico.
 > `Domain Modeling` (09) é `Requires` de Architecture / Architectural Styles.
 
 ### 05 · Platform Engineering
 
-| # | Story | Notas |
-|---|---|---|
-| 01 | Web Fundamentals | **canônico**: HTTP, TLS, DNS, TCP/UDP, CORS, Cookies, Sessions, WebSocket, SSE |
-| 02 | API Fundamentals | Requires: Web Fundamentals |
-| 03 | GraphQL | Requires: API Fundamentals (N+1 → Requires DB Performance) |
-| 04 | Database Fundamentals | **canônico**: SQL, JOIN, Schema, Keys, Constraints |
-| 05 | Database Design | Requires: Database Fundamentals |
-| 06 | Database Transactions | **canônico**: ACID, Isolation Levels · Requires: Database Fundamentals |
-| 07 | Database Performance | **canônico**: Index, Query Plan, N+1 Query Problem, Connection Pool · Requires: Database Design |
-| 08 | NoSQL | Requires: Database Design |
-| 09 | Caching | **canônico**: Cache-Aside, Read/Write-Through, Write-Behind, Eviction, LRU, TTL, Invalidation, Redis, HTTP Cache, CDN · Requires: Web Fundamentals, Database Fundamentals |
-| 10 | Authentication | **canônico**: Session vs Token, JWT, OAuth 2.0, OIDC, MFA · Requires: Web Fundamentals |
-| 11 | Authorization | **canônico**: RBAC, ABAC, Least Privilege, Resource Ownership · Requires: Authentication |
-| 12 | Application Security | Requires: Authentication, Authorization, Web Fundamentals |
-| 13 | Observability | **canônico**: Logging, Metrics, Tracing, OpenTelemetry, Alerting |
-| 14 | Performance Engineering | **canônico**: Latency, Throughput, CPU vs I/O bound, Profiling, Benchmarking, Debounce, Throttle · Requires: Observability |
-| 15 | Reliability Engineering | **canônico**: SLI, SLO, SLA, Error Budget, MTTR, Postmortem · Requires: Observability |
-| 16 | Containers | **canônico**: Container, Docker, Image, Registry, Multi-Stage Build |
-| 17 | CI/CD | Requires: Containers |
-| 18 | Cloud Fundamentals | IaaS/PaaS/SaaS, Region/AZ, Compute, Storage, Serverless · Requires: Containers |
-| 19 | Cloud Networking | VPC, Subnet, CIDR, Security Group, NAT · Requires: Web Fundamentals |
-| 20 | Cloud Security | IAM, Policy, Service Account, Secret Manager · Requires: Authorization, Cloud Fundamentals |
-| 21 | Kubernetes Fundamentals | Requires: Containers, Cloud Networking |
+> **Fase 2 aprovada / FROZEN em 2026-09-05.** Detalhamento Task-a-Task:
+> `05-platform-engineering.md`. **21 Stories · 187 Tasks** (183 canônicas · 4
+> `canonical: false` + `revisitOf`). 46 consolidações auditadas + 9 rebaixamentos
+> §C/§D + 2 renomeações vendor-agnostic (`Redis` → `In-Memory Data Store`;
+> `DataLoader` → `Batching & Per-Request Caching`). ~30 `Requires` de ordem de
+> estudo removidos (4 invertidos corrigidos). `TLS` Task própria; `HTTPS` subtopic.
+> `Middleware / Request Pipeline` **nova** (ancora o `Chain of Responsibility` que
+> segue SUGESTÃO no Epic 04).
+
+| # | Story | Tasks | Notas |
+|---|---|---|---|
+| 01 | Web Fundamentals | 16 | **canônico**: HTTP (+ methods/status/headers/evolution), TLS, DNS, TCP/UDP, URL Anatomy, SOP, CORS, Cookies, Sessions, WebSocket, SSE |
+| 02 | API Fundamentals | 15 | **canônico**: API Contract, REST, Request Validation *(contrato/boundary)*, Pagination, **Idempotency Key**, **Rate Limiting**, API Versioning/Deprecation, OpenAPI, **Middleware / Request Pipeline** *(nova)* · Requires: Web Fundamentals |
+| 03 | GraphQL | 7 | **canônico**: GraphQL Schema & Type System, Resolver, Batching & Per-Request Caching, Query Complexity · `N+1 in Resolvers` = revisita de Database Performance · Requires: API Fundamentals |
+| 04 | Database Fundamentals | 10 | **canônico**: SQL, Table, Keys, Constraint, JOIN, Aggregate & GROUP BY, Subqueries & CTEs, Schema |
+| 05 | Database Design | 7 | **canônico**: Data Modeling, Relationship Cardinality, Normalization, Normal Forms, Denormalization, Natural vs Surrogate Key, Migration · Requires: Database Fundamentals |
+| 06 | Database Transactions | 7 | **canônico**: ACID *(A/C/D consolidados)*, Isolation Levels, Read Phenomena, Optimistic/Pessimistic Locking · Requires: Database Fundamentals |
+| 07 | Database Performance | 7 | **canônico**: Index (+ Selectivity sub), Composite Index, Query Plan, Query Optimization, **N+1 Query Problem**, Connection Pool, Slow Query Analysis · Requires: Database Design |
+| 08 | NoSQL | 4 | **canônico**: SQL vs NoSQL, NoSQL Data Models, Schema-on-Read, Choosing SQL vs NoSQL · Requires: Database Design |
+| 09 | Caching | 9 | **canônico**: Cache (+ hit/miss sub), TTL, Invalidation, Eviction, Cache-Aside, Read/Write-Through/Write-Behind, **In-Memory Data Store** *(sub: Redis/Valkey/Memcached)*, Browser & HTTP Cache, CDN · Requires: Web Fundamentals, Database Fundamentals |
+| 10 | Authentication | 10 | **canônico**: Session vs Token, Password Hashing, JWT, Access & Refresh Token, OAuth 2.0, OIDC, SSO, MFA · Requires: Web Fundamentals |
+| 11 | Authorization | 5 | **canônico**: RBAC, ABAC, Permission-Based, **Principle of Least Privilege**, Resource Ownership · Requires: Authentication |
+| 12 | Application Security | 14 | **canônico**: Threat Modeling, OWASP Top 10, SQLi/XSS/CSRF/SSRF/BAC, **Input Validation** *(segurança)*, Output Encoding, CSP, Security Headers, Secrets Management, Encryption at Rest & in Transit, Dependency Vulnerabilities · Requires: Authentication, Authorization, Web Fundamentals |
+| 13 | Observability | 9 | **canônico**: Observability vs Monitoring, Logging, Structured Logging, Correlation ID, Metrics (+ Dashboard sub), Distributed Tracing, OpenTelemetry, Alerting |
+| 14 | Performance Engineering | 10 | **canônico**: **Latency**, **Throughput**, **CPU-Bound vs I/O-Bound**, **Profiling**, Benchmarking, Bottleneck Analysis, Lazy vs Eager Loading, Debounce/Throttle, Compression · Requires: Observability |
+| 15 | Reliability Engineering | 8 | **canônico**: SLI, SLO, SLA, Error Budget, Incident, MTTD/MTTR, Incident Response, Postmortem (Blameless) · Requires: Observability |
+| 16 | Containers | 7 | **canônico**: Container, Container vs VM, Docker, Docker Image (+ Dockerfile sub), Registry, Docker Volumes & Networks (+ Compose sub), Multi-Stage Build |
+| 17 | CI/CD | 11 | **canônico**: CI, CD (delivery/deployment), Pipeline, Build, Artifact, Deployment, Environments & Configuration, Feature Flags, Rollback, Deployment Strategies · Requires: Containers |
+| 18 | Cloud Fundamentals | 9 | **canônico**: Cloud Computing, Service Models, Region/AZ, Compute & VM, Cloud Storage Types, Managed Database, **Serverless** *(primitivo)* · `Load Balancer`/`Auto Scaling` = revisita de Architecture / Scalability · Requires: Containers |
+| 19 | Cloud Networking | 6 | **canônico**: VPC, Subnet, CIDR & IP Address, Firewall & Security Group, NAT & Internet Gateway, DNS in Cloud · Requires: Web Fundamentals |
+| 20 | Cloud Security | 7 | **canônico**: IAM, User vs Role, Policy, Service Account, Secret Manager, Shared Responsibility Model · `Least Privilege in Cloud` = revisita de Authorization · Requires: Authorization, Cloud Fundamentals |
+| 21 | Kubernetes Fundamentals | 9 | **canônico**: Kubernetes, Cluster & Node, Pod, Deployment & ReplicaSet, Service, Ingress, ConfigMap & Secret, HPA, Liveness & Readiness Probes · Requires: Containers, Cloud Networking |
 
 Racional: protocolo web → REST → GraphQL (contraste) → banco relacional
 (fundamentos → modelagem → transações → performance) → NoSQL → caching → auth → authz
 → segurança → observabilidade → performance/confiabilidade → containers → CI/CD →
 cloud → rede → segurança de cloud → Kubernetes.
+
+**Mudanças não silenciosas nesta Epic** (vs Fase 1):
+- **`Rate Limiting`** canônico passa de `Architecture / Resilience Patterns` para
+  **`Platform / API Fundamentals`** (Epic 06 e Epic 07 revisitam).
+- **`Idempotency Key`** (mecânica HTTP) canônico em `Platform / API Fundamentals`;
+  o conceito `Idempotency` de resiliência permanece canônico em
+  `Architecture / Resilience Patterns`.
+- **`Middleware / Request Pipeline`** — Task nova canônica (não estava na macro).
+- **`Profiling`** ganha lar canônico em `Platform / Performance Engineering`.
+- **`Epic 04 / Enterprise & Application Patterns`** `Requires: Platform / Database
+  Fundamentals` — **formalizado** (era pendência sem `Requires` formal).
+
+`N+1 Query Problem` permanece canônico em `Platform / Database Performance` (= Fase 1);
+`GraphQL / N+1 in Resolvers` revisita. `Serverless` primitivo canônico em Platform;
+`Load Balancing`/`Auto Scaling` permanecem canônicos em `Architecture / Scalability`
+(Cloud = revisita).
+
+*SUGESTÃO de Story:* `Infrastructure as Code` (Terraform/Pulumi, state, drift,
+plan/apply, módulos) · `Non-Functional Testing` (load/stress/soak/spike, DAST, chaos).
 
 *SUGESTÃO de Story:* `Infrastructure as Code` (Terraform, state, drift, módulos).
 
@@ -341,11 +371,16 @@ Software Craft ──▶ Architecture / Architecture Evolution (ADR, Tech Debt)
 Software Craft / Error Boundaries ──▶ Architecture / Resilience Patterns   (futuro, sem Requires ainda)
 Software Craft / Runbook ──▶ Platform / Reliability Engineering            (futuro, sem Requires ainda)
 Software Design / Domain Modeling ──▶ Architecture / Architectural Styles
-Software Design / Enterprise Patterns ⟵ Requires ── Platform / Database Fundamentals
+Software Design / Enterprise Patterns ⟵ Requires ── Platform / Database Fundamentals  (formalizado 2026-09-05, acíclico)
+Software Design / Chain of Responsibility (SUGESTÃO) ──▶ Platform / API Fundamentals / Middleware / Request Pipeline
 Platform Engineering ──▶ Architecture & System Design (Epic inteiro)
                     └──▶ AI Engineering (APIs, Observability, Caching)
+Platform / API Fundamentals / Rate Limiting, Idempotency Key ──▶ Architecture / Resilience Patterns  (revisita)
+Platform / Cloud Fundamentals / Load Balancer, Auto Scaling ⟵ revisitOf ── Architecture / Scalability  (forward-ref, acíclico)
+Platform / Database Performance / N+1 Query Problem ──▶ Platform / GraphQL / N+1 in Resolvers  (revisita intra-Epic)
 Architecture / Resilience Patterns ──▶ AI Engineering / Production AI
 Platform / Observability ──▶ AI Engineering / AI Observability
+Platform / Performance Engineering ──▶ AI Engineering / Production AI
 ```
 
 ### Conceitos transversais — lar canônico × revisita
@@ -367,15 +402,22 @@ Platform / Observability ──▶ AI Engineering / AI Observability
 | TDD / Red-Green-Refactor | Testing & Quality / Test-Driven Development | Software Craft / Refactoring (passo "refactor" — pointer, não Requires) |
 | Test Pyramid / Code Coverage / Testability / Test Isolation / Flaky Tests / Regression Testing / Property-Based Testing / Contract Testing | Testing & Quality / Testing Strategy | Software Design (DI); Platform / CI-CD; Platform / API; Architecture / Service Communication; AI / Regression Evaluation |
 | Reproduction / Hypothesis-Driven Debugging / Stack Trace / Breakpoints / Binary Search Debugging / Git Bisect / Root Cause Analysis | Testing & Quality / Debugging | Platform / Reliability Engineering (Postmortem); Software Craft / Git (`Bisect` → referência) |
-| Retry / Timeout / Backoff / Circuit Breaker / Idempotency | Architecture / Resilience Patterns | Platform / API; AI / Tool Calling; AI / Production AI |
+| Retry / Timeout / Backoff / Circuit Breaker / Idempotency *(conceito de resiliência)* | Architecture / Resilience Patterns | AI / Tool Calling; AI / Production AI |
+| Idempotency Key *(mecânica HTTP)* | Platform / API Fundamentals | Architecture / Resilience Patterns (`Idempotency` conceito) |
+| Rate Limiting | **Platform / API Fundamentals** *(era Architecture / Resilience Patterns — mudança não silenciosa vs Fase 1)* | Architecture / Resilience Patterns; AI / Production AI (custo de LLM) |
+| Middleware / Request Pipeline | Platform / API Fundamentals *(Task nova)* | Software Design / Chain of Responsibility segue SUGESTÃO |
 | Caching (patterns) | Platform / Caching | Architecture / Caching at Scale; AI / Production AI (Semantic Cache) |
-| Latency / Throughput | Platform / Performance Engineering | Architecture / System Design Fundamentals |
+| Latency / Throughput / CPU vs I/O bound / Profiling | Platform / Performance Engineering | Architecture / System Design Fundamentals; AI / Production AI (TTFT, Model Latency) |
 | Consistency (ACID) | Platform / Database Transactions | colide de nome com Distributed Consistency — sentido diferente |
 | Consistency (distributed) / Eventual Consistency | Architecture / Distributed Systems Fundamentals | Architecture / Messaging; Architecture / Data Patterns |
-| Least Privilege | Platform / Authorization | Platform / Cloud Security; AI / Safety & Guardrails |
-| Observability (logs/metrics/traces) | Platform / Observability | AI / AI Observability; Architecture / Reliability |
+| Least Privilege | Platform / Authorization | Platform / Cloud Security (Least Privilege in Cloud, `canonical: false`); AI / Safety & Guardrails |
+| Observability (logs/metrics/traces) / OpenTelemetry | Platform / Observability | AI / AI Observability; Architecture / Reliability |
 | ADR / Technical Debt / Backward Compatibility | Software Craft | Architecture / Architecture Evolution |
-| N+1 | Platform / Database Performance | Platform / GraphQL (DataLoader) |
+| N+1 Query Problem | Platform / Database Performance | Platform / GraphQL (N+1 in Resolvers, `canonical: false`); Architecture (chatty I/O) |
+| TLS *(+ HTTPS subtopic)* | Platform / Web Fundamentals | Platform / Application Security (Encryption in Transit) |
+| Input Validation *(segurança)* | Platform / Application Security | Platform / API Fundamentals (Request Validation = contrato/boundary, conceito distinto) |
+| Load Balancing / Auto Scaling | Architecture / Scalability | Platform / Cloud Fundamentals (primitivos, `canonical: false`); Platform / Kubernetes (HPA) |
+| Serverless | Platform / Cloud Fundamentals *(primitivo)* | Architecture / Architectural Styles (estilo serverless) |
 | Guardrail / Validation / Gate · Retry / Repair / Fallback | AI / Safety & Guardrails + AI / Agent Fundamentals | deck `harness` como resource |
 
 ---
@@ -417,7 +459,7 @@ Platform / Observability ──▶ AI Engineering / AI Observability
 |---|---|---|
 | **Fase 1** | Epics → Stories, ordem, racional, sobreposições, dependências de alto nível | ✅ Aprovada 2026-09-03 |
 | **Fase 2** | Detalhamento Epic por Epic: ordenar Tasks, `Requires` por Task, canônico × revisita, consolidar duplicatas, SUGESTÕES de Task | 🔄 Em andamento — uma rodada por Epic, com aprovação |
-| **Fase 3** | Implementação visual: `data/roadmap.js`, navegação Área → Módulo → Conceito, identidade visual da referência | 🔜 Próximo passo — 1ª versão: 7 Epics na Home + navegação completa para os Epics com Fase 2 concluída (01–04) |
+| **Fase 3** | Implementação visual: `data/roadmap.js`, navegação Área → Módulo → Conceito, identidade visual da referência | 🔜 Próximo passo — 1ª versão: 7 Epics na Home + navegação completa para os Epics com Fase 2 concluída (01–05) |
 
 ### Fase 2 — progresso por Epic
 
@@ -427,7 +469,7 @@ Platform / Observability ──▶ AI Engineering / AI Observability
 | 02 · Testing & Quality Engineering | ✅ **Concluído 2026-09-03** — 5 Stories, 31 Tasks | `02-testing-quality-engineering.md` |
 | 03 · Software Craft | ✅ **Concluído 2026-09-05** — 9 Stories, 61 Tasks | `03-software-craft.md` |
 | 04 · Software Design | ✅ **Concluído 2026-09-05** — 9 Stories, 56 Tasks | `04-software-design.md` |
-| 05 · Platform Engineering | ⏳ Não iniciado | — |
+| 05 · Platform Engineering | ✅ **Concluído / FROZEN 2026-09-05** — 21 Stories, 187 Tasks | `05-platform-engineering.md` |
 | 06 · Architecture & System Design | ⏳ Não iniciado | — |
 | 07 · AI Engineering | ⏳ Não iniciado | — |
 
@@ -435,19 +477,20 @@ Platform / Observability ──▶ AI Engineering / AI Observability
 
 Implementar a primeira versão navegável do roadmap:
 - **Home**: os 7 Epics como cards coloridos (Fase 1).
-- **Navegação completa** (Área → Módulo → Conceito) **para os Epics 01–04**
+- **Navegação completa** (Área → Módulo → Conceito) **para os Epics 01–05**
   — os únicos com detalhamento Task-a-Task aprovado.
-- Epics 05–07: card na Home, mas sem drill-down de Stories/Tasks até a Fase 2
+- Epics 06–07: card na Home, mas sem drill-down de Stories/Tasks até a Fase 2
   correspondente.
 
 Arquitetura técnica de referência: `../PLAN.md` (Anexo).
 
 ### Arquivos originais
 
-`architecture-e-system-design.md`, `ai-engineering.md`, `platform-engineering.md`
-mantêm a estrutura **antiga** e serão reorganizados nas próximas rodadas da Fase 2.
-`design-e-fundamentals.md` já foi **totalmente consumido** (fundamentos de linguagem →
-Epic 01, detalhados em `01-programming-foundations.md`; design/patterns/DDD → Epic 04,
-detalhados em `04-software-design.md`). `software-craft.md` já foi totalmente consumido
-pelo Epic 03 (Stories `Testing` e `Debugging` extraídas antes para o Epic 02; as
-demais Stories detalhadas em `03-software-craft.md`).
+`architecture-e-system-design.md` e `ai-engineering.md` mantêm a estrutura **antiga**
+e serão reorganizados nas próximas rodadas da Fase 2. `design-e-fundamentals.md` já foi
+**totalmente consumido** (fundamentos de linguagem → Epic 01, detalhados em
+`01-programming-foundations.md`; design/patterns/DDD → Epic 04, detalhados em
+`04-software-design.md`). `software-craft.md` já foi totalmente consumido pelo Epic 03
+(Stories `Testing` e `Debugging` extraídas antes para o Epic 02; as demais Stories
+detalhadas em `03-software-craft.md`). `platform-engineering.md` já foi **totalmente
+consumido** pelo Epic 05 (21 Stories detalhadas em `05-platform-engineering.md`).
