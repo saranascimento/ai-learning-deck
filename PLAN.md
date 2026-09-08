@@ -15,8 +15,8 @@ representa o roadmap de estudo para nível Senior Software Engineer.
 | 2026-09-05 | Fase 2 · Epic 04 | `Software Design` **aprovado**: 9 Stories, 56 Tasks. Detalhe: `roadmap/04-software-design.md`. Versão enxuta dos catálogos GoF (`Structural` 7→5, `Behavioral` 11→5; patterns retirados → SUGESTÃO). `Chain of Responsibility` fica como Advanced/Optional p/ reconsiderar no Epic 05 (middleware). `Law of Demeter` + `Principle of Least Knowledge` = 1 Task. `Composition over Inheritance` recebido do Epic 01. `Entity`/`Value Object` canônicos em OOD, revisita (`canonical: false` + `revisitOf`) em Domain Modeling. Sem cadeia `Requires` Creational→Structural→Behavioral. Excluídas: `Principle of Least Astonishment`, `High Cohesion/Low Coupling`, `Dependency`, `Dependency Inversion`, `Dependency Graph`. |
 | 2026-09-05 | Fase 2 · Epic 05 | `Platform Engineering` **aprovado / FROZEN**: 21 Stories, 187 Tasks (183 canônicas, 4 `canonical: false` + `revisitOf`). Detalhe: `roadmap/05-platform-engineering.md`. 46 consolidações auditadas + 9 rebaixamentos §C/§D. `Rate Limiting` + `Idempotency Key` canônicos em Platform / API Fundamentals (**mudança não silenciosa vs Fase 1** — `Rate Limiting` era Architecture/Resilience). `Middleware / Request Pipeline` nova Task (ancora `Chain of Responsibility`, que segue SUGESTÃO no Epic 04). `Profiling` ganha lar canônico. `TLS` Task própria, `HTTPS` subtopic. `Redis` → `In-Memory Data Store`; `DataLoader` → `Batching & Per-Request Caching`. ~30 `Requires` de ordem de estudo removidos (4 invertidos). Dependência `Epic 04 / Enterprise & Application Patterns` → `Requires: Platform / Database Fundamentals` **formalizada**. |
 | 2026-09-08 | Fase 2 · Epic 06 | `Architecture & System Design` **aprovado / FROZEN**: 14 Stories, 93 Tasks (91 canônicas, 2 `canonical: false` + `revisitOf`). Detalhe: `roadmap/06-architecture-system-design.md`. 7 consolidações auditadas (5 umbrella 3→1 + 2 par 2→1) + 11 rebaixamentos a subtopic. Auditoria dedicada de `Requires` de Task (ORDER ≠ REQUIRES) sobre 108 arestas propostas: **63 KEEP / 42 relações removidas de `Requires` (preservadas como pointer/contexto quando aplicável) / 3 REPOINT** — zero ciclos, zero forward dependencies. Ownership canônico do Epic 05 preservado integralmente (`Rate Limiting`/`Idempotency Key` em Platform; `Load Balancing`/`Auto Scaling`/`Idempotency` genérico canônicos aqui; `Serverless` primitivo em Platform). `Event` (Messaging) e `Domain Event` (Software Design) ficam ambos canônicos, colisão anotada, sem `revisitOf`. `CQRS` não tem `Requires` formal para `CQS` (Software Design), só pointer. Múltiplas Tasks-root aceitas nas Stories `Availability & Reliability` e `Resilience Patterns`. |
-| — | Fase 2 · Epic 07 | Não iniciado. Próxima rodada, com sua própria aprovação. |
-| — | Fase 3 · 1ª versão | ✅ Implementada (`index.html` + `js/roadmap/*`). Home com os 7 Epics + navegação completa (Área → Módulo → Conceito) para os Epics com Fase 2 concluída — agora **01–06**. Epic 07 aparece na Home sem drill-down. |
+| 2026-09-08 | Fase 2 · Epic 07 | `AI Engineering` **aprovado / FINAL / FROZEN**: 23 Stories, 161 Tasks (156 canônicas, 5 `canonical: false` + `revisitOf`). Detalhe: `roadmap/07-ai-engineering.md`. 2 Tasks novas vs a proposta base de 159: `Agentic System` (Story 14) e `Structured Prompting` (Story 04, relocada de subtopic de `Structured Output`). ~30 consolidações auditadas. Auditoria dedicada de `Requires` de Task (ORDER ≠ REQUIRES) + reconciliação de contagem + 12 decisões de PENDENTE + 3 ajustes finais: a árvore rodada-2 tinha **160 arestas** → **30 REMOVE / 32 REPOINT / 98 KEEP** → **130 arestas finais** — zero ciclos, zero forward dependencies. `Requires` de Story `Tool Calling → Structured Generation` e `MCP → Tool Calling` preservadas no nível de Story, sem Task-edge artificial (PENDENTE-7). `MCP`, `Deterministic vs Agentic Workflow` e `HITL` viram roots. Ownership canônico dos Epics 05/06 preservado (`Rate Limiting` → Platform/API; `Cache` → Platform/Caching; `Latency`/`Throughput` → Platform/Performance; `Principle of Least Privilege` → Platform/Authorization; `Retry` → Architecture/Resilience). `Grounding` (RAG) e `Faithfulness & Answer Relevance` (AI Evaluation) ficam conceitos distintos, sem `revisitOf` entre si (PENDENTE-2). **Fase 2 completa — nenhum Epic pendente.** |
+| — | Fase 3 · 1ª versão | ✅ Implementada (`index.html` + `js/roadmap/*`). Home com os 7 Epics + navegação completa (Área → Módulo → Conceito) para **todos os 7 Epics (01–07)**. |
 
 > A cópia de trabalho original deste plano vive em
 > `~/.claude/plans/quero-transformar-este-projeto-mellow-spring.md`.
@@ -86,7 +86,7 @@ Decisões tomadas pelo usuário:
 | `Bisect` / `Git Bisect` | `Git` **e** `Debugging` | Duplicado | ✅ **Fase 2 · Epic 02**: canônico `Git Bisect` em Testing & Quality / Debugging, `Requires: Epic 03 / Git` (forward-ref aceita). Epic 03 / Git terá revisita/referência |
 | `Caching` (patterns) | Story inteira em Platform **e** em Architecture | ~90% duplicado | Canônico em **Platform / Caching**; Architecture mantém slim **Caching at Scale** com `Requires` |
 | `CDN` / `CDN Architecture` | Platform/Caching **e** Architecture/Caching | Duplicado | Canônico Platform; Architecture referencia |
-| `Prompt Versioning`, `Model Fallback`, `Rate Limiting`, `Retry Strategy` | Tasks em `Production AI` | Repetem conceitos de Prompt Eng. / Model Routing / Architecture | `Production AI` vira revisita explícita (`Requires`) |
+| `Prompt Versioning`, `Model Fallback`, `Rate Limiting`, `Retry Strategy` | Tasks em `Production AI` | Repetem conceitos de Prompt Eng. / Model Routing / Architecture | ✅ **Fase 2 · Epic 07**: `Model Fallback`, `Rate Limiting`, `Retry Strategy` = `canonical: false` + `revisitOf`; `Prompt Versioning` citada por pointer (canônica em Prompt Engineering, sem 2ª Task); `Model Versioning` é a Task canônica nova em Production AI |
 | `Load Balancing`, `Auto Scaling` | Architecture/Scalability **e** Platform/Cloud | Conceito × primitivo de cloud | ✅ **Fase 2 · Epic 05**: conceito permanece canônico em **Architecture/Scalability**; `Load Balancer`/`Auto Scaling` em Platform/Cloud são `canonical: false` + `revisitOf` (o recurso concreto de cloud **não** vira nova casa canônica) |
 | `Rate Limiting` | Production AI **e** *(Fase 1: Architecture/Resilience)* **e** Platform/API | Conceito de resiliência × quota de API | ✅ **Fase 2 · Epic 05** — **mudança não silenciosa**: canônico movido para **Platform / API Fundamentals** (token/leaky bucket, `429`, `Retry-After`); Architecture/Resilience e AI/Production AI revisitam |
 | `Latency`, `Throughput` | Architecture/System Design **e** Platform/Performance | Duplicado | ✅ **Fase 2 · Epic 05**: canônico em **Platform / Performance Engineering** (+ `CPU-Bound vs I/O-Bound`, `Profiling` — este ganha lar canônico aqui); Architecture revisita "em escala" |
@@ -96,8 +96,8 @@ Decisões tomadas pelo usuário:
 | `Backward Compatibility`, `Technical Debt`, `ADR` | Software Craft **e** Architecture Evolution | Duplicado | ✅ **Fase 2 · Epic 06**: canônico em **Software Craft**; `Architecture Evolution` aplica via `Requires` formal (não recria como Task própria) |
 | `Least Privilege` | Authorization, Cloud Security, AI Safety | Repetido em 3 contextos | ✅ **Fase 2 · Epic 05**: canônico **Platform / Authorization**; `Least Privilege in Cloud` (Cloud Security) é `canonical: false` + `revisitOf`; AI Safety `Requires` |
 | `Serverless` / `Serverless Architecture` | Platform/Cloud **e** Architecture/Styles | Primitivo × estilo | ✅ **Fase 2 · Epic 05**: primitivo canônico em **Platform / Cloud Fundamentals**; o estilo arquitetural revisita em Architecture / Architectural Styles |
-| `Handoff` / `Agent Handoff` | Agent Orchestration **e** Multi-Agent Systems | Duplicado | Canônico **Multi-Agent Systems** |
-| `Semantic Similarity` / `Semantic Similarity Evaluation` | Embeddings **e** AI Evaluation | Relacionados, não idênticos | Manter; `Evaluation` com `Requires: Embeddings` |
+| `Handoff` / `Agent Handoff` | Agent Orchestration **e** Multi-Agent Systems | Duplicado | ✅ **Fase 2 · Epic 07**: `Handoff` removida de Agent Orchestration; lar canônico único = `Agent Handoff` (Multi-Agent Systems) |
+| `Semantic Similarity` / `Semantic Similarity Evaluation` | Embeddings **e** AI Evaluation | Relacionados, não idênticos | ✅ **Fase 2 · Epic 07**: `Semantic Similarity` canônico em Embeddings; `Evaluation Methods` (AI Evaluation) o usa como método — colisão de nome `[R]`, sem `revisitOf` |
 
 > A resolução Task-a-Task de cada linha acima acontece na **Fase 2**, Epic por Epic.
 
@@ -197,6 +197,14 @@ Platform / Observability ──▶ AI Engineering / AI Observability
 Software Design / SOLID / DIP ──▶ Architecture / Architecture Fundamentals / Dependency Direction   (revisita, pointer)
 Software Design / Design Principles / CQS ──▶ Architecture / Data & Architecture Patterns / CQRS   (revisita, pointer — sem Requires formal)
 Platform / Performance Engineering / Throughput ──▶ Architecture / System Design Fundamentals / Capacity Estimation   (Requires formal)
+
+--- formalizado na Fase 2 do Epic 07 (2026-09-08) ---
+Platform / Observability (Distributed Tracing, Structured Logging) ──▶ AI Engineering / AI Observability (LLM Tracing, Prompt Logging)   (Requires formal)
+Platform / Performance Engineering (Latency, Throughput) ──▶ AI Engineering / AI Observability + Production AI   (Requires formal)
+Platform / API Fundamentals / API ──▶ AI Engineering / MCP / MCP vs API   (Requires formal)
+Platform / Caching / Cache; Platform / API Fundamentals / Rate Limiting; Platform / Authorization / Principle of Least Privilege ⟵ revisitOf ── AI Engineering (Production AI, AI Safety)
+Architecture / Resilience Patterns / Retry ⟵ revisitOf ── AI Engineering / Production AI / Retry Strategy
+Testing & Quality / Regression Testing ──▶ AI Engineering / AI Evaluation / Regression Evaluation   (pointer — já FROZEN do lado do Epic 02)
 ```
 
 Tabela de conceitos transversais (canônico × revisita): `roadmap/00-overview.md`.
@@ -251,15 +259,14 @@ contextual, consolidar duplicatas Task-a-Task, registrar SUGESTÕES de Task.
 | 04 · Software Design | ✅ Concluído 2026-09-05 — 9 Stories, 56 Tasks | `roadmap/04-software-design.md` |
 | 05 · Platform Engineering | ✅ Concluído / FROZEN 2026-09-05 — 21 Stories, 187 Tasks | `roadmap/05-platform-engineering.md` |
 | 06 · Architecture & System Design | ✅ Concluído / FROZEN 2026-09-08 — 14 Stories, 93 Tasks | `roadmap/06-architecture-system-design.md` |
-| 07 · AI Engineering | ⏳ Não iniciado — herda: `AI Evaluation` revisita `Test Doubles`/`Regression Testing` (Epic 02) | — |
+| 07 · AI Engineering | ✅ Concluído / FROZEN 2026-09-08 — 23 Stories, 161 Tasks | `roadmap/07-ai-engineering.md` |
 
-**Total de Tasks no roadmap (Epics 01–06): 507.**
+**Total no roadmap (Epics 01–07): 89 Stories · 668 Tasks** (Epics 01–06 = 507;
+Epic 07 = 161). **Fase 2 completa.**
 
 **Fase 3 — Implementação visual · 1ª versão** (✅ implementada):
 - Home com os **7 Epics** como cards coloridos.
-- Navegação completa **Área → Módulo → Conceito para os Epics com Fase 2
-  concluída — agora 01–06**.
-- Epic 07: card na Home, sem drill-down até sua própria Fase 2.
+- Navegação completa **Área → Módulo → Conceito para todos os 7 Epics (01–07)**.
 - Converter `roadmap/0N-*.md` em `data/roadmap.js`; construir router por hash +
   views; preparar (sem ativar) o modelo de progresso.
 - Arquitetura de referência: Anexo abaixo.

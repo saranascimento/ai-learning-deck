@@ -3,16 +3,17 @@
 > Estrutura macro (Epics → Stories) **aprovada em 2026-09-03**. Fonte da verdade da
 > hierarquia. O detalhamento Task-a-Task acontece na Fase 2, um Epic por vez.
 >
-> **Fase 2 em andamento** — Epics 01 · Programming Foundations e 02 · Testing & Quality
+> **Fase 2 COMPLETA** — Epics 01 · Programming Foundations e 02 · Testing & Quality
 > Engineering concluídos (2026-09-03), 03 · Software Craft e 04 · Software Design
 > concluídos (2026-09-05), 05 · Platform Engineering concluído / **FROZEN**
 > (2026-09-05), 06 · Architecture & System Design concluído / **FROZEN**
-> (2026-09-08), ver `01-programming-foundations.md`, `02-testing-quality-engineering.md`,
-> `03-software-craft.md`, `04-software-design.md`, `05-platform-engineering.md` e
-> `06-architecture-system-design.md`.
+> (2026-09-08), 07 · AI Engineering concluído / **FROZEN** (2026-09-08), ver
+> `01-programming-foundations.md`, `02-testing-quality-engineering.md`,
+> `03-software-craft.md`, `04-software-design.md`, `05-platform-engineering.md`,
+> `06-architecture-system-design.md` e `07-ai-engineering.md`.
 > Progresso completo no fim deste arquivo.
-> **Próximo**: Fase 2 · Epic 07 · AI Engineering (não iniciado) — ou revisão da
-> navegação visual, já ampliada para os Epics 01–06.
+> **Próximo**: revisão da navegação visual (Fase 3), já ampliada para os 7 Epics
+> — Fase 2 não tem mais Epics pendentes.
 >
 > Registro completo da decisão (contexto, análise, arquitetura técnica): `../PLAN.md`.
 
@@ -56,7 +57,7 @@ ROADMAP SENIOR
    93 Tasks.)*
 7. **AI Engineering** — a especialização. `Requires` Platform; "Production AI"
    `Requires` Architecture/Resilience. Pode ser antecipado por quem já atua na área
-   (só depende de Platform).
+   (só depende de Platform). *(Fase 2 aprovada / FROZEN: 23 Stories, 161 Tasks.)*
 
 ---
 
@@ -367,37 +368,74 @@ do Epic.
 
 ### 07 · AI Engineering
 
-| # | Story | Notas |
-|---|---|---|
-| 01 | AI Fundamentals | **canônico**: AI, ML, Deep Learning, Training, Inference, Parameters · *resources:* harness, ai-fundamentals |
-| 02 | Language Models | **canônico**: LLM, Transformer, Token, Tokenization, Context Window, Attention, Autoregressive Generation · Requires: AI Fundamentals |
-| 03 | Model Inference | Temperature, Top-P/Top-K, Max Tokens, Stop Sequence, Streaming, Seed · Requires: Language Models · *resources:* harness |
-| 04 | Prompt Engineering | **canônico**: Prompt, System/User Prompt, Instruction Hierarchy, Zero/Few-Shot, In-Context Learning, Template · Requires: Model Inference |
-| 05 | Structured Generation | Structured Output, JSON, Schema-Constrained, Output Validation/Parsing, Retry on Invalid · Requires: Prompt Engineering |
-| 06 | Context Engineering | **canônico**: Context, Assembly/Ordering/Compression, Budget/Overflow, Context Rot · Requires: Prompt Engineering · *resources:* harness |
-| 07 | Embeddings | **canônico**: Embedding, Vector, Embedding Space, Cosine Similarity, Dot Product, Euclidean Distance |
-| 08 | Vector Search | **canônico**: k-NN, ANN, Vector Index, HNSW, Vector Database · Requires: Embeddings |
-| 09 | Chunking | Chunk Size/Overlap, Fixed/Recursive/Semantic Chunking |
-| 10 | Retrieval | **canônico**: Semantic/Keyword Search, BM25, Dense/Sparse, Hybrid Search, Reranking · Requires: Vector Search, Chunking |
-| 11 | RAG | RAG Pipeline, Query Transformation, Grounding, Source Attribution, RAG Eval · Requires: Retrieval, Context Engineering |
-| 12 | Tool Calling | **canônico**: Tool, Function Calling, Tool Schema/Selection/Arguments/Result, Error Handling, Execution Loop · Requires: Structured Generation |
-| 13 | MCP | Requires: Tool Calling |
-| 14 | Agent Fundamentals | **canônico**: AI Agent, Agentic System/Workflow, Agent Loop, Planning/Acting/Observation/Reflection, ReAct, HITL · Requires: Tool Calling, Context Engineering · *resources:* harness |
-| 15 | Agent Orchestration | Workflow, Router, Sequential/Parallel/Conditional, Agent State, Termination · Requires: Agent Fundamentals |
-| 16 | AI Memory | Short/Long-Term, Conversation/Semantic/Episodic Memory, Memory vs Context · Requires: Agent Fundamentals, Context Engineering |
-| 17 | Multi-Agent Systems | **canônico**: Agent Role/Delegation/Communication, Supervisor Pattern, Agent Handoff, Coordination · Requires: Agent Orchestration |
-| 18 | Model Routing | **canônico**: Model Router, Static/Dynamic Routing, Capability/Cost/Latency-Based, Model Fallback · Requires: Model Inference |
-| 19 | AI Evaluation | Evals, Golden Dataset, Offline/Online, LLM-as-a-Judge, Faithfulness, Answer Relevance, Retrieval Precision/Recall · Requires: RAG, Agent Fundamentals |
-| 20 | AI Safety & Guardrails | **canônico**: Guardrails (I/O), Hallucination, Prompt Injection, Jailbreak, Data Leakage, PII, Least Privilege for Tools, Human Approval · Requires: Tool Calling, RAG, Agent Fundamentals · *resources:* harness |
-| 21 | AI Observability | LLM Tracing, Prompt Logging, Token/Cost/Latency Tracking, Tool/Retrieval Tracing · Requires: Platform / Observability |
-| 22 | Model Adaptation | Fine-Tuning, SFT, Instruction Tuning, LoRA, PEFT, Distillation, Quantization, RAG vs Fine-Tuning · Requires: AI Fundamentals, RAG |
-| 23 | Production AI | *revisita*: Model Latency, TTFT, Token Budget, Semantic Cache, Rate Limiting, Model Fallback, Retry Strategy, Prompt/Model Versioning, Evaluation in CI/CD · Requires: AI Evaluation, AI Observability, Architecture / Resilience Patterns |
+> **Fase 2 aprovada / FROZEN em 2026-09-08.** Detalhamento Task-a-Task:
+> `07-ai-engineering.md`. **23 Stories · 161 Tasks** (156 canônicas · 5
+> `canonical: false` + `revisitOf`). 2 Tasks novas vs a proposta base de 159:
+> `Agentic System` (Story 14) e `Structured Prompting` (Story 04, relocada de
+> subtopic de `Structured Output`). ~30 consolidações auditadas. Auditoria
+> dedicada de `Requires` de Task (ORDER ≠ REQUIRES): a árvore rodada-2 tinha
+> **160 arestas** → **30 REMOVE / 32 REPOINT / 98 KEEP** → **130 arestas
+> finais** — zero ciclos, zero forward dependencies. Ownership canônico dos
+> Epics 05/06 preservado integralmente (`Rate Limiting` → Platform/API; `Cache`
+> → Platform/Caching; `Latency`/`Throughput` → Platform/Performance; `Principle
+> of Least Privilege` → Platform/Authorization; `Retry` → Architecture/Resilience).
+
+| # | Story | Tasks | Notas |
+|---|---|---|---|
+| 01 | AI Fundamentals | 7 | **canônico**: AI, AI System, ML, AI Model, Training, Inference, Parameters · Deep Learning/Model Architecture = subtopic · *resources:* ai-fundamentals, harness |
+| 02 | Language Models | 9 | **canônico**: LM, LLM, Token, Tokenization, Attention, Transformer, Context Window, Next-Token Prediction, Autoregressive Generation · Token e Attention são roots · Requires: AI Fundamentals |
+| 03 | Model Inference | 6 | **canônico**: Deterministic vs Stochastic Output, Temperature, Top-P/Top-K, Stopping Conditions, Streaming, Seed · Requires: Language Models · *resources:* harness |
+| 04 | Prompt Engineering | 9 | **canônico**: Prompt, System/User Prompt, Instruction Hierarchy, Zero/Few-Shot, In-Context Learning, Prompt Template, **Structured Prompting** *(Task nova)*, Prompt Chaining, Prompt Versioning · Requires: Model Inference |
+| 05 | Context Engineering | 8 | **canônico**: Context, Context Engineering, Assembly, Ordering, Compression, Budget, Overflow, Rot · Requires: Prompt Engineering · *resources:* harness |
+| 06 | Structured Generation | 5 | **canônico**: Structured Output, Schema-Constrained Generation, Output Parsing, Output Validation, Retry on Invalid Output · Requires: Prompt Engineering |
+| 07 | Embeddings | 6 | **canônico**: Vector, Embedding, Embedding Model, Embedding Space, Semantic Similarity, Similarity & Distance Metrics (Cosine/Dot/Euclidean) |
+| 08 | Vector Search | 6 | **canônico**: Vector Search, k-NN, ANN, Vector Index, HNSW, Vector Database · Requires: Embeddings |
+| 09 | Chunking | 2 | **canônico**: Chunking, Chunking Strategies (Fixed/Recursive/Semantic/Document Structure) · Chunk Size/Overlap = subtopic |
+| 10 | Retrieval | 7 | **canônico**: Retrieval, Semantic Search, Keyword Search, BM25, Hybrid Search, Metadata Filtering, Reranking · Dense/Sparse = alt-nomes · Requires: Vector Search, Chunking |
+| 11 | RAG | 7 | **canônico**: RAG, RAG Pipeline, Query Transformation, **Grounding**, Source Attribution, Retrieval Failure, RAG Evaluation · Requires: Retrieval, Context Engineering |
+| 12 | Tool Calling | 8 | **canônico**: Tool, Tool Calling, Tool Schema, Tool Selection, Tool Result, Tool Error Handling, Tool Permissions, Tool Execution Loop · Requires: Structured Generation *(nível de Story)* |
+| 13 | MCP | 5 | **canônico**: MCP, MCP Architecture, MCP Primitives, MCP Transport, MCP vs API · MCP é root no Task DAG · Requires: Tool Calling *(nível de Story)* |
+| 14 | Agent Fundamentals | 8 | **canônico**: Deterministic vs Agentic Workflow, AI Agent, Agent vs LLM, **Agentic System** *(Task nova)*, Agentic Workflow, Agent Loop, ReAct, HITL · Requires: Tool Calling, Context Engineering · *resources:* harness |
+| 15 | Agent Orchestration | 5 | **canônico**: Orchestration (Workflow), Router, Workflow Composition (Seq/Par/Cond), Agent State, Agent Termination · Handoff removida daqui · Requires: Agent Fundamentals |
+| 16 | AI Memory | 6 | **canônico**: Agent Memory, Memory vs Context, Short/Long-Term Memory, Memory Types (Conv/Sem/Epis), Memory Retrieval, Memory Consolidation · Requires: Agent Fundamentals, Context Engineering |
+| 17 | Multi-Agent Systems | 8 | **canônico**: Multi-Agent System, Coordination, Role, Communication, Delegation, **Agent Handoff**, Supervisor Pattern, Trade-offs · Requires: Agent Orchestration |
+| 18 | Model Routing | 5 | **canônico**: Model Router, Static vs Dynamic Routing, Routing Criteria (Cap/Cost/Lat), **Model Fallback**, Multi-Provider Architecture · Requires: Model Inference |
+| 19 | AI Evaluation | 7 | **canônico**: Evaluation (Evals), Evaluation Dataset, Offline vs Online, Evaluation Methods, Retrieval Precision & Recall, Faithfulness & Answer Relevance, Regression Evaluation · Requires: RAG, Agent Fundamentals |
+| 20 | AI Safety & Guardrails | 11 | **canônico**: Guardrails, Input/Output Guardrails, Hallucination, Prompt Injection (+ Indirect), Jailbreak, Data Leakage, PII Handling, Tool Abuse, Human Approval · `Least Privilege for Tools` = `revisitOf` Platform/Authorization · Requires: Tool Calling, RAG, Agent Fundamentals · *resources:* harness |
+| 21 | Model Adaptation | 6 | **canônico**: Fine-Tuning, SFT/Instruction Tuning, PEFT (LoRA), Distillation, Quantization, RAG vs Fine-Tuning · Requires: AI Fundamentals, RAG |
+| 22 | AI Observability | 7 | **canônico**: LLM Tracing, Prompt Logging, Token Usage, Cost Tracking, Latency Tracking, Tool & Retrieval Tracing, Failure Analysis · 100% `canonical: true` (Platform/Observability = `Requires`/pointer) · Requires: Platform / Observability |
+| 23 | Production AI | 13 | **canônico**: AI System Reliability, Model Latency, TTFT, Token Throughput, Model Cost, Token Budget, Model Versioning, Evaluation in CI/CD, AI System Monitoring · `revisitOf`: Caching LLM Responses (Semantic Cache), Rate Limiting, Model Fallback, Retry Strategy · Requires: AI Evaluation, AI Observability, Architecture / Resilience Patterns |
 
 Racional: o que é IA/ML/inferência → como um LLM funciona → controles de inferência →
 prompting → saída estruturada → context engineering → embeddings → busca vetorial →
 chunking → retrieval → RAG → tool calling → MCP → agentes → orquestração → memória →
 multi-agente → roteamento → avaliação → segurança/guardrails → observabilidade de IA →
 adaptação de modelo → Production AI (capstone de revisita).
+
+**`canonical: false` + `revisitOf` (5 Tasks):** `AI Safety / Least Privilege for
+Tools` → Platform/Authorization/Principle of Least Privilege · `Production AI /
+Caching LLM Responses (Semantic Cache)` → Platform/Caching/Cache · `Production AI
+/ Rate Limiting` → Platform/API Fundamentals/Rate Limiting · `Production AI /
+Retry Strategy` → Architecture/Resilience Patterns/Retry · `Production AI / Model
+Fallback` → Model Routing/Model Fallback *(intra-Epic)*.
+
+**Duplicatas resolvidas nesta Epic** (canônico em Epic anterior FROZEN; aplicadas
+via `Requires`/`revisit`, não recriadas): `Rate Limiting` (Platform/API) ·
+`Cache`/Semantic Cache (Platform/Caching) · `Latency`/`Throughput`
+(Platform/Performance Engineering) · `Distributed Tracing`/`Structured Logging`
+(Platform/Observability) · `Principle of Least Privilege` (Platform/Authorization) ·
+`Retry` (Architecture/Resilience Patterns) · `Regression Testing` (Testing &
+Quality Engineering — pointer já FROZEN do lado do Epic 02) · `SSE` (Platform/Web
+Fundamentals — pointer já FROZEN do lado de Platform) · `Handoff` consolidada num
+único lar canônico (`Agent Handoff`, Story 17).
+
+**Colisões a desambiguar**: `Grounding` (RAG) ≠ `Faithfulness & Answer Relevance`
+(AI Evaluation) — conceitos distintos, sem `revisitOf` · `Structured Prompting`
+(soft) ≠ `Schema-Constrained Generation` (hard) · `Tool Execution Loop` ≠ `Agent
+Loop` · `Context Budget` (capacidade) ≠ `Token Budget` (econômico) · `AI System`
+≠ `Agentic System` ≠ `Agentic Workflow` · `Prompt Injection` ≠ `Jailbreak` ·
+`Model Fallback` canônico (Story 18) ≠ `revisitOf` (Story 23). Lista completa:
+`07-ai-engineering.md`.
 
 *SUGESTÃO de Story:* `Responsible AI & Governance` (bias, fairness, transparência,
 governança de dados); `LLM Cost Engineering` (prompt caching, batching, model sizing).
@@ -436,6 +474,20 @@ Software Craft / Engineering Documentation / ADR, Dependency & Version Managemen
 Platform / Database Design / Database Migration ──▶ Architecture / Architecture Evolution / Migration Strategy  (revisita, pointer)
 Platform / Performance Engineering / Throughput ──▶ Architecture / System Design Fundamentals / Capacity Estimation  (Requires formal; Latency fica só pointer)
 Architecture / Distributed Systems Fundamentals ──▶ Architecture / Data Distribution, Messaging, Resilience Patterns, Distributed Transactions, Data & Architecture Patterns  (intra-Epic, acíclico)
+
+--- formalizado na Fase 2 do Epic 07 (2026-09-08) ---
+Platform / Observability / Distributed Tracing (Span / trace context) ──▶ AI Engineering / AI Observability / LLM Tracing  (Requires formal)
+Platform / Observability / Structured Logging ──▶ AI Engineering / AI Observability / Prompt Logging  (Requires formal)
+Platform / Performance Engineering / Latency ──▶ AI Engineering / AI Observability / Latency Tracking + Production AI / Model Latency  (Requires formal)
+Platform / Performance Engineering / Throughput ──▶ AI Engineering / Production AI / Token Throughput  (Requires formal)
+Platform / Caching / Cache ⟵ revisitOf ── AI Engineering / Production AI / Caching LLM Responses (Semantic Cache)
+Platform / API Fundamentals / Rate Limiting ⟵ revisitOf ── AI Engineering / Production AI / Rate Limiting
+Platform / API Fundamentals / API ──▶ AI Engineering / MCP / MCP vs API  (Requires formal)
+Platform / Authorization / Principle of Least Privilege ⟵ revisitOf ── AI Engineering / AI Safety & Guardrails / Least Privilege for Tools
+Architecture / Resilience Patterns / Retry ⟵ revisitOf ── AI Engineering / Production AI / Retry Strategy
+Testing & Quality Engineering / Testing Strategy / Regression Testing ──▶ AI Engineering / AI Evaluation / Regression Evaluation  (pointer — já FROZEN do lado do Epic 02)
+Platform / Web Fundamentals / SSE ──▶ AI Engineering / Model Inference / Streaming  (pointer — já FROZEN do lado de Platform)
+AI Engineering / Model Routing / Model Fallback ⟵ revisitOf ── AI Engineering / Production AI / Model Fallback  (intra-Epic, backward, acíclico)
 ```
 
 ### Conceitos transversais — lar canônico × revisita
@@ -457,16 +509,22 @@ Architecture / Distributed Systems Fundamentals ──▶ Architecture / Data Di
 | TDD / Red-Green-Refactor | Testing & Quality / Test-Driven Development | Software Craft / Refactoring (passo "refactor" — pointer, não Requires) |
 | Test Pyramid / Code Coverage / Testability / Test Isolation / Flaky Tests / Regression Testing / Property-Based Testing / Contract Testing | Testing & Quality / Testing Strategy | Software Design (DI); Platform / CI-CD; Platform / API; Architecture / Service Communication; AI / Regression Evaluation |
 | Reproduction / Hypothesis-Driven Debugging / Stack Trace / Breakpoints / Binary Search Debugging / Git Bisect / Root Cause Analysis | Testing & Quality / Debugging | Platform / Reliability Engineering (Postmortem); Software Craft / Git (`Bisect` → referência) |
-| Retry / Timeout / Backoff / Circuit Breaker / Idempotency *(conceito de resiliência)* | Architecture / Resilience Patterns | AI / Tool Calling; AI / Production AI |
+| Retry / Timeout / Backoff / Circuit Breaker / Idempotency *(conceito de resiliência)* | Architecture / Resilience Patterns | AI / Tool Calling / Tool Error Handling (`[R]`); AI / Structured Generation / Retry on Invalid Output (`[R]`); AI / Production AI / Retry Strategy (`revisitOf`) |
 | Idempotency Key *(mecânica HTTP)* | Platform / API Fundamentals | Architecture / Resilience Patterns (`Idempotency` conceito) |
-| Rate Limiting | **Platform / API Fundamentals** *(era Architecture / Resilience Patterns — mudança não silenciosa vs Fase 1)* | Architecture / Resilience Patterns; AI / Production AI (custo de LLM) |
+| Rate Limiting | **Platform / API Fundamentals** *(era Architecture / Resilience Patterns — mudança não silenciosa vs Fase 1)* | Architecture / Resilience Patterns (`revisitOf`); AI / Production AI / Rate Limiting (`revisitOf` — custo/quota de LLM) |
 | Middleware / Request Pipeline | Platform / API Fundamentals *(Task nova)* | Software Design / Chain of Responsibility segue SUGESTÃO |
-| Caching (patterns) | Platform / Caching | Architecture / Caching at Scale; AI / Production AI (Semantic Cache) |
-| Latency / Throughput / CPU vs I/O bound / Profiling | Platform / Performance Engineering | Architecture / System Design Fundamentals; AI / Production AI (TTFT, Model Latency) |
+| Caching (patterns) / Cache | Platform / Caching | Architecture / Caching at Scale; AI / Production AI / Caching LLM Responses (Semantic Cache, `revisitOf`) |
+| Latency / Throughput / CPU vs I/O bound / Profiling | Platform / Performance Engineering | Architecture / System Design Fundamentals; AI / AI Observability / Latency Tracking (`Requires`); AI / Production AI / Model Latency + Token Throughput (`Requires`) |
 | Consistency (ACID) | Platform / Database Transactions | colide de nome com Distributed Consistency — sentido diferente |
 | Consistency (distributed) / Eventual Consistency *(Task: Consistency Models (Strong / Eventual))* | Architecture / Distributed Systems Fundamentals | Architecture / Data Distribution (Replication Topologies), Messaging (Message Ordering), Distributed Transactions (Saga Pattern) — todos pointer `[R]`, sem `Requires` universal |
-| Least Privilege | Platform / Authorization | Platform / Cloud Security (Least Privilege in Cloud, `canonical: false`); AI / Safety & Guardrails |
-| Observability (logs/metrics/traces) / OpenTelemetry | Platform / Observability | AI / AI Observability; Architecture / Reliability |
+| Least Privilege | Platform / Authorization | Platform / Cloud Security (Least Privilege in Cloud, `canonical: false`); AI / Safety & Guardrails / Least Privilege for Tools (`revisitOf`) |
+| Observability (logs/metrics/traces) / OpenTelemetry / Distributed Tracing / Structured Logging | Platform / Observability | AI / AI Observability / LLM Tracing + Prompt Logging (`Requires`); Architecture / Reliability |
+| API | Platform / API Fundamentals | AI / MCP / MCP vs API (`Requires`) |
+| Regression Testing | Testing & Quality Engineering / Testing Strategy | AI / AI Evaluation / Regression Evaluation (`[R]` — pointer já FROZEN do lado do Epic 02) |
+| Server-Sent Events (SSE) | Platform / Web Fundamentals | AI / Model Inference / Streaming (`[R]` — pointer já FROZEN do lado de Platform); Programming Foundations / Async / Promise |
+| Grounding *(propriedade)* | AI / RAG | **[≠]** ≠ `Faithfulness & Answer Relevance` (AI / AI Evaluation, métrica) — conceitos distintos, sem `revisitOf` (decisão Fase 2 · Epic 07) |
+| Model Fallback | AI / Model Routing | AI / Production AI / Model Fallback (`revisitOf`, intra-Epic) — mesmo padrão de `N+1 in Resolvers` no Epic 05 |
+| Prompt Versioning | AI / Prompt Engineering | AI / Production AI / Model Versioning (citado por pointer, sem 2ª Task) |
 | ADR / Technical Debt / Backward Compatibility | Software Craft | Architecture / Architecture Evolution (`Requires` formal — Fase 2 · Epic 06) |
 | CQS (Command-Query Separation) | Software Design / Design Principles | Architecture / Data & Architecture Patterns (`CQRS` — generaliza para arquitetura, pointer `[R]`, sem `Requires` formal) |
 | Event (transporte/infraestrutura) | Architecture / Messaging | **[≠]** ≠ `Domain Event` (Software Design / Domain Modeling) — ambos canônicos, colisão anotada, sem `revisitOf` (decisão Fase 2 · Epic 06) |
@@ -515,8 +573,8 @@ Architecture / Distributed Systems Fundamentals ──▶ Architecture / Data Di
 | Fase | Escopo | Estado |
 |---|---|---|
 | **Fase 1** | Epics → Stories, ordem, racional, sobreposições, dependências de alto nível | ✅ Aprovada 2026-09-03 |
-| **Fase 2** | Detalhamento Epic por Epic: ordenar Tasks, `Requires` por Task, canônico × revisita, consolidar duplicatas, SUGESTÕES de Task | 🔄 Em andamento — uma rodada por Epic, com aprovação |
-| **Fase 3** | Implementação visual: `data/roadmap.js`, navegação Área → Módulo → Conceito, identidade visual da referência | ✅ 1ª versão implementada — navegação completa para os Epics com Fase 2 concluída (**01–06**); Epic 07 aparece na Home sem drill-down |
+| **Fase 2** | Detalhamento Epic por Epic: ordenar Tasks, `Requires` por Task, canônico × revisita, consolidar duplicatas, SUGESTÕES de Task | ✅ **Completa 2026-09-08** — 7 Epics detalhados (89 Stories, 668 Tasks) |
+| **Fase 3** | Implementação visual: `data/roadmap.js`, navegação Área → Módulo → Conceito, identidade visual da referência | ✅ 1ª versão implementada — navegação completa para os **7 Epics** (01–07) |
 
 ### Fase 2 — progresso por Epic
 
@@ -528,27 +586,25 @@ Architecture / Distributed Systems Fundamentals ──▶ Architecture / Data Di
 | 04 · Software Design | ✅ **Concluído 2026-09-05** — 9 Stories, 56 Tasks | `04-software-design.md` |
 | 05 · Platform Engineering | ✅ **Concluído / FROZEN 2026-09-05** — 21 Stories, 187 Tasks | `05-platform-engineering.md` |
 | 06 · Architecture & System Design | ✅ **Concluído / FROZEN 2026-09-08** — 14 Stories, 93 Tasks | `06-architecture-system-design.md` |
-| 07 · AI Engineering | ⏳ Não iniciado | — |
+| 07 · AI Engineering | ✅ **Concluído / FROZEN 2026-09-08** — 23 Stories, 161 Tasks | `07-ai-engineering.md` |
 
-**Total de Tasks no roadmap (Epics 01–06): 507.** Epic 07 ainda não contribui
-Tasks (Fase 2 não iniciada).
+**Total no roadmap (Epics 01–07): 89 Stories · 668 Tasks** (Epics 01–06 = 507;
+Epic 07 = 161). **Fase 2 completa — nenhum Epic pendente.**
 
 ### Navegação visual — estado atual
 
 A 1ª versão navegável (`index.html` + `js/roadmap/*`) já está implementada no
-repositório. Com o Epic 06 FROZEN:
+repositório. Com todos os 7 Epics FROZEN:
 - **Home**: os 7 Epics como cards coloridos.
-- **Navegação completa** (Área → Módulo → Conceito) para os **Epics 01–06** —
+- **Navegação completa** (Área → Módulo → Conceito) para os **Epics 01–07** —
   todos com detalhamento Task-a-Task aprovado.
-- **Epic 07**: card na Home, sem drill-down de Stories/Tasks até sua própria
-  Fase 2.
 
 Arquitetura técnica de referência: `../PLAN.md` (Anexo).
 
 ### Arquivos originais
 
-`ai-engineering.md` mantém a estrutura **antiga** e será reorganizado quando a
-Fase 2 do Epic 07 começar. `architecture-e-system-design.md` já foi
+`ai-engineering.md` já foi **totalmente consumido** pelo Epic 07 (23 Stories
+detalhadas em `07-ai-engineering.md`). `architecture-e-system-design.md` já foi
 **totalmente consumido** pelo Epic 06 (14 Stories detalhadas em
 `06-architecture-system-design.md`). `design-e-fundamentals.md` já foi
 **totalmente consumido** (fundamentos de linguagem → Epic 01, detalhados em
