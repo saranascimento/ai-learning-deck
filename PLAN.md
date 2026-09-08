@@ -14,8 +14,9 @@ representa o roadmap de estudo para nível Senior Software Engineer.
 | 2026-09-05 | Fase 2 · Epic 03 | `Software Craft` **aprovado**: 9 Stories, 61 Tasks. Detalhe: `roadmap/03-software-craft.md`. Removidas `Pure Functions`/`Side Effects`/`Immutability` (canônico Epic 01); `Git Bisect` não-canônico (`revisitOf` Epic 02/Debugging); 3 correções de `Requires` aplicadas (`Inline Function`, `Legacy Code`, `Merge Conflicts`); Tasks guarda-chuva novas: `Refactoring`, `Code Review`, `Errors vs Exceptions`; consolidação `Review Dimensions` (5 Tasks → 1, `subtopics`). |
 | 2026-09-05 | Fase 2 · Epic 04 | `Software Design` **aprovado**: 9 Stories, 56 Tasks. Detalhe: `roadmap/04-software-design.md`. Versão enxuta dos catálogos GoF (`Structural` 7→5, `Behavioral` 11→5; patterns retirados → SUGESTÃO). `Chain of Responsibility` fica como Advanced/Optional p/ reconsiderar no Epic 05 (middleware). `Law of Demeter` + `Principle of Least Knowledge` = 1 Task. `Composition over Inheritance` recebido do Epic 01. `Entity`/`Value Object` canônicos em OOD, revisita (`canonical: false` + `revisitOf`) em Domain Modeling. Sem cadeia `Requires` Creational→Structural→Behavioral. Excluídas: `Principle of Least Astonishment`, `High Cohesion/Low Coupling`, `Dependency`, `Dependency Inversion`, `Dependency Graph`. |
 | 2026-09-05 | Fase 2 · Epic 05 | `Platform Engineering` **aprovado / FROZEN**: 21 Stories, 187 Tasks (183 canônicas, 4 `canonical: false` + `revisitOf`). Detalhe: `roadmap/05-platform-engineering.md`. 46 consolidações auditadas + 9 rebaixamentos §C/§D. `Rate Limiting` + `Idempotency Key` canônicos em Platform / API Fundamentals (**mudança não silenciosa vs Fase 1** — `Rate Limiting` era Architecture/Resilience). `Middleware / Request Pipeline` nova Task (ancora `Chain of Responsibility`, que segue SUGESTÃO no Epic 04). `Profiling` ganha lar canônico. `TLS` Task própria, `HTTPS` subtopic. `Redis` → `In-Memory Data Store`; `DataLoader` → `Batching & Per-Request Caching`. ~30 `Requires` de ordem de estudo removidos (4 invertidos). Dependência `Epic 04 / Enterprise & Application Patterns` → `Requires: Platform / Database Fundamentals` **formalizada**. |
-| — | Fase 2 · Epics 06–07 | Não iniciados. Um Epic por vez, cada rodada com aprovação. |
-| — | Fase 3 · 1ª versão | **Próximo passo.** Home com os 7 Epics + navegação completa (Área → Módulo → Conceito) para os Epics com Fase 2 concluída (01–05). |
+| 2026-09-08 | Fase 2 · Epic 06 | `Architecture & System Design` **aprovado / FROZEN**: 14 Stories, 93 Tasks (91 canônicas, 2 `canonical: false` + `revisitOf`). Detalhe: `roadmap/06-architecture-system-design.md`. 7 consolidações auditadas (5 umbrella 3→1 + 2 par 2→1) + 11 rebaixamentos a subtopic. Auditoria dedicada de `Requires` de Task (ORDER ≠ REQUIRES) sobre 108 arestas propostas: **63 KEEP / 42 relações removidas de `Requires` (preservadas como pointer/contexto quando aplicável) / 3 REPOINT** — zero ciclos, zero forward dependencies. Ownership canônico do Epic 05 preservado integralmente (`Rate Limiting`/`Idempotency Key` em Platform; `Load Balancing`/`Auto Scaling`/`Idempotency` genérico canônicos aqui; `Serverless` primitivo em Platform). `Event` (Messaging) e `Domain Event` (Software Design) ficam ambos canônicos, colisão anotada, sem `revisitOf`. `CQRS` não tem `Requires` formal para `CQS` (Software Design), só pointer. Múltiplas Tasks-root aceitas nas Stories `Availability & Reliability` e `Resilience Patterns`. |
+| — | Fase 2 · Epic 07 | Não iniciado. Próxima rodada, com sua própria aprovação. |
+| — | Fase 3 · 1ª versão | ✅ Implementada (`index.html` + `js/roadmap/*`). Home com os 7 Epics + navegação completa (Área → Módulo → Conceito) para os Epics com Fase 2 concluída — agora **01–06**. Epic 07 aparece na Home sem drill-down. |
 
 > A cópia de trabalho original deste plano vive em
 > `~/.claude/plans/quero-transformar-este-projeto-mellow-spring.md`.
@@ -74,7 +75,7 @@ Decisões tomadas pelo usuário:
 
 | Conceito | Onde está | Problema | Correção proposta |
 |---|---|---|---|
-| `Coupling`, `Cohesion`, `Separation of Concerns` | Tasks repetidas em Software Craft, Design & F. e Architecture | Fundamento tratado como item pontual em 3 lugares | ✅ **Fase 2 · Epic 01**: canônico em Programming Foundations / Programming Fundamentals; demais viram `[R]` nas Fases 2 dos Epics 03/06 |
+| `Coupling`, `Cohesion`, `Separation of Concerns` | Tasks repetidas em Software Craft, Design & F. e Architecture | Fundamento tratado como item pontual em 3 lugares | ✅ **Fases 2 · Epics 01/03/04/06**: canônico em Programming Foundations / Programming Fundamentals; nas demais Epics (Craft, Design, Architecture) aplicados via `Requires`/`revisit` em Tasks reais, nunca recriados como Task própria |
 | `DRY`, `KISS`, `YAGNI` | Tasks dentro de `Clean Code` | Não são "clean code", são heurísticas de design | Story própria **Design Heuristics** (Software Craft) |
 | `Pure Functions`, `Side Effects`, `Immutability` | Tasks em `Clean Code` **e** em `Functional Programming` | Duplicado | ✅ **Fase 2 · Epic 01**: canônico em Programming Foundations / Functional Programming; remover de Clean Code na Fase 2 do Epic 03 |
 | `Testing` | Story (17 tasks) em Software Craft | Volume e importância de Epic | Promover a **Epic: Testing & Quality Engineering** |
@@ -92,7 +93,7 @@ Decisões tomadas pelo usuário:
 | `Idempotency` | Architecture/Resilience **e** Platform/API | Conceito × mecânica de idempotency-key | ✅ **Fase 2 · Epic 05**: `Idempotency Key` (mecânica HTTP) canônico em **Platform / API Fundamentals**; o conceito `Idempotency` de resiliência permanece canônico em **Architecture/Resilience**. *(Mudança não silenciosa vs Fase 1, que dizia só "Platform/API referencia".)* |
 | `Consistency` | Architecture (modelos distribuídos) **e** Platform/DB Transactions (ACID) | Colisão de nome, sentidos diferentes | ✅ **Fase 2 · Epic 05**: `Consistency (ACID)` fica subtopic **nomeado** de `ACID` em Platform/DB Transactions; `Distributed Consistency` é Architecture — nota explícita de colisão |
 | `N+1 Problem` / `N+1 Query Problem` | GraphQL **e** Database Performance | Mesmo conceito | ✅ **Fase 2 · Epic 05**: canônico em **Platform / Database Performance**; `GraphQL / N+1 in Resolvers` é `canonical: false` + `revisitOf` (não cria 2ª canônica) |
-| `Backward Compatibility`, `Technical Debt`, `ADR` | Software Craft **e** Architecture Evolution | Duplicado | Canônico em **Software Craft**; Architecture revisita "no nível de arquitetura" |
+| `Backward Compatibility`, `Technical Debt`, `ADR` | Software Craft **e** Architecture Evolution | Duplicado | ✅ **Fase 2 · Epic 06**: canônico em **Software Craft**; `Architecture Evolution` aplica via `Requires` formal (não recria como Task própria) |
 | `Least Privilege` | Authorization, Cloud Security, AI Safety | Repetido em 3 contextos | ✅ **Fase 2 · Epic 05**: canônico **Platform / Authorization**; `Least Privilege in Cloud` (Cloud Security) é `canonical: false` + `revisitOf`; AI Safety `Requires` |
 | `Serverless` / `Serverless Architecture` | Platform/Cloud **e** Architecture/Styles | Primitivo × estilo | ✅ **Fase 2 · Epic 05**: primitivo canônico em **Platform / Cloud Fundamentals**; o estilo arquitetural revisita em Architecture / Architectural Styles |
 | `Handoff` / `Agent Handoff` | Agent Orchestration **e** Multi-Agent Systems | Duplicado | Canônico **Multi-Agent Systems** |
@@ -191,6 +192,11 @@ Platform / API Fundamentals / Rate Limiting, Idempotency Key ──▶ Architect
 Platform / Cloud Fundamentals / Load Balancer, Auto Scaling ⟵ revisitOf ── Architecture / Scalability   (forward-ref, acíclico)
 Architecture / Resilience Patterns ──▶ AI Engineering / Production AI
 Platform / Observability ──▶ AI Engineering / AI Observability
+
+--- formalizado na Fase 2 do Epic 06 (2026-09-08) ---
+Software Design / SOLID / DIP ──▶ Architecture / Architecture Fundamentals / Dependency Direction   (revisita, pointer)
+Software Design / Design Principles / CQS ──▶ Architecture / Data & Architecture Patterns / CQRS   (revisita, pointer — sem Requires formal)
+Platform / Performance Engineering / Throughput ──▶ Architecture / System Design Fundamentals / Capacity Estimation   (Requires formal)
 ```
 
 Tabela de conceitos transversais (canônico × revisita): `roadmap/00-overview.md`.
@@ -244,14 +250,16 @@ contextual, consolidar duplicatas Task-a-Task, registrar SUGESTÕES de Task.
 | 03 · Software Craft | ✅ Concluído 2026-09-05 — 9 Stories, 61 Tasks | `roadmap/03-software-craft.md` |
 | 04 · Software Design | ✅ Concluído 2026-09-05 — 9 Stories, 56 Tasks | `roadmap/04-software-design.md` |
 | 05 · Platform Engineering | ✅ Concluído / FROZEN 2026-09-05 — 21 Stories, 187 Tasks | `roadmap/05-platform-engineering.md` |
-| 06 · Architecture & System Design | ⏳ Não iniciado — herda: `Coupling/Cohesion/SoC` viram `[R]` do Epic 01; `Service Communication` revisita `Contract Testing` (Epic 02); `Load Balancing`/`Auto Scaling` canônicos aqui (Platform revisita); `Rate Limiting`/`Idempotency` conceito revisitam Platform / API Fundamentals; `Caching at Scale` `Requires` Platform / Caching | — |
+| 06 · Architecture & System Design | ✅ Concluído / FROZEN 2026-09-08 — 14 Stories, 93 Tasks | `roadmap/06-architecture-system-design.md` |
 | 07 · AI Engineering | ⏳ Não iniciado — herda: `AI Evaluation` revisita `Test Doubles`/`Regression Testing` (Epic 02) | — |
 
-**Fase 3 — Implementação visual · 1ª versão** (próximo passo):
+**Total de Tasks no roadmap (Epics 01–06): 507.**
+
+**Fase 3 — Implementação visual · 1ª versão** (✅ implementada):
 - Home com os **7 Epics** como cards coloridos.
 - Navegação completa **Área → Módulo → Conceito para os Epics com Fase 2
-  concluída (01–05)**.
-- Epics 06–07: card na Home, sem drill-down até a Fase 2 correspondente.
+  concluída — agora 01–06**.
+- Epic 07: card na Home, sem drill-down até sua própria Fase 2.
 - Converter `roadmap/0N-*.md` em `data/roadmap.js`; construir router por hash +
   views; preparar (sem ativar) o modelo de progresso.
 - Arquitetura de referência: Anexo abaixo.

@@ -6,11 +6,13 @@
 > **Fase 2 em andamento** — Epics 01 · Programming Foundations e 02 · Testing & Quality
 > Engineering concluídos (2026-09-03), 03 · Software Craft e 04 · Software Design
 > concluídos (2026-09-05), 05 · Platform Engineering concluído / **FROZEN**
-> (2026-09-05), ver `01-programming-foundations.md`, `02-testing-quality-engineering.md`,
-> `03-software-craft.md`, `04-software-design.md` e `05-platform-engineering.md`.
+> (2026-09-05), 06 · Architecture & System Design concluído / **FROZEN**
+> (2026-09-08), ver `01-programming-foundations.md`, `02-testing-quality-engineering.md`,
+> `03-software-craft.md`, `04-software-design.md`, `05-platform-engineering.md` e
+> `06-architecture-system-design.md`.
 > Progresso completo no fim deste arquivo.
-> **Próximo**: Fase 3 — 1ª versão visual (7 Epics na Home + navegação completa só para
-> os Epics 01–05).
+> **Próximo**: Fase 2 · Epic 07 · AI Engineering (não iniciado) — ou revisão da
+> navegação visual, já ampliada para os Epics 01–06.
 >
 > Registro completo da decisão (contexto, análise, arquitetura técnica): `../PLAN.md`.
 
@@ -50,7 +52,8 @@ ROADMAP SENIOR
    ops, cloud. Pouca dependência conceitual, muito volume. *(Fase 2 aprovada / FROZEN:
    21 Stories, 187 Tasks.)*
 6. **Architecture & System Design** — sistemas que escalam, distribuem e evoluem.
-   `Requires` Platform + Software Design.
+   `Requires` Platform + Software Design. *(Fase 2 aprovada / FROZEN: 14 Stories,
+   93 Tasks.)*
 7. **AI Engineering** — a especialização. `Requires` Platform; "Production AI"
    `Requires` Architecture/Resilience. Pode ser antecipado por quem já atua na área
    (só depende de Platform).
@@ -297,27 +300,70 @@ plan/apply, módulos) · `Non-Functional Testing` (load/stress/soak/spike, DAST,
 
 ### 06 · Architecture & System Design
 
-| # | Story | Notas |
-|---|---|---|
-| 01 | Architecture Fundamentals | Architecture vs Design, Characteristics, Constraints, Trade-offs (Coupling/Cohesion → Requires Foundations) |
-| 02 | Architectural Styles | Requires: Architecture Fundamentals, Software Design / Domain Modeling |
-| 03 | System Design Fundamentals | Functional/NFR, Capacity Estimation, Bottlenecks, SPOF |
-| 04 | Scalability | **canônico**: Vertical/Horizontal Scaling, Load Balancing, Auto Scaling, Statelessness, Backpressure |
-| 05 | Caching at Scale | Distributed Cache, Cache Stampede, cache coherence · Requires: Platform / Caching, Scalability |
-| 06 | Availability & Reliability | **canônico**: Fault Tolerance, Redundancy, Failover, Graceful Degradation, RTO, RPO · Requires: Scalability |
-| 07 | Distributed Systems Fundamentals | **canônico**: Partial Failure, Network Partition, Consistency (distributed), CAP, PACELC, Consensus, Leader Election |
-| 08 | Data Distribution | **canônico**: Replication, Partitioning, Sharding, Consistent Hashing · Requires: Distributed Systems Fundamentals |
-| 09 | Service Communication | Sync/Async, RPC, gRPC, Service Discovery, API Gateway, Reverse Proxy, Service Mesh · Requires: Architectural Styles |
-| 10 | Messaging | **canônico**: Message Queue/Broker, Pub/Sub, Delivery Semantics, Ordering, Dead Letter Queue · Requires: Service Communication |
-| 11 | Resilience Patterns | **canônico**: Timeout, Retry, Backoff, Jitter, Circuit Breaker, Bulkhead, Rate Limiting, Idempotency · Requires: Distributed Systems Fundamentals, Messaging |
-| 12 | Distributed Transactions | 2PC, Saga, Choreography, Orchestration, Outbox · Requires: Messaging, Resilience Patterns |
-| 13 | Data & Architecture Patterns | CQRS, Event Sourcing, Materialized View, CDC, Database per Service · Requires: Messaging, Data Distribution |
-| 14 | Architecture Evolution | Evolutionary Architecture, Fitness Functions, Strangler Fig, Migration Strategy, Build vs Buy (ADR/Tech Debt → Requires Software Craft) |
+> **Fase 2 aprovada / FROZEN em 2026-09-08.** Detalhamento Task-a-Task:
+> `06-architecture-system-design.md`. **14 Stories · 93 Tasks** (91 canônicas · 2
+> `canonical: false` + `revisitOf`). 7 consolidações auditadas (5 umbrella 3→1 + 2
+> par 2→1) + 11 rebaixamentos a subtopic/pointer. Auditoria dedicada de `Requires`
+> de Task (ORDER ≠ REQUIRES) sobre as 108 arestas propostas: **63 KEEP / 42
+> relações removidas de `Requires` (preservadas como pointer/contexto quando
+> aplicável) / 3 REPOINT**. Ownership canônico do Epic 05 preservado
+> integralmente (`Rate Limiting`/`Idempotency Key` em Platform; `Load
+> Balancing`/`Auto Scaling`/`Idempotency` genérico canônicos aqui; `Serverless`
+> primitivo em Platform).
+
+| # | Story | Tasks | Notas |
+|---|---|---|---|
+| 01 | Architecture Fundamentals | 6 | **canônico**: Architecture vs Design, Characteristics, Constraints, Trade-offs, Modularity, Dependency Direction · Coupling/Cohesion/SoC não viram Task própria (aplicadas via `revisit`) |
+| 02 | Architectural Styles | 9 | **canônico**: Layered, Dependency-Rule (Clean/Hexagonal/Onion, 3→1), Monolith, Modular Monolith, Microservices, SOA, Event-Driven, Microkernel · `Serverless Architecture` = `revisitOf` Platform/Cloud Fundamentals · Requires: Architecture Fundamentals, Software Design / Domain Modeling |
+| 03 | System Design Fundamentals | 5 | **canônico**: Functional/NFR, Capacity Estimation, Bottlenecks, SPOF · Latency/Throughput não recriadas (canônicas em Platform) |
+| 04 | Scalability | 7 | **canônico**: Vertical/Horizontal Scaling, Statelessness, **Load Balancing**, **Auto Scaling**, Backpressure |
+| 05 | Caching at Scale | 3 | **canônico**: Distributed Cache, Cache Stampede, Cache Coherence · Requires: Platform / Caching, Scalability |
+| 06 | Availability & Reliability | 7 | **canônico**: Availability, Reliability, Fault Tolerance, Redundancy, Failover, Graceful Degradation, Disaster Recovery (RTO/RPO) · Requires: Scalability · múltiplas Tasks-root (decisão final da auditoria) |
+| 07 | Distributed Systems Fundamentals | 9 | **canônico**: Distributed System, Partial Failure, Network Partition, Clock & Time, Consistency Models, CAP, PACELC, Consensus, Leader Election |
+| 08 | Data Distribution | 7 | **canônico**: Replication (+ Topologies), Partitioning, Sharding, Consistent Hashing, Hotspot (realocado de Scalability), Rebalancing · Requires: Distributed Systems Fundamentals |
+| 09 | Service Communication | 7 | **canônico**: Sync vs Async Communication, RPC, gRPC, Service Discovery, API Gateway, Reverse Proxy, Service Mesh · Requires: Architectural Styles |
+| 10 | Messaging | 8 | **canônico**: Message Queue, Message Broker, Pub/Sub, Event, Consumer Groups, Message Ordering, Delivery Semantics, Dead Letter Queue · Requires: Service Communication |
+| 11 | Resilience Patterns | 9 | **canônico**: Timeout, Retry, **Idempotency**, Backoff, Jitter, Retry Storm, Circuit Breaker, Bulkhead · `Rate Limiting` = `revisitOf` Platform/API Fundamentals · Requires: Distributed Systems Fundamentals, Messaging · múltiplas Tasks-root |
+| 12 | Distributed Transactions | 6 | **canônico**: Distributed Transaction, 2PC, Saga (+ Compensating Transaction), Choreography, Orchestration, Transactional Outbox · Requires: Messaging, Resilience Patterns |
+| 13 | Data & Architecture Patterns | 5 | **canônico**: CQRS, Event Sourcing, Materialized View, Database per Service, CDC · Requires: Messaging, Data Distribution |
+| 14 | Architecture Evolution | 5 | **canônico**: Evolutionary Architecture, Fitness Functions, Strangler Fig, Migration Strategy, Build vs Buy · Requires: Software Craft (Dependency & Version Management, Engineering Documentation) · ADR/Tech Debt/Backward Compatibility não recriadas |
 
 Racional: fundamentos → estilos → como atacar um problema de system design → escalar
 um sistema único → cache em escala → disponibilidade → distribuição (CAP, consenso) →
 distribuir dados → comunicação entre serviços → mensageria → resiliência → transações
 distribuídas → padrões de dados avançados → evoluir arquitetura (capstone).
+
+**Auditoria de `Requires` de Task** (rodada dedicada, além da auditoria padrão de
+ownership/consolidação já aplicada nos Epics 01–05): das 108 arestas de `Requires`
+propostas inicialmente, só **63** passaram no teste "é impossível/inadequado
+entender B sem A" — as outras **42** eram ordem pedagógica ou associação temática,
+removidas de `Requires` e preservadas como pointer/contexto quando aplicável (não
+apagadas); **3** foram `REPOINT` para um
+pré-requisito mais correto (`Replication → Distributed System`; `Message Ordering →
+Message Broker`; `Transactional Outbox → Distributed Transaction`). Resultado:
+múltiplas Tasks-root são aceitáveis dentro de uma Story (Stories 06 e 11 em
+particular) — `Requires` não existe para conectar visualmente a árvore.
+
+**Duplicatas resolvidas nesta Epic** (canônico em Epic anterior FROZEN; não
+recriadas aqui, aplicadas via `Requires`/`revisit`):
+- `Coupling` / `Cohesion` / `Separation of Concerns` — canônico em Programming
+  Foundations / Programming Fundamentals (Epic 01).
+- `ADR` / `Backward Compatibility` / `Technical Debt` — canônico em Software Craft.
+- `Latency` / `Throughput` / `Profiling` — canônico em Platform / Performance
+  Engineering.
+
+**Colisões de nome a desambiguar**: `Consistency Models` (distribuído) ≠
+`Consistency (ACID)` (Platform) · `Event` (Messaging, canônico) ≠ `Domain Event`
+(Software Design, canônico) — ambos ficam canônicos, sem `revisitOf` · `CQRS` ≠
+`CQS` (Software Design) — sem `Requires` formal, só pointer histórico ·
+`Service Discovery`/`Service Mesh` ≠ `Service` (K8s) ≠ `Service Layer` (Software
+Design) ≠ `Service Account` (Cloud Security). Lista completa: `06-architecture-
+system-design.md`.
+
+*SUGESTÕES de Task* (não incluídas): Chaos Engineering, Vector Clocks/Lamport
+Timestamps, Quorum, API Composition, Sidecar Pattern, Anti-Corruption Layer,
+Backends for Frontends, Active-Active vs Active-Passive. Lista completa no arquivo
+do Epic.
 
 ### 07 · AI Engineering
 
@@ -381,6 +427,15 @@ Platform / Database Performance / N+1 Query Problem ──▶ Platform / GraphQL
 Architecture / Resilience Patterns ──▶ AI Engineering / Production AI
 Platform / Observability ──▶ AI Engineering / AI Observability
 Platform / Performance Engineering ──▶ AI Engineering / Production AI
+
+--- formalizado na Fase 2 do Epic 06 (2026-09-08) ---
+Software Design / SOLID / DIP ──▶ Architecture / Architecture Fundamentals / Dependency Direction  (revisita, pointer)
+Software Design / Domain Modeling / Bounded Context ──▶ Architecture / Architectural Styles / Microservices  (revisita, pointer — não Requires formal)
+Software Design / Design Principles / CQS ──▶ Architecture / Data & Architecture Patterns / CQRS  (revisita, pointer — sem Requires formal)
+Software Craft / Engineering Documentation / ADR, Dependency & Version Management / Technical Debt + Backward Compatibility ──▶ Architecture / Architecture Evolution  (Requires formal)
+Platform / Database Design / Database Migration ──▶ Architecture / Architecture Evolution / Migration Strategy  (revisita, pointer)
+Platform / Performance Engineering / Throughput ──▶ Architecture / System Design Fundamentals / Capacity Estimation  (Requires formal; Latency fica só pointer)
+Architecture / Distributed Systems Fundamentals ──▶ Architecture / Data Distribution, Messaging, Resilience Patterns, Distributed Transactions, Data & Architecture Patterns  (intra-Epic, acíclico)
 ```
 
 ### Conceitos transversais — lar canônico × revisita
@@ -389,7 +444,7 @@ Platform / Performance Engineering ──▶ AI Engineering / Production AI
 |---|---|---|
 | Coupling / Cohesion / SoC | Programming Foundations / Programming Fundamentals | Software Craft; Software Design; Architecture Fundamentals |
 | Abstraction / Encapsulation / Interface / Contract / Polymorphism | Programming Foundations / Programming Fundamentals | Software Design / OOD, SOLID |
-| Entity / Value Object / Identity | Software Design / Object-Oriented Design | Software Design / Domain Modeling (framing DDD, `canonical: false`); Architecture (futuro) |
+| Entity / Value Object / Identity | Software Design / Object-Oriented Design | Software Design / Domain Modeling (framing DDD, `canonical: false`) |
 | Pure Functions / Immutability / Side Effects / Referential Transparency | Programming Foundations / Functional Programming | AI (determinismo) — removido de Software Craft / Clean Code |
 | Closure / Higher-Order Functions / Function Composition | Programming Foundations / Functional Programming | Async / Callback; Frontend (SUGESTÃO) |
 | Memory / Value vs Reference / Stack vs Heap / Call Stack / GC / Memory Leak | Programming Foundations / Memory & Runtime | Async / Event Loop; Concurrency; Platform / Performance; Frontend (SUGESTÃO) |
@@ -409,10 +464,12 @@ Platform / Performance Engineering ──▶ AI Engineering / Production AI
 | Caching (patterns) | Platform / Caching | Architecture / Caching at Scale; AI / Production AI (Semantic Cache) |
 | Latency / Throughput / CPU vs I/O bound / Profiling | Platform / Performance Engineering | Architecture / System Design Fundamentals; AI / Production AI (TTFT, Model Latency) |
 | Consistency (ACID) | Platform / Database Transactions | colide de nome com Distributed Consistency — sentido diferente |
-| Consistency (distributed) / Eventual Consistency | Architecture / Distributed Systems Fundamentals | Architecture / Messaging; Architecture / Data Patterns |
+| Consistency (distributed) / Eventual Consistency *(Task: Consistency Models (Strong / Eventual))* | Architecture / Distributed Systems Fundamentals | Architecture / Data Distribution (Replication Topologies), Messaging (Message Ordering), Distributed Transactions (Saga Pattern) — todos pointer `[R]`, sem `Requires` universal |
 | Least Privilege | Platform / Authorization | Platform / Cloud Security (Least Privilege in Cloud, `canonical: false`); AI / Safety & Guardrails |
 | Observability (logs/metrics/traces) / OpenTelemetry | Platform / Observability | AI / AI Observability; Architecture / Reliability |
-| ADR / Technical Debt / Backward Compatibility | Software Craft | Architecture / Architecture Evolution |
+| ADR / Technical Debt / Backward Compatibility | Software Craft | Architecture / Architecture Evolution (`Requires` formal — Fase 2 · Epic 06) |
+| CQS (Command-Query Separation) | Software Design / Design Principles | Architecture / Data & Architecture Patterns (`CQRS` — generaliza para arquitetura, pointer `[R]`, sem `Requires` formal) |
+| Event (transporte/infraestrutura) | Architecture / Messaging | **[≠]** ≠ `Domain Event` (Software Design / Domain Modeling) — ambos canônicos, colisão anotada, sem `revisitOf` (decisão Fase 2 · Epic 06) |
 | N+1 Query Problem | Platform / Database Performance | Platform / GraphQL (N+1 in Resolvers, `canonical: false`); Architecture (chatty I/O) |
 | TLS *(+ HTTPS subtopic)* | Platform / Web Fundamentals | Platform / Application Security (Encryption in Transit) |
 | Input Validation *(segurança)* | Platform / Application Security | Platform / API Fundamentals (Request Validation = contrato/boundary, conceito distinto) |
@@ -459,7 +516,7 @@ Platform / Performance Engineering ──▶ AI Engineering / Production AI
 |---|---|---|
 | **Fase 1** | Epics → Stories, ordem, racional, sobreposições, dependências de alto nível | ✅ Aprovada 2026-09-03 |
 | **Fase 2** | Detalhamento Epic por Epic: ordenar Tasks, `Requires` por Task, canônico × revisita, consolidar duplicatas, SUGESTÕES de Task | 🔄 Em andamento — uma rodada por Epic, com aprovação |
-| **Fase 3** | Implementação visual: `data/roadmap.js`, navegação Área → Módulo → Conceito, identidade visual da referência | 🔜 Próximo passo — 1ª versão: 7 Epics na Home + navegação completa para os Epics com Fase 2 concluída (01–05) |
+| **Fase 3** | Implementação visual: `data/roadmap.js`, navegação Área → Módulo → Conceito, identidade visual da referência | ✅ 1ª versão implementada — navegação completa para os Epics com Fase 2 concluída (**01–06**); Epic 07 aparece na Home sem drill-down |
 
 ### Fase 2 — progresso por Epic
 
@@ -470,24 +527,30 @@ Platform / Performance Engineering ──▶ AI Engineering / Production AI
 | 03 · Software Craft | ✅ **Concluído 2026-09-05** — 9 Stories, 61 Tasks | `03-software-craft.md` |
 | 04 · Software Design | ✅ **Concluído 2026-09-05** — 9 Stories, 56 Tasks | `04-software-design.md` |
 | 05 · Platform Engineering | ✅ **Concluído / FROZEN 2026-09-05** — 21 Stories, 187 Tasks | `05-platform-engineering.md` |
-| 06 · Architecture & System Design | ⏳ Não iniciado | — |
+| 06 · Architecture & System Design | ✅ **Concluído / FROZEN 2026-09-08** — 14 Stories, 93 Tasks | `06-architecture-system-design.md` |
 | 07 · AI Engineering | ⏳ Não iniciado | — |
 
-### Próximo passo — Fase 3, 1ª versão visual
+**Total de Tasks no roadmap (Epics 01–06): 507.** Epic 07 ainda não contribui
+Tasks (Fase 2 não iniciada).
 
-Implementar a primeira versão navegável do roadmap:
-- **Home**: os 7 Epics como cards coloridos (Fase 1).
-- **Navegação completa** (Área → Módulo → Conceito) **para os Epics 01–05**
-  — os únicos com detalhamento Task-a-Task aprovado.
-- Epics 06–07: card na Home, mas sem drill-down de Stories/Tasks até a Fase 2
-  correspondente.
+### Navegação visual — estado atual
+
+A 1ª versão navegável (`index.html` + `js/roadmap/*`) já está implementada no
+repositório. Com o Epic 06 FROZEN:
+- **Home**: os 7 Epics como cards coloridos.
+- **Navegação completa** (Área → Módulo → Conceito) para os **Epics 01–06** —
+  todos com detalhamento Task-a-Task aprovado.
+- **Epic 07**: card na Home, sem drill-down de Stories/Tasks até sua própria
+  Fase 2.
 
 Arquitetura técnica de referência: `../PLAN.md` (Anexo).
 
 ### Arquivos originais
 
-`architecture-e-system-design.md` e `ai-engineering.md` mantêm a estrutura **antiga**
-e serão reorganizados nas próximas rodadas da Fase 2. `design-e-fundamentals.md` já foi
+`ai-engineering.md` mantém a estrutura **antiga** e será reorganizado quando a
+Fase 2 do Epic 07 começar. `architecture-e-system-design.md` já foi
+**totalmente consumido** pelo Epic 06 (14 Stories detalhadas em
+`06-architecture-system-design.md`). `design-e-fundamentals.md` já foi
 **totalmente consumido** (fundamentos de linguagem → Epic 01, detalhados em
 `01-programming-foundations.md`; design/patterns/DDD → Epic 04, detalhados em
 `04-software-design.md`). `software-craft.md` já foi totalmente consumido pelo Epic 03
