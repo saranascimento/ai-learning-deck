@@ -14,7 +14,7 @@ body {
 }
 
 :root {
-  --epic-color: var(--color-accent);
+  --area-color: var(--color-accent);
   --radius-card: 0.9rem;
   --radius-row: 0.6rem;
   --rm-max-width: 77.5rem; /* 1240px */
@@ -86,7 +86,7 @@ body {
   padding: var(--space-md);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-top: 3px solid var(--epic-color);
+  border-top: 3px solid var(--area-color);
   border-radius: var(--radius-card);
 }
 
@@ -98,7 +98,7 @@ body {
   font-size: 0.72rem;
   letter-spacing: 0.14em;
   font-weight: 600;
-  color: var(--epic-color);
+  color: var(--area-color);
 }
 
 .area-card__title {
@@ -108,7 +108,7 @@ body {
 }
 
 a.area-card__title--link:hover {
-  color: var(--epic-color);
+  color: var(--area-color);
 }
 
 .area-card__desc {
@@ -141,7 +141,7 @@ a.area-card__title--link:hover {
 .area-card__more {
   font-size: var(--font-size-small);
   font-weight: 600;
-  color: var(--epic-color);
+  color: var(--area-color);
 }
 
 .area-card__count {
@@ -208,7 +208,7 @@ a.track__row:hover {
 }
 
 a.track__row:hover .track__arrow {
-  color: var(--epic-color);
+  color: var(--area-color);
 }
 
 .track__chips {
@@ -256,7 +256,7 @@ a.track__row:hover .track__arrow {
   font-size: 0.72rem;
   letter-spacing: 0.14em;
   font-weight: 600;
-  color: var(--epic-color);
+  color: var(--area-color);
 }
 
 .page-head__title {
@@ -295,8 +295,8 @@ a.track__row:hover .track__arrow {
 }
 
 .chip--c {
-  border-color: color-mix(in srgb, var(--epic-color) 55%, var(--color-border));
-  color: var(--epic-color);
+  border-color: color-mix(in srgb, var(--area-color) 55%, var(--color-border));
+  color: var(--area-color);
 }
 
 .chip--r {
@@ -359,7 +359,7 @@ a.track__row:hover .track__arrow {
 }
 
 .taglist__item a {
-  color: var(--epic-color);
+  color: var(--area-color);
 }
 
 .muted {
@@ -377,7 +377,7 @@ a.track__row:hover .track__arrow {
 }
 
 /* ---- navegação sequencial entre Conceitos -------------------- */
-.task-nav {
+.concept-nav {
   display: flex;
   justify-content: space-between;
   gap: var(--space-sm);
@@ -386,15 +386,15 @@ a.track__row:hover .track__arrow {
   font-size: var(--font-size-small);
 }
 
-.task-nav__link {
+.concept-nav__link {
   color: var(--color-text-muted);
 }
 
-.task-nav__link:hover {
-  color: var(--epic-color);
+.concept-nav__link:hover {
+  color: var(--area-color);
 }
 
-.task-nav__link--next {
+.concept-nav__link--next {
   text-align: right;
   margin-left: auto;
 }

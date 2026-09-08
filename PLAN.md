@@ -273,33 +273,52 @@ Epic 07 = 161). **Fase 2 completa.**
 
 ---
 
-## Anexo — Arquitetura técnica (referência para a Fase 3)
+## Anexo — Arquitetura técnica
 
-Mantém o estilo atual: sem build, sem framework, IIFE + `window.App`.
+Sem build, sem framework, sem bundler. **ES Modules nativos** servidos via HTTP
+estático. `index.html` carrega um único entrypoint: `<script type="module"
+src="src/app/app.js">`. Não abre por `file://` (CORS de módulo) — servir localmente
+(ex.: `python3 -m http.server`).
 
-- **Dado**: `data/roadmap.js` único (`window.App.roadmap = [...]`), árvore aninhada
-  Epic → Story → Task. Só metadados/títulos/ordem/resources; conteúdo futuro da Task
-  fica fora (slot `content: null`). ~200 objetos ≈ um `<script>` síncrono resolve.
-- **Schema (resumo)**: cada nó tem `id` estável e imutável (chave de rota e de
-  progresso), `jiraType` (`"epic"|"story"|"task"`), `title`, `slug`, `order` esparso
-  (10, 20, 30…); Epic tem `color`; Task tem `resources[]`
-  (`{type:"deck", deckId}` resolve via `App.presentations`) e `jiraKey` (null agora,
-  para sync futuro com Jira).
-- **Navegação**: `index.html` único + roteamento por hash
-  (`#/`, `#/e/:epic`, `#/e/:epic/s/:story`, `#/e/:epic/s/:story/t/:task` reservada).
-  Hash funciona em `file://` e host estático; deep-link e botão voltar nativos.
-- **Módulos novos** (IIFE): `js/roadmap/data.js` (`App.roadmapModel` — acessores +
-  `flattenTasks()` para ordem pedagógica global), `router.js`, `views.js`
-  (`renderHome/renderEpic/renderStory` via `createElement`), `app.js` (bootstrap).
-  `js/home.js` é substituído; `js/navigation.js` fica intocado (exclusivo dos decks).
-- **Progresso** (preparado, atrás de `App.config.progressEnabled = false`):
-  `js/roadmap/progress.js` com `App.progress` (`getStatus/setStatus/cycleStatus`,
-  `rollup(node) → {done,total}`, `nextRecommendedTask()`); persistência em
-  `localStorage` chave `App:roadmap:progress:v1` = `{ "<taskId>": "STUDYING"|"DONE" }`.
-  API sempre existe; só a UI de status/contadores/"CONTINUAR ESTUDANDO" é condicionada.
-- **Estilo**: novo `css/roadmap.css` (só na Home). Cor por Epic = `el.style.setProperty
-  ("--epic-color", epic.color)` + `var(--epic-color)` no CSS; zero CSS por-Epic.
-  `css/{layout,components,diagram}.css` continuam exclusivos dos decks.
-- **Compat**: `data/presentations.js` mantido como registro de decks (catálogo de
-  `resources`). `home__intro` "Papo de IA" vira o masthead da Home do Roadmap.
-  Decks e `js/navigation.js` intocados.
+Modelo de domínio: **Area → Module → Concept** (interface: Área → Módulo → Conceito).
+Vocabulário próprio — Jira, se um dia houver integração, é uma fronteira externa; o
+domínio não conhece Jira.
+
+Estrutura **feature-first** sob `src/` (reestruturado 2026-09-08 — antes era
+`data/roadmap.js` God File + `js/roadmap/*` IIFE + `window.App` + nomenclatura
+Epic/Story/Task; ver `refactor(roadmap): modularize architecture and domain model`):
+
+```
+src/
+├── app/app.js                     entrypoint do browser — compõe model+router+views+progress
+├── roadmap/
+│   ├── data/
+│   │   ├── builders.js            export area()/module()/concept()
+│   │   ├── meta.js                export roadmapMeta
+│   │   ├── index.js               composition root do dataset — export { roadmap, roadmapMeta }
+│   │   └── areas/01..07-*.js      1 arquivo por Area — import builders → export default area({…})
+│   ├── model/roadmap-model.js     export roadmapModel — indexa (slug/id/back-pointers/sort) + acessores + flattenConcepts + resolveResource
+│   ├── ui/views.js                export views — renderHome/Area/Module/Concept via createElement
+│   ├── routing/router.js          export router — hash routing (#/, #/areas/:area, /modules/:module, /concepts/:concept)
+│   └── progress/progress.js       export progress + config — API pronta, UI atrás de config.progressEnabled === false
+└── presentations/catalog.js       export presentations — catálogo de decks (resources)
+```
+
+- **Grafo de imports** (DAG): `builders`/`meta` → `areas/*` → `data/index.js` →
+  `model/roadmap-model.js` (+ `presentations/catalog.js`) → `ui`,`routing`,`progress`
+  → `app/app.js`. Consumidores importam de `data/index.js`, nunca de `areas/*`.
+- **Sem globais**: nenhum `window.App`. Só APIs de browser (`location.hash`,
+  `localStorage`, `scrollTo`) + o CustomEvent `roadmap:progress` (progress → app).
+- **Sem Jira no domínio**: sem `jiraType` (→ `kind: "area"|"module"|"concept"`), sem
+  `jiraKey`. Uma futura sincronização Jira mapearia `concept.id` → chave externa fora
+  do `src/roadmap/` (não existe hoje).
+- **Schema (resumo)**: cada nó tem `id`/`slug` derivados no model (chave de rota e de
+  progresso), `kind` (`"area"|"module"|"concept"`), `title`, `order` esparso (10, 20,
+  30…); Area tem `color`; Concept tem `resources[]` (`{type:"deck", deckId}` resolve
+  contra `presentations`) e `content: null` (slot futuro).
+- **Rotas**: `#/` · `#/areas/:area` · `#/areas/:area/modules/:module` ·
+  `#/areas/:area/modules/:module/concepts/:concept` (slugs derivados de `title`).
+- **Estilo**: `css/roadmap.css` (só na Home). Cor por Area = `el.style.setProperty
+  ("--area-color", area.color)` + `var(--area-color)`; zero CSS por-Area.
+  `css/{layout,components,diagram}.css` e `js/navigation.js` continuam exclusivos dos
+  decks (intocados; deck HTML em `presentations/<slug>/index.html`).
