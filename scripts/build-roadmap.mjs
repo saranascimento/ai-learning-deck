@@ -1,11 +1,10 @@
 /*
- * build-roadmap — R3.5.2: SCAFFOLD + AUDITORIA + SHELL DE PREVIEW.
+ * build-roadmap — R3.5.3: AUDITORIA + PREVIEW (Home real + 404).
  *
- * Preserva todas as validações da R3.5.1 (invariantes, unicidade de path/slug,
- * auditoria R2, testes de path/relativização) e, se tudo passar, gera o primeiro
- * HTML estático de verdade: build/preview/index.html e build/preview/404.html —
- * apenas o SHELL semântico (landmarks + skip-link), sem Home/Area/Module/Concept
- * e sem JavaScript.
+ * Preserva todas as validações da R3.5.1/R3.5.2 (invariantes, unicidade de
+ * path/slug, auditoria R2, testes de path/relativização, shell/landmarks) e, se
+ * tudo passar, gera build/preview/index.html com a Home real do DevAtlas (7
+ * Áreas) + build/preview/404.html. Area/Module/Concept → R3.5.4+. Sem JavaScript.
  *
  * Requisitos: Node >= 22.7 (detecção de sintaxe ESM sem package.json). Zero
  * dependências. Só escreve dentro de build/ (gitignored). Não toca na SPA.
@@ -21,6 +20,8 @@ import { roadmap, roadmapMeta } from "../src/roadmap/data/index.js";
 import { roadmapModel as model } from "../src/roadmap/model/roadmap-model.js";
 import { HOME_PATH, pathFor, filePathFor, depthOf, relativize } from "../src/roadmap/routing/paths.js";
 import { renderDocument, escapeAttr } from "../src/roadmap/render/html.mjs";
+import { renderHome } from "../src/roadmap/render/home.mjs";
+import { num, escapeHtml } from "../src/roadmap/render/partials.mjs";
 
 // ---- harness mínimo (sem framework, sem deps) -----------------------------
 const results = [];
@@ -216,7 +217,7 @@ expect("Contagens futuras", "roadmap node paths", nodeCount, 764);
 expect("Contagens futuras", "content routes (1 Home + 7 + 89 + 668)", contentRoutes, 765);
 expect("Contagens futuras", "HTML pages (765 content + 1 página 404)", htmlPages, 766);
 
-// ---- 8. shell de preview (R3.5.2) — gerado, escrito só se tudo passar --
+// ---- 8. preview: Home real (R3.5.3) + 404 (R3.5.2) --------------------
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const PREVIEW_DIR = join(ROOT, "build", "preview");
 // CSS existente é COPIADO para dentro de build/preview/css/ para o preview ser
@@ -226,24 +227,45 @@ const CSS_FILES = ["reset.css", "variables.css", "base.css", "roadmap.css", "roa
 const STYLESHEETS = CSS_FILES.map((p) => "css/" + p);
 
 const homeHref = relativize(HOME_PATH, HOME_PATH); // "./"
-const SITE = roadmapMeta.title;
 
-const indexHtml = renderDocument({
-  title: "Preview HTML-first · " + SITE,
+// Identidade do produto — DevAtlas. Separada do roadmapMeta (que descreve só o
+// conjunto de conteúdo: as 7 Áreas). Futuramente pode virar src/site/product.mjs
+// ou um campo product: em meta.js sem rework — os renderers já recebem por
+// parâmetro. Serve a todos os níveis (do básico ao avançado): sem copy de sênior.
+const PRODUCT = {
+  name: "DevAtlas",
+  tagline: "Mapa de conhecimento para desenvolvimento de software.",
+  footerText: "DevAtlas — mapa de conhecimento para desenvolvimento de software.",
+};
+
+// view-model da Home montado a partir de model + paths; home.mjs é puro sobre ele.
+const areaVM = model.areas().map((a, i) => ({
+  index: i,
+  title: a.title,
+  slug: a.slug,
+  navigable: a.status === "navigable",
+  summary: a.summary,
+  color: a.color,
+  moduleCount: model.moduleCount(a),
+  conceptCount: model.conceptCount(a),
+  href: relativize(HOME_PATH, pathFor(a)), // "areas/<slug>/"
+}));
+const deckVM = model.decks().map((d) => ({ title: d.title, url: d.url }));
+
+const indexHtml = renderHome({
+  product: PRODUCT,
+  areas: areaVM,
+  decks: deckVM,
   homeHref,
-  homeLabel: SITE,
   stylesheets: STYLESHEETS,
-  main: [
-    "      <h1>Preview HTML-first do Roadmap Senior</h1>",
-    "      <p>Shell estático gerado por <code>scripts/build-roadmap.mjs</code> (R3.5.2). Prova que HTML semântico real pode ser servido por HTTP estático, sem JavaScript.</p>",
-    "      <p>A Home real (Áreas do roadmap) passa a ser gerada na etapa R3.5.3.</p>",
-  ].join("\n"),
 });
 
 const notFoundHtml = renderDocument({
-  title: "Página não encontrada · " + SITE,
+  title: "Página não encontrada · " + PRODUCT.name,
   homeHref,
-  homeLabel: SITE,
+  homeLabel: PRODUCT.name,
+  navLabel: PRODUCT.name,
+  footerText: PRODUCT.footerText,
   stylesheets: STYLESHEETS,
   main: [
     "      <h1>Página não encontrada</h1>",
@@ -252,7 +274,10 @@ const notFoundHtml = renderDocument({
   ].join("\n"),
 });
 
-function shellChecks(label, html) {
+// landmarks/shell — comuns às duas páginas (Home tem <header class="masthead">
+// e <footer class="home-decks"> DENTRO do <main>: válidos, não são banner/
+// contentinfo — por isso as contagens miram o site-header / site-footer).
+function landmarkChecks(label, html) {
   const g = "Shell (" + label + ")";
   record(g, "doctype minúsculo", html.startsWith("<!doctype html>"));
   record(g, 'lang="pt-BR"', html.includes('<html lang="pt-BR">'));
@@ -260,24 +285,81 @@ function shellChecks(label, html) {
   record(g, "meta viewport", html.includes('name="viewport"'));
   record(g, "<title> não vazio", /<title>[^<]+<\/title>/.test(html));
   record(g, "skip-link aponta para #main", html.includes('<a href="#main" class="skip-link">Pular para o conteúdo principal</a>'));
-  record(g, "exatamente um <header>", (html.match(/<header[\s>]/g) || []).length === 1);
-  record(g, 'nav aria-label="Roadmap"', html.includes('<nav aria-label="Roadmap">'));
+  record(g, "exatamente um <header class=\"site-header\">", (html.match(/<header class="site-header">/g) || []).length === 1);
+  record(g, `nav aria-label="${PRODUCT.name}" (uma vez)`, (html.match(new RegExp(`<nav aria-label="${PRODUCT.name}">`, "g")) || []).length === 1);
+  record(g, `rodapé = "${PRODUCT.footerText}"`, html.includes(`<footer class="site-footer">\n      <p>${PRODUCT.footerText}</p>`));
+  record(g, "sem copy de nível/sênior (Senior Software Engineer / sênior / roadmap sênior)", !/senior software engineer|nível sênior|roadmap.{0,12}sênior/i.test(html));
   record(g, "exatamente um <main>", (html.match(/<main[\s>]/g) || []).length === 1);
   record(g, 'main#main tabindex="-1"', html.includes('<main id="main" tabindex="-1">'));
-  record(g, "exatamente um <footer>", (html.match(/<footer[\s>]/g) || []).length === 1);
+  record(g, "exatamente um <footer class=\"site-footer\">", (html.match(/<footer class="site-footer">/g) || []).length === 1);
   record(g, "exatamente um <h1>", (html.match(/<h1[\s>]/g) || []).length === 1);
   record(g, "sem aria-live", !html.includes("aria-live"));
   record(g, "sem <script>", !html.toLowerCase().includes("<script"));
   record(g, "_shell.css referenciado", html.includes("css/roadmap/_shell.css"));
-  record(g, "assets só por caminho relativo (sem base absoluta)", !/(?:href|src)="\//.test(html) && !html.includes("/ai-learning-deck/"));
+  record(g, "assets/links sem base absoluta, sem hash-route", !/(?:href|src)="(?:\/|https?:|#\/)/.test(html) && !html.includes("/ai-learning-deck/"));
 }
-shellChecks("index.html", indexHtml);
-shellChecks("404.html", notFoundHtml);
+landmarkChecks("index.html", indexHtml);
+landmarkChecks("404.html", notFoundHtml);
+
+// ---- 9. validação da Home real --------------------------------------
+{
+  const g = "Home";
+  const titleLinks = [...indexHtml.matchAll(/<h2 class="area-card__title"><a class="area-card__title--link" href="([^"]+)">([^<]+)<\/a><\/h2>/g)];
+  record(g, "exatamente 7 <li class=\"area-card\">", (indexHtml.match(/<li class="area-card/g) || []).length === 7);
+  record(g, "exatamente 7 títulos <h2 class=\"area-card__title\">", (indexHtml.match(/<h2 class="area-card__title">/g) || []).length === 7);
+  record(g, "7 Áreas navegáveis com <a href> no título", titleLinks.length === 7);
+  record(g, 'lista semântica <ul class="area-grid"> com 7 <li>', /<ul class="area-grid"[^>]*>/.test(indexHtml));
+  record(g, "um único <h1> (masthead)", (indexHtml.match(/<h1[\s>]/g) || []).length === 1);
+  record(g, `masthead h1 = "${PRODUCT.name}"`, indexHtml.includes(`<h1 class="masthead__title">${PRODUCT.name}</h1>`));
+  record(g, `masthead subtítulo = "${PRODUCT.tagline}"`, indexHtml.includes(`<p class="masthead__subtitle">${PRODUCT.tagline}</p>`));
+  record(g, "identidade do produto NÃO vem de roadmapMeta.title", !indexHtml.includes(`>${roadmapMeta.title}<`));
+
+  let orderOk = true;
+  let countOk = true;
+  let kickerOk = true;
+  model.areas().forEach((a, i) => {
+    const link = titleLinks[i];
+    if (!link || link[2] !== escapeHtml(a.title) || link[1] !== relativize(HOME_PATH, pathFor(a))) orderOk = false;
+    if (!indexHtml.includes(`>${model.moduleCount(a)} módulos · ${model.conceptCount(a)} conceitos<`)) countOk = false;
+    if (!indexHtml.includes(`<p class="area-card__kicker">${("Área " + num(i)).toUpperCase()}</p>`)) kickerOk = false;
+  });
+  record(g, "ordem + títulos + hrefs idênticos ao model", orderOk);
+  record(g, "kickers ÁREA 01..07 na ordem", kickerOk);
+  record(g, "contagens Modules · Concepts por Área corretas", countOk);
+  record(g, "hrefs de Área = areas/<slug>/ (relativo)", titleLinks.every(([, href], i) => href === "areas/" + model.areas()[i].slug + "/"));
+  record(g, "sem href de hash (#/)", !indexHtml.includes("#/"));
+  record(g, "sem href absoluto (leading /) nem /ai-learning-deck/", !/href="\//.test(indexHtml) && !indexHtml.includes("/ai-learning-deck/"));
+  record(g, "sem <script>", !indexHtml.toLowerCase().includes("<script"));
+  record(g, "sem aria-live", !indexHtml.includes("aria-live"));
+
+  // decks / resources
+  record(g, `${deckVM.length} decks no rodapé <footer class="home-decks">`, deckVM.length > 0 && indexHtml.includes('<footer class="home-decks">'));
+  record(
+    g,
+    "títulos + hrefs relativos dos decks corretos",
+    deckVM.every((d) => indexHtml.includes(`<a href="${d.url}">${d.title}</a>`) && !d.url.startsWith("/") && !d.url.includes("#"))
+  );
+
+  // ramo não-navegável (0 áreas assim hoje) — teste sintético
+  const synth = renderHome({
+    product: { name: "T", tagline: "S", footerText: "T" },
+    areas: [
+      { index: 0, title: "Em Obras", slug: "em-obras", navigable: false, summary: "x", color: "#ffffff", moduleCount: 3, conceptCount: 0, href: "areas/em-obras/" },
+    ],
+    decks: [],
+    homeHref: "./",
+    stylesheets: [],
+  });
+  record("Home (não navegável)", "título sem <a href>", !synth.includes('class="area-card__title--link"'));
+  record("Home (não navegável)", 'badge "Em estruturação"', synth.includes('<p class="area-card__badge">Em estruturação</p>'));
+  record("Home (não navegável)", '"N módulos planejados"', synth.includes("3 módulos planejados"));
+  record("Home (não navegável)", "classe area-card--structuring", synth.includes("area-card--structuring"));
+}
 
 // ---- relatório ---------------------------------------------------------
 const GROUPS = [...new Set(results.map((r) => r.group))];
 const failed = results.filter((r) => !r.ok).length;
-console.log("build-roadmap — R3.5.2  (scaffold + auditoria + shell de preview)\n");
+console.log("build-roadmap — R3.5.3  (auditoria + preview: Home real + 404)\n");
 for (const group of GROUPS) {
   console.log(group);
   for (const r of results.filter((x) => x.group === group)) {
@@ -292,7 +374,7 @@ console.log(`  total ${audit.total} · resolved ${audit.resolved} · ambiguous $
 for (const o of audit.offenders.slice(0, 20)) console.log(`  ✗ ${o.kind}: ${JSON.stringify(o.ref)} → ${o.status}`);
 console.log("");
 
-console.log("Contagens conceituais (futuras — Home/Area/Module/Concept ainda não gerados)");
+console.log("Contagens conceituais (Area/Module/Concept ainda não gerados — R3.5.4+)");
 console.log(`  ${nodeCount} roadmap node paths`);
 console.log(`  ${contentRoutes} content routes futuras: 1 Home + ${areaCount} Areas + ${moduleCount} Modules + ${conceptCount} Concepts`);
 console.log(`  ${htmlPages} HTML pages futuras: ${contentRoutes} content pages + 1 página 404`);
@@ -300,7 +382,7 @@ console.log("  Artefatos auxiliares (ex.: _routes.txt) NÃO entram nessa contage
 console.log("");
 
 // ---- escrita do preview — só se TODAS as invariantes passaram ---------
-console.log("Preview estático (R3.5.2 — só o shell; sem Home/Area/Module/Concept, sem JS)");
+console.log("Preview estático (R3.5.3 — Home real + 404; Area/Module/Concept → R3.5.4+; sem JS)");
 if (failed === 0) {
   mkdirSync(join(PREVIEW_DIR, "css", "roadmap"), { recursive: true });
   for (const f of CSS_FILES) copyFileSync(join(ROOT, "css", f), join(PREVIEW_DIR, "css", f));

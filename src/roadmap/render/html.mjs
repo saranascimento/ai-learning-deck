@@ -1,10 +1,11 @@
 /*
  * html — renderer de SHELL HTML por string (R3.5.2).
  *
- * Puro: sem I/O, sem estado, sem DOM. Não fabrica conteúdo do roadmap — só o
+ * Puro: sem I/O, sem estado, sem DOM. Não fabrica o conteúdo das páginas — só o
  * documento semântico ao redor de um `<main>` recebido pronto como string.
- * Os href/src são passados já resolvidos pelo chamador (o build usa
- * paths.relativize); este módulo não conhece paths, domínio nem deploy.
+ * Os href/src e a identidade do produto (nome, rodapé) são passados já
+ * resolvidos pelo chamador; este módulo não conhece paths, domínio, deploy nem
+ * o nome do produto.
  */
 
 export function escapeHtml(value) {
@@ -23,19 +24,23 @@ export function escapeAttr(value) {
 }
 
 /**
- * renderDocument({ title, main, homeHref, homeLabel, stylesheets })
+ * renderDocument({ title, main, homeHref, homeLabel, stylesheets, navLabel, footerText })
  *   - title       : conteúdo de <title> (texto)
  *   - main        : HTML interno de <main>, já como string (não escapado)
  *   - homeHref    : href relativo já resolvido para a Home
- *   - homeLabel   : rótulo do link para a Home
+ *   - homeLabel   : rótulo do link para a Home (nome do produto)
  *   - stylesheets : lista de href de CSS já resolvidos (ordem preservada)
+ *   - navLabel    : aria-label da <nav> do site (default: homeLabel)
+ *   - footerText  : texto do rodapé do site (default: homeLabel)
  *
  * Sem aria-live global. Sem <script>.
  */
-export function renderDocument({ title, main, homeHref, homeLabel, stylesheets = [] }) {
+export function renderDocument({ title, main, homeHref, homeLabel, stylesheets = [], navLabel, footerText }) {
   const links = stylesheets
     .map((href) => `    <link rel="stylesheet" href="${escapeAttr(href)}" />`)
     .join("\n");
+  const navAria = navLabel || homeLabel;
+  const footer = footerText || homeLabel;
 
   return `<!doctype html>
 <html lang="pt-BR">
@@ -48,7 +53,7 @@ ${links}
   <body>
     <a href="#main" class="skip-link">Pular para o conteúdo principal</a>
     <header class="site-header">
-      <nav aria-label="Roadmap">
+      <nav aria-label="${escapeAttr(navAria)}">
         <a href="${escapeAttr(homeHref)}" class="site-header__home">${escapeHtml(homeLabel)}</a>
       </nav>
     </header>
@@ -56,7 +61,7 @@ ${links}
 ${main}
     </main>
     <footer class="site-footer">
-      <p>Roadmap Senior — roteiro de estudo e revisão para Senior Software Engineer.</p>
+      <p>${escapeHtml(footer)}</p>
     </footer>
   </body>
 </html>
