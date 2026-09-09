@@ -11,6 +11,7 @@
 import { roadmapModel as model } from "../model/roadmap-model.js";
 import { roadmapMeta as M } from "../data/index.js";
 import { router } from "../routing/router.js";
+import { initConceptTabs } from "./concept-tabs.js";
 
 // ---- helper de DOM ----------------------------------------------------------
 function el(tag, attrs, children) {
@@ -262,37 +263,107 @@ function renderModule(area, module) {
 }
 
 // ---- CONCEITO (Concept) -------------------------------------------------------
+
+// Bloco rotulado da área fixa do Conceito: <section aria-labelledby> + heading real.
+// Não usa field() (que segue servindo o Módulo) — aqui os rótulos são headings para
+// dar à página de Conceito um outline navegável (h1 → h2 → h3).
+function conceptSection(id, label, level, body) {
+  return el("section", { class: "concept-section", "aria-labelledby": id }, [
+    el("h" + level, { id: id, class: "concept-section__title", text: label }),
+    el("div", { class: "concept-section__body" }, body),
+  ]);
+}
+
+// Um painel da "Área de estudo". R3: content/examples/exercise estão sempre vazios
+// (content: null, examples: [], exercise: null) → renderiza só o empty-state. A
+// estrutura (section + h3 + data-study-panel) já é a que R5+ vai preencher e que o
+// enhancement de tabs (concept-tabs.js) promove ao padrão APG.
+function studyPanel(key, label, emptyText) {
+  return el("section", { class: "study-panel", "data-study-panel": key }, [
+    el("h3", { class: "concept-section__title study-panel__title", text: label }),
+    el("p", { class: "empty-state", text: emptyText }),
+  ]);
+}
+
 function renderConcept(area, module, concept) {
   const ci = model.concepts(module).indexOf(concept);
   const sib = model.siblingConcepts(concept);
-
   const resources = (concept.resources || []).map((r) => model.resolveResource(r)).filter(Boolean);
-
   const from = { area: area, module: module };
 
-  const fields = [
-    field(
+  // Área fixa: Resumo → relações → Recursos. note/collision/isNew ficam de fora da UI
+  // (metadata editorial) — sem tocar o dataset.
+  const fixed = [
+    conceptSection(
+      "concept-resumo",
+      "Resumo",
+      2,
+      concept.summary ? el("p", { text: concept.summary }) : el("p", { class: "empty-state", text: "Resumo ainda não disponível." })
+    ),
+    conceptSection(
+      "concept-requires",
       "Pré-requisitos (Requires)",
+      2,
       concept.requires && concept.requires.length ? refList(concept.requires, from) : el("span", { class: "muted", text: "nenhum" })
     ),
-    concept.revisitOf ? field("Revisita de", refInline(concept.revisitOf, from)) : null,
-    concept.note ? field("Nota", el("p", { text: concept.note })) : null,
-    concept.subtopics && concept.subtopics.length ? field("Subtópicos", tagList(concept.subtopics)) : null,
-    concept.revisit && concept.revisit.length ? field("Revisitado em", refList(concept.revisit, from)) : null,
-    resources.length
-      ? field(
-          "Recursos",
-          el(
-            "ul",
-            { class: "taglist" },
-            resources.map((r) => el("li", { class: "taglist__item" }, [el("a", { href: r.url, text: r.label })]))
-          )
-        )
-      : null,
   ];
 
-  return setAreaColor(
-    el("div", { class: "view view--concept" }, [
+  if (concept.revisitOf) fixed.push(conceptSection("concept-revisitof", "Revisita de", 2, refInline(concept.revisitOf, from)));
+  if (concept.subtopics && concept.subtopics.length) fixed.push(conceptSection("concept-subtopics", "Subtópicos", 2, tagList(concept.subtopics)));
+  if (concept.revisit && concept.revisit.length) fixed.push(conceptSection("concept-revisit", "Revisitado em", 2, refList(concept.revisit, from)));
+  if (resources.length) {
+    fixed.push(
+      conceptSection(
+        "concept-resources",
+        "Recursos",
+        2,
+        el(
+          "ul",
+          { class: "taglist" },
+          resources.map((r) => el("li", { class: "taglist__item" }, [el("a", { href: r.url, text: r.label })]))
+        )
+      )
+    );
+  }
+
+  // Área de estudo — 3 <section> sequenciais, sempre visíveis e legíveis sem JS.
+  const studyArea = el("section", { class: "study-area", "aria-labelledby": "concept-study-heading" }, [
+    el("h2", { id: "concept-study-heading", class: "concept-section__title", text: "Área de estudo" }),
+    el("div", { class: "study-area__panels", "data-study-tabs": "" }, [
+      studyPanel("conteudo", "Conteúdo", "Conteúdo ainda não disponível."),
+      studyPanel("exemplos", "Exemplos", "Exemplos ainda não disponíveis."),
+      studyPanel("exercicio", "Exercício", "Exercício ainda não disponível."),
+    ]),
+  ]);
+
+  // Navegação anterior/próximo — links reais; rel=prev/next; nome acessível nomeia o
+  // conceito de destino. Sem aria-current (não representam a página atual).
+  const navLinks = [];
+  if (sib.prev) {
+    navLinks.push(
+      el("a", {
+        class: "concept-nav__link concept-nav__link--prev",
+        href: router.concept(sib.prev),
+        rel: "prev",
+        "aria-label": "Conceito anterior: " + sib.prev.title,
+        text: "← " + sib.prev.title,
+      })
+    );
+  }
+  if (sib.next) {
+    navLinks.push(
+      el("a", {
+        class: "concept-nav__link concept-nav__link--next",
+        href: router.concept(sib.next),
+        rel: "next",
+        "aria-label": "Próximo conceito: " + sib.next.title,
+        text: sib.next.title + " →",
+      })
+    );
+  }
+
+  const viewNode = setAreaColor(
+    el("div", { class: "view view--concept concept-study" }, [
       crumbs([
         { label: M.title, href: router.home() },
         { label: area.title, href: router.area(area) },
@@ -302,19 +373,20 @@ function renderConcept(area, module, concept) {
       el("header", { class: "page-head" }, [
         el("p", { class: "page-head__kicker", text: (M.interfaceLabels.concept + " " + num(ci)).toUpperCase() }),
         el("h1", { class: "page-head__title", text: concept.title }),
-        el("div", { class: "markers" }, markerChips(concept)),
+        // Grupo nomeado — dá contexto aos chips (que continuam <span>). A
+        // reestruturação semântica dos chips em si fica para a R3.5.
+        el("div", { class: "markers", role: "group", "aria-label": "Classificações" }, markerChips(concept)),
       ]),
-      el("section", { class: "detail-block" }, fields),
-      el("section", { class: "placeholder-card" }, [
-        el("p", { text: "Conteúdo de estudo — definição, por que existe, problema que resolve, exemplos, código, exercício e revisão — será adicionado numa fase futura." }),
-      ]),
-      el("nav", { class: "concept-nav", "aria-label": "conceitos do módulo" }, [
-        sib.prev ? el("a", { class: "concept-nav__link concept-nav__link--prev", href: router.concept(sib.prev), text: "← " + sib.prev.title }) : el("span", {}),
-        sib.next ? el("a", { class: "concept-nav__link concept-nav__link--next", href: router.concept(sib.next), text: sib.next.title + " →" }) : el("span", {}),
-      ]),
+      el("div", { class: "detail-block" }, fixed),
+      studyArea,
+      navLinks.length ? el("nav", { class: "concept-nav", "aria-label": "Navegação entre conceitos" }, navLinks) : null,
     ]),
     area
   );
+
+  // Progressive enhancement: promove a Área de estudo a APG Tabs quando há JS.
+  initConceptTabs(viewNode);
+  return viewNode;
 }
 
 function renderNotFound() {

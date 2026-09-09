@@ -447,14 +447,127 @@ a.relation-pill:focus-visible {
   color: var(--color-text-muted);
 }
 
-/* ---- placeholder de conteúdo futuro ---------------------------- */
-.placeholder-card {
-  border: 1px dashed var(--color-border);
-  border-radius: var(--radius-card);
-  padding: var(--space-md);
+/* ---- Concept Study Page (R3) ---------------------------------- */
+/* Headings de seção do Conceito (h2/h3) — herdam de base.css o estilo de
+   "subtítulo grande"; aqui voltam ao visual dos rótulos de campo (pequenos,
+   caixa alta, discretos) para não redesenhar a página. */
+.concept-study .concept-section__title {
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 600;
   color: var(--color-text-muted);
+  line-height: var(--line-height-body);
+}
+
+.concept-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.concept-section__body {
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-body);
+}
+
+.concept-section__body p {
+  font-size: var(--font-size-small);
+  color: var(--color-text);
+}
+
+.empty-state {
   font-size: var(--font-size-small);
   font-style: italic;
+  color: var(--color-text-muted);
+}
+
+/* Área de estudo */
+.study-area {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--color-border);
+}
+
+.study-area__panels {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.study-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+/* Painel inativo (enhancement de tabs): `.study-panel { display: flex }` acima
+   venceria a regra de user-agent `[hidden] { display: none }` — esta regra, mais
+   específica e posterior, restabelece o comportamento do atributo hidden. */
+.study-panel[hidden] {
+  display: none;
+}
+
+/* Enhancement: tabs (concept-tabs.js) */
+.study-tabs {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.study-tabs__tab {
+  appearance: none;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  padding: 0.5rem 0.9rem;
+  font: inherit;
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.study-tabs__tab:hover {
+  color: var(--color-text);
+}
+
+.study-tabs__tab[aria-selected="true"] {
+  color: var(--area-color);
+  border-bottom-color: var(--area-color);
+}
+
+.study-tabs__tab:focus-visible {
+  outline: 2px solid var(--area-color);
+  outline-offset: 2px;
+}
+
+.study-area__panels--enhanced {
+  gap: 0;
+}
+
+.study-area__panels--enhanced .study-panel {
+  padding-top: var(--space-sm);
+}
+
+.study-area__panels--enhanced [role="tabpanel"]:focus-visible {
+  outline: 2px solid var(--area-color);
+  outline-offset: 2px;
+}
+
+/* Com tabs, o rótulo já está no botão — o h3 fica só na árvore de acessibilidade. */
+.study-area__panels--enhanced .study-panel__title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* ---- navegação sequencial entre Conceitos -------------------- */
