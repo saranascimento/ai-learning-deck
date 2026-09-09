@@ -1,0 +1,51 @@
+/*
+ * _shell.css — shell + acessibilidade do site estático gerado (R3.5.2).
+ *
+ * Carregado SOMENTE pelas páginas geradas em build/preview/. A SPA da raiz
+ * (index.html) NÃO importa este arquivo. O split completo do CSS do roadmap é
+ * a etapa R3.5.10 — aqui só o mínimo de shell/a11y, nada movido de roadmap.css.
+ */
+
+/* Skip-link — visível só ao receber foco por teclado. */
+.skip-link {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translateY(-120%);
+  padding: 0.5rem 0.75rem;
+  background: var(--color-bg, #101216);
+  color: var(--color-text, #f5f5f5);
+  border: 1px solid currentColor;
+  border-radius: 0 0 0.4rem 0;
+  z-index: 100;
+}
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+/* Foco visível consistente em toda a superfície gerada. */
+:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+/* Landmarks — respiro básico do shell, sem redesenhar nada. */
+.site-header,
+.site-footer {
+  padding: 1rem clamp(1rem, 4vw, 4.5rem);
+}
+main#main {
+  display: block;
+  padding: clamp(1.5rem, 4vw, 3rem) clamp(1rem, 4vw, 4.5rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

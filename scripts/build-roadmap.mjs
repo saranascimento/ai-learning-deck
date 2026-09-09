@@ -1,19 +1,26 @@
 /*
- * build-roadmap — R3.5.1: BUILD SCAFFOLD + AUDITORIA (ainda NÃO gera HTML).
+ * build-roadmap — R3.5.2: SCAFFOLD + AUDITORIA + SHELL DE PREVIEW.
  *
- * Prova que o Node consegue consumir dataset/model, valida as invariantes do
- * roadmap, valida a representação canônica de paths (routing/paths.js) e roda
- * testes objetivos de path/relativização.
+ * Preserva todas as validações da R3.5.1 (invariantes, unicidade de path/slug,
+ * auditoria R2, testes de path/relativização) e, se tudo passar, gera o primeiro
+ * HTML estático de verdade: build/preview/index.html e build/preview/404.html —
+ * apenas o SHELL semântico (landmarks + skip-link), sem Home/Area/Module/Concept
+ * e sem JavaScript.
  *
  * Requisitos: Node >= 22.7 (detecção de sintaxe ESM sem package.json). Zero
- * dependências. NÃO escreve arquivo, NÃO cria diretório, NÃO cria build/.
+ * dependências. Só escreve dentro de build/ (gitignored). Não toca na SPA.
  *
  * Uso:  node scripts/build-roadmap.mjs
- * Exit: 0 se todas as invariantes obrigatórias passarem; != 0 caso contrário.
+ * Exit: 0 se todas as invariantes obrigatórias passarem; != 0 caso contrário
+ *       (nesse caso o preview NÃO é escrito).
  */
-import { roadmap } from "../src/roadmap/data/index.js";
+import { mkdirSync, writeFileSync, copyFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+import { roadmap, roadmapMeta } from "../src/roadmap/data/index.js";
 import { roadmapModel as model } from "../src/roadmap/model/roadmap-model.js";
 import { HOME_PATH, pathFor, filePathFor, depthOf, relativize } from "../src/roadmap/routing/paths.js";
+import { renderDocument, escapeAttr } from "../src/roadmap/render/html.mjs";
 
 // ---- harness mínimo (sem framework, sem deps) -----------------------------
 const results = [];
@@ -209,14 +216,71 @@ expect("Contagens futuras", "roadmap node paths", nodeCount, 764);
 expect("Contagens futuras", "content routes (1 Home + 7 + 89 + 668)", contentRoutes, 765);
 expect("Contagens futuras", "HTML pages (765 content + 1 página 404)", htmlPages, 766);
 
+// ---- 8. shell de preview (R3.5.2) — gerado, escrito só se tudo passar --
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+const PREVIEW_DIR = join(ROOT, "build", "preview");
+// CSS existente é COPIADO para dentro de build/preview/css/ para o preview ser
+// autossuficiente (servível com `cd build/preview && python3 -m http.server`).
+// Não move nem altera os originais em css/. hrefs relativos, sem base absoluta.
+const CSS_FILES = ["reset.css", "variables.css", "base.css", "roadmap.css", "roadmap/_shell.css"];
+const STYLESHEETS = CSS_FILES.map((p) => "css/" + p);
+
+const homeHref = relativize(HOME_PATH, HOME_PATH); // "./"
+const SITE = roadmapMeta.title;
+
+const indexHtml = renderDocument({
+  title: "Preview HTML-first · " + SITE,
+  homeHref,
+  homeLabel: SITE,
+  stylesheets: STYLESHEETS,
+  main: [
+    "      <h1>Preview HTML-first do Roadmap Senior</h1>",
+    "      <p>Shell estático gerado por <code>scripts/build-roadmap.mjs</code> (R3.5.2). Prova que HTML semântico real pode ser servido por HTTP estático, sem JavaScript.</p>",
+    "      <p>A Home real (Áreas do roadmap) passa a ser gerada na etapa R3.5.3.</p>",
+  ].join("\n"),
+});
+
+const notFoundHtml = renderDocument({
+  title: "Página não encontrada · " + SITE,
+  homeHref,
+  homeLabel: SITE,
+  stylesheets: STYLESHEETS,
+  main: [
+    "      <h1>Página não encontrada</h1>",
+    "      <p>O endereço solicitado não existe neste site.</p>",
+    '      <p><a href="' + escapeAttr(homeHref) + '">Voltar para a Home</a></p>',
+  ].join("\n"),
+});
+
+function shellChecks(label, html) {
+  const g = "Shell (" + label + ")";
+  record(g, "doctype minúsculo", html.startsWith("<!doctype html>"));
+  record(g, 'lang="pt-BR"', html.includes('<html lang="pt-BR">'));
+  record(g, "meta charset utf-8", html.includes('<meta charset="utf-8" />'));
+  record(g, "meta viewport", html.includes('name="viewport"'));
+  record(g, "<title> não vazio", /<title>[^<]+<\/title>/.test(html));
+  record(g, "skip-link aponta para #main", html.includes('<a href="#main" class="skip-link">Pular para o conteúdo principal</a>'));
+  record(g, "exatamente um <header>", (html.match(/<header[\s>]/g) || []).length === 1);
+  record(g, 'nav aria-label="Roadmap"', html.includes('<nav aria-label="Roadmap">'));
+  record(g, "exatamente um <main>", (html.match(/<main[\s>]/g) || []).length === 1);
+  record(g, 'main#main tabindex="-1"', html.includes('<main id="main" tabindex="-1">'));
+  record(g, "exatamente um <footer>", (html.match(/<footer[\s>]/g) || []).length === 1);
+  record(g, "exatamente um <h1>", (html.match(/<h1[\s>]/g) || []).length === 1);
+  record(g, "sem aria-live", !html.includes("aria-live"));
+  record(g, "sem <script>", !html.toLowerCase().includes("<script"));
+  record(g, "_shell.css referenciado", html.includes("css/roadmap/_shell.css"));
+  record(g, "assets só por caminho relativo (sem base absoluta)", !/(?:href|src)="\//.test(html) && !html.includes("/ai-learning-deck/"));
+}
+shellChecks("index.html", indexHtml);
+shellChecks("404.html", notFoundHtml);
+
 // ---- relatório ---------------------------------------------------------
 const GROUPS = [...new Set(results.map((r) => r.group))];
-let failed = 0;
-console.log("build-roadmap — R3.5.1  (scaffold + auditoria; nenhum arquivo escrito)\n");
+const failed = results.filter((r) => !r.ok).length;
+console.log("build-roadmap — R3.5.2  (scaffold + auditoria + shell de preview)\n");
 for (const group of GROUPS) {
   console.log(group);
   for (const r of results.filter((x) => x.group === group)) {
-    if (!r.ok) failed++;
     console.log(`  ${r.ok ? "✓" : "✗"} ${r.name}${r.detail ? " — " + r.detail : ""}`);
   }
   console.log("");
@@ -228,11 +292,31 @@ console.log(`  total ${audit.total} · resolved ${audit.resolved} · ambiguous $
 for (const o of audit.offenders.slice(0, 20)) console.log(`  ✗ ${o.kind}: ${JSON.stringify(o.ref)} → ${o.status}`);
 console.log("");
 
-console.log("Contagens conceituais (futuras — nada gerado nesta etapa)");
+console.log("Contagens conceituais (futuras — Home/Area/Module/Concept ainda não gerados)");
 console.log(`  ${nodeCount} roadmap node paths`);
 console.log(`  ${contentRoutes} content routes futuras: 1 Home + ${areaCount} Areas + ${moduleCount} Modules + ${conceptCount} Concepts`);
 console.log(`  ${htmlPages} HTML pages futuras: ${contentRoutes} content pages + 1 página 404`);
 console.log("  Artefatos auxiliares (ex.: _routes.txt) NÃO entram nessa contagem.");
+console.log("");
+
+// ---- escrita do preview — só se TODAS as invariantes passaram ---------
+console.log("Preview estático (R3.5.2 — só o shell; sem Home/Area/Module/Concept, sem JS)");
+if (failed === 0) {
+  mkdirSync(join(PREVIEW_DIR, "css", "roadmap"), { recursive: true });
+  for (const f of CSS_FILES) copyFileSync(join(ROOT, "css", f), join(PREVIEW_DIR, "css", f));
+  console.log(`  copiado: build/preview/css/ (${CSS_FILES.length} arquivos CSS)`);
+  const files = [
+    ["build/preview/index.html", indexHtml],
+    ["build/preview/404.html", notFoundHtml],
+  ];
+  for (const [rel, html] of files) {
+    writeFileSync(join(ROOT, rel), html);
+    console.log(`  escrito: ${rel} (${Buffer.byteLength(html)} bytes)`);
+  }
+  console.log("  servir:  cd build/preview && python3 -m http.server");
+} else {
+  console.log("  NÃO escrito — invariante falhou; corrija antes de gerar o preview.");
+}
 console.log("");
 
 console.log(failed === 0 ? "OK — todas as invariantes passaram" : `FALHOU — ${failed} verificação(ões)`);
