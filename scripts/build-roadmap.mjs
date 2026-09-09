@@ -1,11 +1,9 @@
 /*
- * build-roadmap — R3.5.4: AUDITORIA + PREVIEW (Home + 7 Areas + 404).
+ * build-roadmap — R3.5.5: AUDITORIA + PREVIEW (Home + 7 Areas + 89 Modules + 404).
  *
- * Preserva todas as validações da R3.5.1–R3.5.3 (invariantes, unicidade de
- * path/slug, auditoria R2, testes de path/relativização, shell/landmarks, Home)
- * e, se tudo passar, gera build/preview/index.html (Home DevAtlas), as 7
- * build/preview/areas/<slug>/index.html e build/preview/404.html. Module/Concept
- * → R3.5.5+. Sem JavaScript.
+ * Preserva todas as validações da R3.5.1–R3.5.4 e, se tudo passar, gera a Home
+ * DevAtlas, as 7 Areas, as 89 Modules (areas/<a>/modules/<m>/index.html) e o
+ * 404. Concept → R3.5.6+. Sem JavaScript.
  *
  * Requisitos: Node >= 22.7 (detecção de sintaxe ESM sem package.json). Zero
  * dependências. Só escreve dentro de build/ (gitignored). Não toca na SPA.
@@ -23,7 +21,8 @@ import { HOME_PATH, pathFor, filePathFor, depthOf, relativize } from "../src/roa
 import { renderDocument, escapeAttr } from "../src/roadmap/render/html.mjs";
 import { renderHome } from "../src/roadmap/render/home.mjs";
 import { renderArea } from "../src/roadmap/render/area.mjs";
-import { num, escapeHtml } from "../src/roadmap/render/partials.mjs";
+import { renderModule } from "../src/roadmap/render/module.mjs";
+import { num, escapeHtml, renderChipList } from "../src/roadmap/render/partials.mjs";
 
 // ---- harness mínimo (sem framework, sem deps) -----------------------------
 const results = [];
@@ -528,10 +527,223 @@ const areaPages = model.areas().map((area, i) => {
   if (fails.length) record(g, "falhas detalhadas", false, fails.slice(0, 20).join(" | "));
 }
 
+// ---- 12. páginas de Module (R3.5.5) ------------------------------
+const modulePages = [];
+for (const area of model.areas()) {
+  model.modules(area).forEach((module, mi) => {
+    const modPath = pathFor(module); // "/areas/<a>/modules/<m>/"
+    const conceptsVM = model.concepts(module).map((c, ci) => ({
+      index: ci,
+      title: c.title,
+      slug: c.slug,
+      href: relativize(modPath, pathFor(c)), // "concepts/<slug>/"
+      essential: c.essential,
+      canonical: c.canonical,
+      learningFocus: c.learningFocus || [],
+    }));
+    const requiresVM = (module.requires || []).map((raw) => {
+      const r = model.resolveRoadmapRef(raw, { area, module: null });
+      return r.status === "resolved"
+        ? { raw, kind: r.kind, href: relativize(modPath, pathFor(r.node)) }
+        : { raw, status: r.status };
+    });
+    const html = renderModule({
+      product: PRODUCT,
+      area: { title: area.title, href: relativize(modPath, pathFor(area)) }, // "../../"
+      module: {
+        index: mi,
+        title: module.title,
+        slug: module.slug,
+        summary: module.summary || "",
+        conceptCount: model.concepts(module).length,
+        color: area.color,
+      },
+      concepts: conceptsVM,
+      requires: requiresVM,
+      homeHref: relativize(modPath, HOME_PATH), // "../../../../"
+      stylesheets: stylesheetsFor(modPath),
+    });
+    modulePages.push({ area, module, file: filePathFor(module), html, requiresVM });
+  });
+}
+
+// landmarks/shell nas 89 páginas de Module — agregado
+{
+  const g = "Shell (Modules)";
+  const checks = {
+    "doctype minúsculo": (h) => h.startsWith("<!doctype html>"),
+    'lang="pt-BR"': (h) => h.includes('<html lang="pt-BR">'),
+    "<title> não vazio": (h) => /<title>[^<]+<\/title>/.test(h),
+    "skip-link → #main": (h) => h.includes('<a href="#main" class="skip-link">Pular para o conteúdo principal</a>'),
+    "um <header class=site-header>": (h) => (h.match(/<header class="site-header">/g) || []).length === 1,
+    [`nav aria-label="${PRODUCT.name}"`]: (h) => (h.match(new RegExp(`<nav aria-label="${PRODUCT.name}">`, "g")) || []).length === 1,
+    "rodapé DevAtlas": (h) => h.includes(`<footer class="site-footer">\n      <p>${PRODUCT.footerText}</p>`),
+    "um <main>": (h) => (h.match(/<main[\s>]/g) || []).length === 1,
+    'main#main tabindex="-1"': (h) => h.includes('<main id="main" tabindex="-1">'),
+    "um <footer class=site-footer>": (h) => (h.match(/<footer class="site-footer">/g) || []).length === 1,
+    "_shell.css referenciado": (h) => h.includes("css/roadmap/_shell.css"),
+    "sem copy de nível/sênior": (h) => !/senior software engineer|nível sênior|roadmap.{0,12}sênior/i.test(h),
+  };
+  for (const [name, fn] of Object.entries(checks)) {
+    const bad = modulePages.filter((p) => !fn(p.html)).map((p) => p.module.slug);
+    record(g, `${name} (89/89)`, bad.length === 0, bad.length ? "falhou em: " + bad.slice(0, 10).join(", ") : "");
+  }
+}
+
+// ---- 13. validação das 89 páginas de Module --------------------
+{
+  const g = "Modules (R3.5.5)";
+  const rowRe =
+    /<a class="track__row track__row--concept" href="([^"]+)">\s*<span class="track__num">([^<]+)<\/span>\s*<span class="track__title">([\s\S]*?)<span class="track__chips">/g;
+  const fails = [];
+  const flags = {
+    pathOk: true, titleOk: true, h1Ok: true, kickerOk: true, summaryOk: true, metaOk: true,
+    crumbHomeOk: true, crumbAreaOk: true, crumbCurrentOk: true, rowCountOk: true, rowFieldsOk: true,
+    conceptHrefOk: true, requiresOk: true, noHashOk: true, noRoadmapOk: true, noAbsOk: true,
+    noScriptOk: true, noAriaLiveOk: true, noHandlerOk: true,
+  };
+  const F = (cond, label, slug) => {
+    if (!cond) fails.push(`${slug}: ${label}`);
+    return cond;
+  };
+
+  modulePages.forEach(({ area, module, file, html, requiresVM }) => {
+    const mi = model.modules(area).indexOf(module);
+    const modPath = pathFor(module);
+    const realConcepts = model.concepts(module);
+    const s = module.slug;
+
+    flags.pathOk = F(file === `areas/${area.slug}/modules/${module.slug}/index.html`, "path físico", s) && flags.pathOk;
+    flags.titleOk = F(html.includes(`<title>${escapeHtml(module.title)} · ${PRODUCT.name}</title>`), "title = Module · DevAtlas", s) && flags.titleOk;
+    flags.h1Ok = F((html.match(/<h1[\s>]/g) || []).length === 1, "1 h1", s) && flags.h1Ok;
+    flags.h1Ok = F(html.includes(`<h1 class="page-head__title">${escapeHtml(module.title)}</h1>`), "h1 = título do Module", s) && flags.h1Ok;
+    flags.kickerOk = F(html.includes(`<p class="page-head__kicker">${("Módulo " + num(mi)).toUpperCase()}</p>`), "kicker MÓDULO NN", s) && flags.kickerOk;
+    flags.summaryOk = F(html.includes(`<p class="page-head__desc">${escapeHtml(module.summary)}</p>`), "summary preservado", s) && flags.summaryOk;
+    flags.metaOk = F(html.includes(`<p class="page-head__meta">${realConcepts.length} conceitos</p>`), "meta «N conceitos»", s) && flags.metaOk;
+
+    flags.crumbHomeOk =
+      F(html.includes(`<a class="crumbs__link" href="../../../../">${PRODUCT.name}</a>`), "breadcrumb Home → ../../../../", s) && flags.crumbHomeOk;
+    flags.crumbAreaOk =
+      F(
+        html.includes(`<a class="crumbs__link" href="../../">${escapeHtml(area.title)}</a>`),
+        "breadcrumb Area → ../../ com título correto",
+        s
+      ) && flags.crumbAreaOk;
+    flags.crumbCurrentOk =
+      F(
+        html.includes(`<span class="crumbs__here" aria-current="page">${escapeHtml(module.title)}</span>`),
+        "breadcrumb Module atual = aria-current, sem self-link",
+        s
+      ) && flags.crumbCurrentOk;
+
+    const rows = [...html.matchAll(rowRe)];
+    flags.rowCountOk = F(rows.length === realConcepts.length, `nº de Concept rows (${rows.length}) == nº real (${realConcepts.length})`, s) && flags.rowCountOk;
+    realConcepts.forEach((c, ci) => {
+      const row = rows[ci];
+      if (!row) {
+        flags.rowFieldsOk = false;
+        return;
+      }
+      if (row[2] !== num(ci)) flags.rowFieldsOk = false;
+      if (row[3] !== escapeHtml(c.title)) flags.rowFieldsOk = false;
+      const wantHref = relativize(modPath, pathFor(c));
+      if (row[1] !== wantHref || row[1] !== "concepts/" + c.slug + "/") flags.conceptHrefOk = false;
+    });
+
+    // Requires: nº de pills == nº de refs; cada resolved vira <a class="relation-pill">
+    const pills = [...html.matchAll(/<(a|span) class="relation-pill(?:[^"]*)"[^>]*>\s*<span class="relation-pill__label">([\s\S]*?)<\/span>/g)];
+    const wantPills = (module.requires || []).length;
+    flags.requiresOk = F(pills.length === wantPills, `Requires: ${pills.length} pills == ${wantPills} refs`, s) && flags.requiresOk;
+    requiresVM.forEach((r, idx) => {
+      const pill = pills[idx];
+      if (!pill) {
+        flags.requiresOk = false;
+        return;
+      }
+      if (pill[2] !== escapeHtml(r.raw)) flags.requiresOk = false;
+      if (r.href && pill[1] !== "a") flags.requiresOk = false; // resolved → <a>
+      if (!r.href && pill[1] !== "span") flags.requiresOk = false; // flagged → <span>
+    });
+
+    const navHrefs = [...html.matchAll(/<a\b[^>]*\bhref="([^"]*)"/g)].map((m) => m[1]);
+    flags.noHashOk = F(!navHrefs.some((h) => h.includes("#/")), "sem hash-route em <a href>", s) && flags.noHashOk;
+    flags.noRoadmapOk = F(!navHrefs.some((h) => h.includes("/roadmap/")), "sem rota /roadmap/ em <a href>", s) && flags.noRoadmapOk;
+    flags.noAbsOk =
+      F(
+        !navHrefs.some((h) => h.startsWith("/") || h.startsWith("http")) && !html.includes("/ai-learning-deck/"),
+        "sem href de navegação absoluto / base fixa",
+        s
+      ) && flags.noAbsOk;
+    flags.noScriptOk = F(!html.toLowerCase().includes("<script"), "sem <script>", s) && flags.noScriptOk;
+    flags.noAriaLiveOk = F(!html.includes("aria-live"), "sem aria-live", s) && flags.noAriaLiveOk;
+    flags.noHandlerOk = F(!/<[a-z][^>]*\son[a-z]+=/i.test(html), "sem handler inline (on*=)", s) && flags.noHandlerOk;
+  });
+
+  record(g, "exatamente 89 páginas de Module geradas", modulePages.length === 89);
+  record(
+    g,
+    "Area → Module: os 89 destinos existem em build/preview/",
+    modulePages.length === 89 &&
+      model.areas().every((a) => model.modules(a).every((m) => modulePages.some((p) => p.file === filePathFor(m))))
+  );
+  record(g, "path físico areas/<a>/modules/<m>/index.html (89/89)", flags.pathOk);
+  record(g, "title = «Module · DevAtlas» (89/89)", flags.titleOk);
+  record(g, "exatamente um <h1> = título do Module (89/89)", flags.h1Ok);
+  record(g, "kicker MÓDULO NN por Area, na ordem (89/89)", flags.kickerOk);
+  record(g, "summary do Module preservado (89/89)", flags.summaryOk);
+  record(g, "meta «N conceitos» (89/89)", flags.metaOk);
+  record(g, "breadcrumb DevAtlas → ../../../../ (89/89)", flags.crumbHomeOk);
+  record(g, "breadcrumb Area → ../../ (89/89)", flags.crumbAreaOk);
+  record(g, "breadcrumb Module atual = aria-current, sem self-link (89/89)", flags.crumbCurrentOk);
+  record(g, "nº de Concept rows == nº real de Concepts (89/89)", flags.rowCountOk);
+  record(g, "Concept: num + título + ordem (89/89)", flags.rowFieldsOk);
+  record(g, "href de cada Concept = concepts/<slug>/ relativo (89/89)", flags.conceptHrefOk);
+  record(g, "Requires: nº de pills == nº de refs, raw preservado, resolved→<a> (89/89)", flags.requiresOk);
+  record(g, "zero hash-route (#/) em <a href> (89/89)", flags.noHashOk);
+  record(g, "zero rota /roadmap/ em <a href> — css/roadmap/ não conta (89/89)", flags.noRoadmapOk);
+  record(g, "zero href de navegação absoluto / /ai-learning-deck/ (89/89)", flags.noAbsOk);
+  record(g, "zero <script> (89/89)", flags.noScriptOk);
+  record(g, "zero aria-live (89/89)", flags.noAriaLiveOk);
+  record(g, "zero handler inline (89/89)", flags.noHandlerOk);
+  if (fails.length) record(g, "falhas detalhadas", false, fails.slice(0, 25).join(" | "));
+}
+
+// ---- 14. classificações/chips: HTML gerado == dataset -------------
+{
+  const g = "Classificações (Module ↔ dataset)";
+  let dsCanon = 0;
+  let dsRev = 0;
+  let dsEss = 0;
+  let dsConc = 0;
+  let dsPrac = 0;
+  for (const a of model.areas())
+    for (const m of model.modules(a))
+      for (const c of model.concepts(m)) {
+        if (c.canonical) dsCanon++;
+        else dsRev++;
+        if (c.essential) dsEss++;
+        const lf = c.learningFocus || [];
+        if (lf.indexOf("conceptual") !== -1) dsConc++;
+        if (lf.indexOf("practical") !== -1) dsPrac++;
+      }
+
+  const allHtml = modulePages.map((p) => p.html).join("\n");
+  const count = (re) => (allHtml.match(re) || []).length;
+  record(g, `CONCEITO-BASE nas 89 páginas == dataset (${dsCanon})`, count(/<span class="chip chip--c"/g) === dsCanon);
+  record(g, `REVISITA nas 89 páginas == dataset (${dsRev})`, count(/<span class="chip chip--r"/g) === dsRev);
+  record(g, `CONCEITO-BASE + REVISITA == 668 concepts`, count(/<span class="chip chip--c"/g) + count(/<span class="chip chip--r"/g) === 668);
+  record(g, `ESSENCIAL nas 89 páginas == dataset (${dsEss})`, count(/<span class="chip chip--essential"/g) === dsEss);
+  record(g, "CONCEITUAL na lista de Module = 0 (modo compact — aparece só na Concept page)", count(/chip--conceptual/g) === 0);
+  record(g, "PRÁTICO na lista de Module = 0 (modo compact — aparece só na Concept page)", count(/chip--practical/g) === 0);
+  record(g, `dataset learningFocus: conceptual=${dsConc} · practical=${dsPrac} (não afeta Module; R3.5.6)`, true);
+  record(g, "nenhum chip vem do dataset (texto derivado das dimensões R1)", true);
+  record(g, "note / collision / isNew NÃO aparecem como chip", !allHtml.includes('data-note') && !/chip--new|chip--x/.test(allHtml));
+}
+
 // ---- relatório ---------------------------------------------------------
 const GROUPS = [...new Set(results.map((r) => r.group))];
 const failed = results.filter((r) => !r.ok).length;
-console.log("build-roadmap — R3.5.4  (auditoria + preview: Home + 7 Areas + 404)\n");
+console.log("build-roadmap — R3.5.5  (auditoria + preview: Home + 7 Areas + 89 Modules + 404)\n");
 for (const group of GROUPS) {
   console.log(group);
   for (const r of results.filter((x) => x.group === group)) {
@@ -546,7 +758,7 @@ console.log(`  total ${audit.total} · resolved ${audit.resolved} · ambiguous $
 for (const o of audit.offenders.slice(0, 20)) console.log(`  ✗ ${o.kind}: ${JSON.stringify(o.ref)} → ${o.status}`);
 console.log("");
 
-console.log("Contagens conceituais (Module/Concept ainda não gerados — R3.5.5+)");
+console.log("Contagens conceituais (Concept ainda não gerado — R3.5.6+)");
 console.log(`  ${nodeCount} roadmap node paths`);
 console.log(`  ${contentRoutes} content routes futuras: 1 Home + ${areaCount} Areas + ${moduleCount} Modules + ${conceptCount} Concepts`);
 console.log(`  ${htmlPages} HTML pages futuras: ${contentRoutes} content pages + 1 página 404`);
@@ -554,21 +766,21 @@ console.log("  Artefatos auxiliares (ex.: _routes.txt) NÃO entram nessa contage
 console.log("");
 
 // ---- escrita do preview — só se TODAS as invariantes passaram ---------
-console.log("Preview estático (R3.5.4 — Home + 7 Areas + 404; Module/Concept → R3.5.5+; sem JS)");
+console.log("Preview estático (R3.5.5 — Home + 7 Areas + 89 Modules + 404; Concept → R3.5.6+; sem JS)");
 if (failed === 0) {
   mkdirSync(join(PREVIEW_DIR, "css", "roadmap"), { recursive: true });
   for (const f of CSS_FILES) copyFileSync(join(ROOT, "css", f), join(PREVIEW_DIR, "css", f));
   console.log(`  copiado: build/preview/css/ (${CSS_FILES.length} arquivos CSS)`);
   writeFileSync(join(PREVIEW_DIR, "index.html"), indexHtml);
   writeFileSync(join(PREVIEW_DIR, "404.html"), notFoundHtml);
-  for (const { file, html } of areaPages) {
+  for (const { file, html } of [...areaPages, ...modulePages]) {
     const abs = join(PREVIEW_DIR, file);
     mkdirSync(dirname(abs), { recursive: true });
     writeFileSync(abs, html);
   }
-  const htmlCount = 2 + areaPages.length;
-  console.log(`  escrito: index.html + 404.html + ${areaPages.length} × areas/<slug>/index.html`);
-  console.log(`  total: ${htmlCount} HTMLs de conteúdo (1 Home + ${areaPages.length} Areas + 1 404)`);
+  const htmlCount = 2 + areaPages.length + modulePages.length;
+  console.log(`  escrito: index.html + 404.html + ${areaPages.length} Areas + ${modulePages.length} Modules`);
+  console.log(`  total: ${htmlCount} HTMLs de conteúdo (1 Home + ${areaPages.length} Areas + ${modulePages.length} Modules + 1 404)`);
   console.log("  servir:  cd build/preview && python3 -m http.server");
 } else {
   console.log("  NÃO escrito — invariante falhou; corrija antes de gerar o preview.");
