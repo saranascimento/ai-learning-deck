@@ -387,6 +387,62 @@ a.track__row:hover .track__arrow {
   color: var(--area-color);
 }
 
+/* ---- relações navegáveis (Requires / Revisitado em / Revisita de) — R2 -----
+   Pills secundários, visualmente distintos das classificações (.chip): aparência
+   neutra no estado normal, cor da Area só no hover/focus.
+   resolved → <a>, pill inteiro clicável, com seta "→".
+   ambiguous / unresolved → <span> apagado, tracejado, sem seta, sem link. */
+.relation-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.relation-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.55rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-row);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-text);
+  font-size: 0.78rem;
+  text-decoration: none;
+  transition: border-color var(--transition-duration-fragment) var(--transition-easing),
+    background var(--transition-duration-fragment) var(--transition-easing);
+}
+
+.relation-pill__arrow {
+  color: var(--color-text-muted);
+  font-size: 0.9em;
+  transition: color var(--transition-duration-fragment) var(--transition-easing);
+}
+
+a.relation-pill {
+  cursor: pointer;
+}
+
+a.relation-pill:hover {
+  border-color: color-mix(in srgb, var(--area-color) 55%, var(--color-border));
+  background: color-mix(in srgb, var(--area-color) 12%, transparent);
+}
+
+a.relation-pill:hover .relation-pill__arrow {
+  color: var(--area-color);
+}
+
+a.relation-pill:focus-visible {
+  outline: 2px solid var(--area-color);
+  outline-offset: 2px;
+}
+
+.relation-pill--flagged {
+  border-style: dashed;
+  background: none;
+  color: var(--color-text-muted);
+}
+
 .muted {
   color: var(--color-text-muted);
 }

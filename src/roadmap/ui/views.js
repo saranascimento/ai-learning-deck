@@ -94,6 +94,43 @@ function tagList(values) {
   );
 }
 
+// Um pill de relação. `resolved` → <a> (pill inteiro clicável) com o rótulo e uma
+// seta "→"; `ambiguous` / `unresolved` → <span> apagado, sem seta, sem link.
+// A string exibida é sempre a original.
+function relationPill(raw, result) {
+  const label = el("span", { class: "relation-pill__label", text: raw });
+  if (result.status === "resolved") {
+    return el("a", { class: "relation-pill", href: result.href, "data-ref-kind": result.kind }, [
+      label,
+      el("span", { class: "relation-pill__arrow", "aria-hidden": "true", text: "→" }),
+    ]);
+  }
+  return el(
+    "span",
+    {
+      class: "relation-pill relation-pill--flagged",
+      "data-ref-status": result.status,
+      title: result.status === "ambiguous" ? "referência ambígua — não navegável" : "referência não resolvida — não navegável",
+    },
+    [label]
+  );
+}
+
+// Lista de relações navegáveis (Requires / Revisitado em).
+function refList(values, from) {
+  if (!values || !values.length) return null;
+  return el(
+    "ul",
+    { class: "relation-list" },
+    values.map((raw) => el("li", { class: "relation-list__item" }, [relationPill(raw, model.resolveRoadmapRef(raw, from))]))
+  );
+}
+
+// Uma única referência (revisitOf) — mesmo pill, standalone.
+function refInline(raw, from) {
+  return relationPill(raw, model.resolveRoadmapRef(raw, from));
+}
+
 // ---- HOME ------------------------------------------------------------------
 // A Home representa só o nível Área — Módulos/Conceitos aparecem a partir da
 // página da Área em diante (hierarquia Home → Área → Módulo → Conceito).
@@ -197,7 +234,7 @@ function renderModule(area, module) {
   // (decisões de construção do roadmap) — preservados no dataset, mas
   // fora da navegação de estudo por decisão de UX.
   const details = [];
-  if (module.requires && module.requires.length) details.push(field("Requires (módulo)", tagList(module.requires)));
+  if (module.requires && module.requires.length) details.push(field("Requires (módulo)", refList(module.requires, { area: area, module: null })));
 
   return setAreaColor(
     el("div", { class: "view view--module" }, [
@@ -231,12 +268,17 @@ function renderConcept(area, module, concept) {
 
   const resources = (concept.resources || []).map((r) => model.resolveResource(r)).filter(Boolean);
 
+  const from = { area: area, module: module };
+
   const fields = [
-    field("Pré-requisitos (Requires)", concept.requires && concept.requires.length ? tagList(concept.requires) : el("span", { class: "muted", text: "nenhum" })),
-    concept.revisitOf ? field("Revisita de", el("span", { text: concept.revisitOf })) : null,
+    field(
+      "Pré-requisitos (Requires)",
+      concept.requires && concept.requires.length ? refList(concept.requires, from) : el("span", { class: "muted", text: "nenhum" })
+    ),
+    concept.revisitOf ? field("Revisita de", refInline(concept.revisitOf, from)) : null,
     concept.note ? field("Nota", el("p", { text: concept.note })) : null,
     concept.subtopics && concept.subtopics.length ? field("Subtópicos", tagList(concept.subtopics)) : null,
-    concept.revisit && concept.revisit.length ? field("Revisitado em", tagList(concept.revisit)) : null,
+    concept.revisit && concept.revisit.length ? field("Revisitado em", refList(concept.revisit, from)) : null,
     resources.length
       ? field(
           "Recursos",

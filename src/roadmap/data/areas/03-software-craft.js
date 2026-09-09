@@ -95,7 +95,7 @@ export default area({
       slug: "refactoring",
       order: 40,
       title: "Refactoring",
-      requires: ["Code Smells", "Testing & Quality Engineering"],
+      requires: ["Code Smells", "Testing & Quality Engineering / Testing Fundamentals"],
       summary:
         "Guarda-chuva (o que é refatorar, quando/quando não) → técnicas mecânicas específicas, muitas delas " +
         "corrigindo os smells já diagnosticados. Só se refatora com segurança havendo rede de testes.",

@@ -271,7 +271,7 @@ export default area({
           title: "Event",
           subtopics: ["Command vs Event (distinção)"],
           collision: "≠ Domain Event (Software Design / Domain Modeling) — evento de transporte/infraestrutura × evento de modelagem DDD, granularidades diferentes",
-          revisit: ["Messaging / Pub/Sub"],
+          revisit: ["Pub/Sub"],
         }),
         concept({ order: 50, title: "Consumer Groups", requires: ["Message Broker"], note: "consumo paralelo/escala" }),
         concept({

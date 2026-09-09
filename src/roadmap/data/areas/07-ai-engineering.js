@@ -419,7 +419,7 @@ export default area({
         concept({ order: 90, title: "Model Fallback", canonical: false, revisitOf: "Model Routing / Model Fallback", note: "revisita intra-Epic (mesmo padrão de GraphQL / N+1 in Resolvers no Epic 05) (root)" }),
         concept({ order: 100, title: "Retry Strategy", canonical: false, revisitOf: "Architecture / Resilience Patterns / Retry", note: "aplicação em produção de IA (root)" }),
         concept({ order: 110, title: "Model Versioning", note: "canônico — sem lar anterior. Prompt Versioning NÃO ganha Task própria aqui — já canônico em Prompt Engineering (Story 04), citada só como pointer (root)", revisit: ["Prompt Engineering / Prompt Versioning"] }),
-        concept({ order: 120, title: "Evaluation in CI/CD", requires: ["AI Evaluation / Regression Evaluation"], note: "gate de deploy por qualidade de IA", revisit: ["Platform / CI-CD / CI/CD Pipeline"] }),
+        concept({ order: 120, title: "Evaluation in CI/CD", requires: ["AI Evaluation / Regression Evaluation"], note: "gate de deploy por qualidade de IA", revisit: ["CI/CD Pipeline"] }),
         concept({ order: 130, title: "AI System Monitoring", requires: ["AI Observability / Failure Analysis"], note: "capstone final — pré-deploy (gate) × pós-deploy (monitoramento) são preocupações paralelas", revisit: ["Platform / Reliability Engineering"] }),
       ],
     }),

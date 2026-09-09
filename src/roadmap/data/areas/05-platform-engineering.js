@@ -156,7 +156,6 @@ export default area({
           requires: ["API"],
           isNew: true,
           note: "cadeia de handlers (auth, logging, rate limiting, validação) antes do controller. Ancora o Chain of Responsibility que o Epic 04 deixou como Advanced/Optional — o pattern continua SUGESTÃO no Epic 04, não é movido",
-          revisit: ["Software Design / Behavioral Patterns / Chain of Responsibility (SUGESTÃO)"],
         }),
       ],
     }),

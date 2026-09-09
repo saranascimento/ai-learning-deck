@@ -141,7 +141,7 @@ export default area({
           requires: ["Testing Fundamentals / Unit Testing", "Testing Fundamentals / Test Runner"],
           note: "% de código exercitado pelos testes. Cuidado com \"coverage as a target\" (Goodhart)",
           subtopics: ["line", "statement", "branch", "path coverage"],
-          revisit: ["Platform / CI-CD (coverage gates)", "Software Craft / Code Review"],
+          revisit: ["CI/CD Pipeline", "Software Craft / Code Review"],
         }),
         concept({
           order: 30,
@@ -167,7 +167,7 @@ export default area({
           title: "Regression Testing",
           requires: ["Testing Fundamentals / Unit Testing", "Testing Fundamentals / Test Runner"],
           note: "re-executar testes para impedir que bugs corrigidos voltem",
-          revisit: ["AI Engineering / Regression Evaluation — análogo para modelos, escopo diferente"],
+          revisit: ["AI Engineering / AI Evaluation / Regression Evaluation"],
         }),
         concept({
           order: 70,
@@ -237,7 +237,7 @@ export default area({
         concept({
           order: 60,
           title: "Git Bisect",
-          requires: ["Binary Search Debugging", "Epic 03 / Software Craft / Git (forward-reference aceita)"],
+          requires: ["Binary Search Debugging", "Software Craft / Git"],
           note: "busca binária automatizada sobre o histórico de commits. Canônico aqui — Bisect no Epic 03 / Git é revisita/referência",
         }),
         concept({
@@ -245,7 +245,7 @@ export default area({
           title: "Root Cause Analysis",
           requires: ["Hypothesis-Driven Debugging"],
           note: "ir além do sintoma; 5 Whys — teste de hipótese iterativo",
-          revisit: ["Platform / Reliability Engineering — Postmortem, Blameless Postmortem, MTTD/MTTR"],
+          revisit: ["Platform / Reliability Engineering"],
         }),
       ],
     }),
