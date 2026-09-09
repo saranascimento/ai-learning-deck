@@ -1,10 +1,11 @@
 /*
- * build-roadmap — R3.5.3: AUDITORIA + PREVIEW (Home real + 404).
+ * build-roadmap — R3.5.4: AUDITORIA + PREVIEW (Home + 7 Areas + 404).
  *
- * Preserva todas as validações da R3.5.1/R3.5.2 (invariantes, unicidade de
- * path/slug, auditoria R2, testes de path/relativização, shell/landmarks) e, se
- * tudo passar, gera build/preview/index.html com a Home real do DevAtlas (7
- * Áreas) + build/preview/404.html. Area/Module/Concept → R3.5.4+. Sem JavaScript.
+ * Preserva todas as validações da R3.5.1–R3.5.3 (invariantes, unicidade de
+ * path/slug, auditoria R2, testes de path/relativização, shell/landmarks, Home)
+ * e, se tudo passar, gera build/preview/index.html (Home DevAtlas), as 7
+ * build/preview/areas/<slug>/index.html e build/preview/404.html. Module/Concept
+ * → R3.5.5+. Sem JavaScript.
  *
  * Requisitos: Node >= 22.7 (detecção de sintaxe ESM sem package.json). Zero
  * dependências. Só escreve dentro de build/ (gitignored). Não toca na SPA.
@@ -21,6 +22,7 @@ import { roadmapModel as model } from "../src/roadmap/model/roadmap-model.js";
 import { HOME_PATH, pathFor, filePathFor, depthOf, relativize } from "../src/roadmap/routing/paths.js";
 import { renderDocument, escapeAttr } from "../src/roadmap/render/html.mjs";
 import { renderHome } from "../src/roadmap/render/home.mjs";
+import { renderArea } from "../src/roadmap/render/area.mjs";
 import { num, escapeHtml } from "../src/roadmap/render/partials.mjs";
 
 // ---- harness mínimo (sem framework, sem deps) -----------------------------
@@ -226,6 +228,14 @@ const PREVIEW_DIR = join(ROOT, "build", "preview");
 const CSS_FILES = ["reset.css", "variables.css", "base.css", "roadmap.css", "roadmap/_shell.css"];
 const STYLESHEETS = CSS_FILES.map((p) => "css/" + p);
 
+// hrefs de CSS na profundidade da página: Home/404 (logical "/") → "css/…";
+// Area (logical "/areas/<slug>/") → "../../css/…". Sem base absoluta.
+function stylesheetsFor(logicalPath) {
+  const rel = relativize(logicalPath, HOME_PATH); // "./" na raiz, "../../" na Area
+  const prefix = rel === "./" ? "" : rel;
+  return CSS_FILES.map((f) => prefix + "css/" + f);
+}
+
 const homeHref = relativize(HOME_PATH, HOME_PATH); // "./"
 
 // Identidade do produto — DevAtlas. Separada do roadmapMeta (que descreve só o
@@ -356,10 +366,172 @@ landmarkChecks("404.html", notFoundHtml);
   record("Home (não navegável)", "classe area-card--structuring", synth.includes("area-card--structuring"));
 }
 
+// ---- 10. páginas de Area (R3.5.4) ----------------------------------
+const areaPages = model.areas().map((area, i) => {
+  const areaPath = pathFor(area); // "/areas/<slug>/"
+  const mods = model.modules(area).map((mod, mi) => ({
+    index: mi,
+    title: mod.title,
+    slug: mod.slug,
+    conceptCount: model.conceptCount(mod),
+    href: relativize(areaPath, pathFor(mod)), // "modules/<slug>/"
+  }));
+  const html = renderArea({
+    product: PRODUCT,
+    area: {
+      index: i,
+      title: area.title,
+      slug: area.slug,
+      summary: area.summary,
+      color: area.color,
+      moduleCount: model.modules(area).length,
+      conceptCount: model.conceptCount(area),
+    },
+    modules: mods,
+    homeHref: relativize(areaPath, HOME_PATH), // "../../"
+    stylesheets: stylesheetsFor(areaPath),
+  });
+  return { area, file: filePathFor(area), html, mods };
+});
+
+// landmarks/shell nas 7 páginas de Area — agregado 7/7
+{
+  const g = "Shell (Areas)";
+  const checks = {
+    "doctype minúsculo": (h) => h.startsWith("<!doctype html>"),
+    'lang="pt-BR"': (h) => h.includes('<html lang="pt-BR">'),
+    "meta charset utf-8": (h) => h.includes('<meta charset="utf-8" />'),
+    "<title> não vazio": (h) => /<title>[^<]+<\/title>/.test(h),
+    "skip-link → #main": (h) => h.includes('<a href="#main" class="skip-link">Pular para o conteúdo principal</a>'),
+    "um <header class=site-header>": (h) => (h.match(/<header class="site-header">/g) || []).length === 1,
+    [`nav aria-label="${PRODUCT.name}"`]: (h) => (h.match(new RegExp(`<nav aria-label="${PRODUCT.name}">`, "g")) || []).length === 1,
+    "rodapé DevAtlas": (h) => h.includes(`<footer class="site-footer">\n      <p>${PRODUCT.footerText}</p>`),
+    "um <main>": (h) => (h.match(/<main[\s>]/g) || []).length === 1,
+    'main#main tabindex="-1"': (h) => h.includes('<main id="main" tabindex="-1">'),
+    "um <footer class=site-footer>": (h) => (h.match(/<footer class="site-footer">/g) || []).length === 1,
+    "_shell.css referenciado": (h) => h.includes("css/roadmap/_shell.css"),
+    "sem copy de nível/sênior": (h) => !/senior software engineer|nível sênior|roadmap.{0,12}sênior/i.test(h),
+  };
+  for (const [name, fn] of Object.entries(checks)) {
+    const bad = areaPages.filter((p) => !fn(p.html)).map((p) => p.area.slug);
+    record(g, `${name} (7/7)`, bad.length === 0, bad.length ? "falhou em: " + bad.join(", ") : "");
+  }
+}
+
+// ---- 11. validação das 7 páginas de Area ---------------------------
+{
+  const g = "Areas (R3.5.4)";
+  record(g, "7 páginas de Area geradas", areaPages.length === 7);
+  record(
+    g,
+    "Home → Area: os 7 destinos existem em build/preview/",
+    areaVM.every((a) => areaPages.some((p) => p.file === "areas/" + a.slug + "/index.html"))
+  );
+
+  const rowRe =
+    /<a class="track__row" href="([^"]+)">\s*<span class="track__num">([^<]+)<\/span>\s*<span class="track__title">([^<]*)<\/span>\s*<span class="track__meta">(\d+) conceitos<\/span>/g;
+
+  const fails = [];
+  let pathOk = true;
+  let titleOk = true;
+  let h1Ok = true;
+  let kickerOk = true;
+  let summaryOk = true;
+  let metaOk = true;
+  let crumbHomeOk = true;
+  let crumbCurrentOk = true;
+  let cardCountOk = true;
+  let moduleFieldsOk = true;
+  let sumOk = true;
+  let modHrefOk = true;
+  let noHashOk = true;
+  let noRoadmapRouteOk = true;
+  let noAbsOk = true;
+  let noScriptOk = true;
+  let noAriaLiveOk = true;
+
+  areaPages.forEach(({ area, file, html, mods }, i) => {
+    const realMods = model.modules(area);
+    const push = (cond, label) => {
+      if (!cond) fails.push(`${area.slug}: ${label}`);
+      return cond;
+    };
+    pathOk = push(file === `areas/${area.slug}/index.html`, "path físico") && pathOk;
+    titleOk = push(html.includes(`<title>${escapeHtml(area.title)} · ${PRODUCT.name}</title>`), "title = Area · DevAtlas") && titleOk;
+    h1Ok = push((html.match(/<h1[\s>]/g) || []).length === 1, "1 h1") && h1Ok;
+    h1Ok = push(html.includes(`<h1 class="page-head__title">${escapeHtml(area.title)}</h1>`), "h1 = título da Area") && h1Ok;
+    kickerOk = push(html.includes(`<p class="page-head__kicker">${("Área " + num(i)).toUpperCase()}</p>`), "kicker ÁREA NN") && kickerOk;
+    summaryOk = push(html.includes(`<p class="page-head__desc">${escapeHtml(area.summary)}</p>`), "summary da Area") && summaryOk;
+    metaOk =
+      push(
+        html.includes(`<p class="page-head__meta">${realMods.length} módulos · ${model.conceptCount(area)} conceitos</p>`),
+        "meta N módulos · M conceitos"
+      ) && metaOk;
+    crumbHomeOk = push(html.includes(`<a class="crumbs__link" href="../../">${PRODUCT.name}</a>`), "breadcrumb Home → ../../") && crumbHomeOk;
+    crumbCurrentOk =
+      push(
+        html.includes(`<span class="crumbs__here" aria-current="page">${escapeHtml(area.title)}</span>`),
+        "breadcrumb: Area atual = aria-current, sem self-link"
+      ) && crumbCurrentOk;
+
+    const rows = [...html.matchAll(rowRe)];
+    cardCountOk = push(rows.length === realMods.length && rows.length === mods.length, "nº de module cards == nº real de Modules") && cardCountOk;
+
+    let sum = 0;
+    realMods.forEach((mod, mi) => {
+      const row = rows[mi];
+      sum += model.conceptCount(mod);
+      if (!row) {
+        moduleFieldsOk = false;
+        return;
+      }
+      if (row[1] !== relativize(pathFor(area), pathFor(mod))) modHrefOk = false;
+      if (row[1] !== "modules/" + mod.slug + "/") modHrefOk = false;
+      if (row[2] !== num(mi)) moduleFieldsOk = false;
+      if (row[3] !== escapeHtml(mod.title)) moduleFieldsOk = false;
+      if (Number(row[4]) !== model.conceptCount(mod)) moduleFieldsOk = false;
+    });
+    if (!moduleFieldsOk) fails.push(`${area.slug}: campos/ordem de Module`);
+    if (!modHrefOk) fails.push(`${area.slug}: href de Module`);
+    sumOk = push(sum === model.conceptCount(area), "Σ conceitos dos Modules == total da Area") && sumOk;
+
+    // /roadmap/ e absoluto: só em href de NAVEGAÇÃO (<a>), não em <link> de CSS
+    const navHrefs = [...html.matchAll(/<a\b[^>]*\bhref="([^"]*)"/g)].map((m) => m[1]);
+    noHashOk = push(!navHrefs.some((h) => h.includes("#/")), "sem hash-route em <a href>") && noHashOk;
+    noRoadmapRouteOk = push(!navHrefs.some((h) => h.includes("/roadmap/")), "sem rota /roadmap/ em <a href>") && noRoadmapRouteOk;
+    noAbsOk =
+      push(
+        !navHrefs.some((h) => h.startsWith("/") || h.startsWith("http")) && !html.includes("/ai-learning-deck/"),
+        "sem href de navegação absoluto / base fixa"
+      ) && noAbsOk;
+    noScriptOk = push(!html.toLowerCase().includes("<script"), "sem <script>") && noScriptOk;
+    noAriaLiveOk = push(!html.includes("aria-live"), "sem aria-live") && noAriaLiveOk;
+  });
+
+  record(g, "path físico areas/<slug>/index.html (7/7)", pathOk);
+  record(g, "title = «Area · DevAtlas» (7/7)", titleOk);
+  record(g, "exatamente um <h1> = título da Area (7/7)", h1Ok);
+  record(g, "kicker ÁREA NN na ordem (7/7)", kickerOk);
+  record(g, "summary da Area preservado (7/7)", summaryOk);
+  record(g, "meta «N módulos · M conceitos» (7/7)", metaOk);
+  record(g, "breadcrumb Home → ../../ (7/7)", crumbHomeOk);
+  record(g, "breadcrumb Area atual = aria-current, sem self-link (7/7)", crumbCurrentOk);
+  record(g, "nº de module cards == nº real de Modules (7/7)", cardCountOk);
+  record(g, "Module: num + título + conceptCount + ordem (7/7)", moduleFieldsOk);
+  record(g, "href de cada Module = modules/<slug>/ relativo (7/7)", modHrefOk);
+  record(g, "Σ conceitos dos Modules == total da Area (7/7)", sumOk);
+  record(g, "zero hash-route (#/) em <a href> (7/7)", noHashOk);
+  record(g, "zero rota /roadmap/ em <a href> — css/roadmap/ não conta (7/7)", noRoadmapRouteOk);
+  record(g, "zero href de navegação absoluto / /ai-learning-deck/ (7/7)", noAbsOk);
+  record(g, "zero <script> (7/7)", noScriptOk);
+  record(g, "zero aria-live (7/7)", noAriaLiveOk);
+  if (fails.length) record(g, "falhas detalhadas", false, fails.slice(0, 20).join(" | "));
+}
+
 // ---- relatório ---------------------------------------------------------
 const GROUPS = [...new Set(results.map((r) => r.group))];
 const failed = results.filter((r) => !r.ok).length;
-console.log("build-roadmap — R3.5.3  (auditoria + preview: Home real + 404)\n");
+console.log("build-roadmap — R3.5.4  (auditoria + preview: Home + 7 Areas + 404)\n");
 for (const group of GROUPS) {
   console.log(group);
   for (const r of results.filter((x) => x.group === group)) {
@@ -374,7 +546,7 @@ console.log(`  total ${audit.total} · resolved ${audit.resolved} · ambiguous $
 for (const o of audit.offenders.slice(0, 20)) console.log(`  ✗ ${o.kind}: ${JSON.stringify(o.ref)} → ${o.status}`);
 console.log("");
 
-console.log("Contagens conceituais (Area/Module/Concept ainda não gerados — R3.5.4+)");
+console.log("Contagens conceituais (Module/Concept ainda não gerados — R3.5.5+)");
 console.log(`  ${nodeCount} roadmap node paths`);
 console.log(`  ${contentRoutes} content routes futuras: 1 Home + ${areaCount} Areas + ${moduleCount} Modules + ${conceptCount} Concepts`);
 console.log(`  ${htmlPages} HTML pages futuras: ${contentRoutes} content pages + 1 página 404`);
@@ -382,19 +554,21 @@ console.log("  Artefatos auxiliares (ex.: _routes.txt) NÃO entram nessa contage
 console.log("");
 
 // ---- escrita do preview — só se TODAS as invariantes passaram ---------
-console.log("Preview estático (R3.5.3 — Home real + 404; Area/Module/Concept → R3.5.4+; sem JS)");
+console.log("Preview estático (R3.5.4 — Home + 7 Areas + 404; Module/Concept → R3.5.5+; sem JS)");
 if (failed === 0) {
   mkdirSync(join(PREVIEW_DIR, "css", "roadmap"), { recursive: true });
   for (const f of CSS_FILES) copyFileSync(join(ROOT, "css", f), join(PREVIEW_DIR, "css", f));
   console.log(`  copiado: build/preview/css/ (${CSS_FILES.length} arquivos CSS)`);
-  const files = [
-    ["build/preview/index.html", indexHtml],
-    ["build/preview/404.html", notFoundHtml],
-  ];
-  for (const [rel, html] of files) {
-    writeFileSync(join(ROOT, rel), html);
-    console.log(`  escrito: ${rel} (${Buffer.byteLength(html)} bytes)`);
+  writeFileSync(join(PREVIEW_DIR, "index.html"), indexHtml);
+  writeFileSync(join(PREVIEW_DIR, "404.html"), notFoundHtml);
+  for (const { file, html } of areaPages) {
+    const abs = join(PREVIEW_DIR, file);
+    mkdirSync(dirname(abs), { recursive: true });
+    writeFileSync(abs, html);
   }
+  const htmlCount = 2 + areaPages.length;
+  console.log(`  escrito: index.html + 404.html + ${areaPages.length} × areas/<slug>/index.html`);
+  console.log(`  total: ${htmlCount} HTMLs de conteúdo (1 Home + ${areaPages.length} Areas + 1 404)`);
   console.log("  servir:  cd build/preview && python3 -m http.server");
 } else {
   console.log("  NÃO escrito — invariante falhou; corrija antes de gerar o preview.");
