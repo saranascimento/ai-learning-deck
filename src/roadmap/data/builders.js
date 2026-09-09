@@ -15,6 +15,14 @@ export const concept = (o) =>
       subtopics: [],
       resources: [],
       content: null,
+      // R1 — dimensões aditivas: classificação semântica (learningFocus/essential)
+      // e conteúdo de estudo (summary/examples/exercise). Só defaults estruturais
+      // nesta rodada; o preenchimento é trabalho editorial (R5+).
+      learningFocus: [],
+      essential: false,
+      summary: "",
+      examples: [],
+      exercise: null,
     },
     o
   );

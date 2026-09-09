@@ -52,13 +52,31 @@ function crumbs(items) {
   return el("nav", { class: "crumbs", "aria-label": "trilha" }, kids);
 }
 
+// Chips de marcador — derivados das dimensões aprovadas; nenhum texto de chip é
+// armazenado no dataset. Dimensões independentes:
+//   Estrutura  : concept.canonical === true → CONCEITO-BASE · false → REVISITA
+//   Foco       : concept.learningFocus inclui "conceptual" → CONCEITUAL · "practical" → PRÁTICO
+//   Prioridade : concept.essential === true → ESSENCIAL
+// Modo { compact } (lista de Concepts dentro do Module): só ESSENCIAL e
+// CONCEITO-BASE/REVISITA — CONCEITUAL/PRÁTICO ficam de fora dessa listagem.
+//
 // Badges de colisão de nome (concept.collision) e o marcador de novidade da Fase 2
 // (concept.isNew) são metadados editoriais/de curadoria e ficam fora da navegação
 // normal por decisão de UX — os dados continuam intactos no dataset.
-function markerChips(concept) {
+function markerChips(concept, opts) {
+  const compact = !!(opts && opts.compact);
+  const focus = concept.learningFocus || [];
   const chips = [];
-  if (concept.canonical) chips.push(el("span", { class: "chip chip--c", title: "conceito-base", text: "conceito-base" }));
-  if (!concept.canonical || concept.revisitOf) chips.push(el("span", { class: "chip chip--r", title: "revisita de um conceito-base anterior", text: "revisita" }));
+
+  if (concept.essential) chips.push(el("span", { class: "chip chip--essential", title: "essencial para Senior Software Engineer", text: "ESSENCIAL" }));
+
+  if (concept.canonical) chips.push(el("span", { class: "chip chip--c", title: "conceito-base — lar canônico do conceito", text: "CONCEITO-BASE" }));
+  else chips.push(el("span", { class: "chip chip--r", title: "revisita de um conceito-base anterior", text: "REVISITA" }));
+
+  if (!compact) {
+    if (focus.indexOf("conceptual") !== -1) chips.push(el("span", { class: "chip chip--conceptual", title: "domínio conceitual — compreender, explicar, raciocinar", text: "CONCEITUAL" }));
+    if (focus.indexOf("practical") !== -1) chips.push(el("span", { class: "chip chip--practical", title: "domínio prático — implementar, aplicar, diagnosticar", text: "PRÁTICO" }));
+  }
   return chips;
 }
 
@@ -195,7 +213,7 @@ function renderModule(area, module) {
         concepts.map((c, ci) =>
           el("a", { class: "track__row track__row--concept", href: router.concept(c) }, [
             el("span", { class: "track__num", text: num(ci) }),
-            el("span", { class: "track__title" }, [c.title, el("span", { class: "track__chips" }, markerChips(c))]),
+            el("span", { class: "track__title" }, [c.title, el("span", { class: "track__chips" }, markerChips(c, { compact: true }))]),
             el("span", { class: "track__arrow", "aria-hidden": "true", text: "→" }),
           ])
         )

@@ -24,6 +24,12 @@ body {
   --status-todo: var(--color-text-muted);
   --status-studying: #e0a458;
   --status-done: #57c98a;
+
+  /* Chips de classificação semântica (R1) — cores dos marcadores derivados.
+     CONCEITO-BASE/REVISITA usam --area-color (.chip--c / .chip--r). */
+  --chip-essential: #e8b64c;
+  --chip-conceptual: #b48ead;
+  --chip-practical: #7fbfc9;
 }
 
 .roadmap {
@@ -301,6 +307,25 @@ a.track__row:hover .track__arrow {
 
 .chip--r {
   border-style: dashed;
+}
+
+/* ESSENCIAL — prioridade Senior. Destaque mais forte: preenchimento + peso. */
+.chip--essential {
+  border-color: color-mix(in srgb, var(--chip-essential) 60%, var(--color-border));
+  background: color-mix(in srgb, var(--chip-essential) 16%, transparent);
+  color: var(--chip-essential);
+  font-weight: 700;
+}
+
+/* CONCEITUAL / PRÁTICO — foco de aprendizado; discretos, matizes distintos. */
+.chip--conceptual {
+  border-color: color-mix(in srgb, var(--chip-conceptual) 45%, var(--color-border));
+  color: color-mix(in srgb, var(--chip-conceptual) 82%, var(--color-text));
+}
+
+.chip--practical {
+  border-color: color-mix(in srgb, var(--chip-practical) 45%, var(--color-border));
+  color: color-mix(in srgb, var(--chip-practical) 82%, var(--color-text));
 }
 
 .chip--new {
