@@ -36,15 +36,21 @@ export function escapeAttr(value) {
  *                   Home (default: true). A Home é a raiz — passa `false`: o
  *                   header global (e o link `site-header__home`) some, a página
  *                   começa direto no <main>. Não afeta o skip-link nem o rodapé.
+ *   - scripts     : hrefs (já resolvidos, relativos) de <script type="module">
+ *                   ao fim do <body> (default: []). Enhancement opt-in por
+ *                   página — a Home/Area/Module/404 não passam nada.
  *
- * Sem aria-live global. Sem <script>.
+ * Sem aria-live global. Sem <script> a menos que `scripts` seja passado.
  */
-export function renderDocument({ title, main, homeHref, homeLabel, stylesheets = [], navLabel, footerText, siteHeader = true }) {
+export function renderDocument({ title, main, homeHref, homeLabel, stylesheets = [], navLabel, footerText, siteHeader = true, scripts = [] }) {
   const links = stylesheets
     .map((href) => `    <link rel="stylesheet" href="${escapeAttr(href)}" />`)
     .join("\n");
   const navAria = navLabel || homeLabel;
   const footer = footerText || homeLabel;
+  const scriptTags = scripts.length
+    ? "\n" + scripts.map((src) => `    <script type="module" src="${escapeAttr(src)}"></script>`).join("\n")
+    : "";
 
   const header = siteHeader
     ? `    <header class="site-header">
@@ -70,7 +76,7 @@ ${main}
     </main>
     <footer class="site-footer">
       <p>${escapeHtml(footer)}</p>
-    </footer>
+    </footer>${scriptTags}
   </body>
 </html>
 `;

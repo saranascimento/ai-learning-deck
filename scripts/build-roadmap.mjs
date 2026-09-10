@@ -1,10 +1,15 @@
 /*
- * build-roadmap — R3.5.6: AUDITORIA + PREVIEW (conjunto completo da v0).
+ * build-roadmap — R3.5.7: AUDITORIA + PREVIEW (conjunto completo da v0).
  *
- * Preserva todas as validações da R3.5.1–R3.5.5 e, se tudo passar, gera o
+ * Preserva todas as validações da R3.5.1–R3.5.6 e, se tudo passar, gera o
  * conjunto completo: Home DevAtlas + 7 Areas + 89 Modules + 668 Concepts (porte
- * da Concept Study Page da R3) + 404 = 766 HTMLs. Sem JavaScript (as tabs da
- * Área de estudo são o enhancement da R3.5.8).
+ * da Concept Study Page da R3) + 404 = 766 HTMLs.
+ *
+ * R3.5.7: as 668 Concept Pages ganham UM <script type="module"> apontando para
+ * `assets/concept-tabs.js` (copiado de src/roadmap/enhance/ para dentro do
+ * preview). Progressive enhancement: sem JS a Área de estudo é 3 seções
+ * sequenciais visíveis; com JS vira APG Tabs. Home/Area/Module/404 continuam
+ * 100% sem <script>.
  *
  * Requisitos: Node >= 22.7 (detecção de sintaxe ESM sem package.json). Zero
  * dependências. Só escreve dentro de build/ (gitignored). Não toca na SPA.
@@ -13,7 +18,7 @@
  * Exit: 0 se todas as invariantes obrigatórias passarem; != 0 caso contrário
  *       (nesse caso o preview NÃO é escrito).
  */
-import { mkdirSync, writeFileSync, copyFileSync } from "node:fs";
+import { mkdirSync, writeFileSync, copyFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { roadmap, roadmapMeta } from "../src/roadmap/data/index.js";
@@ -228,6 +233,12 @@ const PREVIEW_DIR = join(ROOT, "build", "preview");
 // Não move nem altera os originais em css/. hrefs relativos, sem base absoluta.
 const CSS_FILES = ["reset.css", "variables.css", "base.css", "roadmap.css", "roadmap/_shell.css"];
 const STYLESHEETS = CSS_FILES.map((p) => "css/" + p);
+
+// Enhancement JS (R3.5.7) — SÓ as 668 Concept Pages carregam este asset, como
+// <script type="module">. É COPIADO para dentro do preview (o deploy não depende
+// de `src/` existir). Path lógico no output: "/assets/concept-tabs.js".
+const ENHANCE_SRC = "src/roadmap/enhance/concept-tabs.js";
+const ENHANCE_DEST = "assets/concept-tabs.js";
 
 // hrefs de CSS na profundidade da página: Home/404 (logical "/") → "css/…";
 // Area (logical "/areas/<slug>/") → "../../css/…". Sem base absoluta.
@@ -831,6 +842,7 @@ for (const area of model.areas()) {
         next: sib.next ? { title: sib.next.title, href: relativize(cPath, pathFor(sib.next)) } : null,
         homeHref: relativize(cPath, HOME_PATH), // "../../../../../../"
         stylesheets: stylesheetsFor(cPath),
+        enhancementScript: assetHrefFor(cPath, ENHANCE_DEST), // "../../../../../../assets/concept-tabs.js"
       };
       conceptPages.push({ area, module, concept, ci, file: filePathFor(concept), html: renderConcept(vm), vm });
     });
@@ -1000,7 +1012,11 @@ for (const area of model.areas()) {
       );
     }
     set("noHidden", F(!/data-study-panel="[^"]*"[^>]*\shidden/.test(html) && !html.includes("<section class=\"study-panel\" hidden"), "sem atributo hidden nos painéis", s));
-    set("noTabRole", F(!/role="tab(list|panel)?"/.test(html), "sem role=tab/tablist/tabpanel (enhancement é R3.5.8)", s));
+    set("noTabRole", F(!/role="tab(list|panel)?"/.test(html), "sem role=tab/tablist/tabpanel no HTML fonte (enhancement = R3.5.7 client-side)", s));
+    set("noAriaSelected", F(!html.includes("aria-selected"), "sem aria-selected no HTML fonte", s));
+    // ordem dos painéis: conteudo → exemplos → exercicio
+    const panelOrder = [...html.matchAll(/data-study-panel="([^"]+)"/g)].map((m) => m[1]);
+    set("panelOrder", F(panelOrder.join(",") === "conteudo,exemplos,exercicio", "3 painéis na ordem conteudo,exemplos,exercicio", s));
 
     // prev/next
     const pv = realSibs.prev;
@@ -1024,7 +1040,25 @@ for (const area of model.areas()) {
     set("noHash", F(!navHrefs.some((h) => h.includes("#/")), "sem hash-route em <a href>", s));
     set("noRoadmapRoute", F(!navHrefs.some((h) => h.includes("/roadmap/")), "sem rota /roadmap/ em <a href>", s));
     set("noAbs", F(!navHrefs.some((h) => h.startsWith("/") || h.startsWith("http")) && !html.includes("/ai-learning-deck/"), "sem href de navegação absoluto", s));
-    set("noScript", F(!html.toLowerCase().includes("<script"), "sem <script>", s));
+    // enhancement de tabs (R3.5.7): exatamente 1 <script type="module"> → o asset de tabs, relativo
+    const scriptSrcs = [...html.matchAll(/<script\b[^>]*\bsrc="([^"]*)"[^>]*>/g)].map((m) => m[1]);
+    const allScripts = [...html.matchAll(/<script\b([^>]*)>/g)].map((m) => m[1]);
+    set(
+      "enhanceScript",
+      F(
+        scriptSrcs.length === 1 &&
+          allScripts.length === 1 &&
+          /type="module"/.test(allScripts[0]) &&
+          scriptSrcs[0] === assetHrefFor(cPath, ENHANCE_DEST) &&
+          scriptSrcs[0].endsWith("assets/concept-tabs.js") &&
+          !scriptSrcs[0].startsWith("/") &&
+          !scriptSrcs[0].startsWith("http") &&
+          !scriptSrcs[0].includes("/ai-learning-deck/") &&
+          !scriptSrcs[0].includes("/src/"),
+        "1 <script type=module> = assets/concept-tabs.js (relativo)",
+        s
+      )
+    );
     set("noAriaLive", F(!html.includes("aria-live"), "sem aria-live", s));
     set("noHandler", F(!/<[a-z][^>]*\son[a-z]+=/i.test(html), "sem handler inline", s));
 
@@ -1072,11 +1106,13 @@ for (const area of model.areas()) {
   P("noResources", "sem «Recursos» quando vazio");
   P("studyHeading", "seção «Área de estudo»");
   P("studyContainer", "container data-study-tabs");
+  P("panelOrder", "3 painéis na ordem conteudo → exemplos → exercicio");
   P("panel_conteudo", "painel Conteúdo + empty state");
   P("panel_exemplos", "painel Exemplos + empty state");
   P("panel_exercicio", "painel Exercício + empty state");
-  P("noHidden", "3 painéis SEM atributo hidden (visíveis sem JS)");
-  P("noTabRole", "sem role=tab/tablist/tabpanel (enhancement = R3.5.8)");
+  P("noHidden", "3 painéis SEM atributo hidden no HTML fonte (visíveis sem JS)");
+  P("noTabRole", "sem role=tab/tablist/tabpanel no HTML fonte (roles = enhancement client-side)");
+  P("noAriaSelected", "sem aria-selected no HTML fonte");
   if (flags.prev !== undefined) P("prev", "prev correto (href relativo + rel=prev + título)");
   if (flags.next !== undefined) P("next", "next correto (href relativo + rel=next + título)");
   P("noPrev", "sem prev no 1º Concept de cada Module");
@@ -1085,7 +1121,7 @@ for (const area of model.areas()) {
   P("noHash", "zero hash-route (#/) em <a href>");
   P("noRoadmapRoute", "zero rota /roadmap/ em <a href> — css/roadmap/ não conta");
   P("noAbs", "zero href de navegação absoluto / /ai-learning-deck/");
-  P("noScript", "zero <script>");
+  P("enhanceScript", "exatamente 1 <script type=module> = assets/concept-tabs.js (relativo, resolve na profundidade do Concept)");
   P("noAriaLive", "zero aria-live");
   P("noHandler", "zero handler inline");
   record(g, `relações resolved → alvo físico gerado (${physChecked} refs checadas)`, physOk);
@@ -1157,10 +1193,65 @@ for (const area of model.areas()) {
   record(g, "R2 total Concept(798) + Module(118) == 916", 798 + 118 === 916);
 }
 
+// ---- 19. enhancement de tabs (R3.5.7) — asset + inclusão seletiva ------
+{
+  const g = "Enhancement de tabs (R3.5.7)";
+  const scriptTagRe = /<script\b[^>]*>/g;
+
+  // 19a. fonte do asset existe (necessária para o build copiar p/ o preview)
+  record(g, `fonte ${ENHANCE_SRC} existe`, existsSync(join(ROOT, ENHANCE_SRC)));
+
+  // 19b. as 668 Concept Pages: exatamente 1 <script type="module"> = o asset, relativo
+  const cWith1Module = conceptPages.filter((p) => {
+    const tags = p.html.match(scriptTagRe) || [];
+    const srcs = [...p.html.matchAll(/<script\b[^>]*\bsrc="([^"]*)"/g)].map((m) => m[1]);
+    return (
+      tags.length === 1 &&
+      /type="module"/.test(tags[0]) &&
+      srcs.length === 1 &&
+      srcs[0] === assetHrefFor(pathFor(p.concept), ENHANCE_DEST)
+    );
+  }).length;
+  record(g, `668 Concept Pages com 1 <script type=module src=…/${ENHANCE_DEST}>`, cWith1Module === 668);
+  record(
+    g,
+    "src do script é relativo (sem leading /, sem http, sem /ai-learning-deck/, sem /src/)",
+    conceptPages.every((p) => {
+      const src = (p.html.match(/<script\b[^>]*\bsrc="([^"]*)"/) || [])[1] || "";
+      return src && !src.startsWith("/") && !src.startsWith("http") && !src.includes("/ai-learning-deck/") && !src.includes("/src/");
+    })
+  );
+  // todas as Concept Pages estão na mesma profundidade → mesmo href relativo
+  record(
+    g,
+    "src idêntico nas 668 (mesma profundidade) = ../../../../../../assets/concept-tabs.js",
+    new Set(conceptPages.map((p) => (p.html.match(/<script\b[^>]*\bsrc="([^"]*)"/) || [])[1])).size === 1 &&
+      (conceptPages[0].html.match(/<script\b[^>]*\bsrc="([^"]*)"/) || [])[1] === "../../../../../../assets/concept-tabs.js"
+  );
+
+  // 19c. NENHUMA outra página carrega concept-tabs (nem <script> algum)
+  const others = [
+    ["Home", indexHtml],
+    ["404", notFoundHtml],
+    ...areaPages.map((p) => ["Area " + p.area.slug, p.html]),
+    ...modulePages.map((p) => ["Module " + p.module.slug, p.html]),
+  ];
+  record(g, "Home / 404 / 7 Areas / 89 Modules SEM concept-tabs", others.every(([, h]) => !h.includes("concept-tabs")));
+  record(g, "Home / 404 / 7 Areas / 89 Modules SEM qualquer <script>", others.every(([, h]) => !h.toLowerCase().includes("<script")));
+
+  // 19d. o href relativo, resolvido a partir de um dir de Concept, aponta p/ o path lógico do asset
+  const sampleConcept = conceptPages[0].concept;
+  record(
+    g,
+    "href do script resolve para /" + ENHANCE_DEST + " (relativize)",
+    assetHrefFor(pathFor(sampleConcept), ENHANCE_DEST) === relativize(pathFor(sampleConcept), "/assets/") + "concept-tabs.js"
+  );
+}
+
 // ---- relatório ---------------------------------------------------------
 const GROUPS = [...new Set(results.map((r) => r.group))];
 const failed = results.filter((r) => !r.ok).length;
-console.log("build-roadmap — R3.5.6  (auditoria + preview: conjunto completo da v0 — 766 HTMLs)\n");
+console.log("build-roadmap — R3.5.7  (auditoria + preview: 766 HTMLs + enhancement de tabs nos Concepts)\n");
 for (const group of GROUPS) {
   console.log(group);
   for (const r of results.filter((x) => x.group === group)) {
@@ -1183,11 +1274,16 @@ console.log("  Artefatos auxiliares (ex.: _routes.txt) NÃO entram nessa contage
 console.log("");
 
 // ---- escrita do preview — só se TODAS as invariantes passaram ---------
-console.log("Preview estático (R3.5.6 — Home + 7 Areas + 89 Modules + 668 Concepts + 404; sem JS)");
+console.log("Preview estático (R3.5.7 — Home + 7 Areas + 89 Modules + 668 Concepts + 404; JS só nos Concepts)");
+let assetOk = true;
 if (failed === 0) {
   mkdirSync(join(PREVIEW_DIR, "css", "roadmap"), { recursive: true });
   for (const f of CSS_FILES) copyFileSync(join(ROOT, "css", f), join(PREVIEW_DIR, "css", f));
   console.log(`  copiado: build/preview/css/ (${CSS_FILES.length} arquivos CSS)`);
+  mkdirSync(join(PREVIEW_DIR, dirname(ENHANCE_DEST)), { recursive: true });
+  copyFileSync(join(ROOT, ENHANCE_SRC), join(PREVIEW_DIR, ENHANCE_DEST));
+  assetOk = existsSync(join(PREVIEW_DIR, ENHANCE_DEST));
+  console.log(`  copiado: build/preview/${ENHANCE_DEST} (enhancement de tabs; só as Concept Pages carregam)${assetOk ? "" : "  ✗ AUSENTE"}`);
   writeFileSync(join(PREVIEW_DIR, "index.html"), indexHtml);
   writeFileSync(join(PREVIEW_DIR, "404.html"), notFoundHtml);
   for (const { file, html } of [...areaPages, ...modulePages, ...conceptPages]) {
@@ -1197,12 +1293,13 @@ if (failed === 0) {
   }
   const htmlCount = 2 + areaPages.length + modulePages.length + conceptPages.length;
   console.log(`  escrito: index.html + 404.html + ${areaPages.length} Areas + ${modulePages.length} Modules + ${conceptPages.length} Concepts`);
-  console.log(`  total: ${htmlCount} HTMLs (1 Home + ${areaPages.length} Areas + ${modulePages.length} Modules + ${conceptPages.length} Concepts + 1 404)`);
+  console.log(`  total: ${htmlCount} HTMLs (1 Home + ${areaPages.length} Areas + ${modulePages.length} Modules + ${conceptPages.length} Concepts + 1 404) + 1 asset JS (não conta como HTML)`);
   console.log("  servir:  cd build/preview && python3 -m http.server");
 } else {
   console.log("  NÃO escrito — invariante falhou; corrija antes de gerar o preview.");
 }
 console.log("");
 
-console.log(failed === 0 ? "OK — todas as invariantes passaram" : `FALHOU — ${failed} verificação(ões)`);
-process.exit(failed === 0 ? 0 : 1);
+const ok = failed === 0 && assetOk;
+console.log(ok ? "OK — todas as invariantes passaram" : failed === 0 ? "FALHOU — asset de enhancement não foi escrito" : `FALHOU — ${failed} verificação(ões)`);
+process.exit(ok ? 0 : 1);

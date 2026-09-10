@@ -13,10 +13,14 @@
  *     data-study-panel = conteudo/exemplos/exercicio } ·
  *   [nav.concept-nav prev/next]
  *
- * R3.5.6 = SÓ o HTML base (pré-enhancement). As 3 seções de estudo ficam
- * SEQUENCIAIS e VISÍVEIS sem JavaScript. NÃO adiciona `hidden`, `role="tab*"`,
- * `role="tablist"` nem tabindex — isso é o enhancement de tabs (R3.5.8), que
- * usa os hooks `data-study-tabs` / `data-study-panel` já presentes aqui.
+ * O HTML base é SÓ pré-enhancement: as 3 seções de estudo ficam SEQUENCIAIS e
+ * VISÍVEIS sem JavaScript. O renderer NÃO adiciona `hidden`, `role="tab*"`,
+ * `role="tablist"` nem tabindex nos painéis.
+ *
+ * R3.5.7: quando `vm.enhancementScript` vem preenchido, o documento carrega
+ * `<script type="module" src="…/assets/concept-tabs.js">` ao fim do <body> —
+ * progressive enhancement que promove `[data-study-tabs]` / `[data-study-panel]`
+ * ao padrão APG Tabs. Sem o script, nada muda no HTML base.
  *
  * note/collision/isNew/relocated/suggestions: NÃO aparecem (metadata editorial).
  * summary/content/examples/exercise: hoje sempre vazios → empty states (a SPA
@@ -78,9 +82,11 @@ function taglist(items, asLink) {
  *   vm.resources  : { label, href }[]
  *   vm.prev/next  : { title, href } | null
  *   vm.homeHref, vm.stylesheets
+ *   vm.enhancementScript : href relativo do <script type="module"> de tabs, ou
+ *                          "" / ausente para não emitir <script> (R3.5.7)
  */
 export function renderConcept(vm) {
-  const { product, area, module, concept, requires, revisitOf, revisit, resources, prev, next, homeHref, stylesheets } = vm;
+  const { product, area, module, concept, requires, revisitOf, revisit, resources, prev, next, homeHref, stylesheets, enhancementScript } = vm;
   const kicker = ("Conceito " + num(concept.index)).toUpperCase();
 
   const fixed = [
@@ -164,5 +170,6 @@ export function renderConcept(vm) {
     footerText: product.footerText,
     stylesheets,
     main,
+    scripts: enhancementScript ? [enhancementScript] : [],
   });
 }
