@@ -29,7 +29,21 @@
   outline-offset: 2px;
 }
 
-/* Landmarks — respiro básico do shell, sem redesenhar nada. */
+/* Container do conteúdo estático — mesma intenção do `.roadmap` da SPA
+   (`max-width: var(--rm-max-width)` = 77.5rem/1240px, centralizado), aplicada
+   ao shell gerado (a SPA usava `<main class="roadmap">`; o shell usa
+   `<main id="main">`, que `.roadmap` nunca alcançou). Reusa o token existente;
+   sem split de CSS, nada movido de roadmap.css. Header/main/footer alinham na
+   mesma coluna. Em telas < 77.5rem o `max-width` não restringe e o padding
+   lateral (`clamp`) garante o respiro — sem overflow (box-sizing: border-box). */
+.site-header,
+main#main,
+.site-footer {
+  max-width: var(--rm-max-width);
+  margin-inline: auto;
+}
+
+/* Landmarks — respiro lateral/vertical, sem redesenhar nada. */
 .site-header,
 .site-footer {
   padding: 1rem clamp(1rem, 4vw, 4.5rem);

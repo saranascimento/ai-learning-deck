@@ -96,6 +96,23 @@ body {
   border-radius: var(--radius-card);
 }
 
+/* Home estática (DevAtlas): o card inteiro é o <a class="area-card">. O <li> vira
+   flex e o <a> preenche (flex:1) e estica até a altura da linha do grid — cards
+   de mesma altura, sem overflow horizontal (min-width:0 libera o encolhimento).
+   O hover mantém o realce do título que antes ficava no <a> do título. Regras
+   escopadas em `.area-grid > li` — inertes para a SPA (usa <article class="area-card">
+   sem <li>). */
+.area-grid > li {
+  display: flex;
+}
+.area-grid > li > .area-card {
+  flex: 1;
+  min-width: 0;
+}
+a.area-card:hover .area-card__title {
+  color: var(--area-color);
+}
+
 .area-card--structuring {
   opacity: 0.72;
 }

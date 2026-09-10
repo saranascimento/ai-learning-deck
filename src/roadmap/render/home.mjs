@@ -6,10 +6,12 @@
  * domínio nem deploy. O shell vem de html.mjs — este módulo NÃO duplica shell.
  *
  * Preserva o conteúdo/estrutura da Home atual (views.js › renderHome/areaCard).
- * Melhorias semânticas já aprovadas no plano da R3.5:
+ * Semântica/UX aprovadas para a v0:
  *   - <ul>/<li> para a lista de Áreas (antes: <section> com <article> soltos);
- *   - título da Área sempre <h2> (antes: <a> nu p/ navegável, <h2> p/ não nav.);
- *   - UM link por card — o <h2><a>; o "Abrir área →" redundante sai.
+ *   - card navegável = o CARD INTEIRO é <a class="area-card"> (uma superfície de
+ *     navegação por card; sai o CTA "Abrir área →", sem link sobreposto, sem JS);
+ *   - título = <h2 class="area-card__title"> texto (sem link);
+ *   - Home é a raiz da navegação → NENHUM breadcrumb.
  *
  * A identidade do produto (DevAtlas + tagline) vem em `product` — separada do
  * roadmapMeta, que descreve só o conjunto de conteúdo (as 7 Áreas).
@@ -50,28 +52,39 @@ export function renderHome({ product, areas, decks = [], homeHref, stylesheets =
   });
 }
 
-// Card de Área — <li class="area-card">. Não usa <article> aninhado: isso
-// quebraria o esticar-para-altura-da-linha do grid (o <li> é o item do grid) e
-// exigiria CSS novo, fora do escopo desta etapa.
+// Card de Área. Navegável: o CARD INTEIRO é o <a class="area-card"> (uma única
+// superfície de navegação por card; sem CTA "Abrir área →", sem link sobreposto,
+// sem JS). Não-navegável: <li class="area-card ..."> sem link. Em ambos os casos
+// o <li> é bare — .area-grid > li vira flex (css/roadmap.css) para o <a>.area-card
+// esticar até a altura da linha do grid, mantendo cards de mesma altura.
 function renderAreaCard(a) {
   const kicker = ("Área " + num(a.index)).toUpperCase();
-  const titleInner = a.navigable
-    ? `<a class="area-card__title--link" href="${escapeAttr(a.href)}">${escapeHtml(a.title)}</a>`
-    : escapeHtml(a.title);
   const countText = a.navigable
     ? `${a.moduleCount} módulos · ${a.conceptCount} conceitos`
     : `${a.moduleCount} módulos planejados`;
 
-  const lines = [
-    `        <li class="area-card${a.navigable ? "" : " area-card--structuring"}" style="--area-color: ${escapeAttr(a.color)}">`,
-    `          <p class="area-card__kicker">${escapeHtml(kicker)}</p>`,
-    `          <h2 class="area-card__title">${titleInner}</h2>`,
-    `          <p class="area-card__desc">${escapeHtml(a.summary)}</p>`,
-  ];
-  if (!a.navigable) lines.push('          <p class="area-card__badge">Em estruturação</p>');
-  lines.push(`          <p class="area-card__foot"><span class="area-card__count">${escapeHtml(countText)}</span></p>`);
-  lines.push("        </li>");
-  return lines.join("\n");
+  const inner = [
+    `            <p class="area-card__kicker">${escapeHtml(kicker)}</p>`,
+    `            <h2 class="area-card__title">${escapeHtml(a.title)}</h2>`,
+    `            <p class="area-card__desc">${escapeHtml(a.summary)}</p>`,
+    ...(a.navigable ? [] : ['            <p class="area-card__badge">Em estruturação</p>']),
+    `            <p class="area-card__foot"><span class="area-card__count">${escapeHtml(countText)}</span></p>`,
+  ].join("\n");
+
+  if (a.navigable) {
+    return [
+      "        <li>",
+      `          <a class="area-card" href="${escapeAttr(a.href)}" style="--area-color: ${escapeAttr(a.color)}">`,
+      inner,
+      "          </a>",
+      "        </li>",
+    ].join("\n");
+  }
+  return [
+    `        <li class="area-card area-card--structuring" style="--area-color: ${escapeAttr(a.color)}">`,
+    inner,
+    "        </li>",
+  ].join("\n");
 }
 
 // Rodapé de decks — <footer> dentro de <main> (não é o contentinfo do site).

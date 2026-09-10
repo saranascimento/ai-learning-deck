@@ -54,3 +54,32 @@ export function renderChipList(concept, { compact = false } = {}) {
   }
   return chips.join("");
 }
+
+// ---- relações navegáveis (R2) — Requires / Revisita de / Revisitado em -----
+// Mesmo markup de views.js › relationPill / refList. `raw` sempre verbatim.
+// Contrato R2: resolved → <a> clicável; ambiguous/unresolved → <span> apagado,
+// NUNCA link. `ref` = { raw, href, kind } (resolved) | { raw, status } (flagged).
+
+/** renderRelationPill(ref) → um pill (usado standalone p/ "Revisita de"). */
+export function renderRelationPill(ref) {
+  if (ref && ref.href) {
+    return (
+      `<a class="relation-pill" href="${escapeAttr(ref.href)}" data-ref-kind="${escapeAttr(ref.kind)}">` +
+      `<span class="relation-pill__label">${escapeHtml(ref.raw)}</span>` +
+      `<span class="relation-pill__arrow" aria-hidden="true">→</span></a>`
+    );
+  }
+  return (
+    `<span class="relation-pill relation-pill--flagged" data-ref-status="${escapeAttr(ref && ref.status)}">` +
+    `<span class="relation-pill__label">${escapeHtml(ref && ref.raw)}</span></span>`
+  );
+}
+
+/** renderRelationList(refs) → <ul class="relation-list"> de <li> com pills. */
+export function renderRelationList(refs) {
+  return (
+    '<ul class="relation-list">' +
+    refs.map((r) => `<li class="relation-list__item">${renderRelationPill(r)}</li>`).join("") +
+    "</ul>"
+  );
+}
