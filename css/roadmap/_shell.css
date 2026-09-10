@@ -53,6 +53,16 @@ main#main {
   padding: clamp(1.5rem, 4vw, 3rem) clamp(1rem, 4vw, 4.5rem);
 }
 
+/* Home estática: título + tagline + grid de Áreas formam uma composição única.
+   A masthead herda `margin-bottom: var(--space-md)` (roadmap.css, compartilhado
+   com a Home da SPA); aqui encurtamos esse respiro só na Home gerada, sem colar
+   os blocos. Escopo `main#main > .masthead`: páginas geradas apenas (a SPA não
+   carrega este arquivo) e só a Home (Area/Module/Concept não têm masthead).
+   Sem token novo, sem margem negativa — só um passo (`--space-xs`) abaixo de md. */
+main#main > .masthead {
+  margin-bottom: calc(var(--space-md) - var(--space-xs));
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

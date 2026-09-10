@@ -99,18 +99,69 @@ body {
 /* Home estática (DevAtlas): o card inteiro é o <a class="area-card">. O <li> vira
    flex e o <a> preenche (flex:1) e estica até a altura da linha do grid — cards
    de mesma altura, sem overflow horizontal (min-width:0 libera o encolhimento).
-   O hover mantém o realce do título que antes ficava no <a> do título. Regras
-   escopadas em `.area-grid > li` — inertes para a SPA (usa <article class="area-card">
-   sem <li>). */
+   Regras escopadas em `.area-grid > li` — inertes para a SPA (usa
+   <article class="area-card"> sem <li>): a SPA mantém a borda colorida no topo,
+   a Home estática troca por uma faixa vertical fina na lateral esquerda. */
 .area-grid > li {
   display: flex;
 }
-.area-grid > li > .area-card {
+.area-grid > li > .area-card,
+.area-grid > li.area-card {
   flex: 1;
   min-width: 0;
+  position: relative;
+  overflow: hidden;
+  /* anula o `border-top: 3px solid var(--area-color)` herdado de .area-card —
+     a cor da Área vira a faixa lateral (::before), não a borda do topo. */
+  border-top-width: 1px;
+  border-top-color: var(--color-border);
 }
-a.area-card:hover .area-card__title {
+.area-grid > li > .area-card::before,
+.area-grid > li.area-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  background: var(--area-color);
+}
+
+/* Card navegável: affordância discreta no hover/focus (o card inteiro é o link).
+   Sem glow, sem gradiente, sem shadow colorido — a cor da Área participa só como
+   um matiz sutil na borda/fundo e no realce da seta. */
+.area-grid > li > a.area-card {
+  transition: border-color var(--transition-duration-fragment) var(--transition-easing),
+    background-color var(--transition-duration-fragment) var(--transition-easing);
+}
+.area-grid > li > a.area-card:hover {
+  border-color: color-mix(in srgb, var(--area-color) 40%, var(--color-border));
+  background-color: color-mix(in srgb, var(--area-color) 7%, var(--color-surface));
+}
+.area-grid > li > a.area-card:focus-visible {
+  outline: 2px solid var(--area-color);
+  outline-offset: 2px;
+}
+.area-grid > li > a.area-card:hover .area-card__arrow {
   color: var(--area-color);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .area-grid > li > a.area-card {
+    transition: border-color var(--transition-duration-fragment) var(--transition-easing),
+      background-color var(--transition-duration-fragment) var(--transition-easing),
+      transform var(--transition-duration-fragment) var(--transition-easing);
+  }
+  .area-card__arrow {
+    transition: color var(--transition-duration-fragment) var(--transition-easing),
+      transform var(--transition-duration-fragment) var(--transition-easing);
+  }
+  .area-grid > li > a.area-card:hover {
+    transform: translateY(-2px);
+  }
+  .area-grid > li > a.area-card:hover .area-card__arrow {
+    transform: translateX(2px);
+  }
 }
 
 .area-card--structuring {
@@ -161,6 +212,16 @@ a.area-card__title--link:hover {
   flex-wrap: wrap;
 }
 
+/* Home estática: separador discreto acima do rodapé + rodapé encostado na base
+   do card (margin-top:auto) para alinhar a régua de contagem entre os cards da
+   linha. Escopado em `.area-grid > li` — a SPA não é afetada. */
+.area-grid > li .area-card__foot {
+  align-items: center;
+  margin-top: auto;
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--color-border);
+}
+
 .area-card__more {
   font-size: var(--font-size-small);
   font-weight: 600;
@@ -169,6 +230,14 @@ a.area-card__title--link:hover {
 
 .area-card__count {
   font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+/* Seta discreta no canto inferior direito do card — afordância de navegação,
+   NÃO é outro link (vive dentro do <a> do card, aria-hidden). */
+.area-card__arrow {
+  font-size: 1rem;
+  line-height: 1;
   color: var(--color-text-muted);
 }
 
@@ -656,5 +725,10 @@ a.relation-pill:focus-visible {
   .area-card__foot {
     flex-direction: column;
     gap: 0.25rem;
+  }
+  /* Home estática: contagem + seta continuam na mesma linha (rodapé curto). */
+  .area-grid > li .area-card__foot {
+    flex-direction: row;
+    gap: var(--space-sm);
   }
 }

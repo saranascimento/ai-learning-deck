@@ -267,7 +267,6 @@ const indexHtml = renderHome({
   product: PRODUCT,
   areas: areaVM,
   decks: deckVM,
-  homeHref,
   stylesheets: STYLESHEETS,
 });
 
@@ -288,7 +287,9 @@ const notFoundHtml = renderDocument({
 // landmarks/shell — comuns às duas páginas (Home tem <header class="masthead">
 // e <footer class="home-decks"> DENTRO do <main>: válidos, não são banner/
 // contentinfo — por isso as contagens miram o site-header / site-footer).
-function landmarkChecks(label, html) {
+// siteHeader:false → a Home (raiz) não emite <header class="site-header"> nem o
+// link site-header__home; começa direto no <main>. 404 e páginas internas mantêm.
+function landmarkChecks(label, html, { siteHeader = true } = {}) {
   const g = "Shell (" + label + ")";
   record(g, "doctype minúsculo", html.startsWith("<!doctype html>"));
   record(g, 'lang="pt-BR"', html.includes('<html lang="pt-BR">'));
@@ -296,8 +297,15 @@ function landmarkChecks(label, html) {
   record(g, "meta viewport", html.includes('name="viewport"'));
   record(g, "<title> não vazio", /<title>[^<]+<\/title>/.test(html));
   record(g, "skip-link aponta para #main", html.includes('<a href="#main" class="skip-link">Pular para o conteúdo principal</a>'));
-  record(g, "exatamente um <header class=\"site-header\">", (html.match(/<header class="site-header">/g) || []).length === 1);
-  record(g, `nav aria-label="${PRODUCT.name}" (uma vez)`, (html.match(new RegExp(`<nav aria-label="${PRODUCT.name}">`, "g")) || []).length === 1);
+  if (siteHeader) {
+    record(g, "exatamente um <header class=\"site-header\">", (html.match(/<header class="site-header">/g) || []).length === 1);
+    record(g, `nav aria-label="${PRODUCT.name}" (uma vez)`, (html.match(new RegExp(`<nav aria-label="${PRODUCT.name}">`, "g")) || []).length === 1);
+    record(g, "link site-header__home para a Home", (html.match(/<a href="[^"]*" class="site-header__home">/g) || []).length === 1);
+  } else {
+    record(g, "raiz: SEM <header class=\"site-header\">", !html.includes('<header class="site-header">'));
+    record(g, "raiz: SEM link site-header__home", !html.includes("site-header__home"));
+    record(g, "raiz: <main> vem logo após o skip-link", /class="skip-link">Pular para o conteúdo principal<\/a>\n    <main id="main"/.test(html));
+  }
   record(g, `rodapé = "${PRODUCT.footerText}"`, html.includes(`<footer class="site-footer">\n      <p>${PRODUCT.footerText}</p>`));
   record(g, "sem copy de nível/sênior (Senior Software Engineer / sênior / roadmap sênior)", !/senior software engineer|nível sênior|roadmap.{0,12}sênior/i.test(html));
   record(g, "exatamente um <main>", (html.match(/<main[\s>]/g) || []).length === 1);
@@ -309,7 +317,7 @@ function landmarkChecks(label, html) {
   record(g, "_shell.css referenciado", html.includes("css/roadmap/_shell.css"));
   record(g, "assets/links sem base absoluta, sem hash-route", !/(?:href|src)="(?:\/|https?:|#\/)/.test(html) && !html.includes("/ai-learning-deck/"));
 }
-landmarkChecks("index.html", indexHtml);
+landmarkChecks("index.html", indexHtml, { siteHeader: false });
 landmarkChecks("404.html", notFoundHtml);
 
 // ---- 9. validação da Home real --------------------------------------
@@ -330,24 +338,38 @@ landmarkChecks("404.html", notFoundHtml);
   record(g, `masthead subtítulo = "${PRODUCT.tagline}"`, indexHtml.includes(`<p class="masthead__subtitle">${PRODUCT.tagline}</p>`));
   record(g, "identidade do produto NÃO vem de roadmapMeta.title", !indexHtml.includes(`>${roadmapMeta.title}<`));
 
-  // Home = raiz da navegação: NENHUM breadcrumb.
+  // Home = raiz da navegação: NENHUM breadcrumb E NENHUM header global.
   record(g, "Home SEM breadcrumb (nav aria-label=Breadcrumb)", !indexHtml.includes('aria-label="Breadcrumb"'));
   record(g, "Home SEM .crumbs / lista de trilha", !/class="crumbs/.test(indexHtml));
+  record(g, "Home SEM header global <header class=\"site-header\">", !indexHtml.includes('class="site-header"'));
+  record(g, "Home SEM link pequeno DevAtlas (site-header__home)", !indexHtml.includes("site-header__home"));
+  record(g, 'Home SEM <nav aria-label="DevAtlas"> (header global)', !indexHtml.includes(`<nav aria-label="${PRODUCT.name}">`));
+  record(g, "Home SEM qualquer <nav> (grid é <ul>, sem trilha)", !indexHtml.includes("<nav"));
+  record(g, "Home começa direto no <main> (nada entre skip-link e <main>)", /class="skip-link">[^<]*<\/a>\n    <main id="main"/.test(indexHtml));
+  // páginas internas preservam o header global — 404 é interna (link p/ Home é útil ali).
+  record(g, "404 mantém o header global + link site-header__home", /<a href="[^"]*" class="site-header__home">DevAtlas<\/a>/.test(notFoundHtml));
 
   let hrefOrderOk = true;
   let countOk = true;
-  let kickerOk = true;
   model.areas().forEach((a, i) => {
     const link = cardLinks[i];
     const wantHref = relativize(HOME_PATH, pathFor(a));
     if (!link || link[1] !== wantHref || link[1] !== "areas/" + a.slug + "/") hrefOrderOk = false;
     if (link && !link[2].includes(`<h2 class="area-card__title">${escapeHtml(a.title)}</h2>`)) hrefOrderOk = false;
     if (!indexHtml.includes(`>${model.moduleCount(a)} módulos · ${model.conceptCount(a)} conceitos<`)) countOk = false;
-    if (!indexHtml.includes(`<p class="area-card__kicker">${("Área " + num(i)).toUpperCase()}</p>`)) kickerOk = false;
   });
   record(g, "7 hrefs de card = as 7 Areas do model, na ordem, = areas/<slug>/", hrefOrderOk);
-  record(g, "kickers ÁREA 01..07 na ordem", kickerOk);
   record(g, "contagens Modules · Concepts por Área corretas", countOk);
+
+  // Início visual do card = só "ÁREA" (sem numeração 01/02/…, sem ícone).
+  const kickers = [...indexHtml.matchAll(/<p class="area-card__kicker">([^<]*)<\/p>/g)].map((m) => m[1]);
+  record(g, 'kicker = exatamente "ÁREA" nos 7 cards (sem número, sem ícone)', kickers.length === 7 && kickers.every((k) => k === "ÁREA"));
+  record(g, "NENHUM número grande de Área (ÁREA 01 / 01 02 03 …)", !/area-card__kicker">[^<]*\d/.test(indexHtml) && !/>ÁREA\s*\d/.test(indexHtml));
+
+  // Seta discreta no rodapé — parte do conteúdo do <a> do card, NÃO é outro link.
+  const arrows = [...indexHtml.matchAll(/<span class="area-card__arrow" aria-hidden="true">→<\/span>/g)];
+  record(g, "seta '→' presente nos 7 cards navegáveis (span aria-hidden, não é link)", arrows.length === 7);
+  record(g, "seta do card NÃO é um <a> separado", cardLinks.every((m) => /area-card__arrow/.test(m[2]) && !/<a\b/.test(m[2])));
   // (os 7 destinos físicos são verificados no grupo "Areas (R3.5.4)": "Home → Area: os 7 destinos existem")
   record(g, "sem href de hash (#/)", !indexHtml.includes("#/"));
   record(g, "sem rota /roadmap/ em <a href>", ![...indexHtml.matchAll(/<a\b[^>]*\bhref="([^"]*)"/g)].some((m) => m[1].includes("/roadmap/")));
@@ -419,6 +441,7 @@ const areaPages = model.areas().map((area, i) => {
     "skip-link → #main": (h) => h.includes('<a href="#main" class="skip-link">Pular para o conteúdo principal</a>'),
     "um <header class=site-header>": (h) => (h.match(/<header class="site-header">/g) || []).length === 1,
     [`nav aria-label="${PRODUCT.name}"`]: (h) => (h.match(new RegExp(`<nav aria-label="${PRODUCT.name}">`, "g")) || []).length === 1,
+    "link site-header__home presente": (h) => /<a href="[^"]*" class="site-header__home">DevAtlas<\/a>/.test(h),
     "rodapé DevAtlas": (h) => h.includes(`<footer class="site-footer">\n      <p>${PRODUCT.footerText}</p>`),
     "um <main>": (h) => (h.match(/<main[\s>]/g) || []).length === 1,
     'main#main tabindex="-1"': (h) => h.includes('<main id="main" tabindex="-1">'),
@@ -592,6 +615,7 @@ for (const area of model.areas()) {
     "skip-link → #main": (h) => h.includes('<a href="#main" class="skip-link">Pular para o conteúdo principal</a>'),
     "um <header class=site-header>": (h) => (h.match(/<header class="site-header">/g) || []).length === 1,
     [`nav aria-label="${PRODUCT.name}"`]: (h) => (h.match(new RegExp(`<nav aria-label="${PRODUCT.name}">`, "g")) || []).length === 1,
+    "link site-header__home presente": (h) => /<a href="[^"]*" class="site-header__home">DevAtlas<\/a>/.test(h),
     "rodapé DevAtlas": (h) => h.includes(`<footer class="site-footer">\n      <p>${PRODUCT.footerText}</p>`),
     "um <main>": (h) => (h.match(/<main[\s>]/g) || []).length === 1,
     'main#main tabindex="-1"': (h) => h.includes('<main id="main" tabindex="-1">'),
@@ -823,6 +847,7 @@ for (const area of model.areas()) {
     "skip-link → #main": (h) => h.includes('<a href="#main" class="skip-link">Pular para o conteúdo principal</a>'),
     "um <header class=site-header>": (h) => (h.match(/<header class="site-header">/g) || []).length === 1,
     [`nav aria-label="${PRODUCT.name}"`]: (h) => (h.match(new RegExp(`<nav aria-label="${PRODUCT.name}">`, "g")) || []).length === 1,
+    "link site-header__home presente": (h) => /<a href="[^"]*" class="site-header__home">DevAtlas<\/a>/.test(h),
     "rodapé DevAtlas": (h) => h.includes(`<footer class="site-footer">\n      <p>${PRODUCT.footerText}</p>`),
     "um <main>": (h) => (h.match(/<main[\s>]/g) || []).length === 1,
     'main#main tabindex="-1"': (h) => h.includes('<main id="main" tabindex="-1">'),

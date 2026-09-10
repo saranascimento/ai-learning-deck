@@ -11,25 +11,30 @@
  *   - card navegável = o CARD INTEIRO é <a class="area-card"> (uma superfície de
  *     navegação por card; sai o CTA "Abrir área →", sem link sobreposto, sem JS);
  *   - título = <h2 class="area-card__title"> texto (sem link);
- *   - Home é a raiz da navegação → NENHUM breadcrumb.
+ *   - Home é a raiz da navegação → NENHUM breadcrumb E NENHUM header global:
+ *     `renderDocument({ siteHeader: false })` remove o <header class="site-header">
+ *     e o link `site-header__home`; a página começa direto no H1 do <main>. As
+ *     páginas internas (Area/Module/Concept) mantêm o header global normalmente.
  *
  * A identidade do produto (DevAtlas + tagline) vem em `product` — separada do
  * roadmapMeta, que descreve só o conjunto de conteúdo (as 7 Áreas).
  */
 import { renderDocument } from "./html.mjs";
-import { escapeHtml, escapeAttr, num } from "./partials.mjs";
+import { escapeHtml, escapeAttr } from "./partials.mjs";
 
 /**
- * renderHome({ product, areas, decks, homeHref, stylesheets }) → documento HTML.
+ * renderHome({ product, areas, decks, stylesheets }) → documento HTML.
  *
  *   product     : { name, tagline, footerText }
  *   areas[]     : { index, title, slug, navigable, summary, color,
  *                   moduleCount, conceptCount, href }
  *   decks[]     : { title, url }   (rodapé de aprofundamento; [] = sem rodapé)
- *   homeHref    : href relativo da Home (para o link do shell)
  *   stylesheets : hrefs de CSS já resolvidos
+ *
+ * A Home é a raiz: sem header global (`siteHeader: false`), logo sem homeHref/
+ * homeLabel/navLabel — só o rodapé do site usa `footerText`.
  */
-export function renderHome({ product, areas, decks = [], homeHref, stylesheets = [] }) {
+export function renderHome({ product, areas, decks = [], stylesheets = [] }) {
   const main = [
     '      <header class="masthead">',
     `        <h1 class="masthead__title">${escapeHtml(product.name)}</h1>`,
@@ -43,12 +48,10 @@ export function renderHome({ product, areas, decks = [], homeHref, stylesheets =
 
   return renderDocument({
     title: product.name,
-    homeHref,
-    homeLabel: product.name,
-    navLabel: product.name,
     footerText: product.footerText,
     stylesheets,
     main,
+    siteHeader: false,
   });
 }
 
@@ -57,18 +60,31 @@ export function renderHome({ product, areas, decks = [], homeHref, stylesheets =
 // sem JS). Não-navegável: <li class="area-card ..."> sem link. Em ambos os casos
 // o <li> é bare — .area-grid > li vira flex (css/roadmap.css) para o <a>.area-card
 // esticar até a altura da linha do grid, mantendo cards de mesma altura.
+//
+// Início visual do card = só o rótulo "ÁREA" na cor da Área (sem numeração
+// "01/02/…", sem ícone). A cor da Área é a assinatura: faixa vertical na lateral
+// esquerda (css) + o rótulo. Rodapé = contagem + seta discreta "→" (parte do
+// conteúdo do <a>, aria-hidden, NÃO é outro link — o CTA textual continua fora).
 function renderAreaCard(a) {
-  const kicker = ("Área " + num(a.index)).toUpperCase();
   const countText = a.navigable
     ? `${a.moduleCount} módulos · ${a.conceptCount} conceitos`
     : `${a.moduleCount} módulos planejados`;
 
+  const foot = a.navigable
+    ? [
+        '            <p class="area-card__foot">',
+        `              <span class="area-card__count">${escapeHtml(countText)}</span>`,
+        '              <span class="area-card__arrow" aria-hidden="true">→</span>',
+        "            </p>",
+      ]
+    : [`            <p class="area-card__foot"><span class="area-card__count">${escapeHtml(countText)}</span></p>`];
+
   const inner = [
-    `            <p class="area-card__kicker">${escapeHtml(kicker)}</p>`,
+    '            <p class="area-card__kicker">ÁREA</p>',
     `            <h2 class="area-card__title">${escapeHtml(a.title)}</h2>`,
     `            <p class="area-card__desc">${escapeHtml(a.summary)}</p>`,
     ...(a.navigable ? [] : ['            <p class="area-card__badge">Em estruturação</p>']),
-    `            <p class="area-card__foot"><span class="area-card__count">${escapeHtml(countText)}</span></p>`,
+    ...foot,
   ].join("\n");
 
   if (a.navigable) {

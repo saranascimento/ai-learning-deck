@@ -24,7 +24,7 @@ export function escapeAttr(value) {
 }
 
 /**
- * renderDocument({ title, main, homeHref, homeLabel, stylesheets, navLabel, footerText })
+ * renderDocument({ title, main, homeHref, homeLabel, stylesheets, navLabel, footerText, siteHeader })
  *   - title       : conteúdo de <title> (texto)
  *   - main        : HTML interno de <main>, já como string (não escapado)
  *   - homeHref    : href relativo já resolvido para a Home
@@ -32,15 +32,28 @@ export function escapeAttr(value) {
  *   - stylesheets : lista de href de CSS já resolvidos (ordem preservada)
  *   - navLabel    : aria-label da <nav> do site (default: homeLabel)
  *   - footerText  : texto do rodapé do site (default: homeLabel)
+ *   - siteHeader  : renderiza o <header class="site-header"> com o link para a
+ *                   Home (default: true). A Home é a raiz — passa `false`: o
+ *                   header global (e o link `site-header__home`) some, a página
+ *                   começa direto no <main>. Não afeta o skip-link nem o rodapé.
  *
  * Sem aria-live global. Sem <script>.
  */
-export function renderDocument({ title, main, homeHref, homeLabel, stylesheets = [], navLabel, footerText }) {
+export function renderDocument({ title, main, homeHref, homeLabel, stylesheets = [], navLabel, footerText, siteHeader = true }) {
   const links = stylesheets
     .map((href) => `    <link rel="stylesheet" href="${escapeAttr(href)}" />`)
     .join("\n");
   const navAria = navLabel || homeLabel;
   const footer = footerText || homeLabel;
+
+  const header = siteHeader
+    ? `    <header class="site-header">
+      <nav aria-label="${escapeAttr(navAria)}">
+        <a href="${escapeAttr(homeHref)}" class="site-header__home">${escapeHtml(homeLabel)}</a>
+      </nav>
+    </header>
+`
+    : "";
 
   return `<!doctype html>
 <html lang="pt-BR">
@@ -52,12 +65,7 @@ ${links}
   </head>
   <body>
     <a href="#main" class="skip-link">Pular para o conteúdo principal</a>
-    <header class="site-header">
-      <nav aria-label="${escapeAttr(navAria)}">
-        <a href="${escapeAttr(homeHref)}" class="site-header__home">${escapeHtml(homeLabel)}</a>
-      </nav>
-    </header>
-    <main id="main" tabindex="-1">
+${header}    <main id="main" tabindex="-1">
 ${main}
     </main>
     <footer class="site-footer">
