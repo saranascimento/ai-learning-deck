@@ -1163,30 +1163,627 @@ export default area({
         concept({
           order: 80,
           title: "Composition",
+          note: "Composição de objetos",
           requires: ["Encapsulation"],
-          note: "composição de objetos (has-a)",
           collision: "≠ Function Composition (Functional Programming) — objetos has-a × f∘g",
+          summary:
+            "Construir comportamento complexo combinando objetos menores que colaboram entre si (has-a), em " +
+            "vez de herdar de uma superclasse (is-a) — a alternativa mais flexível à Inheritance na maioria " +
+            "dos casos.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Composition é montar um objeto a partir de outros objetos que ele contém e para quem delega " +
+                "trabalho (has-a), em vez de herdar comportamento de uma superclasse (is-a). Um Car não é um " +
+                "Engine — ele tem um Engine.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Inheritance cria um acoplamento rígido com a hierarquia inteira da superclasse, com todos os " +
+                "riscos de contrato quebrado já vistos. Composition permite trocar peças individualmente — " +
+                "trocar o Engine de um Car sem tocar na classe Car, ou testar Engine isoladamente sem precisar " +
+                "de um Car inteiro. \"Favoreça composição sobre herança\" é um dos conselhos mais repetidos de " +
+                "design orientado a objetos, justamente por essa flexibilidade.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Não confundir com Function Composition (de programação funcional): lá, f∘g significa encadear " +
+                "funções — a saída de g vira entrada de f. Aqui, Composition é sobre objetos contendo outros " +
+                "objetos. Os nomes coincidem, os conceitos não têm relação direta.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "car.js",
+              code: [
+                "class Engine {",
+                '  start() { return "vrum"; }',
+                "}",
+                "class Car {",
+                "  constructor() {",
+                "    this.engine = new Engine(); // has-a, não is-a",
+                "  }",
+                "  start() {",
+                "    return this.engine.start();",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Car não estende Engine — ele tem um Engine e delega start() pra ele. Trocar o motor por um " +
+                "ElectricEngine só exige mudar o que Car instancia, não a hierarquia de classes inteira.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Composition monta comportamento juntando objetos que colaboram (has-a), em vez de herdar de " +
+                "uma superclasse (is-a) — geralmente mais flexível, porque cada peça pode ser trocada, testada " +
+                "e reutilizada de forma independente.",
+            },
+          ],
+          examples: [
+            {
+              title: "Resolvendo o problema de Inheritance com Composition",
+              context: "O mesmo Bird/Penguin visto em Inheritance, agora sem forçar uma hierarquia que não se aplica a todos.",
+              code: {
+                language: "javascript",
+                filename: "bird-composition.js",
+                code: [
+                  "class Bird {",
+                  "  constructor(flightBehavior) {",
+                  "    this.flightBehavior = flightBehavior; // has-a, não is-a",
+                  "  }",
+                  "  fly() {",
+                  "    return this.flightBehavior.fly();",
+                  "  }",
+                  "}",
+                  'const canFly = { fly: () => "voando" };',
+                  'const cannotFly = { fly: () => "não voa" };',
+                  "",
+                  "const eagle = new Bird(canFly);",
+                  "const penguin = new Bird(cannotFly);",
+                ].join("\n"),
+              },
+              explanation:
+                "Em vez de forçar Penguin extends Bird a sobrescrever fly() com um erro, cada Bird recebe o " +
+                "comportamento de voo que faz sentido pra ele.",
+            },
+            {
+              title: "Composição de múltiplos comportamentos independentes",
+              context: "Cada peça pode ser desenvolvida e testada sem depender da outra.",
+              code: {
+                language: "javascript",
+                filename: "player.js",
+                code: ["class Player {", "  constructor() {", "    this.inventory = new Inventory();", "    this.health = new HealthSystem();", "  }", "}"].join("\n"),
+              },
+              explanation:
+                "Player combina Inventory e HealthSystem — cada um pode ser reutilizado (num NPC, por exemplo) " +
+                "de forma totalmente independente do Player.",
+            },
+            {
+              title: "Function Composition — pra fixar a diferença",
+              context: "Mesmo nome, conceito diferente: aqui não existe objeto nenhum, só funções encadeadas.",
+              code: {
+                language: "javascript",
+                filename: "compose.js",
+                code: ["const double = (x) => x * 2;", "const addOne = (x) => x + 1;", "const doubleThenAddOne = (x) => addOne(double(x));", "", "doubleThenAddOne(5); // 11"].join("\n"),
+              },
+              explanation:
+                "Isso é Function Composition — encadear funções, sem objeto nenhum envolvido. Compartilha o " +
+                "nome com Composition (objetos), mas é um conceito diferente.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Robot precisa tanto de fly() (de FlyingMachine) quanto de swim() (de SwimmingMachine) — mas " +
+              "JavaScript não tem herança múltipla, então extends das duas não é possível.",
+            problemCode: {
+              language: "javascript",
+              filename: "robot.js",
+              code: [
+                "class FlyingMachine {",
+                '  fly() { return "voando"; }',
+                "}",
+                "class SwimmingMachine {",
+                '  swim() { return "nadando"; }',
+                "}",
+                "// class Robot extends FlyingMachine, SwimmingMachine {} // não existe em JS",
+              ].join("\n"),
+            },
+            task:
+              "Reescreva Robot usando Composition para ter tanto fly() quanto swim(), sem herdar de nenhuma das " +
+              "duas classes.",
+            hint: "Robot pode TER um FlyingMachine e um SwimmingMachine internamente, e delegar as chamadas pra eles.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "robot.js",
+                code: [
+                  "class Robot {",
+                  "  constructor() {",
+                  "    this.flying = new FlyingMachine();",
+                  "    this.swimming = new SwimmingMachine();",
+                  "  }",
+                  "  fly() { return this.flying.fly(); }",
+                  "  swim() { return this.swimming.swim(); }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Robot compõe as duas capacidades em vez de tentar herdar as duas — problema que Inheritance " +
+                "sozinha não resolve (JS não tem herança múltipla), Composition resolve naturalmente.",
+            },
+          },
         }),
         concept({
           order: 90,
           title: "Coupling",
+          note: "Acoplamento",
           requires: ["Interface", "Composition", "Inheritance"],
-          note: "era Task duplicada em 3 Epics — aqui vira o lar único",
           revisit: ["Architecture Fundamentals"],
+          summary:
+            "O quanto uma parte do sistema depende dos detalhes internos de outra — Interface, Composition e " +
+            "Inheritance bem usados são justamente as ferramentas para manter esse grau de dependência baixo.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Coupling é o grau de dependência entre duas partes de um sistema — o quanto uma precisa saber " +
+                "sobre os detalhes internos da outra pra funcionar. Alto Coupling: mudar uma parte " +
+                "frequentemente exige mudar a outra também. Baixo Coupling: as partes podem mudar de forma " +
+                "independente.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Sistemas crescem através de muitas partes interagindo entre si — Coupling é a medida de quão " +
+                "presa essa rede de dependências está. Tudo que já vimos (Interface, Composition, Inheritance " +
+                "bem usada) são ferramentas pra manter esse grau baixo: uma Interface bem desenhada esconde a " +
+                "implementação, então quem depende dela não precisa mudar quando a implementação muda por " +
+                "dentro.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "Alto coupling acessando estrutura interna, contra baixo coupling via um método:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "invoice.js",
+              code: [
+                "// alto coupling: printInvoice conhece a estrutura interna de Customer",
+                "function printInvoice(invoice) {",
+                '  console.log(invoice.customer.address.street + ", " + invoice.customer.address.city);',
+                "}",
+                "",
+                "// baixo coupling: Customer expõe um método, esconde a estrutura",
+                "function printInvoiceLowCoupling(invoice) {",
+                "  console.log(invoice.customer.formattedAddress());",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A primeira versão quebra se Customer mudar como guarda o endereço; a segunda não — " +
+                "printInvoiceLowCoupling só depende de um método, não da estrutura interna de Customer.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Coupling mede o quanto uma parte do sistema depende dos detalhes de outra. O objetivo não é " +
+                "coupling zero (impossível) — é manter as dependências no nível mais baixo que o problema " +
+                "permite.",
+            },
+          ],
+          examples: [
+            {
+              title: "Alto coupling entre módulos",
+              context: "Importar um detalhe interno de outro módulo cria uma dependência frágil.",
+              code: { language: "javascript", filename: "consumer.js", code: '// alto coupling: importa a implementação interna de outro módulo\nimport { internalCache } from "./user-service/cache.js";' },
+              explanation:
+                "Qualquer refatoração interna de user-service (trocar a estrutura do cache) quebra este import " +
+                "— o módulo consumidor está acoplado a um detalhe que nunca deveria ter sido exposto.",
+            },
+            {
+              title: "Baixo coupling via injeção de dependência",
+              context: "A classe depende de uma interface, não de uma implementação concreta.",
+              code: {
+                language: "javascript",
+                filename: "order-service.js",
+                code: ["class OrderService {", "  constructor(paymentGateway) {", "    this.paymentGateway = paymentGateway; // depende da interface, não da implementação concreta", "  }", "}"].join("\n"),
+              },
+              explanation:
+                "OrderService não sabe (nem importa) se paymentGateway é Stripe, Pix ou um mock de teste — o " +
+                "coupling está limitado à interface que paymentGateway precisa cumprir.",
+            },
+            {
+              title: "Coupling temporal",
+              context: "Mesmo sem dependência direta de dados, a ORDEM das chamadas pode ser uma forma de acoplamento.",
+              code: { language: "javascript", filename: "connection.js", code: ["const conn = openConnection();", "conn.authenticate(); // precisa vir ANTES de query()", 'conn.query("SELECT 1");'].join("\n") },
+              explanation:
+                "Mesmo sem uma referência direta entre os métodos, existe coupling temporal — chamar query() " +
+                "antes de authenticate() quebra, mesmo que o código pareça independente.",
+            },
+          ],
+          exercise: {
+            problem:
+              "OrderProcessor importa e instancia diretamente StripeGateway — trocar de provedor de pagamento " +
+              "exige editar OrderProcessor.",
+            problemCode: {
+              language: "javascript",
+              filename: "order-processor.js",
+              code: [
+                'import { StripeGateway } from "./stripe-gateway.js";',
+                "",
+                "class OrderProcessor {",
+                "  process(order) {",
+                "    const gateway = new StripeGateway();",
+                "    gateway.charge(order.total);",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            task: "Reduza o coupling entre OrderProcessor e StripeGateway para que trocar de provedor não exija editar OrderProcessor.",
+            hint: "Quem cria o gateway concreto não precisa ser o próprio OrderProcessor — pense em receber a dependência de fora (injeção de dependência).",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "order-processor.js",
+                code: [
+                  "class OrderProcessor {",
+                  "  constructor(gateway) {",
+                  "    this.gateway = gateway; // depende da interface charge(amount), não de StripeGateway",
+                  "  }",
+                  "  process(order) {",
+                  "    this.gateway.charge(order.total);",
+                  "  }",
+                  "}",
+                  "",
+                  "const processor = new OrderProcessor(new StripeGateway());",
+                ].join("\n"),
+              },
+              explanation:
+                "OrderProcessor não importa mais StripeGateway diretamente — recebe qualquer gateway que cumpra " +
+                "charge(amount). Trocar de provedor é só uma mudança em quem instancia OrderProcessor.",
+            },
+          },
         }),
         concept({
           order: 100,
           title: "Cohesion",
+          note: "Coesão",
           requires: ["Coupling"],
-          note: "ensinar em par com Coupling",
           revisit: ["Software Design / SOLID / Single Responsibility Principle (SRP)"],
+          summary:
+            "O quanto as responsabilidades dentro de uma mesma unidade (classe, módulo, função) pertencem de " +
+            "verdade umas às outras — o par de Coupling: baixo Coupling entre unidades, alta Cohesion dentro " +
+            "de cada uma.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Cohesion é o quanto as coisas dentro de uma mesma unidade — uma classe, um módulo, uma função " +
+                "— têm relação entre si e servem a um propósito comum. Alta Cohesion: tudo ali dentro existe " +
+                "por um motivo relacionado. Baixa Cohesion: a unidade faz um monte de coisas sem relação " +
+                "nenhuma entre si, só porque ficaram juntas.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Cohesion é o complemento natural de Coupling: o objetivo de um bom design costuma ser " +
+                "resumido como \"baixo acoplamento, alta coesão\" — dependências fracas entre unidades, " +
+                "responsabilidades fortemente relacionadas dentro de cada unidade. Uma unidade de baixa " +
+                "Cohesion tende a ter muitos motivos para mudar, um por responsabilidade não relacionada, o " +
+                "que a torna frágil e difícil de entender.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "Uma classe de baixa Cohesion, com responsabilidades sem relação real entre si:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "user-manager.js",
+              code: [
+                "// baixa cohesion: três responsabilidades sem relação real entre si",
+                "class UserManager {",
+                "  validateEmail(email) { /* ... */ }",
+                "  sendWelcomeEmail(user) { /* ... */ }",
+                "  generateMonthlyReport() { /* ... */ }",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "validateEmail, sendWelcomeEmail e generateMonthlyReport não têm relação funcional entre si — " +
+                "estão juntas só porque alguém decidiu colocar num arquivo chamado UserManager. Mudar a lógica " +
+                "de relatório não deveria arriscar quebrar validação de e-mail, mas numa classe assim, tudo " +
+                "está mais próximo do que deveria.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Cohesion mede o quanto as responsabilidades dentro de uma unidade pertencem de verdade umas " +
+                "às outras. Junto com Coupling baixo entre unidades, alta Cohesion dentro de cada uma é o par " +
+                "que sustenta a heurística \"baixo acoplamento, alta coesão\".",
+            },
+          ],
+          examples: [
+            {
+              title: "Separando em unidades coesas",
+              context: "A mesma classe de baixa cohesion, dividida em três com um motivo de mudança cada.",
+              code: {
+                language: "javascript",
+                filename: "user-manager-split.js",
+                code: ["class EmailValidator {", "  validate(email) { /* ... */ }", "}", "class WelcomeEmailSender {", "  send(user) { /* ... */ }", "}", "class MonthlyReportGenerator {", "  generate() { /* ... */ }", "}"].join("\n"),
+              },
+              explanation:
+                "Cada classe agora tem um motivo pra mudar. EmailValidator só muda se a regra de validação " +
+                "mudar — nada relacionado a e-mail de boas-vindas ou relatório pode afetá-la.",
+            },
+            {
+              title: "Alta cohesion dentro de uma função",
+              context: "Cada linha contribui diretamente pro mesmo propósito — nada emprestado de outra responsabilidade.",
+              code: {
+                language: "javascript",
+                filename: "total.js",
+                code: ["function calculateTotalWithTax(items, taxRate) {", "  const subtotal = items.reduce((sum, item) => sum + item.price, 0);", "  return subtotal * (1 + taxRate);", "}"].join("\n"),
+              },
+              explanation: "Toda a função existe só para calcular o total com imposto — nenhuma responsabilidade emprestada de outro lugar.",
+            },
+            {
+              title: "Baixa cohesion num módulo grab-bag",
+              context: "Um utils.js genérico tende a virar um monte de funções sem tema em comum.",
+              code: {
+                language: "javascript",
+                filename: "utils.js",
+                code: ["// utils.js — baixa cohesion: funções sem relação temática entre si", "export function formatDate(d) { /* ... */ }", "export function slugify(s) { /* ... */ }", "export function sendPushNotification(msg) { /* ... */ }"].join("\n"),
+              },
+              explanation:
+                "Cada função pertence a um domínio diferente (datas, texto, notificações) — sugere que " +
+                "deveriam ser três módulos, não um só chamado utils.js.",
+            },
+          ],
+          exercise: {
+            problem: "ReportService mistura busca de dados, formatação e envio por e-mail — três responsabilidades sem relação direta.",
+            problemCode: {
+              language: "javascript",
+              filename: "report-service.js",
+              code: [
+                "class ReportService {",
+                "  fetchSalesData() { /* consulta o banco */ }",
+                "  formatAsHtml(data) { /* monta HTML */ }",
+                "  emailReport(html, recipient) { /* envia por e-mail */ }",
+                "  run(recipient) {",
+                "    const data = this.fetchSalesData();",
+                "    const html = this.formatAsHtml(data);",
+                "    this.emailReport(html, recipient);",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Separe ReportService em classes de alta Cohesion — cada uma com uma única responsabilidade " +
+              "relacionada. Esboce como run() ficaria depois, orquestrando as novas classes.",
+            hint: "Pense em pelo menos 3 responsabilidades diferentes aqui — busca de dados, formatação, envio.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "report-service.js",
+                code: [
+                  "class SalesDataFetcher {",
+                  "  fetch() { /* consulta o banco */ }",
+                  "}",
+                  "class HtmlReportFormatter {",
+                  "  format(data) { /* monta HTML */ }",
+                  "}",
+                  "class ReportEmailer {",
+                  "  send(html, recipient) { /* envia por e-mail */ }",
+                  "}",
+                  "",
+                  "class ReportService {",
+                  "  constructor(fetcher, formatter, emailer) {",
+                  "    this.fetcher = fetcher;",
+                  "    this.formatter = formatter;",
+                  "    this.emailer = emailer;",
+                  "  }",
+                  "  run(recipient) {",
+                  "    const data = this.fetcher.fetch();",
+                  "    const html = this.formatter.format(data);",
+                  "    this.emailer.send(html, recipient);",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada nova classe tem uma responsabilidade coesa e um único motivo pra mudar. ReportService " +
+                "virou um orquestrador (baixo coupling com cada peça, via composição) em vez de fazer tudo " +
+                "sozinho.",
+            },
+          },
         }),
         concept({
           order: 110,
           title: "Separation of Concerns",
+          note: "Separação de responsabilidades",
           requires: ["Coupling", "Cohesion"],
-          note: "o princípio que \"baixo acoplamento / alta coesão\" serve",
           revisit: ["Architecture & System Design / Architectural Styles / Layered Architecture"],
+          summary:
+            "O princípio de organizar um sistema para que cada parte trate de uma preocupação distinta — a " +
+            "razão de ser por trás de baixo Coupling e alta Cohesion, não uma técnica nova.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Separation of Concerns é o princípio de organizar um sistema de forma que cada parte trate de " +
+                "uma \"preocupação\" (concern) distinta — uma responsabilidade, um tipo de decisão — sem se " +
+                "misturar com as outras. Não é uma técnica específica; é o objetivo que Coupling baixo e " +
+                "Cohesion alta existem para servir.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Quando concerns diferentes — lógica de negócio, acesso a dados, apresentação — ficam " +
+                "misturados no mesmo lugar, qualquer mudança num deles arrisca quebrar os outros, mesmo sem " +
+                "relação nenhuma entre si. Separar concerns é o que torna possível mudar como os dados são " +
+                "salvos sem tocar em como a regra de negócio funciona — exatamente o resultado prático de ter " +
+                "baixo Coupling entre as partes e alta Cohesion dentro de cada uma.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "Regra de negócio e formatação misturadas, depois separadas:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "discount-message.js",
+              code: [
+                "// concerns misturados: cálculo de desconto + formatação no mesmo lugar",
+                "function getDiscountMessage(price, isVip) {",
+                "  const discount = isVip ? price * 0.2 : price * 0.1;",
+                "  return `Desconto de R$ ${discount.toFixed(2)} aplicado!`;",
+                "}",
+                "",
+                "// concerns separados",
+                "function calculateDiscount(price, isVip) {",
+                "  return isVip ? price * 0.2 : price * 0.1;",
+                "}",
+                "function formatDiscountMessage(discount) {",
+                "  return `Desconto de R$ ${discount.toFixed(2)} aplicado!`;",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Na versão separada, mudar a regra do desconto não exige tocar na formatação da mensagem, e " +
+                "vice-versa — cada função trata de um concern só, o que naturalmente resulta em baixo Coupling " +
+                "entre elas e alta Cohesion dentro de cada uma.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Separation of Concerns é o princípio; baixo Coupling e alta Cohesion são o resultado prático " +
+                "de aplicá-lo bem. Perguntar \"essa parte está misturando preocupações diferentes?\" é uma " +
+                "forma direta de aplicar o princípio no dia a dia.",
+            },
+          ],
+          examples: [
+            {
+              title: "Camadas separando concerns numa rota HTTP",
+              context: "A rota não sabe de regra de negócio; a regra de negócio não sabe de HTTP.",
+              code: {
+                language: "javascript",
+                filename: "orders-route.js",
+                code: [
+                  "// concern: rota HTTP (não sabe de banco de dados)",
+                  'app.post("/orders", (req, res) => {',
+                  "  const order = orderService.create(req.body);",
+                  "  res.json(order);",
+                  "});",
+                  "",
+                  "// concern: regra de negócio (não sabe de HTTP nem de SQL)",
+                  "class OrderService {",
+                  "  create(data) { /* valida e cria o pedido */ }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "A rota HTTP não sabe como um pedido é validado ou salvo; OrderService não sabe que existe um " +
+                "HTTP request por trás — cada camada trata de um concern.",
+            },
+            {
+              title: "Busca de dados misturada com apresentação",
+              context: "Um componente de UI que também sabe buscar dados mistura dois concerns diferentes.",
+              code: {
+                language: "jsx",
+                filename: "user-profile.jsx",
+                code: [
+                  "// concerns misturados: busca de dados + apresentação no mesmo componente",
+                  "function UserProfile({ userId }) {",
+                  "  const [user, setUser] = useState(null);",
+                  "  useEffect(() => {",
+                  "    fetch(`/api/users/${userId}`).then(r => r.json()).then(setUser);",
+                  "  }, [userId]);",
+                  '  return user ? <div>{user.name}</div> : <div>Carregando...</div>;',
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Este componente mistura como buscar o usuário com como desenhar a tela — separar isso (ex.: " +
+                "um hook useUser(userId) cuidando só da busca) deixaria cada concern independente e mais fácil " +
+                "de testar.",
+            },
+            {
+              title: "Validação separada de persistência",
+              context: "Nenhuma das duas funções sabe da existência da outra.",
+              code: {
+                language: "javascript",
+                filename: "order-validation.js",
+                code: ['function validateOrder(order) {', '  if (!order.items.length) throw new Error("pedido vazio");', "}", "function saveOrder(order) {", "  db.orders.insert(order);", "}"].join("\n"),
+              },
+              explanation:
+                "validateOrder não sabe nada sobre banco de dados; saveOrder não sabe nada sobre regras de " +
+                "validação. Trocar o banco de dados não arrisca quebrar uma regra de negócio, e vice-versa.",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo mistura validação, cálculo de preço e persistência num só lugar.",
+            problemCode: {
+              language: "javascript",
+              filename: "checkout.js",
+              code: [
+                "function checkout(cart) {",
+                '  if (cart.items.length === 0) throw new Error("carrinho vazio");',
+                "  const total = cart.items.reduce((sum, item) => sum + item.price * item.qty, 0);",
+                "  db.orders.insert({ items: cart.items, total });",
+                "  return total;",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Separe checkout em pelo menos 3 funções, cada uma tratando de um concern só (validação, cálculo, " +
+              "persistência), e reescreva checkout como a orquestração das três.",
+            hint: "Cada função nova deveria conseguir ser testada sem precisar de banco de dados nenhum, exceto a de persistência.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "checkout.js",
+                code: [
+                  "function validateCart(cart) {",
+                  '  if (cart.items.length === 0) throw new Error("carrinho vazio");',
+                  "}",
+                  "function calculateTotal(cart) {",
+                  "  return cart.items.reduce((sum, item) => sum + item.price * item.qty, 0);",
+                  "}",
+                  "function persistOrder(cart, total) {",
+                  "  db.orders.insert({ items: cart.items, total });",
+                  "}",
+                  "",
+                  "function checkout(cart) {",
+                  "  validateCart(cart);",
+                  "  const total = calculateTotal(cart);",
+                  "  persistOrder(cart, total);",
+                  "  return total;",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "validateCart e calculateTotal agora podem ser testadas com um objeto cart puro, sem banco de " +
+                "dados nenhum — cada concern virou uma função testável isoladamente, e checkout só orquestra a " +
+                "ordem entre elas.",
+            },
+          },
         }),
       ],
     }),

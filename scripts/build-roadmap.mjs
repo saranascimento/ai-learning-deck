@@ -1154,7 +1154,19 @@ for (const area of model.areas()) {
 
   // Piloto editorial — cada Concept em PILOT_SLUGS preenche summary; os demais
   // continuam empty state. Atualizar esta lista conforme novos Concepts ganham conteúdo.
-  const PILOT_SLUGS = ["abstraction", "encapsulation", "information-hiding", "interface", "contract", "inheritance", "polymorphism"];
+  const PILOT_SLUGS = [
+    "abstraction",
+    "encapsulation",
+    "information-hiding",
+    "interface",
+    "contract",
+    "inheritance",
+    "polymorphism",
+    "composition",
+    "coupling",
+    "cohesion",
+    "separation-of-concerns",
+  ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",
     `Resumo empty state: ${withResumoEmpty} (esperado ${668 - PILOT_SLUGS.length} — ${PILOT_SLUGS.length} Concepts do piloto têm summary real)`,
