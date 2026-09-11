@@ -1,0 +1,15 @@
+{
+  "name": "ai-learning-deck",
+  "version": "0.0.0",
+  "private": true,
+  "description": "DevAtlas — site estático gerado (data → model → static generation → build/preview). `npm run dev` = build + serve local. Ver src/roadmap + scripts/build-roadmap.mjs. A SPA antiga (raiz index.html + src/app) segue no repo até a R3.5.9.",
+  "type": "module",
+  "scripts": {
+    "build:preview": "node scripts/build-roadmap.mjs",
+    "serve:preview": "node -e \"console.log('\\n  DevAtlas disponível em: http://localhost:8000/\\n')\" && python3 -m http.server 8000 --directory build/preview",
+    "dev": "npm run build:preview && npm run serve:preview"
+  },
+  "engines": {
+    "node": ">=22.7"
+  }
+}
