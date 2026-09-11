@@ -5002,20 +5002,1085 @@ export default area({
         "Circular Buffer",
       ],
       concepts: [
-        concept({ order: 10, title: "Array", note: "memória contígua, índice O(1)" }),
-        concept({ order: 20, title: "Linked List", requires: ["Array"], note: "contraste: sem contiguidade" }),
-        concept({ order: 30, title: "Stack", requires: ["Array", "Linked List"], note: "LIFO", collision: "≠ Call Stack (Memory & Runtime)" }),
-        concept({ order: 40, title: "Queue", requires: ["Stack"], note: "FIFO, ensinar em par", revisit: ["Asynchronous Programming / Task Queue", "Architecture / Message Queue"] }),
-        concept({ order: 50, title: "Hash Table", requires: ["Array"], revisit: ["Architecture / Consistent Hashing", "Platform / Database Performance / Index"] }),
-        concept({ order: 60, title: "Set", requires: ["Hash Table"], note: "normalmente hash-backed" }),
-        concept({ order: 70, title: "Tree", requires: ["Linked List"], note: "nós + ponteiros" }),
-        concept({ order: 80, title: "Binary Search Tree", requires: ["Tree"], revisit: ["Platform / Database Performance / Index"] }),
-        concept({ order: 90, title: "Heap", requires: ["Tree", "Array"], note: "árvore completa em array; priority queue" }),
+        concept({
+          order: 10,
+          title: "Array",
+          note: "Memória contígua",
+          summary:
+            "Uma coleção de elementos armazenados em posições contíguas de memória, acessíveis por índice " +
+            "numérico em tempo O(1) — a estrutura de dados mais fundamental, direto sobre o que Memory já ensinou.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Um Array guarda elementos em posições contíguas de memória — um do lado do outro, sem " +
+                "lacunas — e cada elemento é acessado por um índice numérico. Como o tamanho de cada elemento " +
+                "é conhecido e fixo, o endereço de qualquer posição pode ser calculado diretamente, sem " +
+                "precisar percorrer nada.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "É a estrutura mais direta possível sobre o que Memory já ensinou: memória endereçável e " +
+                "contígua. Acesso por índice em O(1) — tempo constante, não importa o tamanho do array — é a " +
+                "vantagem central: arr[500000] custa exatamente o mesmo que arr[0], porque é só aritmética de " +
+                "endereço, nenhuma busca envolvida.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "scores.js",
+              code: [
+                "const scores = [85, 92, 78, 95];",
+                "console.log(scores[2]); // 78 — acesso direto, O(1)",
+                "scores.push(88); // adicionar no fim é O(1) amortizado",
+                "scores.unshift(0); // adicionar no INÍCIO é O(n) — precisa deslocar todo mundo",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Acesso por índice é sempre O(1). Mas inserir no início exige deslocar todos os elementos " +
+                "seguintes uma posição adiante — o custo de manter contiguidade.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Array armazena elementos contíguos na memória, com acesso por índice em O(1) — a vantagem " +
+                "que a contiguidade compra é acesso direto e rápido; o custo é que inserir/remover no meio ou " +
+                "no início exige deslocar elementos.",
+            },
+          ],
+          examples: [
+            {
+              title: "Array tipado reservando espaço fixo e contíguo",
+              context: "Reencontrando Memory — a contiguidade fica explícita.",
+              code: { language: "javascript", filename: "typed.js", code: "const nums = new Int32Array(1000); // 4000 bytes contíguos, reservados de uma vez" },
+              explanation: "1000 posições de 4 bytes cada, lado a lado, sem indireção nenhuma.",
+            },
+            {
+              title: "Busca linear — O(n), diferente do acesso por índice",
+              context: "Saber o índice é O(1); procurar um valor sem saber onde está é O(n).",
+              code: { language: "javascript", filename: "contains.js", code: ["function contains(arr, target) {", "  for (const item of arr) {", "    if (item === target) return true;", "  }", "  return false;", "}"].join("\n") },
+              explanation: "Arrays não ordenados não têm atalho pra busca — pode precisar checar todos os elementos.",
+            },
+            {
+              title: "O custo de inserir no início, medido na prática",
+              context: "Cada elemento existente precisa se mover pra abrir espaço.",
+              code: { language: "javascript", filename: "unshift-cost.js", code: "const arr = [1, 2, 3, 4, 5];\narr.unshift(0); // 5 elementos deslocados uma posição" },
+              explanation: "Quanto maior o array, mais caro fica inserir no início.",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo insere repetidamente no início de um array dentro de um loop — sem perceber o custo disso.",
+            problemCode: {
+              language: "javascript",
+              filename: "build-reversed.js",
+              code: ["function buildReversed(items) {", "  const result = [];", "  for (const item of items) {", "    result.unshift(item); // O(n) a cada iteração — O(n²) no total", "  }", "  return result;", "}"].join("\n"),
+            },
+            task: "Reescreva buildReversed para o mesmo resultado, mas evitando unshift dentro do loop — usando uma operação O(1) por inserção.",
+            hint: "Inserir no FIM é O(1) — dá pra construir na ordem normal e reverter uma única vez no final.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "build-reversed-fast.js",
+                code: ["function buildReversedFast(items) {", "  const result = [];", "  for (const item of items) {", "    result.push(item); // O(1) por inserção", "  }", "  return result.reverse(); // uma única operação O(n) no final", "}"].join("\n"),
+              },
+              explanation: "push é O(1); reverter uma vez no final é O(n) — total O(n), em vez do O(n²) que unshift repetido causava.",
+            },
+          },
+        }),
+        concept({
+          order: 20,
+          title: "Linked List",
+          note: "Nós encadeados",
+          requires: ["Array"],
+          summary:
+            "Uma sequência de nós, cada um apontando pro próximo, sem exigir memória contígua — o contraste " +
+            "direto com Array: troca acesso O(1) por índice por inserção/remoção O(1) nas pontas.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Uma Linked List é uma sequência de nós, onde cada nó guarda um valor e um ponteiro/referência " +
+                "pro próximo nó. Diferente de Array, os nós não precisam estar em posições contíguas de " +
+                "memória — podem estar espalhados em qualquer lugar do heap, conectados só pelos ponteiros.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "É o contraste direto de Array, e resolve o que Array faz mal: inserir/remover no início (ou " +
+                "em qualquer ponto, tendo a referência) custa O(1) numa Linked List — só reconectar ponteiros. " +
+                "O preço é perder o acesso O(1) por índice: pra chegar no elemento N, é preciso percorrer os " +
+                "N-1 anteriores, um por um.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "node.js",
+              code: ["class Node {", "  constructor(value) {", "    this.value = value;", "    this.next = null;", "  }", "}", "const head = new Node(1);", "head.next = new Node(2);", "head.next.next = new Node(3);", "// 1 -> 2 -> 3, conectados por ponteiro"].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Não existe \"índice 2\" diretamente acessível — pra chegar no valor 3, é preciso ir de head " +
+                "até head.next até head.next.next. Os nós não precisam estar contíguos na memória.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Linked List troca acesso O(1) por índice (que Array tem) por inserção/remoção O(1) nas pontas " +
+                "(que Array não tem) — a estrutura certa depende de qual operação seu caso de uso faz mais.",
+            },
+          ],
+          examples: [
+            {
+              title: "Inserir no início — O(1), contra O(n) num Array",
+              context: "Nenhum elemento existente precisa se mover.",
+              code: { language: "javascript", filename: "prepend.js", code: ["function prependNode(head, value) {", "  const newNode = new Node(value);", "  newNode.next = head; // só reconecta um ponteiro", "  return newNode;", "}"].join("\n") },
+              explanation: "Só o novo nó aponta pro antigo head, e vira o novo head.",
+            },
+            {
+              title: "Percorrer até um índice — O(n)",
+              context: "Diferente do acesso O(1) de Array.",
+              code: {
+                language: "javascript",
+                filename: "get-at.js",
+                code: ["function getAt(head, index) {", "  let current = head;", "  for (let i = 0; i < index; i++) {", "    current = current.next;", "  }", "  return current ? current.value : undefined;", "}"].join("\n"),
+              },
+              explanation: "Não tem como \"pular\" direto pro nó N — é preciso percorrer todos os anteriores, sequencialmente.",
+            },
+            {
+              title: "Doubly Linked List",
+              context: "Um ponteiro extra permite andar nos dois sentidos.",
+              code: { language: "javascript", filename: "doubly-node.js", code: ["class DoublyNode {", "  constructor(value) {", "    this.value = value;", "    this.next = null;", "    this.prev = null; // ponteiro extra", "  }", "}"].join("\n") },
+              explanation: "Com prev, dá pra percorrer a lista nos dois sentidos, e remover um nó sem percorrer desde o início.",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo insere no final de uma Linked List percorrendo do início toda vez — O(n) por inserção.",
+            problemCode: {
+              language: "javascript",
+              filename: "append-node.js",
+              code: ["function appendNode(head, value) {", "  const newNode = new Node(value);", "  if (!head) return newNode;", "  let current = head;", "  while (current.next) current = current.next; // percorre a lista TODA", "  current.next = newNode;", "  return head;", "}"].join("\n"),
+            },
+            task: "Descreva (ou esboce em código) uma mudança estrutural que tornaria a inserção no final O(1), sem mudar o comportamento visto por quem chama.",
+            hint: "E se a lista guardasse, além do head, uma referência direta pro último nó (tail)?",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "linked-list-tail.js",
+                code: [
+                  "class LinkedList {",
+                  "  constructor() {",
+                  "    this.head = null;",
+                  "    this.tail = null; // referência direta pro último nó",
+                  "  }",
+                  "  append(value) {",
+                  "    const newNode = new Node(value);",
+                  "    if (!this.tail) {",
+                  "      this.head = this.tail = newNode;",
+                  "    } else {",
+                  "      this.tail.next = newNode;",
+                  "      this.tail = newNode; // O(1)",
+                  "    }",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation: "Mantendo tail sempre atualizada, inserir no final vira O(1) — a mesma mudança que listas de bibliotecas padrão já fazem.",
+            },
+          },
+        }),
+        concept({
+          order: 30,
+          title: "Stack",
+          note: "LIFO",
+          requires: ["Array", "Linked List"],
+          collision: "≠ Call Stack (Memory & Runtime)",
+          summary:
+            "Uma estrutura de dados onde o último elemento inserido é o primeiro a ser removido (LIFO) — " +
+            "implementável tanto sobre Array quanto sobre Linked List, e a inspiração de nome (mas não a mesma " +
+            "coisa) da Call Stack do runtime.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Stack (ADT) é uma estrutura de dados com duas operações principais: push (adiciona no topo) " +
+                "e pop (remove do topo) — sempre respeitando LIFO (Last In, First Out): o último elemento que " +
+                "entrou é sempre o primeiro que sai.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "A disciplina LIFO aparece naturalmente em muitos problemas: desfazer ações na ordem inversa " +
+                "de como foram feitas, navegar de volta num histórico, avaliar expressões aninhadas. " +
+                "Implementar essa disciplina como uma estrutura própria torna esses casos de uso diretos.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Este Stack é uma estrutura de dados que você implementa e manipula com push/pop — não " +
+                "confundir com a Call Stack do runtime (Memory & Runtime), gerenciada automaticamente pela " +
+                "linguagem. Os nomes coincidem — a Call Stack também segue LIFO — mas um é uma ferramenta que " +
+                "você usa deliberadamente, o outro é infraestrutura da linguagem.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "paragraph",
+              text: "Implementado sobre Array, a forma mais comum em JavaScript:",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "stack.js",
+              code: ["class Stack {", "  #items = [];", "  push(value) { this.#items.push(value); }", "  pop() { return this.#items.pop(); }", "  peek() { return this.#items[this.#items.length - 1]; }", "}", "const s = new Stack();", "s.push(1); s.push(2); s.push(3);", "s.pop(); // 3"].join(
+                "\n"
+              ),
+            },
+            {
+              type: "paragraph",
+              text:
+                "push/pop no fim de um Array já são O(1) — usar o próprio Array como armazenamento interno é " +
+                "a implementação mais direta de Stack em JavaScript.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Stack é LIFO — o último elemento inserido é o primeiro a sair. Pode ser implementado sobre " +
+                "Array ou Linked List; não confundir com a Call Stack do runtime, que segue a mesma disciplina " +
+                "mas é uma coisa diferente.",
+            },
+          ],
+          examples: [
+            {
+              title: "Validar parênteses balanceados",
+              context: "O caso de uso clássico de Stack.",
+              code: {
+                language: "javascript",
+                filename: "is-balanced.js",
+                code: ["function isBalanced(expr) {", "  const stack = [];", "  for (const char of expr) {", '    if (char === "(") stack.push(char);', '    else if (char === ")") {', "      if (stack.length === 0) return false;", "      stack.pop();", "    }", "  }", "  return stack.length === 0;", "}"].join("\n"),
+              },
+              explanation: "Cada ( empilha; cada ) desempilha — se sobrar algo empilhado (ou desempilhar vazio), os parênteses não batem.",
+            },
+            {
+              title: "Histórico de desfazer",
+              context: "Desfazer sempre reverte a ação mais recente.",
+              code: { language: "javascript", filename: "undo-stack.js", code: ["class UndoStack {", "  #history = [];", "  record(action) { this.#history.push(action); }", "  undo() { return this.#history.pop(); }", "}"].join("\n") },
+              explanation: "Exatamente a disciplina LIFO — a última ação é a primeira a ser desfeita.",
+            },
+            {
+              title: "Stack sobre Linked List",
+              context: "Mesma interface, implementação diferente — Interface revisitado.",
+              code: {
+                language: "javascript",
+                filename: "linked-stack.js",
+                code: ["class LinkedStack {", "  #top = null;", "  push(value) {", "    this.#top = { value, next: this.#top };", "  }", "  pop() {", "    if (!this.#top) return undefined;", "    const value = this.#top.value;", "    this.#top = this.#top.next;", "    return value;", "  }", "}"].join("\n"),
+              },
+              explanation: "Mesma interface (push/pop, LIFO), implementação diferente — Stack é um contrato de comportamento, não uma implementação específica.",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo inverte uma string sem aproveitar explicitamente a disciplina de Stack.",
+            problemCode: {
+              language: "javascript",
+              filename: "reverse-string.js",
+              code: ['function reverseString(str) {', '  const chars = str.split("");', '  let result = "";', "  for (let i = chars.length - 1; i >= 0; i--) {", "    result += chars[i];", "  }", "  return result;", "}"].join("\n"),
+            },
+            task: "Reescreva reverseString usando explicitamente uma Stack (push cada caractere, depois pop todos).",
+            hint: "Empilhar todos os caracteres na ordem original, depois desempilhar um por um, produz a ordem invertida naturalmente.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "reverse-string-stack.js",
+                code: ["function reverseStringWithStack(str) {", "  const stack = [];", "  for (const char of str) stack.push(char);", '  let result = "";', "  while (stack.length > 0) result += stack.pop();", "  return result;", "}"].join("\n"),
+              },
+              explanation: "Empilhar na ordem original e desempilhar produz a ordem invertida automaticamente — a disciplina LIFO faz o trabalho.",
+            },
+          },
+        }),
+        concept({
+          order: 40,
+          title: "Queue",
+          note: "FIFO",
+          requires: ["Stack"],
+          revisit: ["Asynchronous Programming / Task Queue", "Architecture / Message Queue"],
+          summary:
+            "Uma estrutura de dados onde o primeiro elemento inserido é o primeiro a ser removido (FIFO) — o " +
+            "par natural de Stack, ensinado junto por serem opostos na mesma pergunta: qual elemento sai primeiro?",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Queue é uma estrutura de dados com duas operações principais: enqueue (adiciona no final) e " +
+                "dequeue (remove do início) — sempre respeitando FIFO (First In, First Out): o primeiro " +
+                "elemento que entrou é o primeiro que sai.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "É o par natural de Stack — as duas estruturas respondem à mesma pergunta (\"qual elemento sai " +
+                "primeiro?\") de formas opostas. Fila é o modelo natural pra processar coisas na ordem de " +
+                "chegada: pedidos, tarefas, mensagens — a estrutura por trás de Task Queue e Message Queue.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "queue.js",
+              code: ["class Queue {", "  #items = [];", "  enqueue(value) { this.#items.push(value); } // entra no fim", "  dequeue() { return this.#items.shift(); }    // sai do início", "}", "const q = new Queue();", "q.enqueue(1); q.enqueue(2); q.enqueue(3);", "q.dequeue(); // 1"].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Diferente de Stack (que tira do mesmo lado que insere), Queue insere de um lado (fim) e " +
+                "remove do outro (início) — daí FIFO em vez de LIFO.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Queue é FIFO — o primeiro elemento inserido é o primeiro a sair. É o par de Stack: as duas " +
+                "respondem à mesma pergunta de forma oposta, e cada uma serve a um tipo diferente de problema " +
+                "de ordenação de processamento.",
+            },
+          ],
+          examples: [
+            {
+              title: "Processar tarefas na ordem de chegada",
+              context: "A primeira a entrar é a primeira a ser atendida.",
+              code: { language: "javascript", filename: "task-queue.js", code: ["class TaskQueue {", "  #tasks = [];", "  add(task) { this.#tasks.push(task); }", "  processNext() { return this.#tasks.shift(); }", "}"].join("\n") },
+              explanation: "Tarefas são processadas na ordem em que chegaram — o comportamento esperado de uma fila real.",
+            },
+            {
+              title: "Busca em largura (BFS) usando Queue",
+              context: "FIFO garante processar por \"camadas\".",
+              code: {
+                language: "javascript",
+                filename: "bfs.js",
+                code: [
+                  "function bfs(startNode) {",
+                  "  const queue = [startNode];",
+                  "  const visited = new Set([startNode]);",
+                  "  while (queue.length > 0) {",
+                  "    const node = queue.shift(); // processa o mais ANTIGO da fila",
+                  "    for (const neighbor of node.neighbors) {",
+                  "      if (!visited.has(neighbor)) {",
+                  "        visited.add(neighbor);",
+                  "        queue.push(neighbor); // entra no FIM",
+                  "      }",
+                  "    }",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation: "FIFO garante que os nós mais próximos do início são processados antes dos mais distantes — é isso que faz BFS visitar camada por camada.",
+            },
+            {
+              title: ".shift() sendo O(n)",
+              context: "Revisitando o trade-off de Array visto antes.",
+              code: { language: "javascript", filename: "shift-cost.js", code: "const arr = [1, 2, 3, 4, 5];\narr.shift(); // O(n) — todo mundo desloca uma posição pra trás" },
+              explanation: "Implementar Queue sobre Array com .shift() reintroduz o mesmo problema de custo de Array visto antes.",
+            },
+          ],
+          exercise: {
+            problem: "A implementação de Queue abaixo usa .shift(), O(n) — em filas grandes, um gargalo perceptível.",
+            problemCode: {
+              language: "javascript",
+              filename: "array-queue.js",
+              code: ["class Queue {", "  #items = [];", "  enqueue(value) { this.#items.push(value); }", "  dequeue() { return this.#items.shift(); } // O(n)", "}"].join("\n"),
+            },
+            task: "Reescreva Queue usando uma Linked List por trás, de forma que tanto enqueue quanto dequeue sejam O(1).",
+            hint: "Mantenha referências a head (pra dequeue) e tail (pra enqueue), igual fizemos em Linked List.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "linked-queue.js",
+                code: [
+                  "class LinkedQueue {",
+                  "  #head = null;",
+                  "  #tail = null;",
+                  "  enqueue(value) {",
+                  "    const node = { value, next: null };",
+                  "    if (this.#tail) this.#tail.next = node;",
+                  "    else this.#head = node;",
+                  "    this.#tail = node; // O(1)",
+                  "  }",
+                  "  dequeue() {",
+                  "    if (!this.#head) return undefined;",
+                  "    const value = this.#head.value;",
+                  "    this.#head = this.#head.next; // O(1)",
+                  "    return value;",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation: "Com head e tail como referências diretas, inserir no fim e remover do início são ambos O(1).",
+            },
+          },
+        }),
+        concept({
+          order: 50,
+          title: "Hash Table",
+          note: "Chave → valor",
+          requires: ["Array"],
+          revisit: ["Architecture / Consistent Hashing", "Platform / Database Performance / Index"],
+          summary:
+            "Uma estrutura que mapeia chaves a valores usando uma função hash pra calcular onde cada par " +
+            "deveria estar num array por trás — busca, inserção e remoção em O(1) na média, ao custo de perder " +
+            "qualquer noção de ordem.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Uma Hash Table guarda pares chave-valor e usa uma função hash pra transformar cada chave num " +
+                "índice de um Array interno — o \"endereço\" onde aquele par deveria estar. Buscar um valor não " +
+                "exige percorrer nada: a função hash calcula direto onde procurar.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Array dá acesso O(1) por índice numérico, mas e se você quer buscar por uma chave arbitrária " +
+                "— um nome, um ID de string, um objeto? Hash Table resolve isso: transforma qualquer chave num " +
+                "índice via hash, e reaproveita o acesso O(1) de Array por baixo. O preço é que a ordem dos " +
+                "elementos deixa de ter qualquer significado.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "ages.js",
+              code: ['const ages = new Map();', 'ages.set("Ana", 30);', 'ages.set("Bia", 25);', 'console.log(ages.get("Ana")); // 30 — O(1) na média'].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                ".get(\"Ana\") não procura \"Ana\" percorrendo os pares um por um — a função hash de Map calcula " +
+                "diretamente onde esse valor está guardado.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Hash Table mapeia chaves a valores usando uma função hash pra calcular a posição, dando " +
+                "busca/inserção/remoção O(1) na média — o preço é perder qualquer noção de ordem entre os elementos.",
+            },
+          ],
+          examples: [
+            {
+              title: "Colisões de hash",
+              context: "Duas chaves diferentes podem mapear pro mesmo índice.",
+              code: {
+                language: "text",
+                filename: "note.txt",
+                code:
+                  'Conceitualmente: hash("Ana") e hash("Caio") podem colidir no mesmo índice.\nA tabela precisa de uma estratégia (lista encadeada no slot, por exemplo)\npra guardar os dois sem perder nenhum.',
+              },
+              explanation: "Colisões são esperadas e tratadas internamente — uma boa função hash minimiza a frequência, sem eliminar a possibilidade.",
+            },
+            {
+              title: "Cache indexado por chave composta",
+              context: "Qualquer valor hashable serve de chave, inclusive combinada.",
+              code: { language: "javascript", filename: "cache.js", code: ["const cache = new Map();", "function getCached(userId, resource) {", "  const key = `${userId}:${resource}`;", "  return cache.get(key);", "}"].join("\n") },
+              explanation: "Combinar múltiplos valores numa única chave string é um padrão comum de cache.",
+            },
+            {
+              title: "Contando frequência de itens",
+              context: "Um uso clássico de Hash Table.",
+              code: {
+                language: "javascript",
+                filename: "count-occurrences.js",
+                code: ["function countOccurrences(words) {", "  const counts = new Map();", "  for (const word of words) {", "    counts.set(word, (counts.get(word) || 0) + 1);", "  }", "  return counts;", "}"].join("\n"),
+              },
+              explanation: "O acesso O(1) pra ler/atualizar o contador de cada palavra é o que torna essa contagem eficiente mesmo com muitas palavras.",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo verifica duplicatas com busca linear repetida — O(n²) no pior caso.",
+            problemCode: {
+              language: "javascript",
+              filename: "has-duplicates.js",
+              code: ["function hasDuplicates(arr) {", "  for (let i = 0; i < arr.length; i++) {", "    for (let j = i + 1; j < arr.length; j++) {", "      if (arr[i] === arr[j]) return true;", "    }", "  }", "  return false;", "}"].join("\n"),
+            },
+            task: "Reescreva hasDuplicates usando uma Hash Table (Set) para reduzir a complexidade pra O(n).",
+            hint: "Percorra o array uma única vez, guardando cada elemento visto numa estrutura de busca O(1).",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "has-duplicates-fast.js",
+                code: ["function hasDuplicatesFast(arr) {", "  const seen = new Set();", "  for (const item of arr) {", "    if (seen.has(item)) return true; // O(1)", "    seen.add(item);", "  }", "  return false;", "}"].join("\n"),
+              },
+              explanation: "seen.has(item) é O(1) na média, em vez de percorrer o array inteiro pra cada elemento — o loop duplo vira um único loop.",
+            },
+          },
+        }),
+        concept({
+          order: 60,
+          title: "Set",
+          note: "Sem duplicatas",
+          requires: ["Hash Table"],
+          summary:
+            "Uma coleção que garante que cada elemento aparece no máximo uma vez — normalmente implementada " +
+            "por cima de uma Hash Table, aproveitando o mesmo acesso O(1) que ela oferece.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Um Set é uma coleção onde cada elemento pode aparecer no máximo uma vez — adicionar um valor " +
+                "já presente não tem efeito nenhum. As operações principais são add, has (verificar presença) " +
+                "e delete.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Duas necessidades comuns: garantir unicidade e testar pertencimento rapidamente. Um array " +
+                "resolveria isso, mas checar duplicidade ou pertencimento num array exige percorrer tudo — " +
+                "O(n). Set normalmente é implementado por cima de uma Hash Table, então has vira O(1) na " +
+                "média, o mesmo motivo pelo qual Hash Table existe.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "tags.js",
+              code: ["const tags = new Set();", 'tags.add("javascript");', 'tags.add("javascript"); // duplicado, ignorado', 'tags.add("typescript");', "console.log(tags.size); // 2, não 3", 'console.log(tags.has("javascript")); // true — O(1)'].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text: "Adicionar \"javascript\" duas vezes só resulta numa entrada — o Set garante unicidade automaticamente.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Set garante que cada elemento aparece no máximo uma vez, e oferece teste de pertencimento " +
+                "O(1) na média — normalmente implementado por cima de uma Hash Table, herdando as mesmas " +
+                "vantagens e o mesmo trade-off (sem ordem significativa).",
+            },
+          ],
+          examples: [
+            {
+              title: "Removendo duplicatas de um array",
+              context: "O uso mais comum de Set.",
+              code: { language: "javascript", filename: "unique.js", code: "const numbers = [1, 2, 2, 3, 3, 3, 4];\nconst unique = [...new Set(numbers)]; // [1, 2, 3, 4]" },
+              explanation: "Converter pra Set elimina duplicatas automaticamente; o spread converte de volta pra array.",
+            },
+            {
+              title: "Interseção e diferença entre conjuntos",
+              context: ".has() em O(1) torna essas operações eficientes.",
+              code: {
+                language: "javascript",
+                filename: "set-ops.js",
+                code: ["const a = new Set([1, 2, 3]);", "const b = new Set([2, 3, 4]);", "const intersection = [...a].filter(x => b.has(x)); // [2, 3]", "const difference = [...a].filter(x => !b.has(x));  // [1]"].join("\n"),
+              },
+              explanation: "Comparar dois arrays elemento a elemento seria O(n×m) — com Set, cada checagem é O(1).",
+            },
+            {
+              title: "Rastreando visitados numa busca",
+              context: "Set como estrutura de suporte, comum em algoritmos de grafo.",
+              code: { language: "javascript", filename: "visited.js", code: ["const visited = new Set();", "function visit(node) {", "  if (visited.has(node)) return; // O(1) — evita reprocessar", "  visited.add(node);", "}"].join("\n") },
+              explanation: "Garante que cada nó é processado uma única vez, com checagem O(1) a cada passo.",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo verifica se dois arrays têm os mesmos elementos, mas usando comparação O(n²).",
+            problemCode: {
+              language: "javascript",
+              filename: "same-elements.js",
+              code: ["function sameElements(arr1, arr2) {", "  if (arr1.length !== arr2.length) return false;", "  return arr1.every(item => arr2.includes(item)); // .includes() é O(n)", "}"].join("\n"),
+            },
+            task: "Reescreva sameElements usando Set para reduzir a complexidade.",
+            hint: "Converter arr2 pra Set permite usar .has() (O(1)) em vez de .includes() (O(n)) a cada checagem.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "same-elements-fast.js",
+                code: ["function sameElementsFast(arr1, arr2) {", "  if (arr1.length !== arr2.length) return false;", "  const set2 = new Set(arr2);", "  return arr1.every(item => set2.has(item)); // O(1) por checagem", "}"].join("\n"),
+              },
+              explanation: "O total cai de O(n²) pra O(n), porque cada checagem individual agora é O(1) em vez de O(n).",
+            },
+          },
+        }),
+        concept({
+          order: 70,
+          title: "Tree",
+          note: "Nós hierárquicos",
+          requires: ["Linked List"],
+          summary:
+            "Uma estrutura hierárquica de nós conectados, onde cada nó pode ter múltiplos filhos — uma " +
+            "generalização de Linked List (cada nó tem só um \"próximo\") pra representar relações de " +
+            "hierarquia, não só sequência.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Uma Tree é uma coleção de nós conectados hierarquicamente: existe um nó raiz (root), e cada " +
+                "nó pode ter zero ou mais nós filhos. Diferente de Linked List, um nó de Tree pode apontar pra " +
+                "vários filhos — a estrutura generaliza de sequência linear pra hierarquia ramificada.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Muita coisa no mundo real é naturalmente hierárquica: um sistema de arquivos, a estrutura de " +
+                "um HTML/DOM, decisões aninhadas. Tree modela essa forma de organização diretamente, com " +
+                "operações que respeitam a hierarquia.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "tree-node.js",
+              code: [
+                "class TreeNode {",
+                "  constructor(value) {",
+                "    this.value = value;",
+                "    this.children = []; // pode ter QUALQUER número de filhos",
+                "  }",
+                "  addChild(node) {",
+                "    this.children.push(node);",
+                "  }",
+                "}",
+                'const root = new TreeNode("raiz");',
+                'const childA = new TreeNode("filho A");',
+                'const childB = new TreeNode("filho B");',
+                "root.addChild(childA);",
+                "root.addChild(childB);",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "root tem dois filhos diretos — cada TreeNode guarda um array de filhos, em vez de um único " +
+                "ponteiro next como em Linked List.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Tree generaliza Linked List de sequência linear pra hierarquia ramificada — cada nó pode ter " +
+                "múltiplos filhos, em vez de um único \"próximo\". A estrutura natural pra representar qualquer " +
+                "relação de hierarquia.",
+            },
+          ],
+          examples: [
+            {
+              title: "Percorrendo uma Tree em profundidade",
+              context: "Percorrer costuma ser naturalmente recursivo.",
+              code: {
+                language: "javascript",
+                filename: "print-all.js",
+                code: ["function printAll(node, depth = 0) {", '  console.log("  ".repeat(depth) + node.value);', "  for (const child of node.children) {", "    printAll(child, depth + 1);", "  }", "}"].join("\n"),
+              },
+              explanation: "Cada filho é, ele mesmo, a raiz de uma sub-árvore menor — a recursão espelha a estrutura.",
+            },
+            {
+              title: "Um sistema de arquivos modelado como Tree",
+              context: "Pastas e arquivos formam naturalmente uma hierarquia.",
+              code: { language: "javascript", filename: "filesystem.js", code: ['const root = new TreeNode("/");', 'const docs = new TreeNode("documents");', 'const photos = new TreeNode("photos");', "root.addChild(docs);", "root.addChild(photos);", 'docs.addChild(new TreeNode("resume.pdf"));'].join("\n") },
+              explanation: "Cada pasta pode conter outras pastas ou arquivos — exatamente a forma de uma Tree.",
+            },
+            {
+              title: "Altura de uma Tree",
+              context: "Uma propriedade derivada calculada recursivamente.",
+              code: { language: "javascript", filename: "height.js", code: ["function height(node) {", "  if (node.children.length === 0) return 0; // folha", "  return 1 + Math.max(...node.children.map(height));", "}"].join("\n") },
+              explanation: "A altura é o caminho mais longo da raiz até uma folha — calculada olhando a altura de cada sub-árvore.",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo conta nós de uma Tree usando uma pilha manual, em vez da recursão natural da estrutura.",
+            problemCode: {
+              language: "javascript",
+              filename: "count-nodes.js",
+              code: ["function countNodes(root) {", "  let count = 0;", "  const stack = [root];", "  while (stack.length > 0) {", "    const node = stack.pop();", "    count++;", "    for (const child of node.children) stack.push(child);", "  }", "  return count;", "}"].join("\n"),
+            },
+            task: "Reescreva countNodes de forma recursiva, aproveitando que cada filho é raiz de uma sub-árvore menor.",
+            hint: "O total de nós é 1 (o próprio nó) + a soma dos totais de cada sub-árvore filha.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "count-nodes-recursive.js",
+                code: ["function countNodesRecursive(node) {", "  return 1 + node.children.reduce((sum, child) => sum + countNodesRecursive(child), 0);", "}"].join("\n"),
+              },
+              explanation: "A recursão espelha diretamente a definição hierárquica de Tree, sem gerenciar uma pilha manualmente.",
+            },
+          },
+        }),
+        concept({
+          order: 80,
+          title: "Binary Search Tree",
+          note: "Ordenada, busca O(log n)",
+          requires: ["Tree"],
+          revisit: ["Platform / Database Performance / Index"],
+          summary:
+            "Uma Tree onde cada nó tem no máximo dois filhos, e todo valor à esquerda é menor, todo valor à " +
+            "direita é maior — essa invariante de ordenação permite busca, inserção e remoção em O(log n), " +
+            "quando a árvore está balanceada.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Uma Binary Search Tree (BST) é uma Tree com duas restrições: cada nó tem no máximo dois " +
+                "filhos (esquerdo e direito), e existe um invariante de ordenação — pra qualquer nó, todos os " +
+                "valores na sub-árvore esquerda são menores, e todos na sub-árvore direita são maiores.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "O invariante de ordenação é o que torna a busca eficiente: a cada nó visitado, dá pra " +
+                "descartar metade da árvore restante — o mesmo princípio de busca binária, só que sobre uma " +
+                "estrutura de nós em vez de um array. Quando a árvore está balanceada, isso dá O(log n) pra " +
+                "busca/inserção/remoção.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "bst.js",
+              code: [
+                "class BSTNode {",
+                "  constructor(value) {",
+                "    this.value = value;",
+                "    this.left = null;",
+                "    this.right = null;",
+                "  }",
+                "  insert(value) {",
+                "    if (value < this.value) {",
+                "      if (this.left) this.left.insert(value);",
+                "      else this.left = new BSTNode(value);",
+                "    } else {",
+                "      if (this.right) this.right.insert(value);",
+                "      else this.right = new BSTNode(value);",
+                "    }",
+                "  }",
+                "}",
+                "const root = new BSTNode(50);",
+                "root.insert(30); // vai pra esquerda (menor)",
+                "root.insert(70); // vai pra direita (maior)",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "insert decide o lado com base no invariante de ordenação — cada comparação elimina metade " +
+                "das possibilidades restantes.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Binary Search Tree é uma Tree com invariante de ordenação — isso permite busca O(log n) " +
+                "quando balanceada, o mesmo princípio de busca binária aplicado a uma estrutura de nós.",
+            },
+          ],
+          examples: [
+            {
+              title: "Busca aproveitando o invariante",
+              context: "Metade da árvore é descartada a cada passo.",
+              code: {
+                language: "javascript",
+                filename: "search.js",
+                code: ["function search(node, target) {", "  if (!node) return false;", "  if (node.value === target) return true;", "  return target < node.value ? search(node.left, target) : search(node.right, target);", "}"].join("\n"),
+              },
+              explanation: "Se o alvo é menor que o nó atual, a sub-árvore direita inteira é ignorada, sem precisar visitá-la.",
+            },
+            {
+              title: "Percurso in-order devolve valores ordenados",
+              context: "Uma consequência direta do invariante de ordenação.",
+              code: {
+                language: "javascript",
+                filename: "in-order.js",
+                code: ["function inOrder(node, result = []) {", "  if (!node) return result;", "  inOrder(node.left, result);", "  result.push(node.value);", "  inOrder(node.right, result);", "  return result;", "}"].join("\n"),
+              },
+              explanation: "Visitar esquerda, o nó, depois direita, naturalmente produz os valores em ordem crescente.",
+            },
+            {
+              title: "O caso patológico: BST desbalanceada",
+              context: "Degenera pra O(n) por operação.",
+              code: { language: "javascript", filename: "degenerate.js", code: "// Inserir valores JÁ ORDENADOS numa BST simples gera uma árvore \"torta\" —\n// cada nó só tem filho de um lado, virando essencialmente uma Linked List." },
+              explanation: "Sem balanceamento, a garantia de O(log n) desaparece — inserir dados já ordenados é o pior caso clássico.",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo busca o menor valor percorrendo TODOS os nós — O(n), quando a estrutura permite algo bem mais rápido.",
+            problemCode: {
+              language: "javascript",
+              filename: "find-min.js",
+              code: ["function findMin(root) {", "  let min = root.value;", "  function visit(node) {", "    if (!node) return;", "    if (node.value < min) min = node.value;", "    visit(node.left);", "    visit(node.right);", "  }", "  visit(root);", "  return min;", "}"].join("\n"),
+            },
+            task: "Reescreva findMin aproveitando o invariante de ordenação, pra rodar em O(altura da árvore).",
+            hint: "Numa BST, onde é que o menor valor sempre está, em relação à raiz?",
+            solution: {
+              code: { language: "javascript", filename: "find-min-fast.js", code: ["function findMinFast(node) {", "  while (node.left) {", "    node = node.left; // o menor valor está sempre o mais à esquerda possível", "  }", "  return node.value;", "}"].join("\n") },
+              explanation: "Pelo invariante, o menor valor está sempre na extremidade esquerda — basta seguir .left até não haver mais filho.",
+            },
+          },
+        }),
+        concept({
+          order: 90,
+          title: "Heap",
+          note: "Árvore em array",
+          requires: ["Tree", "Array"],
+          summary:
+            "Uma Tree binária completa, guardada de forma compacta dentro de um Array (sem ponteiros), que " +
+            "garante acesso O(1) ao maior (ou menor) elemento — a estrutura por trás de Priority Queue.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Um Heap é uma Tree binária completa (todos os níveis preenchidos, exceto talvez o último, " +
+                "preenchido da esquerda pra direita) que respeita o invariante de heap: em um Max-Heap, todo " +
+                "nó é maior ou igual aos seus filhos. Por ser completa, um Heap pode ser guardado de forma " +
+                "compacta dentro de um Array, usando aritmética de índice pra navegar entre pai e filhos.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Algumas aplicações só precisam acessar rapidamente o maior (ou menor) elemento de um conjunto " +
+                "que muda com frequência — sem manter tudo ordenado o tempo todo. Heap garante acesso O(1) ao " +
+                "topo, e inserção/remoção em O(log n). É a estrutura por trás de Priority Queue.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "paragraph",
+              text: "Max-Heap representado em array — pai no índice i, filhos em 2i+1 e 2i+2:",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "max-heap.js",
+              code: [
+                "class MaxHeap {",
+                "  #items = [];",
+                "  peek() { return this.#items[0]; } // O(1) — o maior está sempre no topo",
+                "  insert(value) {",
+                "    this.#items.push(value);",
+                "    this.#bubbleUp(this.#items.length - 1);",
+                "  }",
+                "  #bubbleUp(i) {",
+                "    const parent = Math.floor((i - 1) / 2);",
+                "    if (parent >= 0 && this.#items[parent] < this.#items[i]) {",
+                "      [this.#items[parent], this.#items[i]] = [this.#items[i], this.#items[parent]];",
+                "      this.#bubbleUp(parent);",
+                "    }",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "peek() é O(1) — o maior elemento está sempre no índice 0. insert adiciona no fim e " +
+                "\"borbulha\" pra cima, sem precisar reordenar a coleção inteira.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Heap é uma Tree completa guardada de forma compacta num Array, garantindo acesso O(1) ao " +
+                "maior (ou menor) elemento e inserção/remoção O(log n) — ideal quando você só precisa do " +
+                "\"topo\" de uma coleção que muda com frequência.",
+            },
+          ],
+          examples: [
+            {
+              title: "Aritmética de índice, sem ponteiro nenhum",
+              context: "A posição de pai/filhos é sempre calculável a partir do índice.",
+              code: { language: "javascript", filename: "heap-indices.js", code: "function parentIndex(i) { return Math.floor((i - 1) / 2); }\nfunction leftChildIndex(i) { return 2 * i + 1; }\nfunction rightChildIndex(i) { return 2 * i + 2; }" },
+              explanation: "Por a árvore ser completa, nenhum ponteiro é necessário, diferente de uma Tree comum.",
+            },
+            {
+              title: "Priority Queue implementada sobre Heap",
+              context: "O uso mais direto de Heap.",
+              code: {
+                language: "javascript",
+                filename: "priority-queue.js",
+                code: ["class PriorityQueue {", "  #heap = new MaxHeap();", "  add(task, priority) { this.#heap.insert({ task, priority }); }", "  next() { return this.#heap.extractMax(); }", "}"].join("\n"),
+              },
+              explanation: "Uma fila de prioridade sempre devolve o item de maior prioridade primeiro — o que Heap garante em O(1) pra consulta.",
+            },
+            {
+              title: "Heap Sort",
+              context: "Extrair o topo repetidamente produz um array ordenado.",
+              code: {
+                language: "javascript",
+                filename: "heap-sort.js",
+                code: ["function heapSort(arr) {", "  const heap = new MaxHeap();", "  for (const item of arr) heap.insert(item);", "  const sorted = [];", "  while (heap.peek() !== undefined) sorted.unshift(heap.extractMax());", "  return sorted;", "}"].join("\n"),
+              },
+              explanation: "Um algoritmo de ordenação inteiro construído em cima de Heap.",
+            },
+          ],
+          exercise: {
+            problem: "Um sistema de atendimento busca o maior prioridade num array comum a cada vez — O(n) por atendimento.",
+            problemCode: {
+              language: "javascript",
+              filename: "get-next-customer.js",
+              code: ["function getNextCustomer(customers) {", "  let highest = customers[0];", "  for (const c of customers) {", "    if (c.priority > highest.priority) highest = c;", "  }", "  customers.splice(customers.indexOf(highest), 1);", "  return highest;", "}"].join("\n"),
+            },
+            task: "Descreva (ou esboce em código) como um Heap resolveria isso em O(log n) por atendimento.",
+            hint: "Cada cliente entra via insert (O(log n)); atender o próximo é peek() + remover o topo (O(log n)).",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "customer-queue.js",
+                code: ["class CustomerQueue {", "  #heap = new MaxHeap(); // ordenado por customer.priority", "  addCustomer(customer) {", "    this.#heap.insert(customer); // O(log n)", "  }", "  getNextCustomer() {", "    return this.#heap.extractMax(); // O(log n)", "  }", "}"].join("\n"),
+              },
+              explanation: "Tanto adicionar quanto atender ficam em O(log n), independente de quantos clientes estão na fila.",
+            },
+          },
+        }),
         concept({
           order: 100,
           title: "Graph",
+          note: "O caso mais geral",
           requires: ["Tree", "Hash Table"],
           revisit: ["AI / Vector Search (HNSW)"],
+          summary:
+            "A estrutura de dados mais geral de todas: nós conectados por arestas, sem as restrições de " +
+            "hierarquia de Tree — qualquer nó pode se conectar a qualquer outro, inclusive formando ciclos.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Um Graph é uma coleção de nós (vértices) conectados por arestas — sem a restrição hierárquica " +
+                "de Tree (que exige uma raiz e proíbe ciclos). Num Graph, qualquer nó pode se conectar a " +
+                "qualquer outro, inclusive formando ciclos.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "É o caso mais geral de estrutura baseada em relações — tão geral que tanto Tree quanto Linked " +
+                "List são, tecnicamente, casos particulares de Graph. Redes sociais, mapas de rotas, " +
+                "dependências entre módulos, o próprio grafo de conhecimento deste roadmap — tudo isso é " +
+                "naturalmente um Graph.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "paragraph",
+              text: "Representado como lista de adjacência — cada nó guarda seus vizinhos:",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "graph.js",
+              code: ["const graph = {", '  A: ["B", "C"],', '  B: ["A", "D"],', '  C: ["A"],', '  D: ["B"],', "};", "// A conecta com B e C; B conecta de volta com A — um ciclo"].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A e B se conectam mutuamente — um ciclo. Numa Tree, isso seria proibido; num Graph, é " +
+                "perfeitamente normal.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Graph é a estrutura mais geral de todas — nós conectados por arestas, sem restrição de " +
+                "hierarquia ou proibição de ciclos. Tree e Linked List são casos particulares e mais " +
+                "restritos de Graph.",
+            },
+          ],
+          examples: [
+            {
+              title: "Grafo dirigido vs. não-dirigido",
+              context: "A direção da conexão importa ou não, dependendo do que é modelado.",
+              code: { language: "javascript", filename: "directed.js", code: ['const friendship = { Ana: ["Bia"], Bia: ["Ana"] }; // não-dirigido, mútuo', 'const follows = { Ana: ["Bia"], Bia: [] }; // dirigido, unilateral'].join("\n") },
+              explanation: "Num grafo dirigido, a aresta tem um sentido; num não-dirigido, a conexão é sempre recíproca.",
+            },
+            {
+              title: "Detectando um ciclo com DFS",
+              context: "Reencontrar um nó \"em progresso\" indica um ciclo.",
+              code: {
+                language: "javascript",
+                filename: "has-cycle.js",
+                code: [
+                  "function hasCycle(graph, node, visiting = new Set(), visited = new Set()) {",
+                  "  if (visiting.has(node)) return true; // ciclo",
+                  "  if (visited.has(node)) return false;",
+                  "  visiting.add(node);",
+                  "  for (const neighbor of graph[node]) {",
+                  "    if (hasCycle(graph, neighbor, visiting, visited)) return true;",
+                  "  }",
+                  "  visiting.delete(node);",
+                  "  visited.add(node);",
+                  "  return false;",
+                  "}",
+                ].join("\n"),
+              },
+              explanation: "Se durante a busca você reencontra um nó que ainda não terminou de ser explorado, isso é um ciclo.",
+            },
+            {
+              title: "Grafo de dependências",
+              context: "O exemplo mais direto do domínio deste próprio roadmap.",
+              code: {
+                language: "javascript",
+                filename: "dependencies.js",
+                code: ["const dependencies = {", '  Interface: ["Abstraction"],', '  Contract: ["Interface"],', '  Polymorphism: ["Interface", "Inheritance"],', "};"].join("\n"),
+              },
+              explanation: "Cada Concept que \"requires\" outro é uma aresta num grafo de dependências.",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo busca um caminho usando DFS, que não garante o caminho mais curto.",
+            problemCode: {
+              language: "javascript",
+              filename: "find-path-dfs.js",
+              code: [
+                "function findPathDFS(graph, start, end, path = [start], visited = new Set([start])) {",
+                "  if (start === end) return path;",
+                "  for (const neighbor of graph[start]) {",
+                "    if (!visited.has(neighbor)) {",
+                "      visited.add(neighbor);",
+                "      const result = findPathDFS(graph, neighbor, end, [...path, neighbor], visited);",
+                "      if (result) return result; // pode não ser o caminho MAIS CURTO",
+                "    }",
+                "  }",
+                "  return null;",
+                "}",
+              ].join("\n"),
+            },
+            task: "Explique (em comentário) por que DFS não garante o caminho mais curto, e reescreva usando BFS, reaproveitando o Concept de Queue.",
+            hint: "BFS explora \"camada por camada\" — o primeiro caminho que alcança o destino é garantidamente um dos mais curtos.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "find-shortest-path-bfs.js",
+                code: [
+                  "function findShortestPathBFS(graph, start, end) {",
+                  "  const queue = [[start]]; // fila de caminhos",
+                  "  const visited = new Set([start]);",
+                  "  while (queue.length > 0) {",
+                  "    const path = queue.shift(); // FIFO — o caminho mais antigo primeiro",
+                  "    const node = path[path.length - 1];",
+                  "    if (node === end) return path;",
+                  "    for (const neighbor of graph[node]) {",
+                  "      if (!visited.has(neighbor)) {",
+                  "        visited.add(neighbor);",
+                  "        queue.push([...path, neighbor]);",
+                  "      }",
+                  "    }",
+                  "  }",
+                  "  return null;",
+                  "}",
+                ].join("\n"),
+              },
+              explanation: "BFS explora todos os caminhos de comprimento 1 antes de qualquer caminho de comprimento 2 — o primeiro a alcançar end é garantidamente um dos mais curtos.",
+            },
+          },
         }),
       ],
     }),

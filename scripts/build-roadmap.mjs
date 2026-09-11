@@ -1194,6 +1194,16 @@ for (const area of model.areas()) {
     "map",
     "filter",
     "reduce",
+    "array",
+    "linked-list",
+    "stack",
+    "queue",
+    "hash-table",
+    "set",
+    "tree",
+    "binary-search-tree",
+    "heap",
+    "graph",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",
