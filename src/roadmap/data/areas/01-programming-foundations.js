@@ -635,17 +635,530 @@ export default area({
         concept({
           order: 50,
           title: "Contract",
+          note: "Contrato",
           requires: ["Interface"],
-          note: "pré/pós-condições, invariantes (Design by Contract)",
           revisit: ["Platform / API", "Testing & Quality Engineering / Testing Strategy / Contract Testing"],
+          summary:
+            "As regras que uma Interface promete cumprir: pré-condições que quem chama precisa garantir, " +
+            "pós-condições que a implementação garante de volta, e invariantes que nunca podem ser violados.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Um Contract formaliza o que uma Interface promete, além da assinatura dos métodos: " +
+                "pré-condições (o que precisa ser verdade antes de chamar), pós-condições (o que fica " +
+                "garantido depois que a chamada termina) e invariantes (o que permanece verdade sempre, antes " +
+                "e depois).",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Uma Interface sozinha diz O QUE existe — os métodos, os tipos. Um Contract diz sob quais " +
+                "condições isso funciona. Sem contrato explícito, essas regras vazam pra fora de formas " +
+                "informais — comentários, convenção, tentativa e erro — e ficam fáceis de violar sem ninguém " +
+                "perceber até algo quebrar em produção.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "paragraph",
+              text: "Uma função com pré-condição verificada no início e pós-condição verificada no fim:",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "withdraw.js",
+              code: [
+                "function withdraw(account, amount) {",
+                "  // pré-condição",
+                '  if (amount <= 0) throw new Error("amount deve ser positivo");',
+                '  if (amount > account.balance) throw new Error("saldo insuficiente");',
+                "",
+                "  const before = account.balance;",
+                "  account.balance -= amount;",
+                "",
+                "  // pós-condição",
+                '  console.assert(account.balance === before - amount, "saldo não bateu com o esperado");',
+                "  return account.balance;",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "As duas checagens do início são o contrato de entrada (pré-condições) — quem chama withdraw " +
+                "precisa garanti-las. O assert do fim documenta o contrato de saída (pós-condição): o efeito " +
+                "que a função promete produzir.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Um Contract é o que uma Interface promete além da assinatura — pré-condições, pós-condições e " +
+                "invariantes tornam explícito sob quais condições o código funciona, em vez de deixar isso " +
+                "implícito na cabeça de quem escreveu.",
+            },
+          ],
+          examples: [
+            {
+              title: "Pré-condição num parâmetro de API",
+              context: "Validar entrada explicitamente em vez de tentar \"adivinhar\" um resultado razoável.",
+              code: {
+                language: "javascript",
+                filename: "paginate.js",
+                code: [
+                  "function paginate(items, page, pageSize) {",
+                  '  if (page < 1) throw new RangeError("page deve ser >= 1");',
+                  '  if (pageSize < 1) throw new RangeError("pageSize deve ser >= 1");',
+                  "  return items.slice((page - 1) * pageSize, page * pageSize);",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "paginate não tenta adivinhar o que fazer com page=0 — o contrato deixa explícito que isso é " +
+                "uma violação, e falha alto (throw) em vez de devolver um resultado estranho silenciosamente.",
+            },
+            {
+              title: "Pós-condição verificada com assert",
+              context: "Documentar e checar, no próprio código, a garantia que um método promete devolver.",
+              code: {
+                language: "javascript",
+                filename: "sorted-insert.js",
+                code: [
+                  "function sortedInsert(list, value) {",
+                  "  const result = [...list, value].sort((a, b) => a - b);",
+                  "  console.assert(",
+                  "    result.every((v, i) => i === 0 || result[i - 1] <= v),",
+                  '    "resultado deveria estar ordenado"',
+                  "  );",
+                  "  return result;",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "O assert documenta e verifica a pós-condição \"o resultado está sempre ordenado\" — parte do " +
+                "contrato de sortedInsert, não um detalhe de implementação.",
+            },
+            {
+              title: "Invariante que um método pode quebrar sem querer",
+              context: "Nem toda violação de contrato lança erro — às vezes ela só corrompe um estado silenciosamente.",
+              code: {
+                language: "javascript",
+                filename: "range.js",
+                code: [
+                  "class Range {",
+                  "  constructor(min, max) {",
+                  '    if (min > max) throw new Error("min não pode ser maior que max");',
+                  "    this.min = min;",
+                  "    this.max = max;",
+                  "  }",
+                  "  expand(amount) {",
+                  "    this.max += amount; // precisa manter min <= max",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "O invariante min <= max precisa continuar válido depois de qualquer método — expand como está " +
+                "pode violá-lo se amount for negativo o bastante, o que é um contrato quebrado mesmo sem " +
+                "lançar erro nenhum.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A função abaixo não documenta nem verifica nenhuma pré-condição — silenciosamente devolve " +
+              "Infinity quando b é 0.",
+            problemCode: {
+              language: "javascript",
+              filename: "divide.js",
+              code: ["function divide(a, b) {", "  return a / b;", "}", "", "divide(10, 0); // Infinity, sem aviso nenhum"].join("\n"),
+            },
+            task:
+              "Reescreva divide para tornar seu contrato explícito: pré-condição (b !== 0) e pós-condição (o " +
+              "resultado, multiplicado por b, deveria bater com a — dentro de uma margem de erro de ponto " +
+              "flutuante).",
+            hint: "Pré-condição = validação no início que lança erro; pós-condição = um assert antes do return.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "divide.js",
+                code: [
+                  "function divide(a, b) {",
+                  '  if (b === 0) throw new Error("divisor não pode ser zero");',
+                  "",
+                  "  const result = a / b;",
+                  '  console.assert(Math.abs(result * b - a) < 1e-9, "resultado inconsistente com a divisão");',
+                  "  return result;",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Agora o contrato de divide está explícito no código: a pré-condição (b !== 0) falha alto em " +
+                "vez de devolver Infinity silenciosamente, e a pós-condição documenta (e verifica em " +
+                "desenvolvimento) o que \"resultado correto\" significa.",
+            },
+          },
         }),
-        concept({ order: 60, title: "Inheritance", requires: ["Encapsulation"], revisit: ["Software Design / Object-Oriented Design", "Software Design / SOLID / Liskov Substitution Principle (LSP)"] }),
+        concept({
+          order: 60,
+          title: "Inheritance",
+          note: "Herança",
+          requires: ["Encapsulation"],
+          revisit: ["Software Design / Object-Oriented Design", "Software Design / SOLID / Liskov Substitution Principle (LSP)"],
+          summary:
+            "Um mecanismo pelo qual uma classe reaproveita e especializa o comportamento de outra — mas com " +
+            "um contrato próprio que precisa ser respeitado para não quebrar quem depende da classe base.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Inheritance é um mecanismo de linguagem: uma classe (subclasse) reutiliza o estado e o " +
+                "comportamento de outra classe (superclasse) e pode sobrescrever ou estender parte dele. É uma " +
+                "forma de dizer \"isso é um tipo daquilo\" (is-a).",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Reaproveitar código comum entre tipos relacionados evita repetição — se Dog e Cat compartilham " +
+                "comportamento de Animal, escrever Animal uma vez e derivar as duas economiza duplicação. Mas " +
+                "Inheritance não é só economia de código: ela cria uma promessa — qualquer lugar que espera um " +
+                "Animal deveria funcionar corretamente com um Dog ou um Cat no lugar (o princípio por trás " +
+                "disso tem nome — Liskov Substitution — e volta com mais profundidade em SOLID).",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "Uma subclasse reaproveitando estrutura e sobrescrevendo comportamento:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "animal.js",
+              code: [
+                "class Animal {",
+                "  constructor(name) {",
+                "    this.name = name;",
+                "  }",
+                "  speak() {",
+                "    return `${this.name} faz um som`;",
+                "  }",
+                "}",
+                "",
+                "class Dog extends Animal {",
+                "  speak() {",
+                "    return `${this.name} late`;",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Dog herda name e a estrutura de Animal, mas sobrescreve speak(). Qualquer código escrito para " +
+                "Animal (ex.: animal.speak()) continua funcionando com um Dog — essa é a promessa que " +
+                "Inheritance está fazendo.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Inheritance reaproveita comportamento de uma classe base, mas junto com o reaproveitamento " +
+                "vem uma promessa: a subclasse deve continuar se comportando como a base esperava. Quebrar " +
+                "essa promessa é o problema mais comum de herança mal usada.",
+            },
+          ],
+          examples: [
+            {
+              title: "Reaproveitando comportamento comum",
+              context: "Um método escrito uma vez na base funciona para qualquer subclasse.",
+              code: {
+                language: "javascript",
+                filename: "shape.js",
+                code: [
+                  "class Shape {",
+                  "  area() {",
+                  '    throw new Error("subclasses devem implementar area()");',
+                  "  }",
+                  "  describe() {",
+                  "    return `Área: ${this.area()}`;",
+                  "  }",
+                  "}",
+                  "class Circle extends Shape {",
+                  "  constructor(radius) { super(); this.radius = radius; }",
+                  "  area() { return Math.PI * this.radius ** 2; }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "describe() é escrito uma vez em Shape e funciona pra qualquer subclasse que implemente area() " +
+                "— inclusive Circle, sem reescrever nada.",
+            },
+            {
+              title: "Herança quebrando a expectativa da base",
+              context: "O clássico \"quadrado não é um retângulo\" — uma violação sutil do contrato herdado.",
+              code: {
+                language: "javascript",
+                filename: "square.js",
+                code: [
+                  "class Rectangle {",
+                  "  setWidth(w) { this.width = w; }",
+                  "  setHeight(h) { this.height = h; }",
+                  "}",
+                  "class Square extends Rectangle {",
+                  "  setWidth(w) { this.width = this.height = w; } // quebra a expectativa de Rectangle",
+                  "  setHeight(h) { this.width = this.height = h; }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Código que espera um Rectangle (e assume que setWidth não muda a altura) quebra silenciosamente " +
+                "se receber um Square — isso é uma violação do contrato que Inheritance implicitamente promete.",
+            },
+            {
+              title: "Herança em cadeia",
+              context: "Cada nível adiciona comportamento sem repetir o que já existe acima.",
+              code: {
+                language: "javascript",
+                filename: "vehicles.js",
+                code: ['class Vehicle { move() { return "se movendo"; } }', 'class Car extends Vehicle { honk() { return "beep"; } }', 'class SportsCar extends Car { turbo() { return "vrooom"; } }'].join("\n"),
+              },
+              explanation:
+                "SportsCar herda de Car, que herda de Vehicle — ganha move(), honk() e turbo() na cadeia, sem " +
+                "repetir nenhum deles.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A classe Bird abaixo assume que toda ave voa — mas Penguin extends Bird quebra essa expectativa " +
+              "silenciosamente, forçando fly() a lançar erro.",
+            problemCode: {
+              language: "javascript",
+              filename: "bird.js",
+              code: [
+                "class Bird {",
+                '  fly() { return "voando"; }',
+                "}",
+                "class Penguin extends Bird {",
+                '  fly() { throw new Error("pinguins não voam"); }',
+                "}",
+                "",
+                "function makeItFly(bird) {",
+                "  return bird.fly(); // quebra se bird for um Penguin",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Redesenhe a hierarquia para que makeItFly nunca receba algo que não pode voar — descreva ou " +
+              "esboce como as classes deveriam se organizar, sem fazer Penguin herdar algo que promete fly().",
+            hint: "Nem todo \"é um tipo de\" precisa vir de uma única hierarquia de voo — pense em separar \"consegue voar\" de \"é uma ave\".",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "bird.js",
+                code: [
+                  "class Bird {",
+                  "  constructor(name) { this.name = name; }",
+                  "}",
+                  "class FlyingBird extends Bird {",
+                  '  fly() { return "voando"; }',
+                  "}",
+                  "class Penguin extends Bird {",
+                  '  swim() { return "nadando"; }',
+                  "}",
+                  "",
+                  "function makeItFly(bird) {",
+                  "  if (!(bird instanceof FlyingBird)) throw new Error(`${bird.name} não voa`);",
+                  "  return bird.fly();",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Penguin não herda mais de algo que promete fly() — a hierarquia agora reflete a realidade " +
+                "(nem toda ave voa) em vez de forçar um método que precisa lançar erro pra \"corrigir\" a " +
+                "promessa quebrada da herança original.",
+            },
+          },
+        }),
         concept({
           order: 70,
           title: "Polymorphism",
+          note: "Polimorfismo",
           requires: ["Interface", "Inheritance"],
-          note: "foco em subtype polymorphism",
           revisit: ["Software Design / Object-Oriented Design", "SOLID"],
+          summary:
+            "A capacidade de tratar objetos de tipos diferentes através da mesma interface, deixando cada tipo " +
+            "decidir como responder à mesma chamada — o motivo pelo qual Interface e Inheritance se tornam " +
+            "úteis na prática.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Polymorphism é a capacidade de chamar a mesma operação (o mesmo nome de método, a mesma " +
+                "interface) em objetos de tipos diferentes, e cada um responder do seu próprio jeito. Quem " +
+                "chama não precisa saber — nem checar — qual tipo concreto está recebendo.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Sem Polymorphism, código que lida com várias variações de um comportamento precisaria de " +
+                "condicionais explícitos checando o tipo de cada objeto — isso cresce sem parar a cada novo " +
+                "tipo. Polymorphism substitui esses condicionais por uma única chamada que \"sabe\" se resolver " +
+                "sozinha, geralmente via Interface (o contrato compartilhado) e Inheritance (o mecanismo que " +
+                "permite sobrescrever comportamento).",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Este material foca em subtype polymorphism — o mesmo método se comportando diferente por " +
+                "tipo/subtipo, o caso mais comum em linguagens orientadas a objeto. Existem outras formas (ex.: " +
+                "polimorfismo paramétrico em genéricos), fora do escopo aqui.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "shapes.js",
+              code: [
+                "class Circle {",
+                "  area() { return Math.PI * this.radius ** 2; }",
+                "}",
+                "class Square {",
+                "  area() { return this.side ** 2; }",
+                "}",
+                "",
+                "function totalArea(shapes) {",
+                "  return shapes.reduce((sum, shape) => sum + shape.area(), 0);",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "totalArea chama shape.area() sem saber (nem perguntar) se é um Circle ou um Square — cada " +
+                "tipo responde area() do seu jeito. Adicionar um Triangle amanhã não exige tocar em totalArea.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Polymorphism deixa cada tipo responder à mesma chamada do seu próprio jeito — é o que " +
+                "transforma Interface (o contrato) e Inheritance (a hierarquia) em código que cresce sem " +
+                "acumular condicionais de tipo.",
+            },
+          ],
+          examples: [
+            {
+              title: "Polymorphism sem herança",
+              context: "Duck typing puro: dois objetos sem relação de herança nenhuma cumprindo a mesma interface.",
+              code: {
+                language: "javascript",
+                filename: "loggers.js",
+                code: [
+                  "const logger1 = { log: (msg) => console.log(msg) };",
+                  'const logger2 = { log: (msg) => fs.appendFileSync("log.txt", msg + "\\n") };',
+                  "",
+                  "function record(logger, message) {",
+                  "  logger.log(message); // polymorphism sem nenhuma classe/herança envolvida",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Nenhum dos dois loggers herda do outro — eles só cumprem a mesma interface (log(msg)). record " +
+                "trata os dois de forma polimórfica mesmo assim.",
+            },
+            {
+              title: "Substituindo uma cadeia de if/instanceof",
+              context: "A versão com polymorphism não cresce a cada novo tipo de forma.",
+              code: {
+                language: "javascript",
+                filename: "area.js",
+                code: [
+                  "// Antes: sem polymorphism",
+                  "function areaBefore(shape) {",
+                  '  if (shape.kind === "circle") return Math.PI * shape.radius ** 2;',
+                  '  if (shape.kind === "square") return shape.side ** 2;',
+                  "}",
+                  "",
+                  "// Depois: com polymorphism",
+                  "function areaAfter(shape) {",
+                  "  return shape.area();",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "A versão \"antes\" precisa crescer a cada novo tipo de forma; a versão \"depois\" delega a " +
+                "decisão para cada objeto, via polymorphism.",
+            },
+            {
+              title: "Polymorphism num array de handlers",
+              context: "O mesmo laço processa handlers completamente diferentes, sem checar tipo nenhum.",
+              code: {
+                language: "javascript",
+                filename: "handlers.js",
+                code: [
+                  "class ClickHandler {",
+                  '  handle(event) { return `clique em ${event.target}`; }',
+                  "}",
+                  "class KeyHandler {",
+                  '  handle(event) { return `tecla ${event.key}`; }',
+                  "}",
+                  "",
+                  "for (const handler of [new ClickHandler(), new KeyHandler()]) {",
+                  "  console.log(handler.handle(currentEvent));",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "O loop chama handle(event) sem saber qual handler concreto está processando — cada um responde " +
+                "ao seu jeito, mesma interface.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A função abaixo usa if/else explícito checando o tipo de cada desconto — toda vez que surge um " +
+              "novo tipo, alguém precisa lembrar de adicionar mais um else if aqui.",
+            problemCode: {
+              language: "javascript",
+              filename: "discount.js",
+              code: [
+                "function applyDiscount(order, discountType) {",
+                '  if (discountType === "percentage") return order.total * 0.9;',
+                '  if (discountType === "fixed") return order.total - 10;',
+                '  if (discountType === "none") return order.total;',
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Reescreva usando polymorphism — cada tipo de desconto deve saber calcular seu próprio valor, sem " +
+              "nenhum if/else if checando tipo dentro de applyDiscount.",
+            hint: "Crie uma classe (ou objeto) por tipo de desconto, todas com o mesmo método (ex.: apply(total)), e deixe applyDiscount só chamar esse método.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "discount.js",
+                code: [
+                  "class PercentageDiscount {",
+                  "  apply(total) { return total * 0.9; }",
+                  "}",
+                  "class FixedDiscount {",
+                  "  apply(total) { return total - 10; }",
+                  "}",
+                  "class NoDiscount {",
+                  "  apply(total) { return total; }",
+                  "}",
+                  "",
+                  "function applyDiscount(order, discount) {",
+                  "  return discount.apply(order.total);",
+                  "}",
+                  "",
+                  "applyDiscount(order, new PercentageDiscount());",
+                ].join("\n"),
+              },
+              explanation:
+                "applyDiscount não sabe mais quantos tipos de desconto existem — cada classe implementa " +
+                "apply(total) do seu jeito. Adicionar um BuyOneGetOneDiscount no futuro não toca em " +
+                "applyDiscount nenhuma vez.",
+            },
+          },
         }),
         concept({
           order: 80,
