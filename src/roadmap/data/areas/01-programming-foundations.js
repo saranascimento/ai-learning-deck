@@ -1803,42 +1803,748 @@ export default area({
         "Stack Overflow (Task própria)",
       ],
       concepts: [
-        concept({ order: 10, title: "Memory", requires: ["Programming Fundamentals / Abstraction"], note: "armazenamento endereçável: bytes, endereços, alocação" }),
+        concept({
+          order: 10,
+          title: "Memory",
+          note: "Memória",
+          requires: ["Programming Fundamentals / Abstraction"],
+          summary:
+            "O espaço endereçável onde um programa guarda dados durante a execução — cada informação vive em " +
+            "algum endereço, e entender isso explica identidade vs. igualdade, custo de alocação e bugs de " +
+            "estado compartilhado.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Memory é o espaço que um programa usa pra guardar dados enquanto roda — cada valor, cada " +
+                "objeto, cada variável ocupa um endereço específico nesse espaço. Um programa não \"sabe\" " +
+                "onde as coisas estão por mágica: cada acesso a um dado é, por baixo, um acesso a um endereço " +
+                "de memória.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Sem memória endereçável, um programa não teria como guardar estado entre uma instrução e a " +
+                "próxima — cada dado precisa de um \"lugar\" que possa ser lido e escrito de novo depois. " +
+                "Entender que memória é organizada em endereços — não é um espaço mágico e infinito — explica " +
+                "por que alocar memória tem custo, por que estruturas contíguas são mais rápidas de percorrer, " +
+                "e por que compartilhar memória entre partes do programa pode causar bugs.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "identity.js",
+              code: ["const a = { x: 1 };", "const b = { x: 1 };", "console.log(a === b); // false: mesmo conteúdo, endereços diferentes na memória"].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "a e b guardam o mesmo valor, mas em endereços diferentes na memória — === em objetos compara " +
+                "identidade (o endereço), não conteúdo. Isso só faz sentido porque memória é endereçável: cada " +
+                "{} novo reserva um espaço próprio.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Memory é o espaço endereçável onde os dados de um programa vivem durante a execução — todo " +
+                "acesso a uma variável é, por baixo, um acesso a um endereço. Isso explica identidade vs. " +
+                "igualdade, custo de alocação, e por que compartilhar memória é uma fonte comum de bugs.",
+            },
+          ],
+          examples: [
+            {
+              title: "Tipos determinando quanto espaço algo ocupa",
+              context: "Um array tipado reserva um tamanho fixo e conhecido por posição, diferente de um array comum de JS.",
+              code: {
+                language: "javascript",
+                filename: "typed-array.js",
+                code: ["// Int32Array reserva exatamente 4 bytes por posição — não \"quantos forem necessários\"", "const nums = new Int32Array(3); // 12 bytes no total, endereçados em sequência", "nums[0] = 42;"].join("\n"),
+              },
+              explanation:
+                "Diferente de um array comum de JS (que guarda referências), um Int32Array reserva um bloco " +
+                "contíguo de memória com tamanho fixo — 4 bytes por número, endereçados lado a lado.",
+            },
+            {
+              title: "Alocação acontecendo a cada objeto novo",
+              context: "Cada literal de objeto dentro de um loop é uma alocação independente.",
+              code: {
+                language: "javascript",
+                filename: "create-points.js",
+                code: ["function createPoints(n) {", "  const points = [];", "  for (let i = 0; i < n; i++) {", "    points.push({ x: i, y: i }); // cada {} aloca um novo espaço em memória", "  }", "  return points;", "}"].join("\n"),
+              },
+              explanation:
+                "Cada { x: i, y: i } dentro do loop é uma alocação nova — n chamadas, n endereços diferentes " +
+                "reservados, mesmo que o conteúdo se repita.",
+            },
+            {
+              title: "Endereço explícito em linguagens de baixo nível",
+              context: "Em JS o endereço fica escondido; em C ele é um valor que você pode imprimir e manipular.",
+              code: { language: "text", filename: "address.c", code: 'int x = 42;\nprintf("%p", &x); // imprime o endereço onde x está guardado, ex: 0x7ffee3a1' },
+              explanation:
+                "Em C, o endereço é explícito e manipulável — em JS ele fica escondido, mas o conceito por " +
+                "baixo é o mesmo: x vive em algum lugar específico da memória.",
+            },
+          ],
+          exercise: {
+            problem: "Duas variáveis parecem \"iguais\" mas se comportam de forma diferente ao serem modificadas.",
+            problemCode: {
+              language: "javascript",
+              filename: "points.js",
+              code: ["let p1 = { x: 0, y: 0 };", "let p2 = p1;", "p2.x = 99;", "console.log(p1.x); // o que isso imprime, e por quê?"].join("\n"),
+            },
+            task:
+              "Explique (em texto, ou com um comentário no código) por que p1.x muda mesmo que só p2 tenha sido " +
+              "alterado — que conceito de Memory explica esse comportamento?",
+            hint: "Pense em onde p1 e p2 estão apontando, não no que cada uma \"contém\" isoladamente.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "points.js",
+                code: ["let p1 = { x: 0, y: 0 };", "let p2 = p1; // p2 recebe o MESMO endereço que p1, não uma cópia do objeto", "p2.x = 99;", "console.log(p1.x); // 99 — p1 e p2 apontam pro mesmo espaço em memória"].join("\n"),
+              },
+              explanation:
+                "p2 = p1 não copia o objeto — copia o endereço onde o objeto vive. p1 e p2 são dois nomes " +
+                "apontando pro mesmo lugar na memória, então mudar através de um é visível através do outro " +
+                "(esse comportamento tem nome — Value vs Reference — e é o próximo Concept).",
+            },
+          },
+        }),
         concept({
           order: 20,
           title: "Value vs Reference",
+          note: "Valor vs. Referência",
           requires: ["Memory"],
-          note: "cópia de valor × endereço compartilhado; semântica varia por linguagem",
           revisit: ["Concurrency / Shared State", "Software Design / Mutable vs Immutable Objects", "Functional Programming / Immutability"],
+          summary:
+            "Duas formas diferentes de uma variável se relacionar com um dado: copiar o valor por completo, ou " +
+            "compartilhar o endereço onde ele vive — a origem do bug \"mudei uma coisa e outra mudou junto\".",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Quando você atribui um valor a outra variável (ou passa como argumento), duas coisas podem " +
+                "acontecer: o valor é copiado por completo (semântica de valor), ou o endereço é copiado e " +
+                "ambas passam a apontar pro mesmo dado na memória (semântica de referência). Em JavaScript, " +
+                "primitivos (number, string, boolean...) têm semântica de valor; objetos e arrays têm " +
+                "semântica de referência.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Copiar um dado inteiro toda vez que ele é atribuído seria caro para estruturas grandes — " +
+                "referência resolve isso passando só o endereço, barato de copiar. Mas isso tem um preço: " +
+                "mudanças feitas através de uma referência são visíveis através de qualquer outra referência " +
+                "ao mesmo dado — exatamente o comportamento surpreendente visto no exercício de Memory.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "value-vs-reference.js",
+              code: [
+                "let a = 5;",
+                "let b = a; // b recebe uma CÓPIA do valor 5",
+                "b = 10;",
+                "console.log(a); // 5 — a não muda",
+                "",
+                "let obj1 = { x: 5 };",
+                "let obj2 = obj1; // obj2 recebe o MESMO endereço que obj1",
+                "obj2.x = 10;",
+                "console.log(obj1.x); // 10 — obj1 muda junto",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "number é copiado por valor — b = a cria uma cópia independente. Objetos são copiados por " +
+                "referência — obj2 = obj1 copia só o endereço; os dois nomes apontam pro mesmo espaço.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Semântica de valor copia o dado inteiro; semântica de referência copia só o endereço, e os " +
+                "dois nomes passam a compartilhar o mesmo dado. Saber qual das duas está em jogo é a diferença " +
+                "entre um bug de estado compartilhado sem querer e código previsível.",
+            },
+          ],
+          examples: [
+            {
+              title: "Passar por valor vs. por referência como argumento",
+              context: "O mesmo tipo de mudança dentro de uma função tem efeitos completamente diferentes dependendo do tipo.",
+              code: {
+                language: "javascript",
+                filename: "increment.js",
+                code: [
+                  "function incrementValue(n) { n += 1; }",
+                  "function incrementProp(obj) { obj.count += 1; }",
+                  "",
+                  "let x = 5;",
+                  "incrementValue(x);",
+                  "console.log(x); // 5 — x não muda, n era uma cópia",
+                  "",
+                  "let state = { count: 5 };",
+                  "incrementProp(state);",
+                  "console.log(state.count); // 6 — state muda, obj era a mesma referência",
+                ].join("\n"),
+              },
+              explanation:
+                "x (number) entra na função por valor — a função recebe uma cópia. state (objeto) entra por " +
+                "referência — a função recebe o mesmo endereço, e mudanças em obj.count afetam state.count de volta.",
+            },
+            {
+              title: "Mutação acidental de um array compartilhado",
+              context: "Um problema comum: uma função muta um array esperando devolver algo novo.",
+              code: {
+                language: "javascript",
+                filename: "sort-in-place.js",
+                code: ["function sortInPlace(arr) {", "  arr.sort();", "  return arr;", "}", "const original = [3, 1, 2];", "const sorted = sortInPlace(original);", "console.log(original); // [1, 2, 3] — original foi mutado junto"].join("\n"),
+              },
+              explanation:
+                "arr dentro da função é a mesma referência que original — .sort() muta o array no lugar, então " +
+                "quem passou original vê a mudança também.",
+            },
+            {
+              title: "Copiando valor de verdade com spread",
+              context: "Quando referência compartilhada não é o que se quer, é preciso criar um objeto novo de propósito.",
+              code: { language: "javascript", filename: "copy.js", code: ["const original = { x: 1 };", "const copy = { ...original }; // cria um NOVO objeto, endereço diferente", "copy.x = 99;", "console.log(original.x); // 1 — original intacto"].join("\n") },
+              explanation:
+                "{ ...original } cria um objeto novo com os mesmos valores, em outro endereço — agora copy e " +
+                "original são independentes.",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo devia devolver uma prévia do carrinho sem afetar o carrinho original — mas o original está sendo alterado por engano.",
+            problemCode: {
+              language: "javascript",
+              filename: "discount-preview.js",
+              code: [
+                "function applyDiscountPreview(cart, percent) {",
+                "  cart.items.forEach(item => {",
+                "    item.price = item.price * (1 - percent / 100);",
+                "  });",
+                "  return cart;",
+                "}",
+                "",
+                "const cart = { items: [{ price: 100 }, { price: 200 }] };",
+                "const preview = applyDiscountPreview(cart, 10);",
+                "console.log(cart.items[0].price); // deveria continuar 100, mas não continua",
+              ].join("\n"),
+            },
+            task: "Corrija applyDiscountPreview para que cart original não seja alterado — só o objeto devolvido deve ter os preços com desconto.",
+            hint: "cart.items é um array de objetos (referências) — copiar o array por fora não é suficiente; cada item dentro também precisa virar uma cópia nova.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "discount-preview.js",
+                code: [
+                  "function applyDiscountPreview(cart, percent) {",
+                  "  return {",
+                  "    ...cart,",
+                  "    items: cart.items.map(item => ({",
+                  "      ...item,",
+                  "      price: item.price * (1 - percent / 100),",
+                  "    })),",
+                  "  };",
+                  "}",
+                  "",
+                  "const cart = { items: [{ price: 100 }, { price: 200 }] };",
+                  "const preview = applyDiscountPreview(cart, 10);",
+                  "console.log(cart.items[0].price); // 100 — original intacto",
+                ].join("\n"),
+              },
+              explanation:
+                "map() com { ...item, price: ... } cria um objeto NOVO para cada item, em vez de mudar o item " +
+                "original no lugar — quebra a referência compartilhada que causava o efeito colateral.",
+            },
+          },
         }),
         concept({
           order: 30,
           title: "Stack vs Heap",
+          note: "duas regiões de memória",
           requires: ["Value vs Reference"],
-          note: "stack (frames, LIFO, automática) × heap (dinâmica, coletada)",
           collision: "≠ Stack ADT (Data Structures)",
+          summary:
+            "Duas regiões de memória com regras de vida muito diferentes: stack guarda dados de vida curta e " +
+            "previsível (frames de função), heap guarda dados que precisam sobreviver além de uma única chamada.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Stack e Heap são duas regiões de memória com propósitos diferentes. A Stack guarda dados de " +
+                "vida curta e previsível — cada chamada de função empilha um \"frame\" com suas variáveis " +
+                "locais, removido automaticamente (LIFO — o último que entra é o primeiro que sai) quando a " +
+                "função retorna. O Heap guarda dados que precisam viver além de uma única chamada — alocados " +
+                "dinamicamente, removidos só quando nada mais precisa deles.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Nem todo dado tem o mesmo tempo de vida. Uma variável local que só existe durante uma função " +
+                "cabe perfeitamente na disciplina simples e rápida da Stack. Mas um objeto que precisa " +
+                "sobreviver depois que a função que o criou já retornou — porque foi guardado em algum lugar, " +
+                "devolvido, ou referenciado de fora — precisa de um espaço com ciclo de vida mais flexível: o " +
+                "Heap.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Não confundir esse \"Stack\" (região de memória gerenciada automaticamente pelo runtime) com " +
+                "a Stack ADT vista em Data Structures (a estrutura de dados LIFO que você mesmo implementa e " +
+                "manipula com push/pop). Os nomes coincidem — e não por acaso, a região de memória também " +
+                "segue disciplina LIFO — mas são conceitos em camadas diferentes.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "create-point.js",
+              code: ["function createPoint(x, y) {", "  const point = { x, y }; // point (o objeto) vai pro heap", "  return point;            // sobrevive depois que createPoint retorna", "}", "", "const p = createPoint(1, 2); // p ainda é válido aqui, mesmo com o frame de createPoint já desempilhado"].join(
+                "\n"
+              ),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O frame de createPoint (o espaço reservado pra x, y, o nome point) vive na stack e some assim " +
+                "que a função retorna. Mas o objeto { x, y } em si vive no heap — por isso p continua válido " +
+                "mesmo depois que o frame que o criou já foi desempilhado.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Stack guarda dados de vida curta e previsível, na disciplina LIFO de frames de função. Heap " +
+                "guarda dados que precisam sobreviver além de uma única chamada. Um valor primitivo geralmente " +
+                "cabe na stack; um objeto retornado ou compartilhado precisa do heap.",
+            },
+          ],
+          examples: [
+            {
+              title: "Variáveis locais de vida curta",
+              context: "Nada aqui precisa sobreviver além da própria chamada.",
+              code: { language: "javascript", filename: "sum.js", code: ["function sum(a, b) {", "  const result = a + b; // a, b, result: vida curta, limitada ao frame de sum", "  return result;", "}"].join("\n") },
+              explanation: "a, b e result não sobrevivem depois que sum retorna — cabem perfeitamente na disciplina simples da stack.",
+            },
+            {
+              title: "Um objeto sobrevivendo múltiplos frames",
+              context: "Precisa do heap justamente porque será usado bem depois do frame que o criou.",
+              code: {
+                language: "javascript",
+                filename: "build-cache.js",
+                code: ["function buildCache() {", "  const cache = new Map(); // precisa sobreviver além de buildCache()", "  return cache;", "}", "const cache = buildCache(); // usado bem depois, em outros frames", 'cache.set("key", "value");'].join("\n"),
+              },
+              explanation: "cache é usado muito depois que o frame de buildCache já foi desempilhado — só é possível porque o Map vive no heap.",
+            },
+            {
+              title: "Recursão profunda esgotando a stack",
+              context: "O limite físico da disciplina LIFO — a stack não cresce sem limite como o heap.",
+              code: { language: "javascript", filename: "count-down.js", code: ["function countDown(n) {", "  if (n <= 0) return 0;", "  return countDown(n - 1); // cada chamada empilha um novo frame", "}", "countDown(100000); // RangeError: Maximum call stack size exceeded"].join("\n") },
+              explanation: "Cada chamada recursiva empilha mais um frame — como a stack tem tamanho limitado, recursão funda demais estoura esse limite.",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo tenta devolver um contador que \"lembra\" seu valor entre chamadas, mas isso não funciona como esperado.",
+            problemCode: {
+              language: "javascript",
+              filename: "counter.js",
+              code: [
+                "function makeCounter() {",
+                "  let count = 0; // variável local, vida limitada ao frame de makeCounter",
+                "  count += 1;",
+                "  return count;",
+                "}",
+                "console.log(makeCounter()); // 1",
+                "console.log(makeCounter()); // 1 de novo — não incrementa entre chamadas",
+              ].join("\n"),
+            },
+            task:
+              "Explique por que count não \"sobrevive\" entre chamadas dessa forma, e reescreva makeCounter para " +
+              "que o contador realmente persista — de um jeito que force count a viver além de um único frame.",
+            hint: "Um closure (função que \"carrega\" uma variável de fora) é uma forma de garantir que um valor sobreviva no heap além do frame que o criou.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "counter.js",
+                code: [
+                  "function makeCounter() {",
+                  "  let count = 0;",
+                  "  return function increment() { // o closure mantém count vivo no heap",
+                  "    count += 1;",
+                  "    return count;",
+                  "  };",
+                  "}",
+                  "const counter = makeCounter();",
+                  "console.log(counter()); // 1",
+                  "console.log(counter()); // 2",
+                ].join("\n"),
+              },
+              explanation:
+                "count sozinho, numa variável local comum, morre junto com o frame de makeCounter. Mas quando " +
+                "uma função interna (increment) referencia count, o runtime precisa mantê-lo vivo no heap " +
+                "enquanto essa função interna existir.",
+            },
+          },
         }),
         concept({
           order: 40,
           title: "Call Stack",
+          note: "Pilha de chamadas",
           requires: ["Stack vs Heap"],
-          note: "frames de execução, chamada/retorno, stack overflow",
           collision: "≠ Stack ADT (Data Structures)",
           revisit: ["Algorithms & Complexity / Recursion", "Asynchronous Programming / Call Stack"],
+          summary:
+            "A estrutura que rastreia em que ponto do programa a execução está — cada chamada de função " +
+            "empilha um frame, cada retorno desempilha, e é exatamente essa pilha que aparece num stack trace.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "A Call Stack é a pilha de frames de execução que o runtime mantém para saber \"onde estou, e " +
+                "pra onde volto quando essa função terminar\". Toda vez que uma função é chamada, um novo " +
+                "frame é empilhado com suas variáveis locais e o ponto de retorno; quando a função termina, o " +
+                "frame é removido e a execução volta pro frame anterior.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Um programa não executa só uma linha de código isolada — funções chamam outras funções, que " +
+                "chamam outras, formando uma cadeia. A Call Stack é o mecanismo que permite voltar exatamente " +
+                "pro lugar certo depois que cada chamada termina, e é também o que faz recursão funcionar " +
+                "(cada chamada recursiva tem seu próprio frame, suas próprias variáveis locais).",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "trace.js",
+              code: ["function a() { b(); }", "function b() { c(); }", "function c() { console.trace(); } // imprime o estado atual da call stack", "", "a();"].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Quando c() executa, a call stack tem três frames empilhados: a, depois b, depois c (o topo). " +
+                "console.trace() imprime exatamente essa pilha — é o que aparece (invertido) num stack trace " +
+                "de erro.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Call Stack é a pilha de frames que registra onde a execução está e pra onde ela volta. Cada " +
+                "chamada empilha, cada retorno desempilha — e um stack trace é literalmente uma foto dessa " +
+                "pilha no momento do erro.",
+            },
+          ],
+          examples: [
+            {
+              title: "Lendo um stack trace de erro",
+              context: "O trace mostra exatamente a call stack no momento do throw.",
+              code: {
+                language: "text",
+                filename: "trace-output.txt",
+                code: [
+                  "function validate(user) { checkEmail(user.email); }",
+                  'function checkEmail(email) { if (!email.includes("@")) throw new Error("email inválido"); }',
+                  "",
+                  'validate({ email: "sem-arroba" });',
+                  "// Error: email inválido",
+                  "//   at checkEmail (...)",
+                  "//   at validate (...)",
+                  "//   at Object.<anonymous> (...)",
+                ].join("\n"),
+              },
+              explanation: "checkEmail foi chamada por validate, que foi chamada no topo do arquivo — ler o trace é ler a call stack congelada no momento do erro.",
+            },
+            {
+              title: "Recursão consumindo um frame por chamada",
+              context: "Todos os frames ficam empilhados simultaneamente até a recursão atingir o caso base.",
+              code: { language: "javascript", filename: "factorial.js", code: ["function factorial(n) {", "  if (n <= 1) return 1;", "  return n * factorial(n - 1); // um novo frame por chamada recursiva", "}", "factorial(5); // 5 frames empilhados no pico"].join("\n") },
+              explanation: "Cada chamada de factorial fica esperando o resultado da próxima antes de poder retornar — todos ficam empilhados até o caso base.",
+            },
+            {
+              title: "Stack overflow como consequência direta do tamanho da call stack",
+              context: "Sem caso base, a pilha cresce até estourar o espaço reservado pra ela.",
+              code: { language: "javascript", filename: "infinite.js", code: ["function loop() { loop(); } // sem caso base — recursão infinita", "loop(); // RangeError: Maximum call stack size exceeded"].join("\n") },
+              explanation: "O mesmo limite físico da Stack visto no Concept anterior — sem parar, a call stack estoura.",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo entra em recursão infinita porque o parâmetro nunca se aproxima do caso base.",
+            problemCode: {
+              language: "javascript",
+              filename: "count-down-to.js",
+              code: ["function countDownTo(n, target) {", "  console.log(n);", "  return countDownTo(n + 1, target); // deveria se aproximar de target, mas se afasta", "}", "countDownTo(0, 10); // RangeError: Maximum call stack size exceeded"].join("\n"),
+            },
+            task: "Corrija countDownTo para que ela realmente pare quando n alcançar target, evitando o stack overflow.",
+            hint: "Toda função recursiva precisa de duas partes: um caso base que PARA a recursão, e um passo que se aproxima desse caso base a cada chamada.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "count-down-to.js",
+                code: [
+                  "function countDownTo(n, target) {",
+                  "  if (n >= target) return n; // caso base: para a recursão",
+                  "  console.log(n);",
+                  "  return countDownTo(n + 1, target); // se aproxima do caso base a cada chamada",
+                  "}",
+                  "countDownTo(0, 10); // conta de 0 até 10 e para",
+                ].join("\n"),
+              },
+              explanation:
+                "O caso base (n >= target) garante que a call stack pare de crescer — cada chamada agora se " +
+                "aproxima de uma condição que efetivamente vai ser alcançada.",
+            },
+          },
         }),
         concept({
           order: 50,
           title: "Garbage Collection",
+          note: "Coleta de lixo",
           requires: ["Stack vs Heap"],
-          note: "recuperação automática do heap; reachability. Específico de runtimes com GC — contrastar com gestão manual",
           revisit: ["Concurrency (pausas de GC)", "Platform / Performance Engineering"],
+          summary:
+            "O mecanismo que recupera automaticamente a memória do heap que não é mais alcançável por nenhuma " +
+            "parte do programa — a alternativa a gerenciar memória manualmente, ao custo de menos controle " +
+            "direto sobre quando isso acontece.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Garbage Collection (GC) é o processo automático que identifica quais dados no heap não são " +
+                "mais alcançáveis por nenhuma parte do programa em execução, e libera essa memória para reuso. " +
+                "\"Alcançável\" (reachability) significa: existe algum caminho de referências, a partir de algo " +
+                "que o programa ainda usa, até aquele dado?",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Sem GC, quem escreve o programa precisaria liberar manualmente cada pedaço de memória alocado " +
+                "no heap, no momento exato em que ele deixa de ser necessário — esquecer causa memory leak; " +
+                "liberar cedo demais causa acessar memória inválida. GC automatiza essa decisão, trocando " +
+                "controle manual por segurança e produtividade, ao custo de menos previsibilidade sobre quando " +
+                "exatamente a memória é liberada — e, em alguns runtimes, pausas perceptíveis durante a coleta.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Isso é específico de runtimes com GC (JavaScript, Java, Python, Go...) — linguagens como C e " +
+                "C++ exigem gestão manual (malloc/free), e Rust usa um modelo diferente ainda (ownership, sem " +
+                "GC nem gestão manual explícita).",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "create-temp.js",
+              code: ["function createTemp() {", '  let temp = { big: "dado grande" }; // alocado no heap', '  return "resultado";', "} // depois daqui, nada mais referencia { big: ... } — vira elegível pra GC", "", "createTemp();"].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Assim que createTemp retorna, temp deixa de existir e nada mais no programa referencia " +
+                "aquele objeto — ele se torna inalcançável, e o coletor pode (em algum momento, não " +
+                "imediatamente) liberar essa memória.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Garbage Collection libera automaticamente a memória do heap que não é mais alcançável por " +
+                "nada que o programa ainda usa. Evita gestão manual, mas troca controle direto por menos " +
+                "previsibilidade sobre quando exatamente a liberação acontece.",
+            },
+          ],
+          examples: [
+            {
+              title: "Um objeto perdendo sua última referência",
+              context: "Sem nenhum caminho de volta até ele, o objeto vira elegível pra coleta.",
+              code: { language: "javascript", filename: "unreachable.js", code: 'let data = { big: "..." };\ndata = null; // a referência antiga vira inalcançável, elegível pra GC' },
+              explanation: "Nada no programa mais aponta pro objeto original — ele está \"perdido\" no heap, e o GC eventualmente recupera essa memória.",
+            },
+            {
+              title: "Um objeto continuando alcançável através de outro lugar",
+              context: "Mesmo sem variável local direta, um objeto guardado em outra estrutura continua vivo.",
+              code: {
+                language: "javascript",
+                filename: "remember.js",
+                code: ["const cache = [];", "function remember(value) {", "  cache.push(value); // o objeto continua alcançável através de cache", "}", "remember({ id: 1 });"].join("\n"),
+              },
+              explanation: "Mesmo sem nenhuma variável local apontando diretamente pro objeto, ele continua alcançável através do array cache — não é elegível pra coleta.",
+            },
+            {
+              title: "Contraste com gestão manual",
+              context: "O que o GC evita: esquecer de liberar memória alocada manualmente.",
+              code: { language: "text", filename: "manual.c", code: "int *data = malloc(sizeof(int) * 100); // alocação manual\n// ... usa data ...\nfree(data); // quem escreveu o código precisa lembrar de liberar" },
+              explanation: "Em C, esquecer o free(data) é um memory leak permanente — não existe coletor rodando por trás pra recuperar isso.",
+            },
+          ],
+          exercise: {
+            problem: "O código abaixo mantém uma referência escondida a um objeto grande mesmo depois que ele deveria deixar de ser necessário.",
+            problemCode: {
+              language: "javascript",
+              filename: "process-and-cache.js",
+              code: [
+                "let cachedResults = [];",
+                "function processAndCache(bigData) {",
+                "  const result = bigData.slice(0, 10); // só os primeiros 10 itens são realmente úteis",
+                "  cachedResults.push(bigData); // guarda bigData inteiro, sem querer",
+                "  return result;",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Corrija processAndCache para que só o resultado necessário (result) fique alcançável através de " +
+              "cachedResults — bigData deveria poder ser coletado pelo GC assim que a função retornar.",
+            hint: "O problema não é esquecer de liberar memória (JS não tem free manual) — é continuar referenciando, sem querer, algo que já não precisa mais existir.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "process-and-cache.js",
+                code: ["let cachedResults = [];", "function processAndCache(bigData) {", "  const result = bigData.slice(0, 10);", "  cachedResults.push(result); // guarda só o que é necessário, não bigData inteiro", "  return result;", "}"].join("\n"),
+              },
+              explanation:
+                "cachedResults agora só referencia result — bigData deixa de ser alcançável assim que " +
+                "processAndCache retorna, e vira elegível pra GC, em vez de ficar retido para sempre.",
+            },
+          },
         }),
         concept({
           order: 60,
           title: "Memory Leak",
+          note: "Vazamento de memória",
           requires: ["Garbage Collection", "Value vs Reference"],
-          note: "referências retidas que impedem a coleta; modo de falha",
           revisit: ["Platform / Performance Engineering"],
+          summary:
+            "Memória que deveria ter sido liberada, mas continua retida porque alguma referência esquecida " +
+            "ainda a mantém alcançável — mesmo em runtimes com Garbage Collection, é possível vazar memória.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Um Memory Leak acontece quando memória que já não é mais necessária continua alcançável — por " +
+                "causa de uma referência que alguém esqueceu de remover — e por isso o Garbage Collection " +
+                "nunca a recupera. Não é um bug de \"esquecer de liberar\" (como em linguagens sem GC); é um " +
+                "bug de \"esquecer de deixar de referenciar\".",
+            },
+            { type: "heading", text: "Por que existe (como categoria de bug)?" },
+            {
+              type: "paragraph",
+              text:
+                "Garbage Collection só libera o que é inalcançável — se um programa mantém, mesmo sem querer, " +
+                "um caminho de referências até um dado antigo (um cache nunca limpo, um event listener nunca " +
+                "removido, um array que só cresce), esse dado nunca vira elegível pra coleta, não importa quão " +
+                "sofisticado o GC seja. É o modo de falha oposto de um bug comum: em vez de acessar algo que " +
+                "já foi liberado, o programa impede algo de ser liberado.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "unbounded-cache.js",
+              code: ["const cache = {};", "function memoize(key, value) {", "  cache[key] = value; // nunca é removido — cache só cresce", "}"].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Cada chamada de memoize adiciona mais uma entrada em cache, e nada nunca remove entradas " +
+                "antigas — cache fica alcançável (é uma variável de módulo), então cada valor guardado nele " +
+                "também fica, para sempre, mesmo que nunca mais seja usado.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Memory Leak é memória que deveria estar livre, mas continua alcançável por uma referência " +
+                "esquecida — mesmo com Garbage Collection automático, um programa ainda pode vazar memória se " +
+                "ele mesmo mantém, sem querer, um caminho até dados que já não precisa.",
+            },
+          ],
+          examples: [
+            {
+              title: "Event listener nunca removido",
+              context: "O closure do listener retém tudo que ele referencia, enquanto o listener existir.",
+              code: {
+                language: "javascript",
+                filename: "attach-handler.js",
+                code: ["function attachHandler(button) {", "  const bigData = loadBigData();", '  button.addEventListener("click", () => {', "    console.log(bigData.length); // o listener mantém bigData vivo pra sempre", "  });", "}"].join("\n"),
+              },
+              explanation: "Se o botão (e o listener) nunca forem removidos, bigData nunca vira elegível pra GC, mesmo que attachHandler já tenha retornado há muito tempo.",
+            },
+            {
+              title: "Um array/cache que só cresce",
+              context: "Sem limite nem expiração, cada entrada fica retida indefinidamente.",
+              code: { language: "javascript", filename: "request-log.js", code: ["const requestLog = [];", "function logRequest(req) {", "  requestLog.push(req); // cresce pra sempre, nunca é limpo", "}"].join("\n") },
+              explanation: "Num servidor de longa duração, isso cresce até consumir toda a memória disponível.",
+            },
+            {
+              title: "Referência circular não é o problema (contraste importante)",
+              context: "Coletores modernos, baseados em reachability, lidam bem com ciclos.",
+              code: {
+                language: "javascript",
+                filename: "circular.js",
+                code: ["function makePair() {", "  const a = {};", "  const b = {};", "  a.other = b;", "  b.other = a; // referência circular entre a e b", "  return null; // nada mais referencia a ou b de fora", "}", "makePair();"].join("\n"),
+              },
+              explanation:
+                "a e b se referenciam mutuamente, mas nenhum dos dois é alcançável a partir de fora depois que " +
+                "makePair retorna — coletores modernos recuperam os dois normalmente. Referência circular " +
+                "sozinha não causa leak.",
+            },
+          ],
+          exercise: {
+            problem: "Um componente de dashboard registra um setInterval que nunca é cancelado quando o dashboard é destruído.",
+            problemCode: {
+              language: "javascript",
+              filename: "dashboard.js",
+              code: [
+                "function startDashboard(el) {",
+                "  const state = { views: 0 };",
+                "  setInterval(() => {",
+                "    state.views += 1;",
+                "    el.textContent = `Views: ${state.views}`;",
+                "  }, 1000);",
+                "}",
+                "// startDashboard(el) é chamado toda vez que o usuário abre o dashboard —",
+                "// e nunca é \"desligado\" quando o usuário sai",
+              ].join("\n"),
+            },
+            task: "Corrija startDashboard para que seja possível parar o interval (e liberar state/el para o GC) quando o dashboard não for mais necessário.",
+            hint: "setInterval devolve um id que pode ser passado pra clearInterval — exponha uma forma de quem chama startDashboard conseguir parar o que foi iniciado.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "dashboard.js",
+                code: [
+                  "function startDashboard(el) {",
+                  "  const state = { views: 0 };",
+                  "  const intervalId = setInterval(() => {",
+                  "    state.views += 1;",
+                  "    el.textContent = `Views: ${state.views}`;",
+                  "  }, 1000);",
+                  "",
+                  "  return function stopDashboard() {",
+                  "    clearInterval(intervalId); // remove a última referência retendo state/el",
+                  "  };",
+                  "}",
+                  "",
+                  "const stop = startDashboard(el);",
+                  "// mais tarde, quando o dashboard não for mais necessário:",
+                  "stop();",
+                ].join("\n"),
+              },
+              explanation:
+                "clearInterval remove o timer, que era a única coisa mantendo o closure (e, com ele, state/el) " +
+                "alcançável entre execuções. Sem stopDashboard, cada dashboard aberto vazava seu próprio interval.",
+            },
+          },
         }),
       ],
     }),

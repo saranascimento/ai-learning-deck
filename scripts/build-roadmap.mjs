@@ -1166,6 +1166,12 @@ for (const area of model.areas()) {
     "coupling",
     "cohesion",
     "separation-of-concerns",
+    "memory",
+    "value-vs-reference",
+    "stack-vs-heap",
+    "call-stack",
+    "garbage-collection",
+    "memory-leak",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",
