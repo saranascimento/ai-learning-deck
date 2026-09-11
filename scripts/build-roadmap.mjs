@@ -1221,6 +1221,18 @@ for (const area of model.areas()) {
     "microtask-queue",
     "promise",
     "async-await",
+    "concurrency-vs-parallelism",
+    "process",
+    "thread",
+    "shared-state",
+    "race-condition",
+    "critical-section",
+    "atomic-operation",
+    "mutex",
+    "semaphore",
+    "deadlock",
+    "starvation",
+    "thread-safety",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",

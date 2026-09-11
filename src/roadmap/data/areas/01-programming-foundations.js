@@ -7957,24 +7957,1417 @@ export default area({
         "Green Threads / Coroutines",
       ],
       concepts: [
-        concept({ order: 10, title: "Concurrency vs Parallelism", requires: ["Asynchronous Programming / Synchronous vs Asynchronous"], note: "framing — não é o mesmo que async" }),
-        concept({ order: 20, title: "Process", requires: ["Memory & Runtime / Memory"], revisit: ["Platform / Containers (Container vs VM)"] }),
-        concept({ order: 30, title: "Thread", requires: ["Process"], revisit: ["Kubernetes"] }),
+        concept({
+          order: 10,
+          title: "Concurrency vs Parallelism",
+          requires: ["Asynchronous Programming / Synchronous vs Asynchronous"],
+          note: "framing — não é o mesmo que async",
+          summary:
+            "Concurrency é lidar com várias tarefas em andamento ao mesmo tempo, possivelmente intercalando " +
+            "execução numa única CPU; parallelism é executar várias tarefas literalmente ao mesmo tempo, em " +
+            "CPUs diferentes — distinto também de async, que é sobre ordem, não sobre quantas CPUs estão em uso.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Concurrency é a capacidade de um sistema lidar com várias tarefas em andamento ao mesmo " +
+                "tempo — elas podem estar se intercalando numa única CPU (uma avança um pouco, pausa, outra " +
+                "avança um pouco) sem nunca rodar literalmente simultânea. Parallelism é executar várias " +
+                "tarefas literalmente ao mesmo tempo, em CPUs (ou núcleos) diferentes, de verdade em paralelo.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Os três termos — sync/async, concurrency, parallelism — respondem perguntas diferentes, e " +
+                "confundi-los gera raciocínio errado sobre performance. Async (Asynchronous Programming) é " +
+                "sobre ORDEM: uma operação pode terminar depois de outra ter começado. Concurrency é sobre " +
+                "GERENCIAR várias tarefas em andamento. Parallelism é sobre EXECUÇÃO SIMULTÂNEA real, o que só " +
+                "é possível com múltiplos núcleos de CPU. JavaScript no navegador é concorrente (via Event " +
+                "Loop) mas roda numa única thread principal — não é paralelo, a menos que Web Workers (ou " +
+                "worker_threads no Node) sejam usados para rodar código em núcleos separados de verdade.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "text",
+              filename: "concurrency-vs-parallelism.txt",
+              code: [
+                "Concurrency (uma CPU, intercalado):",
+                "  CPU: [Tarefa A] [Tarefa B] [Tarefa A] [Tarefa B] [Tarefa A] ...",
+                "       — nunca as duas rodando no mesmo instante, mas as duas avançam",
+                "",
+                "Parallelism (duas CPUs, simultâneo):",
+                "  CPU1: [Tarefa A] [Tarefa A] [Tarefa A] ...",
+                "  CPU2: [Tarefa B] [Tarefa B] [Tarefa B] ...",
+                "       — as duas rodando no MESMO instante, em núcleos diferentes",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Um sistema pode ser concorrente sem ser paralelo (JavaScript de thread única) — e, com " +
+                "múltiplos núcleos, pode ser as duas coisas ao mesmo tempo (várias tarefas concorrentes, " +
+                "algumas rodando de fato em paralelo).",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Concurrency é gerenciar várias tarefas em andamento, possivelmente intercaladas numa única " +
+                "CPU; parallelism é executá-las literalmente ao mesmo tempo, em CPUs diferentes — e nenhum " +
+                "dos dois é sinônimo de async, que é sobre ordem de execução, não sobre quantos núcleos estão " +
+                "em uso.",
+            },
+          ],
+          examples: [
+            {
+              title: "Concorrente e paralelo ao mesmo tempo",
+              context: "Múltiplas requisições de rede, cada uma processada por um núcleo diferente.",
+              code: { language: "text", filename: "both.txt", code: "Servidor com 4 núcleos, 100 requisições chegando:\n→ Concurrency: as 100 requisições estão todas \"em andamento\" ao mesmo tempo.\n→ Parallelism: até 4 delas rodam literalmente no mesmo instante (uma por núcleo)." },
+              explanation: "Na prática, sistemas reais combinam os dois: concorrência para gerenciar muitas tarefas, paralelismo para acelerar usando os núcleos disponíveis.",
+            },
+            {
+              title: "Concorrente, mas NÃO paralelo",
+              context: "JavaScript de thread única no navegador.",
+              code: {
+                language: "javascript",
+                filename: "single-threaded-concurrency.js",
+                code: ["async function carregarTudo() {", '  const a = fetch("/api/a");', '  const b = fetch("/api/b");', "  return Promise.all([a, b]);", "}", "// as duas requisições estão \"em andamento\" ao mesmo tempo (concurrency)", "// mas o JS da thread principal nunca executa duas linhas literalmente juntas (sem parallelism)"].join("\n"),
+              },
+              explanation: "As requisições de rede rodam em paralelo NO SISTEMA OPERACIONAL, mas o código JavaScript que as disparou continua rodando numa única thread.",
+            },
+            {
+              title: "Paralelo, mas sem múltiplas tarefas lógicas concorrentes",
+              context: "Uma única tarefa (somar um array gigante) dividida entre núcleos.",
+              code: { language: "text", filename: "data-parallelism.txt", code: "Somar 1 bilhão de números, dividido em 4 pedaços, um por núcleo:\n→ Parallelism: 4 núcleos somando pedaços diferentes no mesmo instante.\n→ Não é sobre gerenciar \"tarefas\" concorrentes distintas — é UMA tarefa, paralelizada." },
+              explanation: "Parallelism também aparece sem múltiplas tarefas lógicas — dividir um único problema grande entre núcleos é outra forma comum de paralelismo (data parallelism).",
+            },
+          ],
+          exercise: {
+            problem: "Classifique cada cenário abaixo como concurrency, parallelism, ou os dois.",
+            problemCode: {
+              language: "text",
+              filename: "classify-scenarios.txt",
+              code: [
+                "1. Um servidor Node.js (thread única) atendendo 1000 conexões simultâneas via Event Loop.",
+                "2. Um algoritmo de ordenação que divide o array em 8 partes e ordena cada uma num núcleo diferente.",
+                "3. Um navegador rodando o JS da página numa thread e o parsing de uma imagem noutra thread (Web Worker), ambos avançando ao mesmo tempo em núcleos diferentes.",
+              ].join("\n"),
+            },
+            task: "Para cada item, escreva concurrency, parallelism ou ambos, com uma frase de justificativa.",
+            hint: "Pergunte: existem várias tarefas em andamento (concurrency)? E, se existem, elas rodam literalmente ao mesmo tempo em núcleos diferentes (parallelism)?",
+            solution: {
+              code: {
+                language: "text",
+                filename: "classify-scenarios-solved.txt",
+                code: [
+                  "1. Concurrency apenas — 1000 conexões \"em andamento\", mas tudo numa única thread, intercalado pelo Event Loop.",
+                  "2. Parallelism — uma única tarefa (ordenar) dividida entre núcleos que rodam simultaneamente.",
+                  "3. Ambos — duas tarefas concorrentes (JS da página + parsing) rodando literalmente em paralelo, em threads/núcleos diferentes.",
+                ].join("\n"),
+              },
+              explanation: "O item 1 é o caso clássico que confunde: parece \"paralelo\" por atender muita gente ao mesmo tempo, mas é inteiramente concorrência de thread única.",
+            },
+          },
+        }),
+        concept({
+          order: 20,
+          title: "Process",
+          requires: ["Memory & Runtime / Memory"],
+          revisit: ["Platform / Containers (Container vs VM)"],
+          note: "unidade isolada — memória própria",
+          summary:
+            "Uma instância em execução de um programa, com seu próprio espaço de memória isolado — dois " +
+            "processos não podem acessar diretamente a memória um do outro, o que os torna a unidade mais " +
+            "básica (e mais isolada) de execução concorrente num sistema operacional.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Process é uma instância em execução de um programa, gerenciada pelo sistema operacional. " +
+                "Cada processo recebe seu próprio espaço de memória isolado — variáveis, heap, stack — que " +
+                "nenhum outro processo consegue acessar diretamente. Abrir dois programas (ou duas abas de " +
+                "navegador, em muitos casos) cria dois processos separados.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Isolamento de memória entre processos é o que impede um programa com bug (ou malicioso) de " +
+                "corromper a memória de outro programa rodando ao lado. O sistema operacional paga o custo de " +
+                "gerenciar essa separação (mais memória usada, troca de contexto mais cara) em troca de " +
+                "segurança e estabilidade: travar um processo normalmente não derruba os outros.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "text",
+              filename: "process-isolation.txt",
+              code: [
+                "Processo A (navegador, aba 1)     Processo B (navegador, aba 2)",
+                "  memória: { conta: 100 }            memória: { conta: 999 }",
+                "  ─── isolados: A não enxerga nem consegue alterar a memória de B ───",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Mesmo rodando o mesmo programa (o navegador), cada aba tem seu próprio espaço de memória " +
+                "isolado — travar uma aba não corrompe o estado da outra.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Process é uma instância em execução com espaço de memória isolado do sistema operacional — " +
+                "o isolamento protege processos uns dos outros, ao custo de mais memória e trocas de contexto " +
+                "mais caras do que a alternativa mais leve (Thread).",
+            },
+          ],
+          examples: [
+            {
+              title: "Um programa, múltiplos processos",
+              context: "Navegadores modernos rodam cada aba (ou grupo de abas) em seu próprio processo.",
+              code: { language: "text", filename: "browser-processes.txt", code: "chrome.exe\n├── Processo: aba \"gmail.com\" (memória isolada)\n├── Processo: aba \"youtube.com\" (memória isolada)\n└── Processo: extensão de bloqueio de anúncios (memória isolada)" },
+              explanation: "Isolar cada aba em seu próprio processo é o motivo pelo qual uma aba travando raramente derruba o navegador inteiro.",
+            },
+            {
+              title: "Comunicação entre processos precisa de mecanismo explícito",
+              context: "Como a memória é isolada, dois processos não podem simplesmente compartilhar uma variável.",
+              code: { language: "text", filename: "ipc.txt", code: "Processo A quer mandar um dado pro Processo B:\n→ não dá pra só \"ler a variável\" de B — a memória é isolada\n→ precisa de Inter-Process Communication (IPC): pipes, sockets, memória compartilhada explícita, etc." },
+              explanation: "O isolamento que protege os processos é o mesmo motivo pelo qual compartilhar dados entre eles exige um mecanismo explícito, mais lento que simplesmente ler uma variável.",
+            },
+            {
+              title: "Custo de criar um processo",
+              context: "Duplicar o espaço de memória inteiro tem um custo real.",
+              code: { language: "text", filename: "process-cost.txt", code: "Criar um novo Process: o sistema operacional aloca um espaço de memória NOVO e ISOLADO\n(mais lento e mais pesado que criar uma Thread dentro de um processo já existente)." },
+              explanation: "Esse custo é exatamente o que motiva a existência de Thread como alternativa mais leve dentro de um mesmo processo.",
+            },
+            {
+              title: "Node.js criando um Process real (child_process)",
+              context: "fork() cria um novo Process, com seu próprio espaço de memória isolado.",
+              code: {
+                language: "javascript",
+                filename: "fork-process.js",
+                code: ["const { fork } = require(\"node:child_process\");", "const filho = fork(\"tarefa-pesada.js\"); // Process NOVO, memória isolada", "filho.on(\"message\", (resultado) => console.log(resultado));", "filho.send({ tipo: \"iniciar\" }); // comunicação só via mensagens — memória não é compartilhada"].join("\n"),
+              },
+              explanation: "fork() cria um Process de verdade, não uma Thread — é por isso que a comunicação precisa ser via mensagens (send/on), e não leitura direta de variáveis.",
+            },
+          ],
+          exercise: {
+            problem: "Explique por que travar uma aba do navegador normalmente não derruba as outras abas abertas.",
+            problemCode: {
+              language: "text",
+              filename: "why-tabs-survive.txt",
+              code: "Cenário: a aba X trava (loop infinito, uso excessivo de memória).\nPergunta: por que as abas Y e Z continuam funcionando normalmente?",
+            },
+            task: "Escreva 2-3 frases explicando em termos de Process.",
+            hint: "Pense em onde vive a memória da aba X, e se as abas Y e Z têm algum acesso a ela.",
+            solution: {
+              code: {
+                language: "text",
+                filename: "why-tabs-survive-solved.txt",
+                code: [
+                  "Cada aba roda em seu próprio Process, com espaço de memória isolado do sistema operacional.",
+                  "Quando a aba X trava, o problema fica contido dentro do espaço de memória do Process de X.",
+                  "As abas Y e Z rodam em Processes diferentes, que nunca tiveram acesso à memória de X — então",
+                  "travar X não corrompe nem afeta a execução delas.",
+                ].join("\n"),
+              },
+              explanation: "Isso é exatamente o isolamento que Process oferece — o custo extra de memória por processo compra essa robustez.",
+            },
+          },
+        }),
+        concept({
+          order: 30,
+          title: "Thread",
+          requires: ["Process"],
+          revisit: ["Kubernetes"],
+          note: "unidade de execução dentro do Process",
+          summary:
+            "Uma unidade de execução dentro de um Process, que compartilha o mesmo espaço de memória com as " +
+            "outras threads daquele processo — mais leve de criar que um Process novo, mas sem o isolamento " +
+            "que protegia processos uns dos outros.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Thread é uma unidade de execução dentro de um Process. Um processo pode ter várias threads " +
+                "rodando concorrentemente (ou em paralelo, em núcleos diferentes), e todas elas compartilham " +
+                "o MESMO espaço de memória do processo — variáveis globais, heap — só a Call Stack e alguns " +
+                "registradores são próprios de cada thread.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Criar um Process novo é caro (memória isolada nova, troca de contexto pesada). Quando o " +
+                "objetivo é só rodar código concorrente dentro do MESMO programa, sem precisar de isolamento " +
+                "total, Thread oferece uma unidade mais leve — criar e trocar entre threads custa muito menos " +
+                "do que entre processos, exatamente porque elas compartilham memória em vez de duplicá-la.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "text",
+              filename: "threads-share-memory.txt",
+              code: [
+                "Processo (memória compartilhada: { contador: 0 })",
+                "├── Thread 1 (sua própria Call Stack) — pode ler/escrever \"contador\"",
+                "└── Thread 2 (sua própria Call Stack) — pode ler/escrever o MESMO \"contador\"",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Diferente de dois Processes (memória isolada), duas Threads do mesmo Process leem e escrevem " +
+                "a mesma variável \"contador\" diretamente — é exatamente esse compartilhamento que abre a " +
+                "porta pro problema estudado no próximo Concept (Shared State).",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Thread é uma unidade de execução dentro de um Process, compartilhando memória com as demais " +
+                "threads do mesmo processo — mais leve que criar um Process novo, mas o compartilhamento de " +
+                "memória é exatamente o que introduz os problemas de concorrência estudados a seguir.",
+            },
+          ],
+          examples: [
+            {
+              title: "Múltiplas threads, uma tarefa dividida",
+              context: "Processar 4 partes de uma imagem em paralelo, dentro do mesmo programa.",
+              code: { language: "text", filename: "image-processing.txt", code: "Processo \"editor de imagem\"\n├── Thread 1: processa quadrante superior-esquerdo\n├── Thread 2: processa quadrante superior-direito\n├── Thread 3: processa quadrante inferior-esquerdo\n└── Thread 4: processa quadrante inferior-direito\n(todas compartilham acesso à mesma imagem na memória)" },
+              explanation: "Dividir o trabalho em threads do mesmo processo evita duplicar a imagem inteira na memória de processos separados.",
+            },
+            {
+              title: "Custo de criação: Thread vs Process",
+              context: "A diferença de custo é ordens de grandeza.",
+              code: { language: "text", filename: "cost-comparison.txt", code: "Criar um Process novo:  aloca espaço de memória isolado inteiro — mais lento\nCriar uma Thread nova:   reaproveita a memória do Process existente — muito mais rápido" },
+              explanation: "Essa diferença de custo é o motivo prático pelo qual servidores e aplicações que precisam de muita concorrência preferem threads a processos, quando possível.",
+            },
+            {
+              title: "JavaScript e threads",
+              context: "O modelo do JS evita esse problema por padrão, no código \"comum\".",
+              code: {
+                language: "javascript",
+                filename: "worker-thread.js",
+                code: ["const { Worker } = require(\"node:worker_threads\");", "const worker = new Worker(\"tarefa-pesada.js\"); // Thread nova, mesmo Process", "worker.on(\"message\", (resultado) => console.log(resultado));", "// por padrão, NÃO compartilha memória mutável — comunica por mensagens, como um Process"].join("\n"),
+              },
+              explanation: "É por isso que os problemas deste módulo (Race Condition, Deadlock) são mais um tema de outras linguagens/runtimes multi-thread do que do JavaScript do dia a dia — mesmo worker_threads não compartilhando memória mutável por padrão, exceto com SharedArrayBuffer + Atomics.",
+            },
+          ],
+          exercise: {
+            problem: "Explique a diferença de custo entre criar um novo Process e criar uma nova Thread, em termos de memória.",
+            problemCode: {
+              language: "text",
+              filename: "cost-question.txt",
+              code: "Um servidor precisa atender 1000 requisições concorrentes.\nOpção A: um Process novo por requisição.\nOpção B: uma Thread nova (do mesmo Process) por requisição.",
+            },
+            task: "Escreva 2-3 frases comparando as duas opções, focando em memória.",
+            hint: "Pense no que cada Process precisa duplicar, versus o que uma Thread reaproveita do processo existente.",
+            solution: {
+              code: {
+                language: "text",
+                filename: "cost-question-solved.txt",
+                code: [
+                  "Opção A (1000 Processes) duplicaria o espaço de memória isolado 1000 vezes — extremamente",
+                  "pesado, provavelmente inviável de memória.",
+                  "Opção B (1000 Threads) reaproveita o MESMO espaço de memória do Process para todas as 1000",
+                  "unidades de execução — cada Thread só adiciona sua própria Call Stack, muito mais leve.",
+                  "É por isso que servidores de alta concorrência preferem threads (ou modelos ainda mais",
+                  "leves, como o Event Loop) a um processo por requisição.",
+                ].join("\n"),
+              },
+              explanation: "O compartilhamento de memória entre threads é ao mesmo tempo a fonte da economia de recursos e a fonte dos problemas estudados a seguir no módulo.",
+            },
+          },
+        }),
         concept({
           order: 40,
           title: "Shared State",
           requires: ["Thread", "Functional Programming / Immutability"],
           note: "contraste: dado imutável = sem o problema",
           revisit: ["Architecture & System Design / Scalability / Statelessness"],
+          summary:
+            "Dado em memória que mais de uma thread (ou execução concorrente) pode ler e escrever — a " +
+            "pré-condição necessária para todos os problemas de concorrência estudados a seguir; dado " +
+            "imutável, por definição, nunca é um problema aqui.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Shared State é qualquer dado em memória acessível por mais de uma thread (ou mais de uma " +
+                "execução concorrente) ao mesmo tempo, onde pelo menos uma delas pode escrever nele. Uma " +
+                "variável global, um objeto no heap referenciado por duas threads, um arquivo que dois " +
+                "processos escrevem — todos são Shared State.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Threads compartilham memória por definição (é o que as diferencia de Process) — Shared State " +
+                "não é opcional, é uma consequência direta disso. O nome importa porque é exatamente a " +
+                "PRESENÇA de estado compartilhado e mutável que abre a porta para Race Condition, Deadlock e " +
+                "todos os outros problemas deste módulo. Dado imutável (Immutability), por contraste, pode " +
+                "ser lido por quantas threads quiserem ao mesmo tempo sem nenhum desses problemas — porque " +
+                "ninguém escreve nele.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "text",
+              filename: "shared-state.txt",
+              code: [
+                "let saldo = 100; // Shared State — mutável e acessível por múltiplas threads",
+                "",
+                "Thread A: lê saldo (100), soma 50, escreve 150",
+                "Thread B: lê saldo (100), subtrai 30, escreve 70",
+                "// dependendo da ORDEM em que essas leituras/escritas intercalam, o resultado final varia",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "\"saldo\" é o Shared State. O problema não é a variável em si — é que duas execuções podem " +
+                "ler e escrever nela sem coordenação, produzindo resultados que dependem de timing, não da " +
+                "lógica do programa.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Shared State é dado mutável acessível por mais de uma execução concorrente — a pré-condição " +
+                "necessária para Race Condition e os demais problemas do módulo; dado imutável nunca é Shared " +
+                "State problemático, porque nada nele muda para haver conflito.",
+            },
+          ],
+          examples: [
+            {
+              title: "Shared State clássico: contador global",
+              context: "Uma variável mutável, lida e escrita por várias execuções.",
+              code: { language: "text", filename: "shared-counter.txt", code: "let contador = 0; // Shared State\n// qualquer thread pode fazer: contador = contador + 1" },
+              explanation: "Mesmo essa operação aparentemente simples esconde um problema, explorado no próximo Concept (Race Condition).",
+            },
+            {
+              title: "Sem Shared State — dados isolados por thread",
+              context: "Quando cada thread tem sua própria cópia, não há nada pra compartilhar.",
+              code: { language: "text", filename: "no-shared-state.txt", code: "Thread A: contadorLocal = 0 (só de A)\nThread B: contadorLocal = 0 (só de B)\n// nenhuma das duas consegue ver ou alterar a variável da outra — zero conflito possível" },
+              explanation: "Sem compartilhamento, não existe Race Condition — a ausência de Shared State é uma forma de evitar o problema pela raiz, não só de resolvê-lo com locks.",
+            },
+            {
+              title: "Imutabilidade elimina o problema, não só o esconde",
+              context: "Dado congelado pode ser lido por quantas threads quiserem, sem coordenação.",
+              code: { language: "javascript", filename: "immutable-shared.js", code: "const config = Object.freeze({ modo: \"produção\" }); // Shared, mas IMUTÁVEL\n// qualquer número de threads pode LER config ao mesmo tempo, sem nenhum risco —\n// não existe \"escrita concorrente\" pra coordenar, porque ninguém escreve" },
+              explanation: "Isso é o motivo pelo qual Immutability é uma das ferramentas mais eficazes contra bugs de concorrência: elimina a pré-condição do problema, em vez de gerenciá-lo com locks.",
+            },
+          ],
+          exercise: {
+            problem: "Para cada situação abaixo, diga se ela envolve Shared State problemático (mutável + compartilhado) ou não.",
+            problemCode: {
+              language: "text",
+              filename: "classify-shared-state.txt",
+              code: [
+                "1. Duas threads leem (só leem) a mesma constante de configuração.",
+                "2. Duas threads incrementam a mesma variável 'contador'.",
+                "3. Cada thread tem sua própria cópia local de 'total', somada no final por uma única thread.",
+                "4. Duas threads escrevem em posições DIFERENTES do mesmo array.",
+              ].join("\n"),
+            },
+            task: "Classifique cada item e justifique em uma frase.",
+            hint: "A pergunta chave é sempre: existe escrita, e mais de uma execução pode fazer essa escrita concorrentemente sobre o MESMO dado?",
+            solution: {
+              code: {
+                language: "text",
+                filename: "classify-shared-state-solved.txt",
+                code: [
+                  "1. Não problemático — só leitura, sem escrita concorrente.",
+                  "2. Problemático — escrita concorrente sobre o mesmo dado mutável (Race Condition clássica).",
+                  "3. Não problemático DURANTE a soma parcial (cada thread só mexe na sua própria cópia); a",
+                  "   combinação final precisa de coordenação, mas o padrão evita o problema na maior parte do trabalho.",
+                  "4. Depende — tecnicamente ainda é o mesmo array, mas se as posições nunca se sobrepõem,",
+                  "   não há conflito real de dados (embora alguns runtimes ainda exijam cuidado de baixo nível aqui).",
+                ].join("\n"),
+              },
+              explanation: "O item 3 ilustra uma estratégia comum: minimizar Shared State dividindo o trabalho em partes independentes e só combinando os resultados no final.",
+            },
+          },
         }),
-        concept({ order: 50, title: "Race Condition", requires: ["Shared State"], revisit: ["Platform / Database Transactions"] }),
-        concept({ order: 60, title: "Critical Section", requires: ["Race Condition"] }),
-        concept({ order: 70, title: "Atomic Operation", requires: ["Race Condition"], collision: "≠ ACID Atomicity (Platform) — escopo diferente" }),
-        concept({ order: 80, title: "Mutex", requires: ["Critical Section"] }),
-        concept({ order: 90, title: "Semaphore", requires: ["Mutex"] }),
-        concept({ order: 100, title: "Deadlock", requires: ["Mutex", "Semaphore"], revisit: ["Platform / Database Transactions"] }),
-        concept({ order: 110, title: "Starvation", requires: ["Semaphore", "Deadlock"], note: "ensinar em par (falhas de liveness)" }),
-        concept({ order: 120, title: "Thread Safety", requires: ["Mutex", "Atomic Operation", "Functional Programming / Immutability"], note: "a síntese da Story" }),
+        concept({
+          order: 50,
+          title: "Race Condition",
+          requires: ["Shared State"],
+          revisit: ["Platform / Database Transactions"],
+          note: "o resultado depende da ordem de execução",
+          summary:
+            "Um bug onde o resultado final depende da ordem (imprevisível) em que operações concorrentes " +
+            "acessam o mesmo Shared State — o mesmo código pode produzir resultados diferentes em execuções " +
+            "diferentes, dependendo só de timing.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Race Condition é quando o resultado final de um programa depende da ordem em que operações " +
+                "concorrentes sobre o mesmo Shared State acontecem — e essa ordem não é garantida, podendo " +
+                "variar entre execuções. O nome vem de threads \"competindo\" (racing) pra ler/escrever o " +
+                "mesmo dado primeiro.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Uma operação aparentemente simples como \"incrementar um contador\" (contador = contador + 1) " +
+                "na verdade acontece em passos: ler o valor atual, somar 1, escrever o novo valor. Se duas " +
+                "threads fazem isso ao mesmo tempo sobre o mesmo Shared State, os passos podem intercalar de " +
+                "formas que perdem uma das atualizações — sem nenhum erro visível, sem exceção, só um " +
+                "resultado numericamente errado.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "text",
+              filename: "race-condition.txt",
+              code: [
+                "contador = 0",
+                "",
+                "Thread A: lê contador (0)",
+                "Thread B: lê contador (0)     ← as duas leram o MESMO valor antigo",
+                "Thread A: escreve contador = 0 + 1 = 1",
+                "Thread B: escreve contador = 0 + 1 = 1     ← sobrescreve o resultado de A",
+                "",
+                "Resultado final: contador = 1 (deveria ser 2 — um incremento se perdeu)",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "As duas threads fizeram exatamente o que o código dizia — o bug não está numa linha " +
+                "específica, está na FALTA de coordenação entre os três passos (ler, somar, escrever) de cada uma.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Race Condition é quando o resultado depende da ordem imprevisível de acesso a Shared State — " +
+                "operações que parecem atômicas (como incrementar) na verdade têm vários passos, e intercalar " +
+                "esses passos entre execuções concorrentes pode perder atualizações silenciosamente.",
+            },
+          ],
+          examples: [
+            {
+              title: "Race condition clássica: saldo bancário",
+              context: "Duas operações de saque concorrentes sobre a mesma conta.",
+              code: { language: "text", filename: "bank-race.txt", code: "saldo = 100\nThread A (saque de 80): lê saldo (100) → 100 >= 80? sim → escreve saldo = 20\nThread B (saque de 80): lê saldo (100) → 100 >= 80? sim → escreve saldo = 20\n// as duas leram o saldo ANTES de qualquer uma escrever — os dois saques \"passaram\",\n// mesmo a conta só tendo 100 pra cobrir um saque de 80" },
+              explanation: "Esse é o exemplo canônico de por que sistemas financeiros precisam de mecanismos de coordenação (Mutex, ou transações no banco de dados) sobre Shared State.",
+            },
+            {
+              title: "Race condition em JavaScript assíncrono (sem threads reais)",
+              context: "Mesmo sem threads, código async pode intercalar sobre o mesmo estado.",
+              code: {
+                language: "javascript",
+                filename: "async-race.js",
+                code: [
+                  "let saldo = 100;",
+                  "async function sacar(valor) {",
+                  "  const atual = saldo; // lê",
+                  "  await verificarFraude(); // pausa aqui — outra chamada de sacar() pode intercalar",
+                  "  saldo = atual - valor; // escreve, baseado no valor lido ANTES da pausa",
+                  "}",
+                  "sacar(80);",
+                  "sacar(80); // se as duas leem \"100\" antes de qualquer uma escrever, mesmo bug do exemplo anterior",
+                ].join("\n"),
+              },
+              explanation: "Race conditions não são exclusivas de threads reais — qualquer ponto de pausa (await) entre ler e escrever Shared State abre a mesma janela de risco.",
+            },
+            {
+              title: "Corrigindo com uma operação atômica",
+              context: "Combinar ler+escrever num único passo indivisível elimina a janela do problema.",
+              code: { language: "text", filename: "atomic-fix.txt", code: "Em vez de: ler contador, somar, escrever (3 passos, intercaláveis)\nUsar uma operação ATÔMICA de incremento: incrementar(contador) — um único passo indivisível,\nsem janela onde outra thread possa intercalar" },
+              explanation: "Isso antecipa o próximo Concept (Atomic Operation) — a correção fundamental para Race Condition é eliminar a janela de tempo entre ler e escrever.",
+            },
+          ],
+          exercise: {
+            problem: "O código abaixo tem uma Race Condition — duas chamadas concorrentes de reservarAssento podem, em teoria, reservar o mesmo assento duas vezes.",
+            problemCode: {
+              language: "text",
+              filename: "seat-race.txt",
+              code: [
+                "assentosLivres = { \"A1\": true }",
+                "",
+                "função reservarAssento(id):",
+                "  se assentosLivres[id] == true:",
+                "    // ← JANELA: outra chamada pode passar por aqui antes da escrita abaixo",
+                "    assentosLivres[id] = false",
+                "    retorna \"reservado com sucesso\"",
+                "  senão:",
+                "    retorna \"assento já ocupado\"",
+              ].join("\n"),
+            },
+            task: "Identifique exatamente ONDE está a janela de Race Condition, e explique o cenário de falha com duas chamadas concorrentes.",
+            hint: "A janela está entre o momento em que a condição é checada e o momento em que o valor é escrito.",
+            solution: {
+              code: {
+                language: "text",
+                filename: "seat-race-solved.txt",
+                code: [
+                  "A janela é entre \"se assentosLivres[id] == true\" e \"assentosLivres[id] = false\".",
+                  "",
+                  "Cenário de falha:",
+                  "Chamada A: checa assentosLivres[\"A1\"] == true → sim",
+                  "Chamada B: checa assentosLivres[\"A1\"] == true → AINDA sim, porque A ainda não escreveu",
+                  "Chamada A: escreve assentosLivres[\"A1\"] = false, retorna sucesso",
+                  "Chamada B: escreve assentosLivres[\"A1\"] = false, retorna sucesso TAMBÉM",
+                  "",
+                  "As duas chamadas 'reservaram com sucesso' o mesmo assento — a checagem e a escrita",
+                  "precisariam ser uma única operação atômica (ou protegidas por um Mutex) pra evitar isso.",
+                ].join("\n"),
+              },
+              explanation: "Esse padrão (\"check-then-act\") é uma das fontes mais comuns de Race Condition em sistemas reais — de reserva de assentos a controle de estoque.",
+            },
+          },
+        }),
+        concept({
+          order: 60,
+          title: "Critical Section",
+          requires: ["Race Condition"],
+          note: "o trecho que precisa de acesso exclusivo",
+          summary:
+            "O trecho de código que acessa Shared State e que, por isso, não pode ser executado por mais de " +
+            "uma thread ao mesmo tempo — nomear essa seção é o primeiro passo antes de protegê-la com algum " +
+            "mecanismo de exclusão mútua.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Critical Section é o trecho específico de código que lê e/ou escreve Shared State de uma " +
+                "forma que precisa de acesso exclusivo — só uma thread pode estar executando aquele trecho " +
+                "por vez, ou uma Race Condition pode acontecer.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Nem todo o código de uma thread precisa de proteção — só a parte que realmente toca Shared " +
+                "State de forma insegura. Nomear essa parte especificamente (em vez de proteger o programa " +
+                "inteiro) é o que permite otimizar: proteger só o mínimo necessário, deixando o resto do " +
+                "código rodar livremente e concorrente. É também o vocabulário necessário antes de introduzir " +
+                "as ferramentas que fazem essa proteção (Mutex, Semaphore).",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "text",
+              filename: "critical-section.txt",
+              code: [
+                "função sacar(valor):",
+                "  registrarLog(\"tentativa de saque\")   // fora da Critical Section — não toca Shared State",
+                "  // ─── Critical Section começa ───",
+                "  se saldo >= valor:",
+                "    saldo = saldo - valor",
+                "  // ─── Critical Section termina ───",
+                "  registrarLog(\"saque processado\")     // fora de novo",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Só as duas linhas que leem e escrevem \"saldo\" precisam de exclusão mútua — os registrarLog " +
+                "podem continuar rodando concorrentemente sem risco, porque não tocam Shared State.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Critical Section é o trecho de código que acessa Shared State de forma que exige exclusão " +
+                "mútua — identificar exatamente esse trecho (e só ele) é o que permite proteger o mínimo " +
+                "necessário, em vez de serializar o programa inteiro.",
+            },
+          ],
+          examples: [
+            {
+              title: "Critical Section mínima vs. exagerada",
+              context: "Proteger mais do que o necessário mata a concorrência à toa.",
+              code: {
+                language: "text",
+                filename: "minimal-vs-excessive.txt",
+                code: [
+                  "Exagerada (toda a função é Critical Section):",
+                  "  [buscarDadosDoDisco(); calcularAlgoLento(); saldo -= valor;]  ← tudo serializado, mesmo o que não precisa",
+                  "",
+                  "Mínima (só o que toca Shared State):",
+                  "  buscarDadosDoDisco(); calcularAlgoLento();",
+                  "  [saldo -= valor;]  ← só isso precisa de exclusão mútua",
+                ].join("\n"),
+              },
+              explanation: "Uma Critical Section maior que o necessário é um erro comum de performance — ela serializa trabalho que poderia rodar concorrentemente sem risco algum.",
+            },
+            {
+              title: "Múltiplas Critical Sections independentes",
+              context: "Seções que tocam Shared State diferente não competem entre si.",
+              code: { language: "text", filename: "independent-sections.txt", code: "// Critical Section A protege \"saldoContaX\"\n// Critical Section B protege \"saldoContaY\"\n// threads podem executar A e B AO MESMO TEMPO — são dados diferentes, sem conflito" },
+              explanation: "Nomear a Critical Section com precisão (por dado, não por função inteira) permite paralelismo real entre seções que não compartilham o mesmo Shared State.",
+            },
+            {
+              title: "Sem proteção nenhuma — a Critical Section \"nua\"",
+              context: "Antes de aplicar qualquer mecanismo, a Critical Section ainda é vulnerável.",
+              code: {
+                language: "javascript",
+                filename: "unprotected.js",
+                code: ["function sacar(valor) {", "  // Critical Section identificada, mas SEM Mutex/Semaphore aplicado ainda:", "  if (saldo >= valor) saldo = saldo - valor; // ainda pode ter Race Condition", "}"].join("\n"),
+              },
+              explanation: "Identificar a Critical Section é o passo 1; os próximos Concepts (Atomic Operation, Mutex) são as ferramentas que efetivamente a protegem.",
+            },
+          ],
+          exercise: {
+            problem: "Na função abaixo, identifique exatamente quais linhas formam a Critical Section (e quais não precisam de proteção).",
+            problemCode: {
+              language: "text",
+              filename: "identify-critical-section.txt",
+              code: [
+                "função processarPedido(pedido):",
+                "  validarPedido(pedido)              // linha 1",
+                "  logAuditoria(\"processando\", pedido) // linha 2",
+                "  estoque[pedido.item] -= pedido.qtd  // linha 3 — toca Shared State",
+                "  enviarEmailConfirmacao(pedido)      // linha 4",
+              ].join("\n"),
+            },
+            task: "Diga qual(is) linha(s) formam a Critical Section e justifique por que as outras ficam de fora.",
+            hint: "Pergunte, linha por linha: essa linha lê ou escreve algum dado que outra execução concorrente também poderia estar lendo/escrevendo?",
+            solution: {
+              code: {
+                language: "text",
+                filename: "identify-critical-section-solved.txt",
+                code: [
+                  "Critical Section: só a linha 3 (estoque[pedido.item] -= pedido.qtd).",
+                  "",
+                  "Linhas 1, 2 e 4 não tocam Shared State compartilhado entre execuções concorrentes",
+                  "(validação e log usam só o 'pedido' local; email é uma ação externa, sem estado mutável",
+                  "compartilhado) — podem rodar livremente em paralelo entre pedidos diferentes.",
+                  "Só a linha 3 precisa de exclusão mútua, porque dois pedidos concorrentes do MESMO item",
+                  "podem entrar em Race Condition sobre a mesma posição de 'estoque'.",
+                ].join("\n"),
+              },
+              explanation: "Isolar a Critical Section a uma única linha é o cenário ideal — o resto da função continua totalmente concorrente, sem custo de sincronização.",
+            },
+          },
+        }),
+        concept({
+          order: 70,
+          title: "Atomic Operation",
+          requires: ["Race Condition"],
+          collision: "≠ ACID Atomicity (Platform) — escopo diferente",
+          note: "indivisível — sem janela para intercalar",
+          summary:
+            "Uma operação que executa como um único passo indivisível, sem nenhuma janela onde outra " +
+            "execução concorrente possa intercalar — a forma mais direta de eliminar uma Race Condition, " +
+            "quando disponível.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Atomic Operation é uma operação que, do ponto de vista de qualquer outra thread observando, " +
+                "acontece de uma vez só — ou ela ainda não começou, ou ela já terminou completamente, nunca " +
+                "\"pela metade\". Não existe janela de tempo onde outra execução possa ler um estado " +
+                "intermediário ou intercalar sua própria escrita no meio.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "A Race Condition do contador acontecia porque \"incrementar\" na verdade eram 3 passos " +
+                "separados (ler, somar, escrever), com uma janela entre eles. Se o hardware ou o runtime " +
+                "oferece uma operação de incremento ATÔMICA — os 3 passos acontecem como se fossem 1, sem " +
+                "possibilidade de intercalar — a Race Condition desaparece sem precisar de um Mutex explícito. " +
+                "Nem toda operação pode ser atômica (operações complexas geralmente não), mas operações " +
+                "simples (incrementar, comparar-e-trocar) frequentemente têm versões atômicas no hardware.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "text",
+              filename: "atomic-operation.txt",
+              code: [
+                "Não-atômico (3 passos, janela entre eles):",
+                "  ler contador → somar 1 → escrever contador     ← outra thread pode intercalar aqui",
+                "",
+                "Atômico (1 passo indivisível):",
+                "  incrementarAtomicamente(contador)     ← nenhuma thread consegue ver um estado \"pela metade\"",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Com a versão atômica, duas threads chamando incrementarAtomicamente(contador) ao mesmo tempo " +
+                "sempre resultam no valor correto — não existe intercalação possível, porque a operação " +
+                "inteira é tratada como uma unidade única pelo hardware.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Atomic Operation executa como um único passo indivisível, sem janela pra intercalar — quando " +
+                "disponível (tipicamente para operações simples, suportadas pelo hardware), elimina Race " +
+                "Condition sem precisar de um lock explícito como Mutex.",
+            },
+          ],
+          examples: [
+            {
+              title: "Compare-and-swap, o primitivo por trás de muitas estruturas lock-free",
+              context: "Uma operação atômica mais poderosa que incremento simples.",
+              code: { language: "text", filename: "compare-and-swap.txt", code: "compareAndSwap(endereco, valorEsperado, novoValor):\n  atomicamente:\n    se *endereco == valorEsperado:\n      *endereco = novoValor\n      retorna sucesso\n    senão:\n      retorna falha (outra thread mudou o valor primeiro)" },
+              explanation: "Compare-and-swap é atômico e permite implementar contadores, filas e outras estruturas que funcionam corretamente sob concorrência sem precisar de um Mutex tradicional.",
+            },
+            {
+              title: "JavaScript: Atomics sobre SharedArrayBuffer",
+              context: "O mecanismo real de operações atômicas em JS multi-thread.",
+              code: { language: "javascript", filename: "js-atomics.js", code: ["const buffer = new SharedArrayBuffer(4);", "const view = new Int32Array(buffer);", "Atomics.add(view, 0, 1); // incremento atômico — seguro mesmo com Web Workers concorrentes"].join("\n") },
+              explanation: "Atomics.add garante que o incremento aconteça como uma única operação indivisível, mesmo que múltiplos Web Workers compartilhem o mesmo SharedArrayBuffer.",
+            },
+            {
+              title: "Nem tudo pode ser atômico",
+              context: "Operações compostas (múltiplas variáveis) geralmente exigem um lock, não um átomo.",
+              code: { language: "text", filename: "cannot-be-atomic.txt", code: "transferir(contaA, contaB, valor):\n  contaA.saldo -= valor   // duas variáveis diferentes —\n  contaB.saldo += valor  // não existe uma instrução de hardware que faça as duas de uma vez\n// aqui a ferramenta certa não é Atomic Operation, é Mutex" },
+              explanation: "Isso antecipa por que Mutex é necessário para além do Atomic Operation: quando a Critical Section envolve mais de uma variável, uma operação atômica única geralmente não existe.",
+            },
+          ],
+          exercise: {
+            problem: "Para cada operação abaixo, diga se ela é candidata natural a uma versão atômica simples, ou se precisa de um Mutex por envolver múltiplos passos/variáveis.",
+            problemCode: {
+              language: "text",
+              filename: "atomic-candidates.txt",
+              code: [
+                "1. incrementar um contador em 1.",
+                "2. mover 'valor' de contaA.saldo para contaB.saldo.",
+                "3. marcar um único booleano 'processado' como true.",
+                "4. ler o valor de um array numa posição e escrever numa posição DIFERENTE, com base no valor lido.",
+              ].join("\n"),
+            },
+            task: "Classifique cada item e justifique brevemente.",
+            hint: "Uma operação é boa candidata a Atomic quando toca UMA única posição de memória, de forma simples (soma, troca, comparação).",
+            solution: {
+              code: {
+                language: "text",
+                filename: "atomic-candidates-solved.txt",
+                code: [
+                  "1. Atômica — incremento de uma única posição é o exemplo canônico (Atomics.add).",
+                  "2. Precisa de Mutex — envolve duas variáveis diferentes (contaA e contaB), sem instrução única.",
+                  "3. Atômica — escrever um valor fixo numa única posição é uma operação simples e atômica.",
+                  "4. Precisa de Mutex — envolve ler e escrever posições diferentes, com lógica entre os dois passos.",
+                ].join("\n"),
+              },
+              explanation: "A regra prática é: uma posição de memória, uma operação simples → geralmente atômica; múltiplas posições ou lógica composta → geralmente precisa de Mutex.",
+            },
+          },
+        }),
+        concept({
+          order: 80,
+          title: "Mutex",
+          requires: ["Critical Section"],
+          note: "lock de exclusão mútua — só um de cada vez",
+          summary:
+            "Um lock que garante que só uma thread por vez execute uma Critical Section — qualquer outra " +
+            "thread que tente entrar precisa esperar até a primeira liberar o lock, o mecanismo mais " +
+            "direto de exclusão mútua.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Mutex (de \"mutual exclusion\") é um mecanismo de lock: antes de entrar numa Critical " +
+                "Section, uma thread precisa \"adquirir\" o mutex; se outra thread já o adquiriu, a que chegou " +
+                "depois espera (bloqueada) até o mutex ser liberado. Só uma thread por vez consegue segurar o " +
+                "mutex — daí o nome, exclusão mútua.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Quando uma Critical Section envolve mais de uma operação (múltiplos passos, múltiplas " +
+                "variáveis), uma Atomic Operation simples não resolve — é preciso garantir que TODA a " +
+                "sequência de passos aconteça sem interrupção de outra thread. Mutex resolve isso ao nível " +
+                "de código: em vez de depender de uma instrução atômica de hardware, ele serializa o acesso à " +
+                "Critical Section inteira, não importa quantos passos ela tenha.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "text",
+              filename: "mutex.txt",
+              code: [
+                "mutex = novo Mutex()",
+                "",
+                "função transferir(contaA, contaB, valor):",
+                "  mutex.adquirir()          // espera aqui se outra thread já segura o mutex",
+                "  contaA.saldo -= valor",
+                "  contaB.saldo += valor",
+                "  mutex.liberar()           // libera — a próxima thread esperando pode entrar",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Enquanto uma thread segura o mutex dentro de transferir, qualquer outra thread chamando " +
+                "transferir fica bloqueada em mutex.adquirir() até a primeira terminar e liberar.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Mutex é um lock que garante exclusão mútua sobre uma Critical Section — só uma thread " +
+                "executa o trecho protegido por vez, e qualquer outra espera até o mutex ser liberado, mesmo " +
+                "quando a Critical Section tem múltiplos passos ou variáveis.",
+            },
+          ],
+          examples: [
+            {
+              title: "Sem Mutex — a Race Condition volta",
+              context: "Contraste direto: a mesma transferência, sem proteção.",
+              code: { language: "text", filename: "no-mutex.txt", code: "função transferir(contaA, contaB, valor):\n  contaA.saldo -= valor\n  contaB.saldo += valor\n// sem mutex, duas transferências concorrentes envolvendo as mesmas contas\n// podem intercalar os passos de formas que corrompem o saldo total" },
+              explanation: "Esse é exatamente o cenário que Atomic Operation não resolve (múltiplas variáveis) e que motiva o Mutex.",
+            },
+            {
+              title: "Esquecer de liberar o mutex — o perigo mais comum",
+              context: "Um mutex nunca liberado trava todas as outras threads para sempre.",
+              code: { language: "text", filename: "forgot-unlock.txt", code: "mutex.adquirir()\nse condicao:\n  retorna erro  // ← esqueceu de chamar mutex.liberar() antes de sair!\nmutex.liberar()\n// qualquer thread esperando esse mutex fica bloqueada PARA SEMPRE" },
+              explanation: "Esse bug motiva padrões de linguagem que liberam o mutex automaticamente (blocos with/using, try/finally) — liberar manualmente é fácil de esquecer num caminho de erro.",
+            },
+            {
+              title: "Um Mutex por recurso, não um único Mutex global",
+              context: "Um mutex global demais mata concorrência que poderia ser segura.",
+              code: {
+                language: "javascript",
+                filename: "granular-mutex.js",
+                code: ["const mutexContaA = new Mutex(); // protege só contaA", "const mutexContaB = new Mutex(); // protege só contaB", "// transferências envolvendo contas DIFERENTES podem rodar em paralelo,", "// cada uma segurando só o mutex da conta que está tocando"].join("\n"),
+              },
+              explanation: "Granularidade do lock é um trade-off real: um mutex por recurso permite mais concorrência, mas exige mais cuidado para evitar Deadlock (próximo tema do módulo).",
+            },
+          ],
+          exercise: {
+            problem: "O código abaixo tem um bug: em um dos caminhos, o mutex nunca é liberado.",
+            problemCode: {
+              language: "text",
+              filename: "mutex-bug.txt",
+              code: [
+                "função sacar(conta, valor):",
+                "  mutex.adquirir()",
+                "  se conta.saldo < valor:",
+                "    retorna \"saldo insuficiente\"",
+                "  conta.saldo -= valor",
+                "  mutex.liberar()",
+                "  retorna \"sucesso\"",
+              ].join("\n"),
+            },
+            task: "Identifique o caminho onde o mutex fica preso e corrija.",
+            hint: "Rastreie o caminho do 'retorna \"saldo insuficiente\"' — ele passa pelo mutex.liberar()?",
+            solution: {
+              code: {
+                language: "text",
+                filename: "mutex-bug-fixed.txt",
+                code: [
+                  "função sacar(conta, valor):",
+                  "  mutex.adquirir()",
+                  "  se conta.saldo < valor:",
+                  "    mutex.liberar()          // ← faltava aqui",
+                  "    retorna \"saldo insuficiente\"",
+                  "  conta.saldo -= valor",
+                  "  mutex.liberar()",
+                  "  retorna \"sucesso\"",
+                ].join("\n"),
+              },
+              explanation: "O caminho de 'saldo insuficiente' retornava sem liberar o mutex, deixando qualquer outra thread esperando por ele bloqueada para sempre — um bug clássico de gerenciamento manual de lock.",
+            },
+          },
+        }),
+        concept({
+          order: 90,
+          title: "Semaphore",
+          requires: ["Mutex"],
+          note: "generaliza Mutex — permite N acessos, não só 1",
+          summary:
+            "Um contador que controla quantas threads podem acessar um recurso ao mesmo tempo — generaliza " +
+            "Mutex (que permite exatamente 1) para permitir N acessos concorrentes, útil para limitar uso de " +
+            "recursos como conexões ou slots de processamento.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Semaphore mantém um contador interno: cada thread que quer acessar o recurso protegido " +
+                "decrementa o contador (e espera se ele chegar a zero); ao terminar, incrementa de volta. Um " +
+                "Mutex é, na prática, um Semaphore binário — um contador que só pode ser 0 ou 1 (só uma " +
+                "thread por vez). Um Semaphore com contador inicial N permite até N threads acessando " +
+                "simultaneamente.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Mutex resolve \"só um de cada vez\", mas muitos cenários reais têm um limite maior que 1: um " +
+                "pool de 10 conexões de banco de dados, 5 slots de processamento pesado disponíveis. " +
+                "Semaphore generaliza a ideia de Mutex para expressar exatamente esse limite — permitir " +
+                "concorrência controlada, não zero concorrência.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "text",
+              filename: "semaphore.txt",
+              code: [
+                "semaphore = novo Semaphore(3)  // permite até 3 acessos simultâneos",
+                "",
+                "função processarImagem(img):",
+                "  semaphore.adquirir()   // decrementa; espera se já tiver 3 threads dentro",
+                "  fazerProcessamentoPesado(img)",
+                "  semaphore.liberar()    // incrementa de volta; libera espaço pra próxima thread esperando",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Até 3 chamadas de processarImagem podem estar rodando ao mesmo tempo; a 4ª chamada espera " +
+                "em semaphore.adquirir() até uma das 3 primeiras liberar.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Semaphore é um contador que limita quantas threads acessam um recurso concorrentemente — " +
+                "generaliza Mutex (que é o caso especial de limite 1) para permitir N acessos simultâneos, " +
+                "útil pra controlar uso de recursos limitados como conexões ou slots de processamento.",
+            },
+          ],
+          examples: [
+            {
+              title: "Pool de conexões de banco de dados",
+              context: "O caso de uso mais comum de Semaphore.",
+              code: { language: "text", filename: "connection-pool.txt", code: "semaphoreConexoes = novo Semaphore(10)  // no máximo 10 conexões simultâneas\n// requisição 11 precisa esperar uma das 10 primeiras liberar sua conexão" },
+              explanation: "Limitar conexões concorrentes protege o banco de dados de ficar sobrecarregado com mais requisições do que consegue processar bem.",
+            },
+            {
+              title: "Mutex como Semaphore(1)",
+              context: "A relação formal entre os dois conceitos.",
+              code: { language: "text", filename: "mutex-as-semaphore.txt", code: "mutex = novo Semaphore(1)  // contador máximo 1 → comportamento idêntico a um Mutex\n// Mutex é o nome que damos ao caso especial mais comum de Semaphore" },
+              explanation: "Entender Mutex como Semaphore(1) ajuda a perceber que a diferença entre os dois é só o valor do contador — a mecânica de adquirir/esperar/liberar é a mesma.",
+            },
+            {
+              title: "Semaphore controlando concorrência de rede",
+              context: "Limitar quantas requisições simultâneas um cliente dispara.",
+              code: {
+                language: "javascript",
+                filename: "fetch-with-limit.js",
+                code: ["// pseudocódigo com um Semaphore simplificado em JS", "const semaforo = new Semaphore(5); // no máximo 5 fetch() concorrentes", "async function fetchLimitado(url) {", "  await semaforo.adquirir();", "  try {", "    return await fetch(url);", "  } finally {", "    semaforo.liberar();", "  }", "}"].join("\n"),
+              },
+              explanation: "Isso evita disparar centenas de requisições simultâneas contra uma API, algo que poderia sobrecarregar o servidor ou estourar limites de rate limiting.",
+            },
+          ],
+          exercise: {
+            problem: "Um sistema precisa processar imagens, mas rodar mais de 4 processamentos pesados ao mesmo tempo derruba a performance do servidor.",
+            problemCode: {
+              language: "text",
+              filename: "unlimited-processing.txt",
+              code: ["função processarLote(imagens):", "  para cada img em imagens:", "    processarImagem(img)  // roda TODAS ao mesmo tempo, sem limite"].join("\n"),
+            },
+            task: "Descreva como usar um Semaphore para limitar a 4 processamentos concorrentes, e explique o que acontece com a 5ª imagem.",
+            hint: "O Semaphore precisa ser adquirido antes de processarImagem e liberado depois, com um contador inicial de 4.",
+            solution: {
+              code: {
+                language: "text",
+                filename: "limited-processing-solved.txt",
+                code: [
+                  "semaphore = novo Semaphore(4)",
+                  "",
+                  "função processarLote(imagens):",
+                  "  para cada img em imagens (em paralelo):",
+                  "    semaphore.adquirir()",
+                  "    processarImagem(img)",
+                  "    semaphore.liberar()",
+                  "",
+                  "A 5ª imagem (e qualquer uma além da 4ª) fica esperando em semaphore.adquirir() até uma",
+                  "das 4 primeiras terminar e liberar seu espaço — nunca mais de 4 rodam ao mesmo tempo.",
+                ].join("\n"),
+              },
+              explanation: "O Semaphore transforma \"processar tudo de uma vez\" em \"processar até 4 de cada vez\", sem precisar reescrever a lógica de processamento em si.",
+            },
+          },
+        }),
+        concept({
+          order: 100,
+          title: "Deadlock",
+          requires: ["Mutex", "Semaphore"],
+          revisit: ["Platform / Database Transactions"],
+          note: "espera circular — ninguém consegue avançar",
+          summary:
+            "Uma situação onde duas (ou mais) threads ficam esperando, cada uma, por um lock que a outra " +
+            "está segurando — uma espera circular onde nenhuma consegue avançar, e o programa trava " +
+            "permanentemente naquele ponto.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Deadlock acontece quando duas ou mais threads esperam, cada uma, por um lock (Mutex ou " +
+                "Semaphore) que outra já está segurando — formando um ciclo de espera onde ninguém consegue " +
+                "avançar. Diferente de um bug que produz resultado errado, Deadlock trava o programa " +
+                "completamente naquele ponto, para sempre.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "É uma consequência direta de usar múltiplos locks: se uma thread precisa adquirir o Mutex A " +
+                "e depois o B, enquanto outra thread precisa adquirir B e depois A, existe a possibilidade de " +
+                "cada uma já ter conseguido o primeiro lock e ficar esperando pelo segundo — que a outra está " +
+                "segurando. Nenhuma libera o que já tem (porque ainda não terminou), então nenhuma consegue o " +
+                "que falta.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "text",
+              filename: "deadlock.txt",
+              code: [
+                "Thread A: adquire mutexContaX",
+                "Thread B: adquire mutexContaY",
+                "Thread A: tenta adquirir mutexContaY  → espera (B está segurando)",
+                "Thread B: tenta adquirir mutexContaX  → espera (A está segurando)",
+                "",
+                "// A espera B liberar Y; B espera A liberar X — nenhuma das duas vai liberar. Travado.",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Esse cenário clássico acontece quando duas transferências entre as mesmas duas contas rodam " +
+                "concorrentemente, cada uma adquirindo os mutexes das contas em ordem OPOSTA.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Deadlock é uma espera circular entre threads segurando locks que as outras precisam — o " +
+                "programa trava permanentemente naquele ponto; a causa mais comum é adquirir múltiplos locks " +
+                "em ordens diferentes entre threads diferentes.",
+            },
+          ],
+          examples: [
+            {
+              title: "As 4 condições clássicas do Deadlock",
+              context: "Deadlock só acontece quando todas as 4 estão presentes simultaneamente.",
+              code: {
+                language: "text",
+                filename: "four-conditions.txt",
+                code: [
+                  "1. Exclusão mútua: o recurso só pode ser usado por uma thread por vez (é o que Mutex garante).",
+                  "2. Posse e espera: uma thread segura um recurso enquanto espera outro.",
+                  "3. Sem preempção: um recurso não pode ser tomado à força de quem o segura.",
+                  "4. Espera circular: existe um ciclo de threads esperando recursos umas das outras.",
+                ].join("\n"),
+              },
+              explanation: "Prevenir Deadlock geralmente significa quebrar UMA dessas condições — a mais comum na prática é eliminar a espera circular (condição 4).",
+            },
+            {
+              title: "Prevenindo com ordem consistente de aquisição",
+              context: "A correção mais comum para o exemplo do saldo bancário.",
+              code: {
+                language: "javascript",
+                filename: "consistent-order-fix.js",
+                code: [
+                  "// Em vez de cada thread adquirir na ordem que \"faz sentido pro seu caso\":",
+                  "// SEMPRE adquira os mutexes numa ordem fixa (ex.: pelo id da conta, do menor pro maior)",
+                  "function transferir(contaA, contaB, valor) {",
+                  "  const [primeira, segunda] = ordenarPorId(contaA, contaB);",
+                  "  primeira.mutex.adquirir();",
+                  "  segunda.mutex.adquirir();",
+                  "  // ... transferência ...",
+                  "  segunda.mutex.liberar();",
+                  "  primeira.mutex.liberar();",
+                  "}",
+                ].join("\n"),
+              },
+              explanation: "Se TODAS as threads adquirem locks na mesma ordem relativa, a espera circular (condição 4) nunca se forma — quebra a possibilidade de Deadlock nesse padrão.",
+            },
+            {
+              title: "Deadlock com mais de duas threads",
+              context: "O ciclo pode ter qualquer tamanho.",
+              code: { language: "text", filename: "three-way-deadlock.txt", code: "Thread A segura X, espera Y\nThread B segura Y, espera Z\nThread C segura Z, espera X\n// ciclo A → B → C → A — nenhuma consegue avançar" },
+              explanation: "O ciclo de espera não precisa envolver só duas threads — qualquer número de threads formando um ciclo fechado de espera produz o mesmo travamento.",
+            },
+          ],
+          exercise: {
+            problem: "Duas funções de transferência abaixo adquirem mutexes em ordens diferentes, criando risco de Deadlock.",
+            problemCode: {
+              language: "text",
+              filename: "deadlock-risk.txt",
+              code: [
+                "função transferirXparaY(valor):",
+                "  mutexX.adquirir()",
+                "  mutexY.adquirir()",
+                "  // ...",
+                "  mutexY.liberar()",
+                "  mutexX.liberar()",
+                "",
+                "função transferirYparaX(valor):",
+                "  mutexY.adquirir()   // ← ordem OPOSTA da função acima",
+                "  mutexX.adquirir()",
+                "  // ...",
+                "  mutexX.liberar()",
+                "  mutexY.liberar()",
+              ].join("\n"),
+            },
+            task: "Explique o cenário exato de Deadlock entre as duas funções, e corrija o código.",
+            hint: "O problema está na ORDEM de aquisição ser diferente entre as duas funções — a correção é forçar a mesma ordem nas duas.",
+            solution: {
+              code: {
+                language: "text",
+                filename: "deadlock-risk-fixed.txt",
+                code: [
+                  "Cenário de Deadlock: transferirXparaY adquire mutexX e espera mutexY; ao mesmo tempo,",
+                  "transferirYparaX adquire mutexY e espera mutexX — espera circular, travado.",
+                  "",
+                  "Correção: as duas funções devem adquirir os mutexes na MESMA ordem, sempre:",
+                  "função transferirYparaX(valor):",
+                  "  mutexX.adquirir()   // mesma ordem de transferirXparaY: X primeiro",
+                  "  mutexY.adquirir()",
+                  "  // ...",
+                  "  mutexY.liberar()",
+                  "  mutexX.liberar()",
+                ].join("\n"),
+              },
+              explanation: "Forçar uma ordem consistente de aquisição entre TODAS as funções que usam os dois mutexes elimina a possibilidade de espera circular entre elas.",
+            },
+          },
+        }),
+        concept({
+          order: 110,
+          title: "Starvation",
+          requires: ["Semaphore", "Deadlock"],
+          note: "ensinar em par (falhas de liveness)",
+          summary:
+            "Uma thread que fica perpetuamente impedida de progredir, não porque está travada num ciclo " +
+            "(como Deadlock), mas porque outras threads sempre passam na frente dela — uma falha de " +
+            "liveness diferente, mas do mesmo tipo geral (o sistema não avança) que Deadlock.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Starvation é quando uma thread específica nunca consegue avançar — não porque está presa " +
+                "num ciclo de espera (isso é Deadlock), mas porque, toda vez que o recurso fica disponível, " +
+                "outra thread \"fura a fila\" e consegue primeiro. A thread faminta continua tecnicamente livre " +
+                "para tentar de novo, só nunca tem sucesso.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Muitos mecanismos de lock não garantem ordem de atendimento (fairness) — quando o recurso " +
+                "libera, qualquer thread esperando pode ser a próxima escolhida, sem respeitar quem chegou " +
+                "primeiro. Se um scheduler ou algoritmo consistentemente favorece certas threads (por " +
+                "prioridade, ou por azar de timing), outra thread pode acabar sempre perdendo a vez — " +
+                "starvation é o nome desse padrão de má sorte sistemática.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "text",
+              filename: "starvation.txt",
+              code: [
+                "Thread de alta prioridade: sempre pega o mutex assim que ele libera",
+                "Thread de baixa prioridade: está esperando desde o início, mas NUNCA é escolhida,",
+                "                             porque sempre existe uma thread de alta prioridade pedindo",
+                "",
+                "// a thread de baixa prioridade não está em ciclo (não é Deadlock) — ela simplesmente",
+                "// nunca tem sua vez",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A diferença chave para Deadlock: aqui não há espera circular nem impossibilidade lógica de " +
+                "avançar — é uma questão de política de agendamento consistentemente injusta.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Starvation é quando uma thread nunca consegue avançar porque outras sempre passam na frente " +
+                "dela — diferente de Deadlock (ciclo de espera sem saída lógica), mas do mesmo tipo de " +
+                "problema: uma falha de liveness, onde o sistema não garante progresso pra todo mundo.",
+            },
+          ],
+          examples: [
+            {
+              title: "Starvation por prioridade fixa",
+              context: "Um scheduler que sempre favorece threads de alta prioridade.",
+              code: { language: "text", filename: "priority-starvation.txt", code: "Scheduler: sempre executa a thread de MAIOR prioridade disponível.\nSe threads de alta prioridade chegam constantemente, uma thread de baixa prioridade\npode esperar indefinidamente, mesmo sem nenhum deadlock." },
+              explanation: "Esse é o motivo pelo qual muitos schedulers reais usam \"aging\" — aumentar a prioridade de threads que esperam há muito tempo, pra evitar starvation.",
+            },
+            {
+              title: "Starvation por Semaphore sem ordem de fila",
+              context: "Um Semaphore que escolhe threads arbitrariamente ao liberar.",
+              code: { language: "text", filename: "semaphore-starvation.txt", code: "semaphore.liberar() → escolhe QUALQUER thread esperando, não necessariamente a mais antiga\n// uma thread pode, por azar, nunca ser a escolhida entre as várias esperando" },
+              explanation: "Semaphores/Mutexes \"justos\" (fair) resolvem isso garantindo ordem FIFO entre quem está esperando — a correção comum para starvation nesse cenário.",
+            },
+            {
+              title: "Corrigindo com fairness (ordem FIFO)",
+              context: "Garantir que quem chegou primeiro seja atendido primeiro.",
+              code: { language: "javascript", filename: "fair-lock.js", code: "const mutexJusto = new Mutex({ fair: true });\n// threads esperando são atendidas na ordem em que pediram o lock,\n// eliminando a possibilidade de uma thread ser sempre preterida" },
+              explanation: "A troca é performance (locks justos costumam ter overhead maior) por garantia de progresso — um trade-off explícito entre throughput e fairness.",
+            },
+          ],
+          exercise: {
+            problem: "Um sistema de impressão sempre prioriza documentos curtos sobre documentos longos, pra maximizar quantos documentos são impressos por minuto.",
+            problemCode: {
+              language: "text",
+              filename: "printer-starvation.txt",
+              code: "Fila de impressão: sempre escolhe o próximo documento MAIS CURTO disponível.\nUm documento de 500 páginas foi enviado há 2 horas e ainda não imprimiu — documentos\ncurtos continuam chegando e sempre furam a fila na frente dele.",
+            },
+            task: "Explique por que isso é Starvation (não Deadlock), e proponha uma correção.",
+            hint: "Pergunte: o documento longo está em algum ciclo de espera impossível, ou só está sendo preterido repetidamente?",
+            solution: {
+              code: {
+                language: "text",
+                filename: "printer-starvation-solved.txt",
+                code: [
+                  "É Starvation, não Deadlock: não existe ciclo de espera nem impossibilidade lógica de o",
+                  "documento longo imprimir — ele simplesmente nunca é escolhido, porque a política sempre",
+                  "favorece documentos mais curtos que continuam chegando.",
+                  "",
+                  "Correção: introduzir aging — aumentar a prioridade de um documento quanto mais tempo ele",
+                  "espera, até eventualmente ele ficar prioritário mesmo sendo longo. Isso garante que todo",
+                  "documento eventualmente progride, ao custo de não ser sempre o mais eficiente no curto prazo.",
+                ].join("\n"),
+              },
+              explanation: "Aging é a correção clássica para starvation em qualquer sistema de agendamento por prioridade — reintroduz fairness sem eliminar a priorização por completo.",
+            },
+          },
+        }),
+        concept({
+          order: 120,
+          title: "Thread Safety",
+          requires: ["Mutex", "Atomic Operation", "Functional Programming / Immutability"],
+          note: "a síntese da Story",
+          summary:
+            "A propriedade de um trecho de código se comportar corretamente quando executado por múltiplas " +
+            "threads concorrentemente, sem Race Condition, Deadlock ou Starvation — a síntese de todas as " +
+            "ferramentas do módulo, combinadas ou usadas conforme o caso.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Thread Safety é a propriedade de um pedaço de código continuar se comportando corretamente " +
+                "quando chamado por múltiplas threads ao mesmo tempo — sem produzir resultados errados por " +
+                "Race Condition, sem travar por Deadlock, sem deixar nenhuma thread starving " +
+                "indefinidamente. Não é uma ferramenta nova, é o OBJETIVO que Mutex, Semaphore, Atomic " +
+                "Operation e Immutability existem para alcançar.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Nomear essa propriedade permite fazer uma pergunta objetiva sobre qualquer trecho de código: " +
+                "\"isso é thread-safe?\" — e, quando a resposta é não, escolher a ferramenta certa pra corrigir: " +
+                "Atomic Operation para operações simples de uma única variável, Mutex/Semaphore para " +
+                "Critical Sections mais complexas, ou — a estratégia mais robusta — eliminar Shared State " +
+                "mutável usando Immutability, o que torna o código thread-safe por construção, sem precisar " +
+                "de locks nenhum.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "text",
+              filename: "thread-safety-strategies.txt",
+              code: [
+                "Estratégia 1 — Atomic Operation:  incrementarAtomicamente(contador)",
+                "Estratégia 2 — Mutex:             mutex.adquirir() / seção crítica / mutex.liberar()",
+                "Estratégia 3 — Immutability:      dado nunca muda → nenhuma thread precisa de lock pra lê-lo",
+                "",
+                "Todas as três produzem código THREAD-SAFE — a escolha depende do caso.",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Não existe uma única \"ferramenta certa\" universal — thread safety é o resultado desejado, e " +
+                "as ferramentas do módulo são as opções disponíveis pra chegar lá, cada uma com seu trade-off " +
+                "de performance e complexidade.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Thread Safety é o objetivo de todo o módulo: código que se comporta corretamente sob " +
+                "execução concorrente, sem Race Condition, Deadlock ou Starvation — alcançado combinando " +
+                "Atomic Operation, Mutex/Semaphore e, quando possível, eliminando o problema pela raiz com " +
+                "Immutability.",
+            },
+          ],
+          examples: [
+            {
+              title: "Não thread-safe",
+              context: "O contador clássico, sem nenhuma proteção.",
+              code: { language: "text", filename: "not-thread-safe.txt", code: "função incrementar():\n  contador = contador + 1\n// múltiplas threads chamando isso concorrentemente → Race Condition, resultado errado" },
+              explanation: "Esse é o ponto de partida do módulo inteiro — o problema que todas as ferramentas seguintes existem para resolver.",
+            },
+            {
+              title: "Thread-safe via Mutex",
+              context: "Correção com lock explícito.",
+              code: { language: "text", filename: "thread-safe-mutex.txt", code: "função incrementar():\n  mutex.adquirir()\n  contador = contador + 1\n  mutex.liberar()\n// agora thread-safe, ao custo de serializar o acesso (só uma thread por vez)" },
+              explanation: "Correto, mas com custo de performance — cada chamada precisa esperar sua vez, mesmo quando não há conflito de verdade acontecendo naquele instante.",
+            },
+            {
+              title: "Thread-safe via Immutability — sem lock nenhum",
+              context: "Eliminando o Shared State mutável em vez de protegê-lo.",
+              code: {
+                language: "javascript",
+                filename: "thread-safe-immutable.js",
+                code: ["function incrementar(estadoAtual) {", "  return { ...estadoAtual, contador: estadoAtual.contador + 1 }; // novo objeto, nunca muta o antigo", "}", "// cada thread trabalha com sua própria referência de estado — nada pra sincronizar"].join("\n"),
+              },
+              explanation: "Como nada é mutado, não existe Shared State problemático — thread-safe sem nenhum lock, sem nenhum custo de sincronização, o motivo pelo qual Immutability é tão valorizada em código concorrente.",
+            },
+          ],
+          exercise: {
+            problem: "Avalie a função abaixo e diga se ela é thread-safe. Se não for, proponha UMA correção (Mutex OU Immutability) e justifique a escolha.",
+            problemCode: {
+              language: "text",
+              filename: "evaluate-thread-safety.txt",
+              code: [
+                "cache = {}",
+                "",
+                "função buscarOuCalcular(chave):",
+                "  se chave não está em cache:",
+                "    cache[chave] = calcularAlgoLento(chave)",
+                "  retorna cache[chave]",
+              ].join("\n"),
+            },
+            task: "Diga se é thread-safe, explique o cenário de falha se não for, e escolha uma correção.",
+            hint: "Duas threads podem checar 'chave não está em cache' ao mesmo tempo, antes de qualquer uma escrever — o mesmo padrão de check-then-act já visto em Race Condition.",
+            solution: {
+              code: {
+                language: "text",
+                filename: "evaluate-thread-safety-solved.txt",
+                code: [
+                  "NÃO é thread-safe: duas threads podem checar 'chave não está em cache' ao mesmo tempo,",
+                  "ambas verem 'não está', e ambas chamarem calcularAlgoLento(chave) desnecessariamente",
+                  "(trabalho duplicado, não corrupção de dado neste caso específico, mas ainda um bug de",
+                  "concorrência clássico do tipo check-then-act).",
+                  "",
+                  "Correção com Mutex:",
+                  "função buscarOuCalcular(chave):",
+                  "  mutex.adquirir()",
+                  "  se chave não está em cache:",
+                  "    cache[chave] = calcularAlgoLento(chave)",
+                  "  resultado = cache[chave]",
+                  "  mutex.liberar()",
+                  "  retorna resultado",
+                  "",
+                  "Justificativa: aqui a operação envolve checar E escrever no MESMO cache compartilhado —",
+                  "Immutability não se aplica bem porque o cache PRECISA acumular novas entradas ao longo",
+                  "do tempo; Mutex serializa só a checagem+escrita, mantendo a leitura de cache já resolvido",
+                  "barata para chamadas futuras.",
+                ].join("\n"),
+              },
+              explanation: "Esse padrão (cache compartilhado, check-then-act) é extremamente comum na prática — memoization concorrente exige exatamente esse cuidado.",
+            },
+          },
+        }),
       ],
     }),
   ],
