@@ -3686,37 +3686,1304 @@ export default area({
         "Pipe / Flow",
       ],
       concepts: [
-        concept({ order: 10, title: "Declarative vs Imperative", requires: ["Programming Fundamentals / Abstraction"], note: "framing do paradigma" }),
-        concept({ order: 20, title: "First-Class Functions", requires: ["Declarative vs Imperative"], note: "o recurso de linguagem que habilita o resto" }),
+        concept({
+          order: 10,
+          title: "Declarative vs Imperative",
+          note: "Declarativo vs. imperativo",
+          requires: ["Programming Fundamentals / Abstraction"],
+          summary:
+            "Duas formas de descrever o que um programa faz: dizer passo a passo como chegar no resultado " +
+            "(imperativo), ou dizer o que se quer e deixar a implementação decidir o como (declarativo).",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Código Imperativo descreve uma sequência de passos explícitos que mudam o estado do programa " +
+                "até chegar no resultado — \"faça isso, depois isso, depois aquilo\". Código Declarativo " +
+                "descreve o resultado desejado, sem especificar os passos — \"eu quero isto\", deixando pra " +
+                "implementação decidir como chegar lá.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Todo o resto deste módulo (Map, Filter, Reduce, Pure Functions, Function Composition) é, no " +
+                "fundo, uma forma de escrever código mais declarativo — entender essa distinção primeiro dá o " +
+                "\"porquê\" por trás de cada um desses Concepts. Código declarativo tende a ser mais curto e " +
+                "mais fácil de ler, mas depende de confiar na implementação por trás.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "double-all.js",
+              code: [
+                "// Imperativo: descreve o PASSO A PASSO",
+                "const doubled = [];",
+                "for (let i = 0; i < numbers.length; i++) {",
+                "  doubled.push(numbers[i] * 2);",
+                "}",
+                "",
+                "// Declarativo: descreve O QUE se quer",
+                "const doubled2 = numbers.map(n => n * 2);",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "As duas versões produzem o mesmo resultado. A imperativa diz exatamente como percorrer, " +
+                "acumular e inserir; a declarativa só diz \"eu quero cada número dobrado\" — o .map() decide " +
+                "como iterar por baixo.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Imperativo descreve os passos; Declarativo descreve o resultado desejado. Boa parte de " +
+                "Functional Programming é sobre escrever mais no estilo declarativo — os próximos Concepts " +
+                "são ferramentas concretas pra isso.",
+            },
+          ],
+          examples: [
+            {
+              title: "SQL como declarativo puro",
+              context: "Você não diz como buscar — só o que quer.",
+              code: { language: "text", filename: "query.sql", code: "SELECT name FROM users WHERE age > 18;" },
+              explanation: "Você não diz como buscar (índice? scan completo?) — só o quê. O motor do banco decide a estratégia.",
+            },
+            {
+              title: "CSS declarativo vs. manipulação de DOM imperativa",
+              context: "O mesmo resultado, duas filosofias diferentes de descrevê-lo.",
+              code: { language: "javascript", filename: "buttons.js", code: '.button { color: red; }\n\ndocument.querySelectorAll(".button").forEach(el => { el.style.color = "red"; });' },
+              explanation: "CSS declara o resultado desejado; o JS imperativo descreve o passo a passo manual pra chegar lá.",
+            },
+            {
+              title: "Condicional imperativa vs. busca declarativa",
+              context: "find() expressa a intenção diretamente.",
+              code: {
+                language: "javascript",
+                filename: "find-user.js",
+                code: ["// imperativo", "let found = null;", "for (const user of users) {", "  if (user.id === targetId) { found = user; break; }", "}", "", "// declarativo", "const found2 = users.find(user => user.id === targetId);"].join("\n"),
+              },
+              explanation: ".find() expressa a intenção diretamente, sem descrever o loop, o break, a variável acumuladora.",
+            },
+          ],
+          exercise: {
+            problem: "O código abaixo filtra e transforma uma lista de pedidos de forma totalmente imperativa.",
+            problemCode: {
+              language: "javascript",
+              filename: "summaries.js",
+              code: ["const summaries = [];", "for (let i = 0; i < orders.length; i++) {", "  if (orders[i].total > 100) {", "    summaries.push(`Pedido #${orders[i].id}: R$ ${orders[i].total}`);", "  }", "}"].join("\n"),
+            },
+            task: "Reescreva no estilo declarativo, usando métodos de array que expressem \"filtre os pedidos com total > 100, depois transforme cada um numa string de resumo\".",
+            hint: "Pense em qual método de array expressa \"manter só o que satisfaz uma condição\", e qual expressa \"transformar cada item\".",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "summaries.js",
+                code: ["const summaries2 = orders", "  .filter(order => order.total > 100)", "  .map(order => `Pedido #${order.id}: R$ ${order.total}`);"].join("\n"),
+              },
+              explanation: ".filter() expressa \"mantenha só o que satisfaz\"; .map() expressa \"transforme cada item\" — a intenção fica evidente lendo o código.",
+            },
+          },
+        }),
+        concept({
+          order: 20,
+          title: "First-Class Functions",
+          note: "Funções de primeira classe",
+          requires: ["Declarative vs Imperative"],
+          summary:
+            "Funções tratadas como qualquer outro valor — podem ser guardadas em variáveis, passadas como " +
+            "argumento, devolvidas por outra função. O recurso de linguagem que torna todo o resto de " +
+            "Functional Programming possível.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Numa linguagem com First-Class Functions, uma função pode ser tratada exatamente como " +
+                "qualquer outro valor: guardada numa variável, passada como argumento pra outra função, " +
+                "devolvida como resultado, guardada dentro de um array ou objeto. Não existe uma categoria " +
+                "especial de \"função\" separada dos outros valores.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "É o recurso de linguagem que habilita praticamente tudo neste módulo. Sem First-Class " +
+                "Functions, não haveria como passar uma função de comparação pra .sort(), nem como " +
+                "Map/Filter/Reduce receberem uma função como argumento, nem como Closures ou Higher-Order " +
+                "Functions existirem. Este Concept é a base sobre a qual os outros são construídos.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "greet.js",
+              code: [
+                "const greet = function (name) { return `Olá, ${name}`; }; // função guardada numa variável",
+                "",
+                "function callTwice(fn, arg) { // função recebida como argumento",
+                '  return fn(arg) + " " + fn(arg);',
+                "}",
+                'callTwice(greet, "Ana");',
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "greet é um valor comum — pode ser guardado, passado adiante, chamado de dentro de outra " +
+                "função. Nada disso exige sintaxe especial.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "First-Class Functions trata função como qualquer outro valor — guardável, passável, " +
+                "retornável. É o alicerce que torna Closures, Higher-Order Functions e todo o resto de " +
+                "Functional Programming possível.",
+            },
+          ],
+          examples: [
+            {
+              title: "Função guardada num objeto, como qualquer dado",
+              context: "Funções vivem dentro de um objeto comum, igual guardaria números ou strings.",
+              code: { language: "javascript", filename: "operations.js", code: ["const operations = {", "  add: (a, b) => a + b,", "  subtract: (a, b) => a - b,", "};", "operations.add(2, 3);"].join("\n") },
+              explanation: "Funções são valores como quaisquer outros — vivem dentro de um objeto comum, sem sintaxe especial.",
+            },
+            {
+              title: "Função devolvida por outra função",
+              context: "Só é possível porque função é um valor de primeira classe.",
+              code: { language: "javascript", filename: "multiplier.js", code: ["function multiplier(factor) {", "  return function (n) { return n * factor; }; // devolve uma função", "}", "const double = multiplier(2);", "double(5); // 10"].join("\n") },
+              explanation: "multiplier devolve uma FUNÇÃO como resultado — tão devolvível quanto um number.",
+            },
+            {
+              title: "Contraste com linguagens sem First-Class Functions plenas",
+              context: "Passar comportamento como argumento nem sempre é tão direto.",
+              code: {
+                language: "text",
+                filename: "note.txt",
+                code:
+                  "Em linguagens sem first-class functions plenas, passar comportamento como argumento exige\nmecanismos indiretos (ponteiros de função, interfaces com um único método, reflection) —\nnão é tão direto quanto simplesmente passar a função como valor.",
+              },
+              explanation: "O contraste ajuda a perceber o quanto isso facilita as coisas — em linguagens sem esse recurso pleno, comportamento não circula tão livremente quanto dado.",
+            },
+          ],
+          exercise: {
+            problem: "As duas funções abaixo duplicam lógica quase idêntica pra validar campos diferentes.",
+            problemCode: {
+              language: "javascript",
+              filename: "validators.js",
+              code: ["function validateEmail(user) {", '  return user.email.includes("@");', "}", "function validateAge(user) {", "  return user.age >= 18;", "}"].join("\n"),
+            },
+            task: "Usando First-Class Functions, crie uma função validate(user, rule) genérica que recebe a regra como argumento, eliminando a necessidade de funções separadas.",
+            hint: "rule deveria ser uma função que recebe user e devolve true/false — a mesma validate serve pra qualquer regra.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "validate.js",
+                code: ["function validate(user, rule) {", "  return rule(user);", "}", 'validate(user, u => u.email.includes("@"));', "validate(user, u => u.age >= 18);"].join("\n"),
+              },
+              explanation: "validate não sabe nada sobre email ou idade — só chama a regra recebida, como valor.",
+            },
+          },
+        }),
         concept({
           order: 30,
           title: "Closure",
+          note: "função + escopo capturado",
           isNew: true,
           requires: ["First-Class Functions"],
-          note:
-            "função + ambiente léxico capturado. Importante para callbacks e comportamento de funções em JavaScript. " +
-            "NÃO é pré-requisito do mecanismo do Event Loop.",
           revisit: ["Asynchronous Programming / Callback"],
+          summary:
+            "Uma função que \"lembra\" o ambiente léxico onde foi criada, mesmo depois que esse ambiente já " +
+            "deveria ter deixado de existir — a técnica por trás de estado privado, callbacks com contexto, e " +
+            "Encapsulation fora de classes.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Um Closure é uma função combinada com o ambiente léxico — as variáveis — de onde ela foi " +
+                "criada. Mesmo depois que a função externa que criou esse ambiente já retornou, a função " +
+                "interna continua tendo acesso a essas variáveis. Já vimos isso em Stack vs Heap: um closure é " +
+                "o que força uma variável local a sobreviver no heap além do frame que a criou.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Closures permitem que uma função \"carregue\" contexto junto com ela — sem precisar de uma " +
+                "classe, sem parâmetros extras toda vez que ela é chamada. É assim que callbacks conseguem " +
+                "lembrar de dados relevantes no momento em que foram registrados, e é uma forma alternativa de " +
+                "Encapsulation: estado privado, sem classe nenhuma envolvida.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "paragraph",
+              text: "O mesmo makeCounter de Stack vs Heap, revisitado sob a lente de Closure:",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "make-counter.js",
+              code: ["function makeCounter() {", "  let count = 0; // parte do ambiente léxico de makeCounter", "  return function increment() {", '    count += 1; // increment "fecha sobre" count — isso é o closure', "    return count;", "  };", "}", "const counter = makeCounter();", "counter(); // 1", "counter(); // 2"].join(
+                "\n"
+              ),
+            },
+            {
+              type: "paragraph",
+              text:
+                "increment continua tendo acesso a count muito depois que makeCounter já retornou — o closure " +
+                "\"prende\" count ao lado de increment, mesmo que nada mais no programa consiga acessar count " +
+                "diretamente.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Closure é uma função que carrega consigo o ambiente léxico onde foi criada — permite estado " +
+                "privado e contexto persistente sem precisar de uma classe, e é a base de como callbacks " +
+                "lembram de dados relevantes.",
+            },
+          ],
+          examples: [
+            {
+              title: "Closures dando privacidade real",
+              context: "Encapsulation sem classe nenhuma.",
+              code: {
+                language: "javascript",
+                filename: "account.js",
+                code: [
+                  "function createAccount(initialBalance) {",
+                  "  let balance = initialBalance; // privado — só acessível pelas funções devolvidas",
+                  "  return {",
+                  "    deposit: (amount) => { balance += amount; },",
+                  "    getBalance: () => balance,",
+                  "  };",
+                  "}",
+                  "const account = createAccount(100);",
+                  "account.deposit(50);",
+                  "account.getBalance(); // 150",
+                ].join("\n"),
+              },
+              explanation: "balance nunca é exposto diretamente — só as funções devolvidas têm acesso, via closure. É Encapsulation sem class nenhuma.",
+            },
+            {
+              title: "Um callback lembrando de contexto",
+              context: "Cada registro do handler tem seu próprio closure independente.",
+              code: {
+                language: "javascript",
+                filename: "click-counter.js",
+                code: [
+                  "function attachClickCounter(button, label) {",
+                  "  let clicks = 0;",
+                  '  button.addEventListener("click", () => {',
+                  "    clicks += 1;",
+                  "    console.log(`${label}: ${clicks} cliques`); // lembra de label e clicks",
+                  "  });",
+                  "}",
+                ].join("\n"),
+              },
+              explanation: "O callback fecha sobre label e clicks — cada botão que chama attachClickCounter tem seu próprio closure independente.",
+            },
+            {
+              title: "Uma armadilha clássica: var vs let em loop",
+              context: "var compartilha uma única variável; let cria uma nova a cada iteração.",
+              code: {
+                language: "javascript",
+                filename: "loop-closure.js",
+                code: ["for (var i = 0; i < 3; i++) {", "  setTimeout(() => console.log(i), 0); // imprime 3, 3, 3", "}", "for (let j = 0; j < 3; j++) {", "  setTimeout(() => console.log(j), 0); // imprime 0, 1, 2", "}"].join("\n"),
+              },
+              explanation: "var cria uma única variável compartilhada pelo loop inteiro; let cria uma variável nova a cada iteração — cada closure fecha sobre a sua.",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo tenta criar múltiplos contadores independentes, mas todos compartilham o mesmo estado.",
+            problemCode: {
+              language: "javascript",
+              filename: "shared-counter.js",
+              code: ["let count = 0;", "function increment() {", "  count += 1;", "  return count;", "}", "const counterA = increment;", "const counterB = increment;", "counterA(); // 1", "counterB(); // 2 — deveria ser 1"].join("\n"),
+            },
+            task: "Reescreva usando closure de verdade (uma função de fábrica), de forma que counterA e counterB tenham cada um seu próprio count independente.",
+            hint: "count precisa deixar de ser compartilhada no escopo externo e passar a viver dentro do ambiente léxico de uma função de fábrica, chamada uma vez por contador.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "independent-counter.js",
+                code: ["function makeCounter() {", "  let count = 0; // cada chamada cria um ambiente léxico próprio", "  return function increment() {", "    count += 1;", "    return count;", "  };", "}", "const counterA = makeCounter();", "const counterB = makeCounter();", "counterA(); // 1", "counterB(); // 1"].join(
+                  "\n"
+                ),
+              },
+              explanation: "Cada chamada de makeCounter() cria um novo ambiente léxico, com seu próprio count — counterA e counterB fecham sobre variáveis diferentes.",
+            },
+          },
         }),
-        concept({ order: 40, title: "Side Effects", requires: ["Programming Fundamentals / Encapsulation"], note: "ensinar antes de Pure Functions", revisit: ["Concurrency / Shared State", "AI Engineering / Model Inference / Deterministic vs Stochastic Output"] }),
+        concept({
+          order: 40,
+          title: "Side Effects",
+          note: "Efeitos colaterais",
+          requires: ["Programming Fundamentals / Encapsulation"],
+          revisit: ["Concurrency / Shared State", "AI Engineering / Model Inference / Deterministic vs Stochastic Output"],
+          summary:
+            "Qualquer interação de uma função com o mundo fora dela — mudar uma variável externa, escrever num " +
+            "arquivo, fazer uma requisição de rede. Entender o que é um efeito colateral é o pré-requisito pra " +
+            "entender o que uma Pure Function evita.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Um Side Effect é qualquer coisa que uma função faz além de calcular e devolver um valor — " +
+                "modificar uma variável fora do seu escopo, mudar um objeto recebido por referência, escrever " +
+                "num arquivo, fazer uma chamada de rede, imprimir no console, ler a hora atual. Se a função " +
+                "\"toca\" o mundo fora dela, ou depende de algo fora dela que pode mudar, isso é um efeito colateral.",
+            },
+            { type: "heading", text: "Por que existe (como conceito a nomear)?" },
+            {
+              type: "paragraph",
+              text:
+                "Nomear \"efeito colateral\" explicitamente é o primeiro passo pra decidir, de forma " +
+                "deliberada, onde ele deveria acontecer no seu programa. Um programa sem nenhum efeito " +
+                "colateral seria inútil (nunca mostraria nada na tela) — o objetivo não é eliminar efeitos " +
+                "colaterais, é isolá-los da lógica de cálculo pura, exatamente o que Pure Functions descreve.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "add-to-total.js",
+              code: ["let total = 0;", "function addToTotal(amount) {", "  total += amount; // efeito colateral: modifica uma variável FORA da função", "}", "addToTotal(10);"].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "addToTotal não devolve nada de útil — o que ela faz é mudar total, uma variável que existe " +
+                "fora dela. O \"trabalho de verdade\" acontece por fora do valor de retorno.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Side Effect é qualquer interação de uma função com algo fora dela — variável externa, objeto " +
+                "mutado, I/O. Nomear isso explicitamente é o primeiro passo pra decidir onde, no seu programa, " +
+                "isso deveria (ou não) acontecer.",
+            },
+          ],
+          examples: [
+            {
+              title: "Mutação de um parâmetro recebido por referência",
+              context: "Um efeito colateral sutil — afeta algo fora do escopo local.",
+              code: { language: "javascript", filename: "add-item.js", code: ["function addItem(cart, item) {", "  cart.items.push(item); // efeito colateral: muta o objeto recebido", "}"].join("\n") },
+              explanation: "addItem muta o cart que recebeu — um efeito colateral porque afeta algo que existe fora do escopo local.",
+            },
+            {
+              title: "I/O como efeito colateral necessário",
+              context: "Não é \"errado\" — só precisa ser reconhecido como diferente de um cálculo puro.",
+              code: {
+                language: "javascript",
+                filename: "log-error.js",
+                code: ["function logError(message) {", "  console.error(message); // efeito colateral: escreve no console", '  fs.appendFileSync("errors.log", message); // efeito colateral: escreve em disco', "}"].join("\n"),
+              },
+              explanation: "Os dois efeitos colaterais aqui são o ponto da função — não tem como logar um erro sem tocar o mundo fora dela.",
+            },
+            {
+              title: "Depender de algo externo mutável",
+              context: "Também é efeito colateral, na direção oposta (ler, não escrever).",
+              code: { language: "javascript", filename: "discounted-price.js", code: ["function getDiscountedPrice(price) {", "  return price * (1 - currentPromotion.discountRate); // depende de algo externo e mutável", "}"].join("\n") },
+              explanation: "Mesmo sem modificar nada, a função depende de currentPromotion — chamar duas vezes com o mesmo price pode dar resultados diferentes.",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo mistura cálculo com efeito colateral, sem deixar claro qual parte é qual.",
+            problemCode: {
+              language: "javascript",
+              filename: "process-order.js",
+              code: ["let orderCount = 0;", "function processOrder(order) {", "  orderCount += 1; // efeito colateral", "  return order.items.reduce((sum, item) => sum + item.price, 0); // cálculo", "}"].join("\n"),
+            },
+            task:
+              "Identifique (em comentário) qual linha é efeito colateral e qual é cálculo puro, e reescreva a função separando as duas responsabilidades — sem remover o efeito colateral do programa, só isolando onde ele acontece.",
+            hint: "Uma função pode calcular o total sem incrementar orderCount; outra função cuida do efeito colateral separadamente.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "process-order-split.js",
+                code: [
+                  "function calculateOrderTotal(order) { // cálculo puro, sem efeito colateral",
+                  "  return order.items.reduce((sum, item) => sum + item.price, 0);",
+                  "}",
+                  "",
+                  "let orderCount = 0;",
+                  "function trackOrder() { // só o efeito colateral, isolado",
+                  "  orderCount += 1;",
+                  "}",
+                  "",
+                  "function processOrder(order) {",
+                  "  trackOrder();",
+                  "  return calculateOrderTotal(order);",
+                  "}",
+                ].join("\n"),
+              },
+              explanation: "calculateOrderTotal só calcula; trackOrder isola o efeito colateral. processOrder orquestra as duas, deixando claro onde cada tipo de trabalho acontece.",
+            },
+          },
+        }),
         concept({
           order: 50,
           title: "Pure Functions",
+          note: "Funções puras",
           requires: ["Side Effects"],
           revisit: ["Testing & Quality Engineering / Testing Strategy / Testability", "Algorithms & Complexity / Memoization"],
+          summary:
+            "Uma função que, pro mesmo input, sempre devolve o mesmo output, e não produz nenhum efeito " +
+            "colateral — previsível, testável isoladamente, e segura de chamar quantas vezes for preciso.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Uma Pure Function satisfaz duas regras: pro mesmo input, sempre devolve o mesmo output — " +
+                "nunca depende de nada externo que possa variar; e não produz nenhum Side Effect — não muta " +
+                "nada fora dela, não faz I/O, não depende de estado externo mutável.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Funções puras são as unidades mais fáceis de entender, testar e reutilizar que existem — dado " +
+                "o input, o resultado é sempre previsível, sem precisar simular o resto do sistema pra testar. " +
+                "É também o que torna otimizações como memoization seguras: se o resultado é sempre o mesmo " +
+                "pro mesmo input, dá pra guardar em cache sem medo.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "pure-vs-impure.js",
+              code: [
+                "// Pura: mesmo input, sempre o mesmo output, sem efeito colateral",
+                "function add(a, b) {",
+                "  return a + b;",
+                "}",
+                "",
+                "// Impura: depende de estado externo mutável (Date.now() muda a cada chamada)",
+                "function addWithTimestamp(a, b) {",
+                "  return { sum: a + b, at: Date.now() };",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "add(2, 3) sempre devolve 5, não importa quando ou quantas vezes for chamada. " +
+                "addWithTimestamp(2, 3) devolve algo diferente a cada chamada, mesmo com os mesmos argumentos.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Pure Function devolve sempre o mesmo output pro mesmo input, e não produz efeito colateral " +
+                "nenhum. Isso as torna previsíveis, fáceis de testar isoladamente, e seguras de otimizar " +
+                "(cache, memoization) sem medo de resultado errado.",
+            },
+          ],
+          examples: [
+            {
+              title: "Impureza por mutar um parâmetro",
+              context: "Versão impura muda o que recebeu; versão pura devolve dado novo.",
+              code: {
+                language: "javascript",
+                filename: "add-tax.js",
+                code: ["// Impura: muta o array recebido", "function addTax(items) {", "  items.forEach(item => { item.price *= 1.1; });", "  return items;", "}", "// Pura: devolve um array novo", "function addTaxPure(items) {", "  return items.map(item => ({ ...item, price: item.price * 1.1 }));", "}"].join(
+                  "\n"
+                ),
+              },
+              explanation: "A versão impura muda os objetos recebidos; a versão pura devolve dados novos, sem tocar no original.",
+            },
+            {
+              title: "Impureza por depender de estado global",
+              context: "A versão pura recebe tudo que precisa como argumento.",
+              code: {
+                language: "javascript",
+                filename: "calculate-tax.js",
+                code: ["let taxRate = 0.1;", "function calculateTax(price) { // impura: depende de taxRate", "  return price * taxRate;", "}", "function calculateTaxPure(price, rate) { // pura", "  return price * rate;", "}"].join("\n"),
+              },
+              explanation: "A versão pura não depende de uma variável externa que pode ter um valor diferente na próxima chamada.",
+            },
+            {
+              title: "Aleatoriedade nunca é pura",
+              context: "Sem input, com output variável — quebra as duas regras de uma vez.",
+              code: { language: "javascript", filename: "roll-dice.js", code: "function rollDice() {\n  return Math.floor(Math.random() * 6) + 1; // impura por natureza\n}" },
+              explanation: "rollDice() não recebe input, e o output varia a cada chamada — por definição, não pode ser pura.",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo mistura leitura de uma variável global com o cálculo, tornando-a impura sem necessidade.",
+            problemCode: {
+              language: "javascript",
+              filename: "apply-discount.js",
+              code: ["let discountPercent = 10;", "function applyDiscount(price) {", "  return price - (price * discountPercent / 100);", "}"].join("\n"),
+            },
+            task: "Reescreva applyDiscount como uma Pure Function — tudo que ela precisa deveria vir como parâmetro.",
+            hint: "Adicione discountPercent como um segundo parâmetro, em vez de lê-lo do escopo externo.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "apply-discount-pure.js",
+                code: ["function applyDiscountPure(price, discountPercent) {", "  return price - (price * discountPercent / 100);", "}", "applyDiscountPure(100, 10); // sempre 90, para os mesmos argumentos"].join("\n"),
+              },
+              explanation: "applyDiscountPure não depende de nada fora dela — o mesmo par de argumentos sempre produz o mesmo resultado.",
+            },
+          },
         }),
-        concept({ order: 60, title: "Referential Transparency", requires: ["Pure Functions"] }),
+        concept({
+          order: 60,
+          title: "Referential Transparency",
+          note: "Transparência referencial",
+          requires: ["Pure Functions"],
+          summary:
+            "A propriedade de uma expressão poder ser substituída pelo seu valor resultante sem mudar o " +
+            "comportamento do programa — uma consequência direta de trabalhar só com Pure Functions.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Uma expressão tem Referential Transparency se ela pode ser substituída pelo valor que produz, " +
+                "em qualquer lugar do programa, sem mudar o comportamento de nada. add(2, 3) tem transparência " +
+                "referencial porque você pode trocar cada ocorrência dela por 5 em qualquer lugar, e o " +
+                "programa continua funcionando exatamente igual.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "É uma consequência direta — quase uma definição alternativa — de trabalhar só com Pure " +
+                "Functions. Se uma função é pura, então chamá-la é intercambiável com o valor que ela produz. " +
+                "Isso permite raciocinar sobre código \"substituindo mentalmente\" chamadas por valores — o " +
+                "tipo de raciocínio que fica impossível quando funções têm efeitos colaterais.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "double.js",
+              code: ["function double(n) { return n * 2; }", "", "const a = double(5) + double(5); // pode ser reescrito como:", "const b = 10 + 10;               // sem mudar NADA no comportamento"].join("\n"),
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "impure-double.js",
+              code: [
+                "function impureDouble(n) {",
+                '  console.log("calculando..."); // efeito colateral — quebra a transparência',
+                "  return n * 2;",
+                "}",
+                "// impureDouble(5) + impureDouble(5) NÃO pode virar 10 + 10 sem perder os dois console.log",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Com double (pura), substituir a chamada pelo resultado não muda nada. Com impureDouble, " +
+                "substituir a chamada pelo valor eliminaria os efeitos colaterais — a substituição deixa de " +
+                "ser \"transparente\".",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Referential Transparency significa que uma chamada de função pode ser trocada pelo valor que " +
+                "ela produz, sem mudar o comportamento do programa. É o que Pure Functions garantem.",
+            },
+          ],
+          examples: [
+            {
+              title: "Transparência permitindo reescrever expressões livremente",
+              context: "Uma reescrita só é segura porque o valor nunca muda.",
+              code: { language: "javascript", filename: "square.js", code: ["function square(n) { return n * n; }", "const result = square(3) + square(3) + square(3);", "const result2 = 3 * square(3); // reescrita válida"].join("\n") },
+              explanation: "Como square(3) sempre devolve o mesmo valor, multiplicar por 3 em vez de somar três vezes é uma reescrita segura.",
+            },
+            {
+              title: "Quebra de transparência por estado mutável",
+              context: "Não existe um único valor que substitua todas as chamadas.",
+              code: {
+                language: "javascript",
+                filename: "next.js",
+                code: ["let counter = 0;", "function next() { return ++counter; } // não é referencialmente transparente", "const pair = [next(), next()]; // [1, 2]"].join("\n"),
+              },
+              explanation: "next() devolve valores diferentes a cada chamada — não existe um valor fixo que possa substituir todas as ocorrências sem mudar o comportamento.",
+            },
+            {
+              title: "Transparência habilitando memoization com segurança",
+              context: "Só é seguro cachear porque o resultado nunca varia pro mesmo input.",
+              code: {
+                language: "javascript",
+                filename: "memoized-square.js",
+                code: ["const cache = new Map();", "function memoizedSquare(n) {", "  if (cache.has(n)) return cache.get(n);", "  const result = n * n;", "  cache.set(n, result);", "  return result;", "}"].join("\n"),
+              },
+              explanation: "Se o resultado pudesse variar pro mesmo n, o cache devolveria respostas erradas — a transparência é o que garante que isso não acontece.",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo não é referencialmente transparente — substituir uma chamada pelo seu retorno mudaria o comportamento do programa.",
+            problemCode: {
+              language: "javascript",
+              filename: "fetch-with-log.js",
+              code: ["let requestCount = 0;", "function fetchWithLog(url) {", "  requestCount += 1; // efeito colateral", "  console.log(`Requisição #${requestCount} para ${url}`);", "  return `dados de ${url}`;", "}"].join("\n"),
+            },
+            task: "Explique (em comentário) por que fetchWithLog não é referencialmente transparente, e separe em uma parte pura e uma com o efeito colateral isolado.",
+            hint: "O que muda a cada chamada, mesmo com o mesmo url? Essa é a parte que precisa ficar de fora da função \"pura\".",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "fetch-with-log-split.js",
+                code: [
+                  "function buildDataMessage(url) { // pura, referencialmente transparente",
+                  "  return `dados de ${url}`;",
+                  "}",
+                  "",
+                  "let requestCount = 0;",
+                  "function logRequest(url) { // efeito colateral isolado",
+                  "  requestCount += 1;",
+                  "  console.log(`Requisição #${requestCount} para ${url}`);",
+                  "}",
+                  "",
+                  "function fetchWithLog(url) {",
+                  "  logRequest(url);",
+                  "  return buildDataMessage(url);",
+                  "}",
+                ].join("\n"),
+              },
+              explanation: "buildDataMessage(url) agora pode ser substituída pelo seu valor de retorno em qualquer lugar sem mudar nada — o efeito colateral ficou isolado em logRequest.",
+            },
+          },
+        }),
         concept({
           order: 70,
           title: "Immutability",
+          note: "Imutabilidade",
           requires: ["Side Effects", "Memory & Runtime / Value vs Reference"],
           revisit: ["Concurrency / Thread Safety", "Software Design / Mutable vs Immutable Objects", "Architecture / Event Sourcing"],
+          summary:
+            "Dados que, uma vez criados, nunca mudam — em vez de alterar um valor existente, qualquer " +
+            "\"mudança\" cria um valor novo. Elimina uma categoria inteira de bug de estado compartilhado inesperado.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Immutability significa que um dado, depois de criado, nunca é alterado — qualquer operação " +
+                "que \"pareça\" mudar esse dado, na verdade, cria e devolve uma versão nova, deixando o " +
+                "original intocado. Em Value vs Reference vimos o problema que isso resolve: mudar um objeto " +
+                "compartilhado através de uma referência afeta todo mundo que também a tem.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Se nenhum dado nunca muda, nunca existe o risco de \"alguém mudou isso sem eu saber\" — cada " +
+                "referência a um objeto imutável é garantidamente o mesmo valor pra sempre, o que simplifica " +
+                "muito raciocinar sobre estado compartilhado, especialmente em código concorrente ou em UIs " +
+                "que precisam saber exatamente quando algo mudou.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "add-item.js",
+              code: [
+                "// Mutável: muda o objeto original",
+                "function addItemMutable(cart, item) {",
+                "  cart.items.push(item);",
+                "  return cart;",
+                "}",
+                "",
+                "// Imutável: devolve um objeto NOVO, original intocado",
+                "function addItemImmutable(cart, item) {",
+                "  return { ...cart, items: [...cart.items, item] };",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "addItemMutable altera o cart recebido — qualquer outro código com a mesma referência vê a " +
+                "mudança também. addItemImmutable devolve um objeto completamente novo; o cart original " +
+                "permanece exatamente como estava.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Immutability significa nunca alterar um dado existente — qualquer \"mudança\" cria um valor " +
+                "novo. Elimina o bug de estado compartilhado inesperado pela raiz, ao custo de criar mais objetos.",
+            },
+          ],
+          examples: [
+            {
+              title: "Métodos de array mutáveis vs. imutáveis",
+              context: "Uma armadilha comum de JavaScript.",
+              code: {
+                language: "javascript",
+                filename: "sort-copy.js",
+                code: ["const original = [3, 1, 2];", "original.sort(); // MUTA o array original", "", "const original2 = [3, 1, 2];", "const sorted = [...original2].sort(); // copia antes de ordenar"].join("\n"),
+              },
+              explanation: ".sort() (e .push(), .splice()) mutam o array no lugar — uma cópia antes da operação preserva o original.",
+            },
+            {
+              title: "Object.freeze forçando imutabilidade em runtime",
+              context: "O próprio JavaScript garante a imutabilidade, sem depender só de disciplina.",
+              code: {
+                language: "javascript",
+                filename: "frozen-config.js",
+                code: ['const config = Object.freeze({ apiUrl: "https://api.example.com" });', 'config.apiUrl = "outra coisa"; // falha silenciosamente (ou lança erro em modo estrito)', "console.log(config.apiUrl); // ainda o valor original"].join("\n"),
+              },
+              explanation: "Object.freeze impede mutação em runtime — o JavaScript garante a imutabilidade, em vez de depender só de quem escreve o código.",
+            },
+            {
+              title: "Imutabilidade tornando comparação de mudança trivial",
+              context: "Comum em frameworks de UI para detectar mudanças de estado.",
+              code: { language: "javascript", filename: "state-compare.js", code: ["const state1 = { count: 0 };", "const state2 = { ...state1, count: 1 }; // novo objeto a cada mudança", "console.log(state1 === state2); // false"].join("\n") },
+              explanation: "Como cada mudança gera um objeto novo, basta comparar === (identidade) pra saber se algo mudou.",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo muta o array de tarefas recebido, causando um bug em outro lugar que ainda tinha uma referência à lista original.",
+            problemCode: {
+              language: "javascript",
+              filename: "mark-all-done.js",
+              code: [
+                "function markAllDone(tasks) {",
+                "  tasks.forEach(task => { task.done = true; });",
+                "  return tasks;",
+                "}",
+                "const original = [{ id: 1, done: false }, { id: 2, done: false }];",
+                "const updated = markAllDone(original);",
+                "console.log(original[0].done); // true — o \"original\" foi mutado junto!",
+              ].join("\n"),
+            },
+            task: "Reescreva markAllDone de forma imutável — o array e os objetos originais não devem ser alterados.",
+            hint: "Use .map() (que já devolve um array novo) combinado com spread pra criar uma cópia de cada tarefa.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "mark-all-done-immutable.js",
+                code: ["function markAllDoneImmutable(tasks) {", "  return tasks.map(task => ({ ...task, done: true }));", "}", "const original2 = [{ id: 1, done: false }, { id: 2, done: false }];", "const updated2 = markAllDoneImmutable(original2);", "console.log(original2[0].done); // false — original intocado"].join(
+                  "\n"
+                ),
+              },
+              explanation: ".map() já devolve um array novo, e { ...task, done: true } cria uma cópia de cada tarefa — nada do que existia antes é tocado.",
+            },
+          },
         }),
-        concept({ order: 80, title: "Higher-Order Functions", requires: ["First-Class Functions", "Closure"] }),
-        concept({ order: 90, title: "Function Composition", requires: ["Higher-Order Functions", "Pure Functions"], collision: "≠ Composition (Programming Fundamentals, objetos). f∘g" }),
-        concept({ order: 100, title: "Map", requires: ["Higher-Order Functions"] }),
-        concept({ order: 110, title: "Filter", requires: ["Map"] }),
-        concept({ order: 120, title: "Reduce", requires: ["Map", "Filter"], note: "o caso geral — ensinar por último" }),
+        concept({
+          order: 80,
+          title: "Higher-Order Functions",
+          note: "Funções de alta ordem",
+          requires: ["First-Class Functions", "Closure"],
+          summary:
+            "Uma função que recebe outra função como argumento, devolve uma função como resultado, ou as duas " +
+            "coisas — a categoria que engloba Map, Filter, Reduce e Function Composition.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Uma Higher-Order Function (HOF) é uma função que faz pelo menos uma destas duas coisas: " +
+                "recebe outra função como argumento, ou devolve uma função como resultado. Só é possível " +
+                "porque funções são First-Class.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "HOFs são o mecanismo que permite abstrair padrões de comportamento, não só dados. Em vez de " +
+                "escrever um loop diferente pra cada operação, uma HOF como .map() abstrai \"aplicar uma " +
+                "transformação a cada item\" e deixa você fornecer só a transformação específica — o padrão de " +
+                "iteração fica reutilizado, só a lógica de cada caso muda.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "hof.js",
+              code: [
+                "function applyTwice(fn, value) { // HOF: recebe uma função como argumento",
+                "  return fn(fn(value));",
+                "}",
+                'applyTwice(n => n * 2, 3); // 12 — aplica "dobrar" duas vezes',
+                "",
+                "function makeAdder(x) { // HOF: devolve uma função como resultado",
+                "  return function (y) { return x + y; };",
+                "}",
+                "const add5 = makeAdder(5);",
+                "add5(3); // 8",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "applyTwice recebe uma função como argumento; makeAdder devolve uma função — as duas são " +
+                "Higher-Order Functions, cada uma satisfazendo um dos dois critérios.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Higher-Order Function é qualquer função que recebe função como argumento, devolve função como " +
+                "resultado, ou as duas — a categoria que engloba Map/Filter/Reduce e Function Composition.",
+            },
+          ],
+          examples: [
+            {
+              title: ".sort() como HOF",
+              context: ".sort() não sabe nada sobre o critério — só aplica o que recebe.",
+              code: { language: "javascript", filename: "sort-users.js", code: ["const users = [{ age: 30 }, { age: 25 }, { age: 35 }];", "users.sort((a, b) => a.age - b.age); // .sort() é HOF: recebe uma função"].join("\n") },
+              explanation: ".sort() não sabe nada sobre \"idade\" — a lógica de comparação é fornecida como função.",
+            },
+            {
+              title: "Uma HOF genérica de retry",
+              context: "Um padrão de comportamento abstraído em cima de qualquer função.",
+              code: {
+                language: "javascript",
+                filename: "with-retry.js",
+                code: ["function withRetry(fn, times) { // HOF: devolve uma nova função com comportamento extra", "  return function (...args) {", "    for (let i = 0; i < times; i++) {", "      try { return fn(...args); } catch (e) { if (i === times - 1) throw e; }", "    }", "  };", "}", "const safeFetch = withRetry(fetchData, 3);"].join(
+                  "\n"
+                ),
+              },
+              explanation: "withRetry recebe uma função e devolve uma versão dela com retry embutido — um padrão abstraído em cima de qualquer função.",
+            },
+            {
+              title: ".map() implementado do zero",
+              context: "Não é mágica de linguagem — é uma HOF comum.",
+              code: { language: "javascript", filename: "my-map.js", code: ["function myMap(arr, fn) {", "  const result = [];", "  for (const item of arr) result.push(fn(item));", "  return result;", "}", "myMap([1, 2, 3], n => n * 2); // [2, 4, 6]"].join("\n") },
+              explanation: "map() é uma Higher-Order Function comum, que qualquer um poderia escrever, recebendo a função de transformação como argumento.",
+            },
+          ],
+          exercise: {
+            problem: "As duas funções abaixo são quase idênticas — a única diferença é a condição de filtro, mas o código está duplicado.",
+            problemCode: {
+              language: "javascript",
+              filename: "filters.js",
+              code: ["function filterAdults(users) {", "  return users.filter(u => u.age >= 18);", "}", "function filterActiveUsers(users) {", "  return users.filter(u => u.active === true);", "}"].join("\n"),
+            },
+            task: "Crie uma Higher-Order Function filterBy(predicate) que devolve uma função de filtro pronta pra usar, eliminando a duplicação.",
+            hint: "filterBy deveria receber a condição e devolver uma NOVA função que já sabe filtrar por ela.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "filter-by.js",
+                code: ["function filterBy(predicate) {", "  return function (users) {", "    return users.filter(predicate);", "  };", "}", "const filterAdults2 = filterBy(u => u.age >= 18);", "const filterActiveUsers2 = filterBy(u => u.active === true);"].join("\n"),
+              },
+              explanation: "filterBy é uma HOF que devolve uma função especializada — a lógica de filtrar fica reutilizada, só o predicado muda.",
+            },
+          },
+        }),
+        concept({
+          order: 90,
+          title: "Function Composition",
+          note: "Composição de funções",
+          requires: ["Higher-Order Functions", "Pure Functions"],
+          collision: "≠ Composition (Programming Fundamentals, objetos). f∘g",
+          summary:
+            "Combinar funções menores em uma maior, encadeando a saída de uma como entrada da próxima (f∘g) — " +
+            "o mesmo espírito de Composition (objetos), aplicado a comportamento em vez de estado.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Function Composition é combinar duas ou mais funções em uma nova função, onde a saída de uma " +
+                "vira a entrada da próxima — matematicamente notado f∘g, que significa \"primeiro g, depois f " +
+                "com o resultado\". O resultado é uma função nova, feita a partir de peças menores.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Assim como Composition (o Concept de objetos, em Programming Fundamentals) monta comportamento " +
+                "combinando objetos pequenos em vez de herdar de uma superclasse grande, Function Composition " +
+                "monta transformações complexas combinando funções pequenas e puras em vez de escrever uma " +
+                "função grande fazendo tudo de uma vez.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Não confundir com Composition (o Concept de objetos \"has-a\") — os nomes coincidem, mas um é " +
+                "sobre objetos contendo outros objetos, e este é sobre encadear funções. Espírito parecido " +
+                "(montar o maior a partir de peças menores), conceitos diferentes.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "compose.js",
+              code: [
+                "const double = x => x * 2;",
+                "const addOne = x => x + 1;",
+                "",
+                "function compose(f, g) {",
+                "  return function (x) { return f(g(x)); }; // f∘g: primeiro g, depois f",
+                "}",
+                "const doubleThenAddOne = compose(addOne, double);",
+                "doubleThenAddOne(5); // double(5) = 10, depois addOne(10) = 11",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "compose(addOne, double) cria uma função nova que aplica double primeiro, depois addOne no " +
+                "resultado — nenhuma das duas funções originais precisou saber da existência da outra.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Function Composition combina funções pequenas e puras numa transformação maior, encadeando " +
+                "saída→entrada. Mesmo espírito de Composition: montar o complexo a partir de peças simples e " +
+                "testáveis isoladamente.",
+            },
+          ],
+          examples: [
+            {
+              title: "Pipeline de processamento de texto",
+              context: "Cada função faz uma coisa só e é testável isoladamente.",
+              code: {
+                language: "javascript",
+                filename: "slugify.js",
+                code: ["const trim = s => s.trim();", "const toLowerCase = s => s.toLowerCase();", 'const removeSpaces = s => s.replace(/\\s+/g, "-");', "", "const slugify = compose(removeSpaces, compose(toLowerCase, trim));", 'slugify("  Hello World  "); // "hello-world"'].join(
+                  "\n"
+                ),
+              },
+              explanation: "slugify é só a composição de trim, toLowerCase e removeSpaces, sem lógica própria.",
+            },
+            {
+              title: "pipe — composição lida na ordem natural",
+              context: "Aplica as funções na ordem em que aparecem, esquerda pra direita.",
+              code: {
+                language: "javascript",
+                filename: "pipe.js",
+                code: ["function pipe(...fns) {", "  return x => fns.reduce((acc, fn) => fn(acc), x);", "}", "const process = pipe(trim, toLowerCase, removeSpaces); // lê na ordem de execução", 'process("  Hello World  "); // "hello-world"'].join("\n"),
+              },
+              explanation: "pipe aplica as funções na ordem em que aparecem — muitos preferem essa leitura à de compose (direita pra esquerda).",
+            },
+            {
+              title: "Composição herdando impureza de uma peça",
+              context: "Reforça por que Pure Functions é pré-requisito de Function Composition.",
+              code: {
+                language: "javascript",
+                filename: "impure-compose.js",
+                code: ["let log = [];", "const impureDouble = x => { log.push(x); return x * 2; }; // efeito colateral escondido", "const result = compose(addOne, impureDouble)(5);", '// funciona, mas "log" mudou como efeito colateral escondido'].join("\n"),
+              },
+              explanation: "Se uma das peças tem efeito colateral, a composição herda essa impureza — parte do motivo de exigir Pure Functions como pré-requisito.",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo faz três transformações numa string, tudo numa linha só, difícil de testar cada passo isoladamente.",
+            problemCode: {
+              language: "javascript",
+              filename: "format-username.js",
+              code: ["function formatUsername(input) {", "  return input.trim().toLowerCase().replace(/[^a-z0-9]/g, \"\");", "}"].join("\n"),
+            },
+            task: "Reescreva formatUsername como uma composição de três funções pequenas e nomeadas (trim, toLowerCase, stripSpecialChars).",
+            hint: "Cada função pequena deveria fazer exatamente uma transformação — a composição só orquestra a ordem.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "format-username-composed.js",
+                code: [
+                  "const trimStr = s => s.trim();",
+                  "const lower = s => s.toLowerCase();",
+                  'const stripSpecialChars = s => s.replace(/[^a-z0-9]/g, "");',
+                  "",
+                  "function pipe(...fns) {",
+                  "  return x => fns.reduce((acc, fn) => fn(acc), x);",
+                  "}",
+                  "const formatUsername2 = pipe(trimStr, lower, stripSpecialChars);",
+                  'formatUsername2("  Ana@2024!  "); // "ana2024"',
+                ].join("\n"),
+              },
+              explanation: "Cada função pode ser testada isoladamente, e formatUsername2 é só a composição na ordem certa.",
+            },
+          },
+        }),
+        concept({
+          order: 100,
+          title: "Map",
+          note: "Transformar cada item",
+          requires: ["Higher-Order Functions"],
+          summary:
+            "Uma Higher-Order Function que aplica uma transformação a cada item de uma coleção, devolvendo " +
+            "uma coleção nova do mesmo tamanho — o padrão declarativo mais comum pra \"fazer algo com cada elemento\".",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                ".map() recebe uma função de transformação e a aplica a cada item de uma coleção, devolvendo " +
+                "uma coleção nova — imutável, o original não é tocado — com o mesmo número de elementos, cada " +
+                "um transformado.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "É a forma declarativa mais direta de expressar \"eu quero cada item, mas transformado de tal " +
+                "jeito\" — substitui o loop imperativo (for + push) por uma única chamada que expressa a " +
+                "intenção diretamente, e é uma Higher-Order Function pura por construção quando a função de " +
+                "transformação também é pura.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "with-tax.js",
+              code: ["const prices = [10, 20, 30];", "const withTax = prices.map(price => price * 1.1);", "console.log(withTax); // [11, 22, 33]", "console.log(prices);  // [10, 20, 30] — original intocado"].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text: ".map() devolve um array novo, do mesmo tamanho, com cada item transformado — prices original permanece intacto.",
+            },
+            {
+              type: "takeaway",
+              text:
+                ".map() transforma cada item de uma coleção numa coleção nova do mesmo tamanho — a expressão " +
+                "declarativa mais direta de \"aplique isso a cada elemento\", sem mutar o original.",
+            },
+          ],
+          examples: [
+            {
+              title: "Extraindo um campo de uma lista de objetos",
+              context: "Um padrão extremamente comum.",
+              code: { language: "javascript", filename: "names.js", code: ['const users = [{ name: "Ana" }, { name: "Bia" }];', "const names = users.map(user => user.name); // [\"Ana\", \"Bia\"]"].join("\n") },
+              explanation: ".map() extrai name de cada objeto — mais direto que um loop equivalente.",
+            },
+            {
+              title: "Map encadeado",
+              context: "Uma pipeline pequena, cada etapa legível isoladamente.",
+              code: { language: "javascript", filename: "formatted-totals.js", code: ["const orders = [{ total: 100 }, { total: 250 }];", 'const formatted = orders.map(o => o.total).map(t => `R$ ${t.toFixed(2)}`);'].join("\n") },
+              explanation: "O primeiro .map() extrai os totais; o segundo formata cada um.",
+            },
+            {
+              title: "Map sobre índices, gerando dados derivados de posição",
+              context: "Array.from com segundo argumento funciona como um map sobre índices.",
+              code: { language: "javascript", filename: "grid.js", code: "const grid = Array.from({ length: 3 }, (_, i) => i * i); // [0, 1, 4]" },
+              explanation: "Gera uma coleção nova a partir de uma regra, sem precisar de um array de origem já existente.",
+            },
+          ],
+          exercise: {
+            problem: "O código abaixo usa um loop imperativo pra transformar uma lista de temperaturas de Celsius pra Fahrenheit.",
+            problemCode: {
+              language: "javascript",
+              filename: "celsius-to-fahrenheit.js",
+              code: ["const celsius = [0, 20, 37, 100];", "const fahrenheit = [];", "for (let i = 0; i < celsius.length; i++) {", "  fahrenheit.push(celsius[i] * 9/5 + 32);", "}"].join("\n"),
+            },
+            task: "Reescreva usando .map(), eliminando o loop e a variável acumuladora.",
+            hint: "A transformação (a fórmula) é a mesma — só muda COMO ela é aplicada a cada item.",
+            solution: {
+              code: { language: "javascript", filename: "celsius-to-fahrenheit-map.js", code: ["const celsius2 = [0, 20, 37, 100];", "const fahrenheit2 = celsius2.map(c => c * 9/5 + 32);"].join("\n") },
+              explanation: ".map() expressa diretamente \"cada temperatura, convertida\" — sem loop explícito, sem variável acumuladora.",
+            },
+          },
+        }),
+        concept({
+          order: 110,
+          title: "Filter",
+          note: "Manter só o que satisfaz",
+          requires: ["Map"],
+          summary:
+            "Uma Higher-Order Function que mantém só os itens de uma coleção que satisfazem uma condição, " +
+            "devolvendo uma coleção nova (possivelmente menor) — o complemento natural de Map para selecionar, " +
+            "em vez de transformar.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                ".filter() recebe uma função que devolve true/false (um predicado) e a aplica a cada item de " +
+                "uma coleção, devolvendo uma coleção nova contendo só os itens pros quais o predicado devolveu " +
+                "true. Diferente de .map() (que transforma cada item, mantendo o tamanho), .filter() seleciona " +
+                "um subconjunto.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "É a forma declarativa de expressar \"eu quero só os itens que satisfazem tal condição\" — " +
+                "substitui um loop imperativo com if + push condicional por uma única chamada que nomeia " +
+                "exatamente a condição de seleção.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "evens.js",
+              code: ["const numbers = [1, 2, 3, 4, 5, 6];", "const evens = numbers.filter(n => n % 2 === 0);", "console.log(evens); // [2, 4, 6]"].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text: ".filter() percorre numbers e mantém só os itens onde n % 2 === 0 é true — o predicado nomeia a condição diretamente.",
+            },
+            {
+              type: "takeaway",
+              text:
+                ".filter() seleciona um subconjunto de uma coleção com base numa condição, devolvendo uma " +
+                "coleção nova (possivelmente menor). É o complemento de .map(): filter seleciona, map transforma.",
+            },
+          ],
+          examples: [
+            {
+              title: "Filtrando objetos por uma propriedade",
+              context: "Os itens que não satisfazem a condição são descartados do resultado.",
+              code: { language: "javascript", filename: "affordable.js", code: ["const products = [{ price: 50 }, { price: 150 }, { price: 30 }];", "const affordable = products.filter(p => p.price < 100);"].join("\n") },
+              explanation: "affordable contém só os produtos com price < 100 — sem mutar products.",
+            },
+            {
+              title: "Filter encadeado com map",
+              context: "O par mais comum na prática — cada etapa com sua responsabilidade.",
+              code: {
+                language: "javascript",
+                filename: "adult-names.js",
+                code: ['const users = [{ age: 15, name: "A" }, { age: 25, name: "B" }, { age: 17, name: "C" }];', 'const adultNames = users.filter(u => u.age >= 18).map(u => u.name); // ["B"]'].join("\n"),
+              },
+              explanation: ".filter() seleciona primeiro os adultos; .map() extrai só o nome de quem sobrou.",
+            },
+            {
+              title: "Filter removendo valores inválidos/vazios",
+              context: "Um atalho comum com filter(Boolean).",
+              code: { language: "javascript", filename: "valid-names.js", code: ['const inputs = ["Ana", "", null, "Bia", undefined, "Caio"];', "const validNames = inputs.filter(Boolean); // [\"Ana\", \"Bia\", \"Caio\"]"].join("\n") },
+              explanation: "filter(Boolean) mantém só valores \"truthy\", descartando string vazia, null e undefined de uma vez.",
+            },
+          ],
+          exercise: {
+            problem: "O código abaixo usa um loop imperativo pra selecionar só os pedidos pendentes de uma lista.",
+            problemCode: {
+              language: "javascript",
+              filename: "pending-orders.js",
+              code: ['const orders = [{ status: "pending" }, { status: "done" }, { status: "pending" }];', "const pending = [];", "for (let i = 0; i < orders.length; i++) {", '  if (orders[i].status === "pending") {', "    pending.push(orders[i]);", "  }", "}"].join("\n"),
+            },
+            task: "Reescreva usando .filter(), eliminando o loop, o if e a variável acumuladora.",
+            hint: "O predicado é exatamente a condição que já está dentro do if.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "pending-orders-filter.js",
+                code: ['const orders2 = [{ status: "pending" }, { status: "done" }, { status: "pending" }];', 'const pending2 = orders2.filter(order => order.status === "pending");'].join("\n"),
+              },
+              explanation: ".filter() expressa diretamente \"só os pedidos pendentes\" — sem a mecânica de loop e push condicional.",
+            },
+          },
+        }),
+        concept({
+          order: 120,
+          title: "Reduce",
+          note: "O caso geral",
+          requires: ["Map", "Filter"],
+          summary:
+            "A Higher-Order Function mais geral de todas: acumula os itens de uma coleção num único resultado " +
+            "— Map e Filter podem, inclusive, ser implementados em cima de Reduce.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                ".reduce() percorre uma coleção acumulando um resultado — a cada item, chama uma função que " +
+                "recebe o valor acumulado até agora e o item atual, e devolve o novo valor acumulado. No fim, " +
+                "sobra um único resultado — um número, um objeto, um array, qualquer coisa.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Reduce é o caso mais geral de processar uma coleção — tão geral que Map e Filter podem, os " +
+                "dois, ser escritos usando só Reduce por baixo (por isso este Concept é ensinado por último: " +
+                "entender Map/Filter primeiro ajuda a apreciar o quanto Reduce generaliza os dois). Sempre que " +
+                "o objetivo é \"resumir\" uma coleção inteira num valor só, Reduce é a ferramenta.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "total.js",
+              code: ["const prices = [10, 20, 30];", "const total = prices.reduce((accumulated, price) => accumulated + price, 0);", "console.log(total); // 60"].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "reduce começa com accumulated = 0 (o segundo argumento); a cada item, soma ao acumulado — " +
+                "0+10=10, 10+20=30, 30+30=60. O resultado final é um único número.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Reduce acumula os itens de uma coleção num único resultado — é o caso mais geral de todos, e " +
+                "a ferramenta certa sempre que o objetivo é \"resumir\" uma coleção inteira.",
+            },
+          ],
+          examples: [
+            {
+              title: ".map() implementado em cima de .reduce()",
+              context: "Prova de que Reduce generaliza Map.",
+              code: { language: "javascript", filename: "my-map-reduce.js", code: ["function myMap(arr, fn) {", "  return arr.reduce((acc, item) => [...acc, fn(item)], []);", "}", "myMap([1, 2, 3], n => n * 2); // [2, 4, 6]"].join("\n") },
+              explanation: "Cada passo do reduce adiciona um item transformado ao array acumulado — exatamente o que .map() faz.",
+            },
+            {
+              title: ".filter() implementado em cima de .reduce()",
+              context: "Mesma ideia, pra filtro.",
+              code: {
+                language: "javascript",
+                filename: "my-filter-reduce.js",
+                code: ["function myFilter(arr, predicate) {", "  return arr.reduce((acc, item) => predicate(item) ? [...acc, item] : acc, []);", "}", "myFilter([1, 2, 3, 4], n => n % 2 === 0); // [2, 4]"].join("\n"),
+              },
+              explanation: "A cada item, ou ele entra no acumulado (se o predicado for verdadeiro) ou o acumulado passa adiante sem mudar.",
+            },
+            {
+              title: "Reduce agrupando itens num objeto",
+              context: "Algo que Map/Filter sozinhos não produzem.",
+              code: {
+                language: "javascript",
+                filename: "group-by-dept.js",
+                code: [
+                  'const people = [{ name: "Ana", dept: "eng" }, { name: "Bia", dept: "vendas" }, { name: "Caio", dept: "eng" }];',
+                  "const byDept = people.reduce((acc, person) => {",
+                  "  (acc[person.dept] ??= []).push(person.name);",
+                  "  return acc;",
+                  "}, {});",
+                  '// { eng: ["Ana", "Caio"], vendas: ["Bia"] }',
+                ].join("\n"),
+              },
+              explanation: "O resultado aqui é um objeto, não um array — o acumulado pode ser qualquer coisa.",
+            },
+          ],
+          exercise: {
+            problem: "O código abaixo usa duas variáveis e um loop pra calcular, ao mesmo tempo, o total e a quantidade de itens acima de um valor mínimo.",
+            problemCode: {
+              language: "javascript",
+              filename: "total-and-count.js",
+              code: [
+                "const items = [{ price: 50 }, { price: 150 }, { price: 30 }, { price: 200 }];",
+                "let total = 0;",
+                "let countAboveMin = 0;",
+                "for (let i = 0; i < items.length; i++) {",
+                "  total += items[i].price;",
+                "  if (items[i].price > 100) countAboveMin++;",
+                "}",
+              ].join("\n"),
+            },
+            task: "Reescreva usando um único .reduce(), acumulando um objeto { total, countAboveMin } em vez de duas variáveis soltas.",
+            hint: "O valor inicial do reduce pode ser { total: 0, countAboveMin: 0 }, e cada passo devolve um objeto novo atualizado.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "summary-reduce.js",
+                code: [
+                  "const items2 = [{ price: 50 }, { price: 150 }, { price: 30 }, { price: 200 }];",
+                  "const summary = items2.reduce(",
+                  "  (acc, item) => ({",
+                  "    total: acc.total + item.price,",
+                  "    countAboveMin: acc.countAboveMin + (item.price > 100 ? 1 : 0),",
+                  "  }),",
+                  "  { total: 0, countAboveMin: 0 }",
+                  ");",
+                ].join("\n"),
+              },
+              explanation: "Um único .reduce() acumula os dois valores juntos, num objeto — o estado inteiro do cálculo fica contido no acumulador.",
+            },
+          },
+        }),
       ],
     }),
     module({

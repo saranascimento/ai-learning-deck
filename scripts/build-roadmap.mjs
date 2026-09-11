@@ -1182,6 +1182,18 @@ for (const area of model.areas()) {
     "union-types",
     "intersection-types",
     "type-narrowing",
+    "declarative-vs-imperative",
+    "first-class-functions",
+    "closure",
+    "side-effects",
+    "pure-functions",
+    "referential-transparency",
+    "immutability",
+    "higher-order-functions",
+    "function-composition",
+    "map",
+    "filter",
+    "reduce",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",
