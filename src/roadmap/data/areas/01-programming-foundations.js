@@ -28,7 +28,170 @@ export default area({
       ],
       suggestions: ["Modularity", "Encapsulation Boundaries (module / package / service)"],
       concepts: [
-        concept({ order: 10, title: "Abstraction", note: "raiz de tudo", revisit: ["Software Design / Object-Oriented Design", "Architecture Fundamentals"] }),
+        concept({
+          order: 10,
+          title: "Abstraction",
+          note: "Abstração",
+          summary:
+            "Expor só o que quem usa precisa saber, escondendo os detalhes de implementação por trás de uma " +
+            "interface simples — a base para lidar com sistemas complexos sem carregar tudo na cabeça.",
+          revisit: ["Software Design / Object-Oriented Design", "Architecture Fundamentals"],
+          // Piloto editorial (template canônico da Concept Study Page) — só este
+          // Concept. content/examples/exercise já existiam como defaults no
+          // builder (null/[]/null); esta é a primeira vez que são preenchidos.
+          // note: R3.5.11 passa a exibir como subtítulo sob o H1 (tradução curta
+          // do termo em inglês) — deixa de ser só metadata editorial invisível.
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Abstraction é a prática de expor apenas o que quem usa uma parte do sistema precisa saber, " +
+                "escondendo os detalhes de como aquilo funciona por dentro. Você interage com uma representação " +
+                "simplificada — um nome, uma assinatura, um conjunto de operações — sem precisar carregar na " +
+                "cabeça a implementação inteira.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Sistemas de software crescem rápido demais para qualquer pessoa segurar todos os detalhes na " +
+                "cabeça ao mesmo tempo. Imagine precisar entender a implementação completa de leitura de disco, " +
+                "drivers e protocolo de rede só para salvar um arquivo ou chamar uma API. Abstraction existe " +
+                "para que cada parte do sistema possa ser usada — e trocada — sem que quem a consome precise " +
+                "reaprender o que está por trás dela a cada mudança.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Isso é diferente de simplesmente saber que uma função existe. Entender por que Abstraction " +
+                "existe significa reconhecer que ela é uma escolha deliberada de design: alguém decidiu onde " +
+                "traçar a fronteira entre o que é público (a interface) e o que é interno (a implementação), " +
+                "para que times inteiros consigam trabalhar em paralelo sem pisar uns nos outros.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "paragraph",
+              text: "O exemplo abaixo usa fetch, uma abstração já embutida na plataforma web:",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "user-service.js",
+              code: [
+                "async function getUser(id) {",
+                "  const response = await fetch(`/api/users/${id}`);",
+                "  return response.json();",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A abstração aqui é a própria função fetch: ela esconde a criação do socket, o handshake " +
+                "TCP/TLS, a montagem dos cabeçalhos HTTP e o parsing da resposta. Quem chama getUser só " +
+                "precisa saber que existe uma Promise que resolve com uma resposta — nada sobre como os bytes " +
+                "chegam até ali.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Abstraction esconde os detalhes de implementação atrás de uma interface simples — quem usa só " +
+                "precisa entender o que a interface promete, não como ela cumpre a promessa por dentro.",
+            },
+          ],
+          examples: [
+            {
+              title: "Uma função que abstrai um cálculo",
+              context: "Toda função é uma abstração: ela empacota um comportamento atrás de um nome e uma assinatura.",
+              code: {
+                language: "javascript",
+                filename: "validators.js",
+                code: ["function isValidEmail(value) {", "  return /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(value);", "}"].join("\n"),
+              },
+              explanation:
+                "Quem chama isValidEmail(email) não precisa entender a regex nem por que ela foi escrita daquele " +
+                "jeito — só precisa saber que a função devolve true ou false para um endereço de e-mail.",
+            },
+            {
+              title: "Um componente de UI",
+              context: "Interfaces de usuário também escondem complexidade atrás de uma API simples.",
+              code: {
+                language: "jsx",
+                filename: "save-button.jsx",
+                code: ["<Button variant=\"primary\" onClick={handleSave}>", "  Salvar", "</Button>"].join("\n"),
+              },
+              explanation:
+                "Quem usa <Button> não sabe (nem precisa saber) como o componente lida com foco, estados de " +
+                "hover, acessibilidade ou o CSS por trás do variant=\"primary\". Tudo isso está abstraído atrás " +
+                "de duas props.",
+            },
+            {
+              title: "Um client de banco de dados",
+              context: "Bibliotecas de acesso a dados abstraem o protocolo de comunicação com o banco.",
+              code: {
+                language: "javascript",
+                filename: "user-repository.js",
+                code: "const user = await db.users.findById(id);",
+              },
+              explanation:
+                "Por trás dessa linha existe uma conexão TCP, um protocolo binário específico do banco, " +
+                "serialização de queries e parsing de resultados. db.users.findById abstrai tudo isso em uma " +
+                "chamada que parece uma simples busca em uma lista.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O código abaixo lê a temperatura de um sensor conectado por porta serial, decodifica os bytes " +
+              "recebidos e calcula uma média móvel — tudo dentro da mesma função que também desenha o valor na tela.",
+            problemCode: {
+              language: "javascript",
+              filename: "sensor-display.js",
+              code: [
+                "function updateDisplay() {",
+                "  const raw = serialPort.readBytes(4);",
+                "  const celsius = decodeSensorBytes(raw);",
+                "  readings.push(celsius);",
+                "  if (readings.length > 10) readings.shift();",
+                "  const avg = readings.reduce((a, b) => a + b, 0) / readings.length;",
+                "  document.querySelector(\"#temp\").textContent = avg.toFixed(1) + \"°C\";",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Proponha uma abstração que separe \"ler e calcular a temperatura\" de \"atualizar a tela\". Você não " +
+              "precisa escrever a implementação completa — descreva (ou esboce em código) qual seria a assinatura " +
+              "dessa nova função e o que ela esconderia de quem a chama.",
+            hint:
+              "Pense em qual pergunta a função deveria responder para quem a chama — e qual pergunta não é da " +
+              "conta de quem só quer mostrar um número na tela.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "sensor-display.js",
+                code: [
+                  "function readAverageTemperature() {",
+                  "  const raw = serialPort.readBytes(4);",
+                  "  const celsius = decodeSensorBytes(raw);",
+                  "  readings.push(celsius);",
+                  "  if (readings.length > 10) readings.shift();",
+                  "  return readings.reduce((a, b) => a + b, 0) / readings.length;",
+                  "}",
+                  "",
+                  "function updateDisplay() {",
+                  "  const avg = readAverageTemperature();",
+                  "  document.querySelector(\"#temp\").textContent = avg.toFixed(1) + \"°C\";",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "readAverageTemperature abstrai a porta serial, o formato dos bytes do sensor e a lógica da " +
+                "média móvel atrás de uma função que só devolve um número. updateDisplay nem precisa saber que " +
+                "existe um sensor — ela só usa o resultado. Se o sensor for trocado por outro protocolo amanhã, " +
+                "só readAverageTemperature muda.",
+            },
+          },
+        }),
         concept({ order: 20, title: "Encapsulation", requires: ["Abstraction"], revisit: ["Software Design / Object-Oriented Design"] }),
         concept({
           order: 30,

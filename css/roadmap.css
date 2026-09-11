@@ -656,6 +656,333 @@ a.relation-pill:focus-visible {
   border: 0;
 }
 
+/* ---- R3.5.11 — redesign visual da Concept Study Page ------------------
+   Tudo neste bloco é escopado sob .concept-study (a classe do wrapper de
+   Concept) — Home/Area/Module não usam nenhuma destas classes, então nada
+   aqui vaza para as outras páginas mesmo sem o prefixo, mas o prefixo deixa
+   a intenção explícita. Paleta de syntax highlight é fixa (site sem
+   dark/light mode — um tema só). */
+
+.concept-study .icon {
+  width: 1.05em;
+  height: 1.05em;
+  flex: none;
+}
+
+.concept-study .page-head__subtitle {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  margin: 0;
+}
+
+/* Cards com ícone: Resumo · Pré-requisitos · Relacionado a · Revisita de ·
+   Subtópicos · Recursos (no .detail-block) e Problema/Sua tarefa/Dica
+   (dentro do painel Exercício, --exercise = sem moldura própria, só divisor). */
+.concept-study .info-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.9rem 1.1rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+}
+
+.concept-study .info-card__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--font-size-small);
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.concept-study .info-card__icon {
+  color: var(--area-color);
+}
+
+.concept-study .info-card__body {
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-body);
+  color: var(--color-text);
+}
+
+.concept-study .info-card__body p {
+  margin: 0;
+  font-size: var(--font-size-small);
+}
+
+/* base.css define `p, li { font-size: var(--font-size-body) }` globalmente
+   (tamanho de slide, herdado da SPA de apresentação) — todo <p> novo dentro
+   do Concept precisa reafirmar --font-size-small explicitamente, porque um
+   valor especificado em `p` sempre vence herança, não importa a
+   especificidade de quem herdaria. */
+.concept-study .study-panel p {
+  font-size: var(--font-size-small);
+}
+
+.concept-study .example__context,
+.concept-study .example__explanation {
+  font-size: var(--font-size-small);
+  color: var(--color-text);
+  margin: 0;
+}
+
+.concept-study .solution-toggle__body p {
+  font-size: var(--font-size-small);
+}
+
+.concept-study .info-card--exercise {
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-sm);
+}
+
+.concept-study .info-card--exercise:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.concept-study .detail-block__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-sm);
+}
+
+/* Área de estudo: ícone no rótulo das tabs (h3 sem JS / <button> com JS) */
+.concept-study .study-panel__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.concept-study .study-tabs__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Conteúdo estruturado (content/examples/exercise) */
+.concept-study .content-block__heading {
+  font-size: var(--font-size-small);
+  font-weight: 600;
+  color: var(--color-text);
+  margin-top: var(--space-sm);
+}
+
+.concept-study .content-block__heading:first-child {
+  margin-top: 0;
+}
+
+.concept-study .takeaway {
+  margin-top: var(--space-sm);
+  padding: 0.75rem 1rem;
+  background: color-mix(in srgb, var(--status-done) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--status-done) 40%, var(--color-border));
+  border-radius: var(--radius-row);
+}
+
+.concept-study .takeaway__label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.35rem;
+  font-size: var(--font-size-small);
+  font-weight: 600;
+  color: var(--status-done);
+}
+
+.concept-study .takeaway__body {
+  margin: 0;
+  font-size: var(--font-size-small);
+  color: var(--color-text);
+}
+
+/* Code block: cabeçalho (ícone + filename + Copiar) + <pre> com highlight */
+.concept-study .code-block {
+  margin: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-row);
+  overflow: hidden;
+}
+
+.concept-study .code-block__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.concept-study .code-block__file-icon {
+  color: var(--color-text-muted);
+}
+
+.concept-study .code-block__filename {
+  flex: 1;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.concept-study .code-block__copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: none;
+  appearance: none;
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  font: inherit;
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.concept-study .code-block__copy:hover {
+  color: var(--color-text);
+  border-color: color-mix(in srgb, var(--area-color) 45%, var(--color-border));
+}
+
+.concept-study .code-block__copy:focus-visible {
+  outline: 2px solid var(--area-color);
+  outline-offset: 2px;
+}
+
+.concept-study .code-block__copy--done {
+  color: var(--status-done);
+  border-color: color-mix(in srgb, var(--status-done) 55%, var(--color-border));
+}
+
+.concept-study .code-block__pre {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+}
+
+.concept-study .code-block__code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85em;
+  line-height: 1.5;
+  color: var(--color-text);
+  white-space: pre;
+}
+
+.concept-study .tok-keyword { color: #c792ea; }
+.concept-study .tok-string { color: #8bd49c; }
+.concept-study .tok-number { color: #f78c6c; }
+.concept-study .tok-regex { color: #56b6c2; }
+.concept-study .tok-comment { color: var(--color-text-muted); font-style: italic; }
+
+.concept-study .example-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.concept-study .example {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--color-border);
+}
+
+.concept-study .example:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.concept-study .example__number {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--area-color);
+  margin: 0;
+}
+
+.concept-study .example__title {
+  font-size: var(--font-size-small);
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0;
+}
+
+/* "Ver solução" — <details>/<summary> nativo (zero JS), estilizado como botão */
+.concept-study .solution-toggle {
+  margin-top: var(--space-sm);
+}
+
+.concept-study .solution-toggle__summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  list-style: none;
+  cursor: pointer;
+  padding: 0.55rem 1rem;
+  border-radius: var(--radius-row);
+  background: color-mix(in srgb, var(--area-color) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--area-color) 45%, var(--color-border));
+  color: var(--area-color);
+  font-weight: 600;
+  font-size: var(--font-size-small);
+}
+
+.concept-study .solution-toggle__summary::-webkit-details-marker {
+  display: none;
+}
+
+.concept-study .solution-toggle__summary::marker {
+  content: "";
+}
+
+.concept-study .solution-toggle__summary:hover {
+  background: color-mix(in srgb, var(--area-color) 24%, transparent);
+}
+
+.concept-study .solution-toggle__summary:focus-visible {
+  outline: 2px solid var(--area-color);
+  outline-offset: 2px;
+}
+
+.concept-study .solution-toggle__arrow {
+  margin-left: auto;
+}
+
+.concept-study .solution-toggle[open] .solution-toggle__summary {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.concept-study .solution-toggle__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  border: 1px solid color-mix(in srgb, var(--area-color) 45%, var(--color-border));
+  border-top: none;
+  border-bottom-left-radius: var(--radius-row);
+  border-bottom-right-radius: var(--radius-row);
+}
+
+.concept-study .solution-toggle__body p {
+  margin: 0;
+}
+
 /* ---- navegação sequencial entre Conceitos -------------------- */
 .concept-nav {
   display: flex;

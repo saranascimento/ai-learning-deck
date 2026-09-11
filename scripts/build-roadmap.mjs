@@ -832,7 +832,11 @@ for (const area of model.areas()) {
           canonical: concept.canonical,
           learningFocus: concept.learningFocus || [],
           summary: concept.summary || "",
+          note: concept.note || "",
           subtopics: concept.subtopics || [],
+          content: concept.content || null,
+          examples: concept.examples || [],
+          exercise: concept.exercise || null,
         },
         requires: resolveRefs(concept.requires),
         revisitOf: concept.revisitOf ? resolveRefs([concept.revisitOf])[0] : null,
@@ -905,6 +909,9 @@ for (const area of model.areas()) {
   let hasNext = 0;
   let physOk = true;
   let physChecked = 0;
+  let withStudyContent = 0;
+  let withStudyExamples = 0;
+  let withStudyExercise = 0;
 
   conceptPages.forEach(({ area, module, concept, ci, file, html, vm }) => {
     const s = `${module.slug}/${concept.slug}`;
@@ -944,72 +951,86 @@ for (const area of model.areas()) {
       )
     );
 
-    // Resumo (sempre) — hoje sempre empty state
+    // Resumo (sempre) — card com ícone (R3.5.11); label continua "Resumo"
     if (!concept.summary) {
       withResumoEmpty++;
-      set("resumo", F(html.includes('<h2 id="concept-resumo" class="concept-section__title">Resumo</h2>') && html.includes(">Resumo ainda não disponível.</p>"), "Resumo (empty state)", s));
+      set("resumo", F(html.includes('id="concept-resumo" class="info-card__title"') && html.includes("<span>Resumo</span></h2>") && html.includes(">Resumo ainda não disponível.</p>"), "Resumo (empty state, card com ícone)", s));
     }
 
-    // Pré-requisitos (Requires) — sempre presente
-    set("requiresHeading", F(html.includes('<h2 id="concept-requires" class="concept-section__title">Pré-requisitos (Requires)</h2>'), "seção Requires presente", s));
+    // Pré-requisitos (Requires) — sempre presente; card com ícone, label sem "(Requires)" (R3.5.11)
+    set("requiresHeading", F(html.includes('id="concept-requires" class="info-card__title"') && html.includes("<span>Pré-requisitos</span></h2>"), "seção Pré-requisitos presente (card)", s));
     if ((concept.requires || []).length) {
       withRequires++;
       set("requiresList", F(/id="concept-requires"[\s\S]*?<ul class="relation-list">/.test(html), "Requires com <ul>", s));
     } else {
       withRequiresNone++;
-      set("requiresNone", F(/id="concept-requires"[\s\S]{0,220}<span class="muted">nenhum<\/span>/.test(html), 'Requires = "nenhum"', s));
+      set("requiresNone", F(/id="concept-requires"[\s\S]{0,700}<span class="muted">nenhum<\/span>/.test(html), 'Requires = "nenhum"', s));
     }
 
-    // Revisita de (só canonical:false / revisitOf)
+    // Revisita de (só canonical:false / revisitOf) — card com ícone
     if (concept.revisitOf) {
       withRevisitOf++;
-      set("revisitOf", F(html.includes('<h2 id="concept-revisitof" class="concept-section__title">Revisita de</h2>'), "seção Revisita de", s));
+      set("revisitOf", F(html.includes('id="concept-revisitof" class="info-card__title"') && html.includes("<span>Revisita de</span></h2>"), "seção Revisita de (card)", s));
     } else {
       set("noRevisitOf", F(!html.includes('id="concept-revisitof"'), "sem Revisita de quando não há revisitOf", s));
     }
 
-    // Subtópicos
+    // Subtópicos — card com ícone
     if ((concept.subtopics || []).length) {
       withSubtopics++;
-      set("subtopics", F(html.includes('<h2 id="concept-subtopics" class="concept-section__title">Subtópicos</h2>'), "seção Subtópicos", s));
+      set("subtopics", F(html.includes('id="concept-subtopics" class="info-card__title"') && html.includes("<span>Subtópicos</span></h2>"), "seção Subtópicos (card)", s));
     } else {
       set("noSubtopics", F(!html.includes('id="concept-subtopics"'), "sem Subtópicos quando vazio", s));
     }
 
-    // Revisitado em
+    // Relacionado a (era "Revisitado em" — R3.5.11 renomeia o rótulo visual;
+    // dado/semântica de concept.revisit não mudam) — card com ícone
     if ((concept.revisit || []).length) {
       withRevisit++;
-      set("revisit", F(html.includes('<h2 id="concept-revisit" class="concept-section__title">Revisitado em</h2>'), "seção Revisitado em", s));
+      set("revisit", F(html.includes('id="concept-revisit" class="info-card__title"') && html.includes("<span>Relacionado a</span></h2>"), "seção Relacionado a (card)", s));
     } else {
-      set("noRevisit", F(!html.includes('id="concept-revisit"'), "sem Revisitado em quando vazio", s));
+      set("noRevisit", F(!html.includes('id="concept-revisit"'), "sem Relacionado a quando vazio", s));
     }
 
-    // Recursos
+    // Recursos — card com ícone
     if ((concept.resources || []).length) {
       withResources++;
-      set("resources", F(html.includes('<h2 id="concept-resources" class="concept-section__title">Recursos</h2>'), "seção Recursos", s));
+      set("resources", F(html.includes('id="concept-resources" class="info-card__title"') && html.includes("<span>Recursos</span></h2>"), "seção Recursos (card)", s));
     } else {
       set("noResources", F(!html.includes('id="concept-resources"'), "sem Recursos quando vazio", s));
+    }
+
+    // Subtítulo (note) — R3.5.11: exibido sob o H1 só quando concept.note não vazio
+    if (concept.note) {
+      set("subtitle", F(html.includes(`<p class="page-head__subtitle">${escapeHtml(concept.note)}</p>`), "subtítulo (note) presente quando não vazio", s));
+    } else {
+      set("noSubtitle", F(!html.includes('class="page-head__subtitle"'), "sem subtítulo quando note vazio", s));
     }
 
     // Área de estudo — 3 <section data-study-panel>, TODAS visíveis (sem hidden)
     set("studyHeading", F(html.includes('<h2 id="concept-study-heading" class="concept-section__title">Área de estudo</h2>'), "seção Área de estudo", s));
     set("studyContainer", F(html.includes('<div class="study-area__panels" data-study-tabs="">'), "container data-study-tabs", s));
-    for (const [k, label, empty] of [
-      ["conteudo", "Conteúdo", "Conteúdo ainda não disponível."],
-      ["exemplos", "Exemplos", "Exemplos ainda não disponíveis."],
-      ["exercicio", "Exercício", "Exercício ainda não disponível."],
+    // Painel: empty state quando o Concept não tem dado estruturado (maioria hoje);
+    // conteúdo real (e AUSÊNCIA do empty state) quando o dataset traz content/
+    // examples/exercise — piloto: só "abstraction" nesta rodada (ver checagem
+    // "Concepts com conteúdo de estudo real" mais abaixo).
+    for (const [k, label, empty, hasReal] of [
+      ["conteudo", "Conteúdo", "Conteúdo ainda não disponível.", (concept.content || []).length > 0],
+      ["exemplos", "Exemplos", "Exemplos ainda não disponíveis.", (concept.examples || []).length > 0],
+      ["exercicio", "Exercício", "Exercício ainda não disponível.", !!concept.exercise],
     ]) {
-      set(
-        "panel_" + k,
-        F(
-          html.includes(`<section class="study-panel" data-study-panel="${k}">`) &&
-            html.includes(`<h3 class="concept-section__title study-panel__title">${label}</h3>`) &&
-            html.includes(`<p class="empty-state">${empty}</p>`),
-          `painel ${k} presente + empty state`,
-          s
-        )
-      );
+      const wrapperOk =
+        html.includes(`<section class="study-panel" data-study-panel="${k}">`) &&
+        html.includes(`<h3 class="concept-section__title study-panel__title">`) &&
+        html.includes(`<span>${label}</span></h3>`);
+      if (hasReal) {
+        if (k === "conteudo") withStudyContent++;
+        if (k === "exemplos") withStudyExamples++;
+        if (k === "exercicio") withStudyExercise++;
+        set("panel_" + k + "_full", F(wrapperOk && !html.includes(`<p class="empty-state">${empty}</p>`), `painel ${k} com conteúdo real (empty state ausente)`, s));
+      } else {
+        set("panel_" + k + "_empty", F(wrapperOk && html.includes(`<p class="empty-state">${empty}</p>`), `painel ${k} presente + empty state`, s));
+      }
     }
     set("noHidden", F(!/data-study-panel="[^"]*"[^>]*\shidden/.test(html) && !html.includes("<section class=\"study-panel\" hidden"), "sem atributo hidden nos painéis", s));
     set("noTabRole", F(!/role="tab(list|panel)?"/.test(html), "sem role=tab/tablist/tabpanel no HTML fonte (enhancement = R3.5.7 client-side)", s));
@@ -1092,24 +1113,29 @@ for (const area of model.areas()) {
   P("crumbMod", "breadcrumb: Module (link)");
   P("crumbCurrent", "breadcrumb: Concept atual = aria-current, sem self-link");
   P("chips", "classificações == dataset");
-  P("resumo", "Resumo (empty state)");
-  P("requiresHeading", "seção Pré-requisitos (Requires) sempre presente");
+  P("resumo", "Resumo (empty state, card com ícone)");
+  P("requiresHeading", "seção Pré-requisitos sempre presente (card com ícone)");
   if (flags.requiresList !== undefined) P("requiresList", "Requires com <ul class=relation-list> quando há refs");
   if (flags.requiresNone !== undefined) P("requiresNone", 'Requires = "nenhum" quando vazio');
-  if (flags.revisitOf !== undefined) P("revisitOf", "seção «Revisita de» quando revisitOf");
+  if (flags.revisitOf !== undefined) P("revisitOf", "seção «Revisita de» quando revisitOf (card)");
   P("noRevisitOf", "sem «Revisita de» quando não há revisitOf");
-  if (flags.subtopics !== undefined) P("subtopics", "seção «Subtópicos» quando há");
+  if (flags.subtopics !== undefined) P("subtopics", "seção «Subtópicos» quando há (card)");
   P("noSubtopics", "sem «Subtópicos» quando vazio");
-  if (flags.revisit !== undefined) P("revisit", "seção «Revisitado em» quando há");
-  P("noRevisit", "sem «Revisitado em» quando vazio");
-  if (flags.resources !== undefined) P("resources", "seção «Recursos» quando há");
+  if (flags.revisit !== undefined) P("revisit", "seção «Relacionado a» quando há (card)");
+  P("noRevisit", "sem «Relacionado a» quando vazio");
+  if (flags.resources !== undefined) P("resources", "seção «Recursos» quando há (card)");
   P("noResources", "sem «Recursos» quando vazio");
+  if (flags.subtitle !== undefined) P("subtitle", "subtítulo (note) presente quando não vazio");
+  P("noSubtitle", "sem subtítulo quando note vazio");
   P("studyHeading", "seção «Área de estudo»");
   P("studyContainer", "container data-study-tabs");
   P("panelOrder", "3 painéis na ordem conteudo → exemplos → exercicio");
-  P("panel_conteudo", "painel Conteúdo + empty state");
-  P("panel_exemplos", "painel Exemplos + empty state");
-  P("panel_exercicio", "painel Exercício + empty state");
+  if (flags.panel_conteudo_empty !== undefined) P("panel_conteudo_empty", "painel Conteúdo + empty state");
+  if (flags.panel_conteudo_full !== undefined) P("panel_conteudo_full", "painel Conteúdo com conteúdo real (empty state ausente)");
+  if (flags.panel_exemplos_empty !== undefined) P("panel_exemplos_empty", "painel Exemplos + empty state");
+  if (flags.panel_exemplos_full !== undefined) P("panel_exemplos_full", "painel Exemplos com conteúdo real (empty state ausente)");
+  if (flags.panel_exercicio_empty !== undefined) P("panel_exercicio_empty", "painel Exercício + empty state");
+  if (flags.panel_exercicio_full !== undefined) P("panel_exercicio_full", "painel Exercício com conteúdo real (empty state ausente)");
   P("noHidden", "3 painéis SEM atributo hidden no HTML fonte (visíveis sem JS)");
   P("noTabRole", "sem role=tab/tablist/tabpanel no HTML fonte (roles = enhancement client-side)");
   P("noAriaSelected", "sem aria-selected no HTML fonte");
@@ -1126,15 +1152,59 @@ for (const area of model.areas()) {
   P("noHandler", "zero handler inline");
   record(g, `relações resolved → alvo físico gerado (${physChecked} refs checadas)`, physOk);
 
-  record("Concept — cobertura de blocos (renderer ↔ dataset)", "Resumo empty state em todas as 668", withResumoEmpty === 668);
+  // Piloto editorial (Abstraction) preenche summary — 667 continuam empty state.
+  record("Concept — cobertura de blocos (renderer ↔ dataset)", `Resumo empty state: ${withResumoEmpty} (esperado 667 — Abstraction tem summary real)`, withResumoEmpty === 667);
   record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas com Requires: ${withRequires} (dataset 495)`, withRequires === 495);
   record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas Requires = "nenhum": ${withRequiresNone} (dataset 173)`, withRequiresNone === 173);
   record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas com «Revisita de»: ${withRevisitOf} (dataset 15)`, withRevisitOf === 15);
   record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas com «Subtópicos»: ${withSubtopics} (dataset 103)`, withSubtopics === 103);
-  record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas com «Revisitado em»: ${withRevisit} (dataset 160)`, withRevisit === 160);
+  record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas com «Relacionado a»: ${withRevisit} (dataset 160)`, withRevisit === 160);
   record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas com «Recursos»: ${withResources} (dataset 12)`, withResources === 12);
   record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas com prev: ${hasPrev} (esperado 579)`, hasPrev === 579);
   record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas com next: ${hasNext} (esperado 579)`, hasNext === 579);
+
+  // Piloto editorial (Abstraction) — conteúdo de estudo real deve existir em
+  // EXATAMENTE 1 Concept nas 3 tabs, e ser especificamente "abstraction": prova
+  // de que o renderer é genérico (dataset-driven) e não houve preenchimento
+  // acidental de outros Concepts.
+  record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas com Conteúdo real: ${withStudyContent} (esperado 1)`, withStudyContent === 1);
+  record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas com Exemplos reais: ${withStudyExamples} (esperado 1)`, withStudyExamples === 1);
+  record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas com Exercício real: ${withStudyExercise} (esperado 1)`, withStudyExercise === 1);
+  {
+    const withAnyStudy = conceptPages
+      .filter(({ concept }) => (concept.content || []).length > 0 || (concept.examples || []).length > 0 || !!concept.exercise)
+      .map(({ concept }) => concept.slug);
+    record(
+      "Concept — cobertura de blocos (renderer ↔ dataset)",
+      `Concepts com conteúdo de estudo real: ${withAnyStudy.join(", ") || "nenhum"} (esperado: só abstraction)`,
+      withAnyStudy.length === 1 && withAnyStudy[0] === "abstraction"
+    );
+  }
+
+  // R3.5.11 — redesign visual da Concept Page (cards com ícone, code chrome,
+  // syntax highlighting, subtítulo a partir de note).
+  {
+    const withSubtitle = conceptPages.filter(({ concept }) => !!concept.note).map(({ concept }) => concept.slug);
+    record(
+      "Concept — cobertura de blocos (renderer ↔ dataset)",
+      `páginas com subtítulo (note não vazio): ${withSubtitle.length}`,
+      withSubtitle.length > 0 && withSubtitle.includes("abstraction")
+    );
+    const withTakeaway = conceptPages.filter(({ concept }) => (concept.content || []).some((b) => b.type === "takeaway")).map(({ concept }) => concept.slug);
+    record(
+      "Concept — cobertura de blocos (renderer ↔ dataset)",
+      `Concepts com bloco «Em resumo»: ${withTakeaway.join(", ") || "nenhum"} (esperado: só abstraction)`,
+      withTakeaway.length === 1 && withTakeaway[0] === "abstraction"
+    );
+    const abstractionPage = conceptPages.find(({ concept }) => concept.slug === "abstraction");
+    const ah = abstractionPage ? abstractionPage.html : "";
+    record("Concept — cobertura de blocos (renderer ↔ dataset)", "Abstraction: code blocks com cabeçalho (ícone arquivo + filename + botão Copiar)", (ah.match(/<div class="code-block__header">/g) || []).length >= 5);
+    record("Concept — cobertura de blocos (renderer ↔ dataset)", "Abstraction: syntax highlight aplicado (tok-keyword presente)", ah.includes('class="tok-keyword"'));
+    record("Concept — cobertura de blocos (renderer ↔ dataset)", "Abstraction: regex-literal destacado (tok-regex presente)", ah.includes('class="tok-regex"'));
+    record("Concept — cobertura de blocos (renderer ↔ dataset)", "Abstraction: botão Copiar presente e inerte sem handler inline", (ah.match(/data-copy-code/g) || []).length >= 5 && !/data-copy-code[^>]*\son[a-z]+=/i.test(ah));
+    record("Concept — cobertura de blocos (renderer ↔ dataset)", "Abstraction: <details class=solution-toggle> com <summary> (Ver solução, zero JS)", ah.includes('<details class="solution-toggle">') && ah.includes(">Ver solução</span>") && !ah.includes("<details class=\"solution-toggle\" open"));
+    record("Concept — cobertura de blocos (renderer ↔ dataset)", "grid Pré-requisitos/Relacionado a presente em Abstraction", ah.includes('<div class="detail-block__grid">'));
+  }
 
   if (fails.length) record(g, "falhas detalhadas", false, fails.slice(0, 25).join(" | "));
 }
