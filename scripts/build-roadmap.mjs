@@ -1152,8 +1152,14 @@ for (const area of model.areas()) {
   P("noHandler", "zero handler inline");
   record(g, `relações resolved → alvo físico gerado (${physChecked} refs checadas)`, physOk);
 
-  // Piloto editorial (Abstraction) preenche summary — 667 continuam empty state.
-  record("Concept — cobertura de blocos (renderer ↔ dataset)", `Resumo empty state: ${withResumoEmpty} (esperado 667 — Abstraction tem summary real)`, withResumoEmpty === 667);
+  // Piloto editorial — cada Concept em PILOT_SLUGS preenche summary; os demais
+  // continuam empty state. Atualizar esta lista conforme novos Concepts ganham conteúdo.
+  const PILOT_SLUGS = ["abstraction", "encapsulation", "information-hiding", "interface"];
+  record(
+    "Concept — cobertura de blocos (renderer ↔ dataset)",
+    `Resumo empty state: ${withResumoEmpty} (esperado ${668 - PILOT_SLUGS.length} — ${PILOT_SLUGS.length} Concepts do piloto têm summary real)`,
+    withResumoEmpty === 668 - PILOT_SLUGS.length
+  );
   record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas com Requires: ${withRequires} (dataset 495)`, withRequires === 495);
   record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas Requires = "nenhum": ${withRequiresNone} (dataset 173)`, withRequiresNone === 173);
   record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas com «Revisita de»: ${withRevisitOf} (dataset 15)`, withRevisitOf === 15);
@@ -1163,21 +1169,22 @@ for (const area of model.areas()) {
   record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas com prev: ${hasPrev} (esperado 579)`, hasPrev === 579);
   record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas com next: ${hasNext} (esperado 579)`, hasNext === 579);
 
-  // Piloto editorial (Abstraction) — conteúdo de estudo real deve existir em
-  // EXATAMENTE 1 Concept nas 3 tabs, e ser especificamente "abstraction": prova
-  // de que o renderer é genérico (dataset-driven) e não houve preenchimento
-  // acidental de outros Concepts.
-  record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas com Conteúdo real: ${withStudyContent} (esperado 1)`, withStudyContent === 1);
-  record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas com Exemplos reais: ${withStudyExamples} (esperado 1)`, withStudyExamples === 1);
-  record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas com Exercício real: ${withStudyExercise} (esperado 1)`, withStudyExercise === 1);
+  // Conteúdo de estudo real deve existir EXATAMENTE nos Concepts de
+  // PILOT_SLUGS (nenhum a mais): prova de que o renderer é genérico
+  // (dataset-driven) e não houve preenchimento acidental de outros Concepts.
+  record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas com Conteúdo real: ${withStudyContent} (esperado ${PILOT_SLUGS.length})`, withStudyContent === PILOT_SLUGS.length);
+  record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas com Exemplos reais: ${withStudyExamples} (esperado ${PILOT_SLUGS.length})`, withStudyExamples === PILOT_SLUGS.length);
+  record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas com Exercício real: ${withStudyExercise} (esperado ${PILOT_SLUGS.length})`, withStudyExercise === PILOT_SLUGS.length);
   {
     const withAnyStudy = conceptPages
       .filter(({ concept }) => (concept.content || []).length > 0 || (concept.examples || []).length > 0 || !!concept.exercise)
-      .map(({ concept }) => concept.slug);
+      .map(({ concept }) => concept.slug)
+      .sort();
+    const expected = [...PILOT_SLUGS].sort();
     record(
       "Concept — cobertura de blocos (renderer ↔ dataset)",
-      `Concepts com conteúdo de estudo real: ${withAnyStudy.join(", ") || "nenhum"} (esperado: só abstraction)`,
-      withAnyStudy.length === 1 && withAnyStudy[0] === "abstraction"
+      `Concepts com conteúdo de estudo real: ${withAnyStudy.join(", ") || "nenhum"} (esperado: ${expected.join(", ")})`,
+      withAnyStudy.length === expected.length && withAnyStudy.every((slug, i) => slug === expected[i])
     );
   }
 
@@ -1188,22 +1195,30 @@ for (const area of model.areas()) {
     record(
       "Concept — cobertura de blocos (renderer ↔ dataset)",
       `páginas com subtítulo (note não vazio): ${withSubtitle.length}`,
-      withSubtitle.length > 0 && withSubtitle.includes("abstraction")
+      withSubtitle.length > 0 && PILOT_SLUGS.every((slug) => withSubtitle.includes(slug))
     );
-    const withTakeaway = conceptPages.filter(({ concept }) => (concept.content || []).some((b) => b.type === "takeaway")).map(({ concept }) => concept.slug);
+    const withTakeaway = conceptPages
+      .filter(({ concept }) => (concept.content || []).some((b) => b.type === "takeaway"))
+      .map(({ concept }) => concept.slug)
+      .sort();
+    const expectedTakeaway = [...PILOT_SLUGS].sort();
     record(
       "Concept — cobertura de blocos (renderer ↔ dataset)",
-      `Concepts com bloco «Em resumo»: ${withTakeaway.join(", ") || "nenhum"} (esperado: só abstraction)`,
-      withTakeaway.length === 1 && withTakeaway[0] === "abstraction"
+      `Concepts com bloco «Em resumo»: ${withTakeaway.join(", ") || "nenhum"} (esperado: ${expectedTakeaway.join(", ")})`,
+      withTakeaway.length === expectedTakeaway.length && withTakeaway.every((slug, i) => slug === expectedTakeaway[i])
     );
+    for (const slug of PILOT_SLUGS) {
+      const page = conceptPages.find(({ concept }) => concept.slug === slug);
+      const ph = page ? page.html : "";
+      record("Concept — cobertura de blocos (renderer ↔ dataset)", `${slug}: code blocks com cabeçalho (ícone arquivo + filename + botão Copiar)`, (ph.match(/<div class="code-block__header">/g) || []).length >= 1);
+      record("Concept — cobertura de blocos (renderer ↔ dataset)", `${slug}: syntax highlight aplicado (tok-keyword presente)`, ph.includes('class="tok-keyword"'));
+      record("Concept — cobertura de blocos (renderer ↔ dataset)", `${slug}: botão Copiar presente e inerte sem handler inline`, (ph.match(/data-copy-code/g) || []).length >= 1 && !/data-copy-code[^>]*\son[a-z]+=/i.test(ph));
+      record("Concept — cobertura de blocos (renderer ↔ dataset)", `${slug}: <details class=solution-toggle> com <summary> (Ver solução, zero JS)`, ph.includes('<details class="solution-toggle">') && ph.includes(">Ver solução</span>") && !ph.includes('<details class="solution-toggle" open'));
+      record("Concept — cobertura de blocos (renderer ↔ dataset)", `${slug}: grid Pré-requisitos/Relacionado a presente`, ph.includes('<div class="detail-block__grid">'));
+    }
+    // regex-literal destacado — só abstraction tem exemplo com regex no dataset atual.
     const abstractionPage = conceptPages.find(({ concept }) => concept.slug === "abstraction");
-    const ah = abstractionPage ? abstractionPage.html : "";
-    record("Concept — cobertura de blocos (renderer ↔ dataset)", "Abstraction: code blocks com cabeçalho (ícone arquivo + filename + botão Copiar)", (ah.match(/<div class="code-block__header">/g) || []).length >= 5);
-    record("Concept — cobertura de blocos (renderer ↔ dataset)", "Abstraction: syntax highlight aplicado (tok-keyword presente)", ah.includes('class="tok-keyword"'));
-    record("Concept — cobertura de blocos (renderer ↔ dataset)", "Abstraction: regex-literal destacado (tok-regex presente)", ah.includes('class="tok-regex"'));
-    record("Concept — cobertura de blocos (renderer ↔ dataset)", "Abstraction: botão Copiar presente e inerte sem handler inline", (ah.match(/data-copy-code/g) || []).length >= 5 && !/data-copy-code[^>]*\son[a-z]+=/i.test(ah));
-    record("Concept — cobertura de blocos (renderer ↔ dataset)", "Abstraction: <details class=solution-toggle> com <summary> (Ver solução, zero JS)", ah.includes('<details class="solution-toggle">') && ah.includes(">Ver solução</span>") && !ah.includes("<details class=\"solution-toggle\" open"));
-    record("Concept — cobertura de blocos (renderer ↔ dataset)", "grid Pré-requisitos/Relacionado a presente em Abstraction", ah.includes('<div class="detail-block__grid">'));
+    record("Concept — cobertura de blocos (renderer ↔ dataset)", "abstraction: regex-literal destacado (tok-regex presente)", (abstractionPage ? abstractionPage.html : "").includes('class="tok-regex"'));
   }
 
   if (fails.length) record(g, "falhas detalhadas", false, fails.slice(0, 25).join(" | "));

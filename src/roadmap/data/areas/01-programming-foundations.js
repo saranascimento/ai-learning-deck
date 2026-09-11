@@ -192,19 +192,445 @@ export default area({
             },
           },
         }),
-        concept({ order: 20, title: "Encapsulation", requires: ["Abstraction"], revisit: ["Software Design / Object-Oriented Design"] }),
+        concept({
+          order: 20,
+          title: "Encapsulation",
+          note: "Encapsulamento",
+          requires: ["Abstraction"],
+          revisit: ["Software Design / Object-Oriented Design"],
+          summary:
+            "Agrupar dados e o comportamento que opera sobre eles em uma única unidade, controlando quem pode " +
+            "acessar ou modificar esse estado de fora.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Encapsulation é a prática de agrupar dados (estado) e o comportamento que opera sobre esses " +
+                "dados na mesma unidade — uma classe, um módulo, um closure — e restringir o acesso direto a " +
+                "esse estado de fora dessa unidade. Quem está de fora só interage através de operações " +
+                "expostas propositalmente.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Se qualquer parte do sistema pode alterar o estado interno de outra parte diretamente, fica " +
+                "impossível garantir que esse estado permaneça válido — qualquer código, em qualquer lugar, " +
+                "pode colocá-lo num formato inesperado. Encapsulation existe para que as regras que protegem " +
+                "um dado (os invariantes) fiquem concentradas num único lugar: dentro da própria unidade que o " +
+                "possui.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "É também o mecanismo mais comum para conseguir Abstraction na prática: você abstrai algo " +
+                "escondendo seus detalhes, e Encapsulation é a ferramenta de linguagem que faz esse esconder " +
+                "acontecer de verdade — não por convenção, mas por restrição real de acesso.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "paragraph",
+              text: "Um campo privado (`#`) só pode ser lido ou alterado através dos métodos da própria classe:",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "bank-account.js",
+              code: [
+                "class BankAccount {",
+                "  #balance = 0;",
+                "",
+                "  deposit(amount) {",
+                '    if (amount <= 0) throw new Error("Valor inválido");',
+                "    this.#balance += amount;",
+                "  }",
+                "",
+                "  get balance() {",
+                "    return this.#balance;",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "#balance não existe fora da classe — não tem como escrever account.#balance = -500 de fora, " +
+                "nem por engano. A única porta de entrada é deposit(), que valida o valor antes de mudar o " +
+                "estado. O invariante \"saldo nunca fica inconsistente\" está protegido estruturalmente, não só " +
+                "por boa vontade de quem chama.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Encapsulation une dados e as operações que os protegem numa única unidade, e bloqueia acesso " +
+                "direto a esses dados — mudanças só acontecem através de métodos que mantêm o estado válido.",
+            },
+          ],
+          examples: [
+            {
+              title: "Estado escondido num closure",
+              context: "Encapsulation não exige classe — uma função de fábrica com closure já esconde estado.",
+              code: {
+                language: "javascript",
+                filename: "counter.js",
+                code: ["function createCounter() {", "  let count = 0;", "  return {", "    increment() { return ++count; },", "    value() { return count; },", "  };", "}"].join("\n"),
+              },
+              explanation:
+                "count só existe dentro do closure criado por createCounter — não há nenhuma forma de acessá-lo " +
+                "de fora a não ser pelos métodos increment/value que a função retorna.",
+            },
+            {
+              title: "Um módulo escondendo cache interno",
+              context: "Um módulo inteiro pode encapsular estado que nenhum outro arquivo consegue tocar.",
+              code: {
+                language: "javascript",
+                filename: "config.js",
+                code: ["let cache = null;", "", "export function getConfig() {", "  if (!cache) cache = JSON.parse(readFileSync(\"config.json\"));", "  return cache;", "}"].join("\n"),
+              },
+              explanation:
+                "Quem importa getConfig() não sabe que existe um cache, nem como o arquivo é lido — esse estado " +
+                "está encapsulado no escopo do módulo, inacessível de fora.",
+            },
+            {
+              title: "Setter protegendo um invariante físico",
+              context: "Encapsulation também aparece em validações que impedem um objeto de existir num estado impossível.",
+              code: {
+                language: "javascript",
+                filename: "temperature.js",
+                code: [
+                  "class Temperature {",
+                  "  #celsius;",
+                  "  set celsius(value) {",
+                  '    if (value < -273.15) throw new Error("Abaixo do zero absoluto");',
+                  "    this.#celsius = value;",
+                  "  }",
+                  "  get celsius() {",
+                  "    return this.#celsius;",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "O setter garante que #celsius nunca fique abaixo do zero absoluto — um invariante do mundo " +
+                "real, protegido pela mesma técnica.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A pilha abaixo expõe o array interno como propriedade pública — qualquer código pode mutá-lo " +
+              "diretamente, ignorando push()/pop() por completo.",
+            problemCode: {
+              language: "javascript",
+              filename: "stack.js",
+              code: [
+                "class Stack {",
+                "  items = [];",
+                "  push(value) { this.items.push(value); }",
+                "  pop() { return this.items.pop(); }",
+                "}",
+                "",
+                "const s = new Stack();",
+                "s.items.push(999); // bypassa push()",
+              ].join("\n"),
+            },
+            task:
+              "Reescreva Stack para que items não possa ser lido nem alterado de fora da classe — a única forma " +
+              "de interagir com a pilha deve ser por push()/pop().",
+            hint: "Campos privados (#nome) do JavaScript moderno bloqueiam acesso de fora por completo, diferente de uma propriedade pública comum.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "stack.js",
+                code: [
+                  "class Stack {",
+                  "  #items = [];",
+                  "  push(value) { this.#items.push(value); }",
+                  "  pop() { return this.#items.pop(); }",
+                  "  get size() { return this.#items.length; }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "#items agora é verdadeiramente privado — s.items nem existe mais de fora da classe, só " +
+                "push/pop/size. O invariante \"só entra e sai pela pilha\" não pode mais ser violado de fora.",
+            },
+          },
+        }),
         concept({
           order: 30,
           title: "Information Hiding",
+          note: "Ocultação de informação",
           requires: ["Encapsulation"],
-          note: "distinção Encapsulation (técnica) × Information Hiding (princípio) — conflados na prática",
+          summary:
+            "O princípio de projetar interfaces que escondem decisões de implementação com chance de mudar — " +
+            "Encapsulation é a técnica de linguagem que ajuda a aplicá-lo, mas os dois não são a mesma coisa.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Information Hiding é um princípio de design: ao projetar um módulo, uma classe ou uma função, " +
+                "você decide deliberadamente quais decisões internas ficam escondidas da interface pública — " +
+                "especialmente aquelas com mais chance de mudar no futuro. Não é sobre usar private; é sobre " +
+                "escolher O QUE esconder.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "É comum confundir Information Hiding com Encapsulation, porque os dois andam juntos na " +
+                "prática — mas Encapsulation é o mecanismo de linguagem (campos privados, módulos, closures) " +
+                "que você usa para aplicar uma decisão de Information Hiding. É perfeitamente possível ter " +
+                "Encapsulation técnico sem esconder informação nenhuma: uma classe pode ter campos privados " +
+                "cujos getters/setters simplesmente espelham a estrutura interna, sem proteger decisão " +
+                "nenhuma de mudança.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "paragraph",
+              text: "O código abaixo é encapsulado (campos privados), mas não esconde nenhuma informação de verdade:",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "rectangle.js",
+              code: [
+                "class Rectangle {",
+                "  #width;",
+                "  #height;",
+                "  getWidth() { return this.#width; }",
+                "  getHeight() { return this.#height; }",
+                "  setWidth(w) { this.#width = w; }",
+                "  setHeight(h) { this.#height = h; }",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "#width e #height são tecnicamente privados, mas a interface pública é só um espelho da " +
+                "estrutura interna. Se amanhã você quiser guardar area e aspectRatio em vez de largura/altura, " +
+                "todo código que chama getWidth()/setWidth() quebra — nenhuma decisão de implementação foi " +
+                "escondida de fato.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Encapsulation esconde o acesso; Information Hiding esconde a decisão. Um bom design " +
+                "normalmente precisa dos dois, mas eles resolvem problemas diferentes.",
+            },
+          ],
+          examples: [
+            {
+              title: "Um algoritmo de ordenação escondido",
+              context: "A interface de sort() esconde completamente como a ordenação é feita por dentro.",
+              code: { language: "javascript", filename: "sort.js", code: "items.sort((a, b) => a.price - b.price);" },
+              explanation:
+                "sort(comparator) esconde COMO a ordenação acontece — só expõe o que ela precisa de você. O " +
+                "motor de JavaScript já trocou de algoritmo de ordenação entre versões sem quebrar nenhum código.",
+            },
+            {
+              title: "Um repositório escondendo a fonte dos dados",
+              context: "Quem consome o repositório não sabe (nem precisa saber) de onde os dados vêm.",
+              code: {
+                language: "javascript",
+                filename: "user-repository.js",
+                code: ["class UserRepository {", "  async findById(id) {", "    return this.#source.query(id);", "  }", "}"].join("\n"),
+              },
+              explanation:
+                "A decisão \"onde os dados moram\" está escondida atrás de findById. Trocar Postgres por Redis " +
+                "não exige mudar nenhum código que consome UserRepository.",
+            },
+            {
+              title: "Uma feature flag escondendo sua origem",
+              context: "A função esconde se a flag vem de env var, de um serviço remoto ou de um arquivo.",
+              code: {
+                language: "javascript",
+                filename: "feature-flags.js",
+                code: ["function isFeatureEnabled(name) {", '  return process.env[`FEATURE_${name}`] === "true";', "}"].join("\n"),
+              },
+              explanation:
+                "Hoje a decisão é ler de variável de ambiente; amanhã pode virar consultar um serviço de " +
+                "feature flags. Quem chama isFeatureEnabled nunca precisa saber disso.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A função de frete abaixo expõe a fórmula de cálculo inteira para quem chama — para simular um " +
+              "frete sem prioridade, é preciso conhecer os parâmetros exatos da fórmula.",
+            problemCode: {
+              language: "javascript",
+              filename: "shipping.js",
+              code: [
+                "function shippingCost(weightKg, distanceKm, isPriority) {",
+                "  const base = weightKg * 2.5;",
+                "  const distanceFee = distanceKm * 0.1;",
+                "  const priorityMultiplier = isPriority ? 1.5 : 1;",
+                "  return (base + distanceFee) * priorityMultiplier;",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Proponha uma mudança na interface que esconda a fórmula de cálculo por completo, mesmo que a " +
+              "lógica interna mude no futuro (ex.: passar a consultar uma tabela de preços por transportadora). " +
+              "Não precisa reescrever tudo — esboce como a assinatura deveria mudar.",
+            hint:
+              "Pense em quais parâmetros hoje \"vazam\" a fórmula interna, e se as taxas poderiam virar decisões " +
+              "internas de um objeto/classe com um único método público.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "shipping.js",
+                code: [
+                  "class ShippingCalculator {",
+                  "  #ratePerKg = 2.5;",
+                  "  #ratePerKm = 0.1;",
+                  "  #priorityMultiplier = 1.5;",
+                  "",
+                  "  cost({ weightKg, distanceKm, priority = false }) {",
+                  "    const base = weightKg * this.#ratePerKg + distanceKm * this.#ratePerKm;",
+                  "    return priority ? base * this.#priorityMultiplier : base;",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "As taxas agora são decisões internas escondidas — podem virar uma consulta a uma tabela de " +
+                "preços sem que cost() mude de assinatura. A interface pública virou só \"o quê\" (peso, " +
+                "distância, prioridade), nunca \"como\" o preço é calculado.",
+            },
+          },
         }),
         concept({
           order: 40,
           title: "Interface",
-          requires: ["Abstraction"],
           note: "a fronteira",
+          requires: ["Abstraction"],
           revisit: ["Software Design / Program to an Interface", "Platform / API Contract", "Testing / Contract Testing"],
+          summary:
+            "O contrato público que separa o que algo faz do como isso é implementado — a fronteira que " +
+            "Abstraction e Encapsulation ajudam a proteger.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Uma Interface é o conjunto de operações que algo expõe para o mundo exterior — a lista do que " +
+                "você pode fazer, sem revelar como isso é feito por dentro. É a fronteira entre \"por fora\" e " +
+                "\"por dentro\".",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Quando duas partes de um sistema só se conhecem pela interface — e não pela implementação uma " +
+                "da outra —, elas podem evoluir de forma independente. Trocar a implementação de um lado não " +
+                "quebra o outro lado, desde que a interface continue igual. A interface é justamente o que " +
+                "sobra depois que os detalhes foram abstraídos.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "paragraph",
+              text: "Duas implementações completamente diferentes podem cumprir a mesma interface implícita:",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "logging.js",
+              code: [
+                "function renderReport(logger) {",
+                '  logger.info("Iniciando relatório");',
+                "  // ...",
+                '  logger.info("Relatório concluído");',
+                "}",
+                "",
+                "renderReport(console);            // usa console.info",
+                "renderReport(myCustomFileLogger); // usa outro logger, mesma interface",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "renderReport não conhece a implementação de logger — só espera que ele tenha um método " +
+                "info(mensagem). Isso é a interface: o contrato mínimo que qualquer logger precisa cumprir " +
+                "para funcionar ali.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Interface é o contrato — o que algo promete fazer. Duas implementações completamente " +
+                "diferentes podem cumprir a mesma interface, e quem depende dela nem percebe a diferença.",
+            },
+          ],
+          examples: [
+            {
+              title: "Duas implementações da mesma interface de pagamento",
+              context: "O checkout depende só do contrato charge(amountCents), não de qual provedor está por trás.",
+              code: {
+                language: "javascript",
+                filename: "payment.js",
+                code: ["class StripePayment {", "  charge(amountCents) { /* chama a API da Stripe */ }", "}", "class PixPayment {", "  charge(amountCents) { /* gera um QR code Pix */ }", "}"].join("\n"),
+              },
+              explanation:
+                "Ambas cumprem a mesma interface implícita: um método charge(amountCents). O código de checkout " +
+                "troca de StripePayment para PixPayment sem mudar uma linha.",
+            },
+            {
+              title: "A interface de um endpoint HTTP",
+              context: "O contrato de entrada/saída de uma API é uma interface, mesmo sem nenhuma classe envolvida.",
+              code: { language: "text", filename: "users-api.txt", code: "GET /users/:id → { id, name, email }" },
+              explanation:
+                "O time de backend pode reescrever o que acontece atrás desse GET — trocar banco, adicionar " +
+                "cache, mudar linguagem — sem afetar quem consome a API, desde que o contrato continue igual.",
+            },
+            {
+              title: "A interface de um componente de UI",
+              context: "As props de um componente são a interface dele — o resto é implementação escondida.",
+              code: { language: "jsx", filename: "chart-usage.jsx", code: "<Chart data={points} onPointClick={handleClick} />" },
+              explanation:
+                "data e onPointClick são a interface do componente Chart. Como ele desenha o gráfico por dentro " +
+                "(SVG, canvas, uma lib de terceiros) é implementação, invisível a quem usa <Chart>.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O sistema de notificação abaixo está acoplado diretamente ao envio por e-mail — toda vez que " +
+              "algo precisa notificar um usuário, chama sendEmail diretamente.",
+            problemCode: {
+              language: "javascript",
+              filename: "notify.js",
+              code: ["function notifyUser(user, message) {", "  sendEmail(user.email, message);", "}"].join("\n"),
+            },
+            task:
+              "Projete uma interface que permita trocar e-mail por SMS/push/etc sem mudar notifyUser. Esboce a " +
+              "assinatura que essa interface deveria ter, e como notifyUser passaria a depender dela em vez de " +
+              "sendEmail diretamente.",
+            hint: "Pense no menor conjunto de métodos que qualquer canal de notificação (e-mail, SMS, push) consegue implementar em comum.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "notify.js",
+                code: [
+                  "// Interface implícita: qualquer notifier precisa ter send(user, message)",
+                  "class EmailNotifier {",
+                  "  send(user, message) { sendEmail(user.email, message); }",
+                  "}",
+                  "class SmsNotifier {",
+                  "  send(user, message) { sendSms(user.phone, message); }",
+                  "}",
+                  "",
+                  "function notifyUser(notifier, user, message) {",
+                  "  notifier.send(user, message);",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "notifyUser agora depende só da interface send(user, message), não de uma implementação " +
+                "específica. Adicionar um PushNotifier no futuro não exige tocar em notifyUser — só criar uma " +
+                "nova classe que cumpra a mesma interface.",
+            },
+          },
         }),
         concept({
           order: 50,
