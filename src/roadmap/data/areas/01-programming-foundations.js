@@ -7082,8 +7082,226 @@ export default area({
         "Backpressure (hoje só em Architecture)",
       ],
       concepts: [
-        concept({ order: 10, title: "Synchronous vs Asynchronous", note: "framing — agnóstico de linguagem" }),
-        concept({ order: 20, title: "Blocking vs Non-Blocking", requires: ["Synchronous vs Asynchronous"], note: "eixo distinto de sync/async — agnóstico" }),
+        concept({
+          order: 10,
+          title: "Synchronous vs Asynchronous",
+          note: "framing — agnóstico de linguagem",
+          summary:
+            "Se o programa espera uma operação terminar antes de seguir pra próxima linha (síncrono), ou " +
+            "se pode disparar a operação e continuar fazendo outra coisa enquanto ela roda em segundo plano " +
+            "(assíncrono) — um eixo que existe em qualquer linguagem, não só em JavaScript.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Código síncrono executa uma instrução de cada vez, na ordem em que aparece — cada linha " +
+                "espera a anterior terminar. Código assíncrono permite disparar uma operação e seguir " +
+                "executando outras linhas antes dela terminar; o resultado chega depois, quando estiver pronto.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Algumas operações (ler um arquivo, esperar uma resposta de rede, esperar um timer) demoram e " +
+                "não usam CPU enquanto esperam — o processador fica ocioso, só aguardando. Se o programa " +
+                "rodasse tudo de forma síncrona, ficaria travado esperando à toa. Async existe pra aproveitar " +
+                "esse tempo ocioso: dispara a operação lenta e segue fazendo outro trabalho enquanto ela roda.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "sync-vs-async.js",
+              code: [
+                'console.log("1");',
+                "setTimeout(function () {",
+                '  console.log("2 — chega depois, mesmo com delay 0");',
+                "}, 0);",
+                'console.log("3");',
+                "// ordem impressa: 1, 3, 2",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "setTimeout dispara a função passada e devolve o controle IMEDIATAMENTE — o programa não " +
+                "espera o timer, segue pra linha seguinte. Por isso \"3\" imprime antes de \"2\", mesmo o " +
+                "setTimeout aparecendo antes do console.log(\"3\") no código.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Síncrono espera cada operação terminar antes de seguir; assíncrono dispara a operação e " +
+                "continua, recebendo o resultado depois — a distinção existe em qualquer linguagem que lida " +
+                "com operações lentas (I/O, timers, rede), não é específica de JavaScript.",
+            },
+          ],
+          examples: [
+            {
+              title: "Tudo síncrono — ordem previsível",
+              context: "Cada linha espera a anterior terminar antes de rodar.",
+              code: { language: "javascript", filename: "all-sync.js", code: ['console.log("a");', 'console.log("b");', 'console.log("c");', "// ordem: a, b, c — sempre, sem surpresas"].join("\n") },
+              explanation: "Sem nenhuma operação assíncrona, a ordem de execução é idêntica à ordem de leitura do código.",
+            },
+            {
+              title: "Uma operação assíncrona no meio",
+              context: "A ordem de EXECUÇÃO deixa de ser a ordem de LEITURA.",
+              code: {
+                language: "javascript",
+                filename: "one-async.js",
+                code: ['console.log("a");', 'setTimeout(() => console.log("b — assíncrono"), 0);', 'console.log("c");', "// ordem: a, c, b"].join("\n"),
+              },
+              explanation: "\"b\" só imprime depois de \"c\", porque setTimeout não bloqueia — o programa segue antes do timer disparar.",
+            },
+            {
+              title: "Duas operações assíncronas — a ordem de chegada não é garantida pela ordem de disparo",
+              context: "Delays diferentes decidem quem chega primeiro.",
+              code: {
+                language: "javascript",
+                filename: "two-async.js",
+                code: ['setTimeout(() => console.log("demorado"), 100);', 'setTimeout(() => console.log("rápido"), 10);', "// ordem: rápido, demorado — quem tem menor delay chega primeiro"].join("\n"),
+              },
+              explanation: "Disparar uma operação assíncrona primeiro não garante que ela termine primeiro — quem controla a ordem de chegada é quando cada uma efetivamente fica pronta.",
+            },
+          ],
+          exercise: {
+            problem: "Preveja a ordem exata em que as mensagens abaixo são impressas no console.",
+            problemCode: {
+              language: "javascript",
+              filename: "predict-order.js",
+              code: ['console.log("início");', 'setTimeout(() => console.log("timeout 1"), 0);', 'console.log("meio");', 'setTimeout(() => console.log("timeout 2"), 0);', 'console.log("fim");'].join("\n"),
+            },
+            task: "Escreva, em um comentário, a ordem exata das 5 mensagens.",
+            hint: "console.log síncrono roda imediatamente, na ordem do código. setTimeout, mesmo com delay 0, sempre roda DEPOIS de todo o código síncrono terminar.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "predict-order-solved.js",
+                code: [
+                  "// Ordem: início, meio, fim, timeout 1, timeout 2",
+                  "// As 3 chamadas síncronas rodam primeiro, na ordem do código.",
+                  "// Os 2 setTimeout só rodam depois, na ordem em que foram AGENDADOS (não importa o delay 0).",
+                ].join("\n"),
+              },
+              explanation: "Todo código síncrono termina antes de qualquer callback assíncrono rodar — mesmo com delay 0, setTimeout nunca interrompe o código síncrono em andamento.",
+            },
+          },
+        }),
+        concept({
+          order: 20,
+          title: "Blocking vs Non-Blocking",
+          requires: ["Synchronous vs Asynchronous"],
+          note: "eixo distinto de sync/async — agnóstico",
+          summary:
+            "Se uma chamada trava a execução até a operação terminar (blocking) ou devolve o controle " +
+            "imediatamente, deixando a operação continuar em segundo plano (non-blocking) — um eixo sobre " +
+            "COMO o runtime lida com espera, distinto (mas relacionado) de sync/async.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Blocking é quando uma chamada trava a thread até a operação terminar — nada mais roda " +
+                "enquanto ela espera. Non-blocking é quando a chamada devolve o controle imediatamente, e a " +
+                "operação continua em segundo plano, notificando quando terminar.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Sync/Async descreve a ORDEM de execução do código; Blocking/Non-Blocking descreve se a " +
+                "THREAD fica presa esperando. Os dois eixos costumam andar juntos (código assíncrono " +
+                "normalmente é non-blocking), mas são conceitos diferentes: dá pra ter uma chamada síncrona " +
+                "que não bloqueia (raro) ou uma API assíncrona construída sobre uma implementação bloqueante " +
+                "por baixo — a distinção existe pra nomear ONDE está o custo de esperar.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "text",
+              filename: "blocking-vs-non-blocking.txt",
+              code: [
+                "Blocking:     leitura de arquivo trava a thread até o disco responder — nada mais roda nesse meio tempo.",
+                "Non-blocking: leitura de arquivo devolve o controle na hora; o resultado chega via notificação",
+                "              (callback/evento), enquanto a thread segue livre pra fazer outra coisa.",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O runtime de JavaScript no browser e no Node é non-blocking por padrão pras operações de I/O " +
+                "mais comuns (rede, timers, leitura de arquivo no Node) — é isso que permite uma página " +
+                "continuar responsiva enquanto espera uma resposta de rede.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Blocking trava a thread até a operação terminar; non-blocking devolve o controle na hora e " +
+                "notifica depois — um eixo sobre COMO a espera é tratada, distinto de sync/async (que é sobre " +
+                "ORDEM de execução), mas os dois costumam aparecer juntos na prática.",
+            },
+          ],
+          examples: [
+            {
+              title: "Blocking — a thread trava",
+              context: "Um loop pesado ocupa a thread inteira; nada mais roda até ele terminar.",
+              code: {
+                language: "javascript",
+                filename: "blocking-loop.js",
+                code: ["function blockFor(ms) {", "  const end = Date.now() + ms;", "  while (Date.now() < end) {} // ocupa a thread ativamente", "}", 'console.log("antes");', "blockFor(2000); // trava tudo por 2s — até o click de um botão espera", 'console.log("depois");'].join("\n"),
+              },
+              explanation: "Enquanto blockFor roda, a thread não processa mais nada — nem eventos de UI, nem outros timers.",
+            },
+            {
+              title: "Non-blocking — a thread fica livre",
+              context: "setTimeout devolve o controle na hora; o timer roda \"por fora\".",
+              code: { language: "javascript", filename: "non-blocking-timer.js", code: ['console.log("antes");', 'setTimeout(() => console.log("depois do timer"), 2000);', 'console.log("logo em seguida");', "// a thread não trava — o programa segue livre enquanto o timer conta"].join("\n") },
+              explanation: "Diferente do blockFor, setTimeout não ocupa a thread pelos 2 segundos — ela fica livre pra outro trabalho.",
+            },
+            {
+              title: "A mesma operação, duas versões",
+              context: "readFileSync (blocking) vs. a contraparte non-blocking, em pseudocódigo de I/O de arquivo.",
+              code: {
+                language: "text",
+                filename: "file-read-modes.txt",
+                code: [
+                  "readFileSync(path)        // BLOCKING — a thread trava até o disco responder",
+                  "readFile(path, callback)  // NON-BLOCKING — devolve o controle na hora, chama callback quando pronto",
+                ].join("\n"),
+              },
+              explanation: "Muitas APIs de I/O oferecem as duas versões — a escolha entre elas é exatamente a escolha entre blocking e non-blocking.",
+            },
+          ],
+          exercise: {
+            problem: "Classifique cada chamada abaixo como blocking ou non-blocking, e justifique.",
+            problemCode: {
+              language: "text",
+              filename: "classify-calls.txt",
+              code: [
+                "1. while (condicao) { /* loop apertado sem await */ }",
+                "2. setTimeout(() => {...}, 1000)",
+                "3. fetch(url) // (independente do que faz com o resultado depois)",
+                "4. Array.from({length: 1e9}).map(x => x * 2) // array gigante, síncrono",
+              ].join("\n"),
+            },
+            task: "Para cada item, escreva blocking ou non-blocking, com uma frase de justificativa.",
+            hint: "Pergunte: enquanto essa linha roda, a thread consegue fazer mais alguma coisa, ou fica presa até terminar?",
+            solution: {
+              code: {
+                language: "text",
+                filename: "classify-calls-solved.txt",
+                code: [
+                  "1. Blocking — o loop ocupa a thread ativamente até a condição mudar; nada mais roda.",
+                  "2. Non-blocking — devolve o controle na hora; o callback roda depois, via notificação.",
+                  "3. Non-blocking — fetch dispara a requisição e devolve o controle imediatamente.",
+                  "4. Blocking — o .map roda inteiro, de forma síncrona, ocupando a thread até terminar.",
+                ].join("\n"),
+              },
+              explanation: "O teste decisivo é sempre o mesmo: a thread fica livre pra outra coisa enquanto a operação está em andamento, ou fica presa até ela terminar?",
+            },
+          },
+        }),
         concept({
           order: 30,
           title: "Call Stack",
@@ -7096,12 +7314,627 @@ export default area({
           order: 40,
           title: "Callback",
           requires: ["Functional Programming / First-Class Functions", "Functional Programming / Closure", "Synchronous vs Asynchronous"],
+          note: "o mecanismo básico — antecessor de Promise",
+          summary:
+            "Uma função passada como argumento pra outra função, com o combinado de ser chamada mais tarde — " +
+            "quando um evento acontece ou uma operação assíncrona termina. O mecanismo mais básico pra " +
+            "\"avisar\" o código de quem chamou quando algo está pronto.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Callback é uma função passada como argumento pra outra função, pra ser executada mais tarde — " +
+                "geralmente quando uma operação assíncrona termina, ou quando um evento acontece. Só é " +
+                "possível porque funções são First-Class: podem ser passadas como qualquer outro valor.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Quando uma operação é assíncrona, o código que a disparou já seguiu em frente — não dá pra " +
+                "simplesmente \"esperar o retorno\" como numa chamada síncrona. Callback resolve isso invertendo " +
+                "o controle: em vez de o chamador esperar o resultado, ele entrega uma função que SERÁ chamada " +
+                "quando o resultado existir. Frequentemente essa função fecha sobre variáveis do escopo onde " +
+                "foi criada (Closure), o que permite acessar contexto do chamador mesmo rodando mais tarde.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "callback.js",
+              code: [
+                "function fetchUser(id, onDone) { // onDone é o callback",
+                "  setTimeout(() => {",
+                '    onDone({ id, name: "Ana" }); // chamado quando o \"resultado\" está pronto',
+                "  }, 100);",
+                "}",
+                "fetchUser(1, function (user) {",
+                "  console.log(user.name); // \"Ana\" — só roda quando o setTimeout dispara",
+                "});",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "fetchUser não retorna o usuário diretamente — não tem como, ele ainda não existe quando a " +
+                "função retorna. Em vez disso, guarda onDone e chama ela quando o dado está pronto.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Callback é uma função entregue como argumento pra ser chamada mais tarde — o mecanismo básico " +
+                "pra lidar com \"o resultado ainda não existe agora\", possível porque funções são First-Class " +
+                "e frequentemente combinado com Closure pra acessar contexto do chamador original.",
+            },
+          ],
+          examples: [
+            {
+              title: "Callback em evento",
+              context: "O mesmo padrão, fora de I/O — reagindo a uma ação do usuário.",
+              code: { language: "javascript", filename: "event-callback.js", code: ['button.addEventListener("click", function () {', '  console.log("clicado!"); // roda só quando o evento acontece, tempo indeterminado', "});"].join("\n") },
+              explanation: "addEventListener recebe um callback que só executa quando (e se) o clique acontecer — pode ser nunca.",
+            },
+            {
+              title: "Closure dentro do callback",
+              context: "O callback \"lembra\" de uma variável do escopo onde foi criado.",
+              code: {
+                language: "javascript",
+                filename: "closure-in-callback.js",
+                code: ["function greetLater(name) {", "  setTimeout(function () {", "    console.log(`Olá, ${name}!`); // fecha sobre \"name\", mesmo rodando depois", "  }, 100);", "}", 'greetLater("Ana"); // imprime "Olá, Ana!" depois de 100ms'].join("\n"),
+              },
+              explanation: "O callback continua tendo acesso a \"name\" mesmo executando bem depois de greetLater ter retornado — Closure em ação.",
+            },
+            {
+              title: "Callback de erro-primeiro (padrão Node.js)",
+              context: "Convenção comum: o primeiro argumento do callback é o erro (ou null).",
+              code: {
+                language: "javascript",
+                filename: "error-first.js",
+                code: ["function readConfig(path, callback) {", "  setTimeout(() => {", "    const failed = false;", '    if (failed) return callback(new Error("arquivo não encontrado"));', '    callback(null, { debug: true });', "  }, 50);", "}", "readConfig(\"config.json\", (err, config) => {", "  if (err) return console.error(err.message);", "  console.log(config);", "});"].join("\n"),
+              },
+              explanation: "Sem um valor de retorno pra usar em try/catch, callbacks assíncronos convencionam passar o erro como primeiro parâmetro.",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo simula uma busca lenta, mas espera receber o resultado como retorno — o que não funciona pra uma operação assíncrona.",
+            problemCode: {
+              language: "javascript",
+              filename: "search-broken.js",
+              code: ["function search(query) {", "  setTimeout(() => {", '    return [`resultado para "${query}"`]; // este return não vai a lugar nenhum útil', "  }, 100);", "}", "const results = search(\"gatos\");", "console.log(results); // undefined — o setTimeout ainda nem rodou"].join("\n"),
+            },
+            task: "Reescreva search pra receber um callback e chamá-lo com os resultados quando estiverem prontos.",
+            hint: "Adicione um segundo parâmetro (o callback) e chame ele dentro do setTimeout, no lugar do return.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "search-fixed.js",
+                code: ["function search(query, onDone) {", "  setTimeout(() => {", '    onDone([`resultado para "${query}"`]);', "  }, 100);", "}", 'search("gatos", (results) => {', "  console.log(results); // [\"resultado para \\\"gatos\\\"\"] — agora chega no momento certo", "});"].join("\n"),
+              },
+              explanation: "O return dentro do setTimeout se perde porque a função-alvo do setTimeout já foi encerrada quando ele roda; o callback é o mecanismo que entrega o resultado no momento certo.",
+            },
+          },
         }),
-        concept({ order: 50, title: "Task Queue", requires: ["Data Structures / Queue", "Callback"], collision: "≠ Architecture / Message Queue (infra, outra Epic)" }),
-        concept({ order: 60, title: "Event Loop", requires: ["Asynchronous Programming / Call Stack", "Task Queue"], note: "modelo do JS / runtimes event-loop" }),
-        concept({ order: 70, title: "Microtask Queue", requires: ["Event Loop", "Task Queue"], note: "específico de runtime (JS)" }),
-        concept({ order: 80, title: "Promise", requires: ["Callback", "Microtask Queue"], revisit: ["AI / Streaming", "Platform / Web Fundamentals / Server-Sent Events (SSE)"] }),
-        concept({ order: 90, title: "Async/Await", requires: ["Promise"], note: "açúcar sintático sobre Promise" }),
+        concept({
+          order: 50,
+          title: "Task Queue",
+          requires: ["Data Structures / Queue", "Callback"],
+          collision: "≠ Architecture / Message Queue (infra, outra Epic)",
+          note: "a fila FIFO de callbacks prontos",
+          summary:
+            "A fila (FIFO) onde callbacks de operações assíncronas terminadas (timers, I/O, eventos) esperam " +
+            "sua vez de rodar — eles só executam quando a Call Stack esvazia, na ordem em que entraram.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Task Queue (também chamada de macrotask queue ou callback queue) é a fila onde callbacks " +
+                "prontos pra rodar — de setTimeout, eventos de I/O, cliques — esperam sua vez. É uma Queue " +
+                "clássica: primeiro a entrar, primeiro a sair (FIFO).",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "JavaScript roda numa única thread — só executa uma coisa por vez. Quando um timer dispara ou " +
+                "uma resposta de rede chega, o callback correspondente não pode simplesmente interromper o " +
+                "que já está rodando; ele entra numa fila e espera a Call Stack ficar vazia. Sem essa fila, " +
+                "callbacks concorreriam de forma imprevisível pela única thread disponível.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "task-queue.js",
+              code: [
+                'console.log("1");',
+                'setTimeout(() => console.log("2"), 0); // callback vai pra Task Queue, não roda na hora',
+                'console.log("3");',
+                "// ordem: 1, 3, 2 — mesmo com delay 0, o callback espera a stack esvaziar",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "setTimeout(fn, 0) não executa fn imediatamente — ele agenda fn pra entrar na Task Queue assim " +
+                "que o timer (0ms) expirar, e de lá ela só sai quando a Call Stack estiver vazia.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Task Queue é a fila FIFO onde callbacks prontos esperam a vez de rodar — eles só saem da " +
+                "fila e entram na Call Stack quando ela está completamente vazia, o que explica por que " +
+                "código assíncrono nunca interrompe código síncrono em andamento.",
+            },
+          ],
+          examples: [
+            {
+              title: "Vários timers — ordem de entrada na fila é a ordem de saída",
+              context: "Mesmo delay, FIFO decide a ordem.",
+              code: { language: "javascript", filename: "fifo-order.js", code: ['setTimeout(() => console.log("primeiro"), 0);', 'setTimeout(() => console.log("segundo"), 0);', 'setTimeout(() => console.log("terceiro"), 0);', "// ordem: primeiro, segundo, terceiro — a ordem em que entraram na fila"].join("\n") },
+              explanation: "Com o mesmo delay, quem entra primeiro na Task Queue sai primeiro — comportamento clássico de Queue.",
+            },
+            {
+              title: "A Call Stack precisa esvaziar antes de QUALQUER callback rodar",
+              context: "Um loop síncrono longo atrasa até um timer de delay 0.",
+              code: {
+                language: "javascript",
+                filename: "stack-must-empty.js",
+                code: ['setTimeout(() => console.log("da fila"), 0);', "for (let i = 0; i < 1e9; i++) {} // ocupa a Call Stack por um tempo", 'console.log("código síncrono termina");', "// \"da fila\" só imprime DEPOIS do loop inteiro, mesmo tendo delay 0"].join("\n"),
+              },
+              explanation: "O callback fica esperando na Task Queue o tempo todo — ele não tem prioridade sobre código síncrono em andamento.",
+            },
+            {
+              title: "Callback de evento também entra na Task Queue",
+              context: "Não é só timer — qualquer callback assíncrono segue a mesma fila.",
+              code: { language: "javascript", filename: "event-in-queue.js", code: ['button.addEventListener("click", () => console.log("clique processado"));', "// quando clicado, o callback entra na Task Queue e espera a Call Stack esvaziar, igual um setTimeout"].join("\n") },
+              explanation: "O mecanismo é o mesmo pra qualquer origem assíncrona — timers e eventos de UI compartilham a mesma fila.",
+            },
+          ],
+          exercise: {
+            problem: "Preveja a ordem de impressão, considerando como a Task Queue processa callbacks.",
+            problemCode: {
+              language: "javascript",
+              filename: "queue-order.js",
+              code: ['console.log("A");', 'setTimeout(() => console.log("B"), 0);', 'console.log("C");', 'setTimeout(() => console.log("D"), 0);', 'console.log("E");'].join("\n"),
+            },
+            task: "Escreva a ordem exata das 5 letras impressas.",
+            hint: "Todo código síncrono roda primeiro, do início ao fim. Só depois a Task Queue começa a ser processada, na ordem FIFO.",
+            solution: {
+              code: { language: "text", filename: "queue-order-solved.txt", code: "Ordem: A, C, E, B, D\n\nSíncrono primeiro (A, C, E), depois a Task Queue processa B e D na ordem em que entraram." },
+              explanation: "Os dois setTimeout entram na Task Queue na ordem em que aparecem no código; ambos só rodam depois que todo o código síncrono terminar.",
+            },
+          },
+        }),
+        concept({
+          order: 60,
+          title: "Event Loop",
+          requires: ["Asynchronous Programming / Call Stack", "Task Queue"],
+          note: "modelo do JS / runtimes event-loop",
+          summary:
+            "O mecanismo que fica checando, em loop constante, se a Call Stack está vazia — e se estiver, " +
+            "move o próximo callback da Task Queue pra dentro dela. É o que conecta código síncrono e " +
+            "assíncrono numa única thread.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Event Loop é o mecanismo do runtime (browser, Node) que continuamente verifica: \"a Call " +
+                "Stack está vazia?\". Se estiver, ele pega o próximo callback da Task Queue e empilha na Call " +
+                "Stack pra executar. Esse ciclo se repete indefinidamente, enquanto o programa roda.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "JavaScript tem uma única Call Stack — só executa uma coisa por vez. Sem um mecanismo " +
+                "coordenando quando callbacks pendentes entram na stack, não haveria como combinar execução " +
+                "síncrona com resultados assíncronos chegando a qualquer momento. Event Loop é essa ponte: ele " +
+                "garante que callbacks só entrem na stack quando ela está livre, nunca interrompendo código " +
+                "síncrono no meio.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "text",
+              filename: "event-loop-cycle.txt",
+              code: [
+                "loop infinito do Event Loop:",
+                "  1. Call Stack está vazia?",
+                "     não → espera (a stack está processando código síncrono)",
+                "     sim → pega o próximo item da Task Queue (se houver) e empilha",
+                "  2. repete",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Esse ciclo simples é o motivo pelo qual setTimeout(fn, 0) nunca roda \"imediatamente\": fn só " +
+                "entra na Call Stack quando o Event Loop percebe que ela está vazia, o que só acontece depois " +
+                "de todo o código síncrono atual terminar.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Event Loop é o ciclo que fica checando se a Call Stack está vazia e, se estiver, move o " +
+                "próximo callback da Task Queue pra dentro dela — o mecanismo que faz JavaScript parecer " +
+                "concorrente rodando numa única thread.",
+            },
+          ],
+          examples: [
+            {
+              title: "Visualizando o ciclo com console.log",
+              context: "Cada peça do quebra-cabeça no lugar certo.",
+              code: { language: "javascript", filename: "visualize-loop.js", code: ['console.log("1: síncrono");', 'setTimeout(() => console.log("3: da Task Queue, via Event Loop"), 0);', 'console.log("2: síncrono");', "// o Event Loop só move o setTimeout pra Call Stack depois que 1 e 2 já rodaram"].join("\n") },
+              explanation: "O Event Loop nunca antecipa um callback — ele espera a Call Stack esvaziar antes de agir.",
+            },
+            {
+              title: "Um loop síncrono \"trava\" o Event Loop",
+              context: "O Event Loop não tem como agir enquanto a Call Stack está ocupada.",
+              code: { language: "javascript", filename: "blocked-loop.js", code: ['setTimeout(() => console.log("preso na fila"), 0);', "while (true) {} // Call Stack nunca esvazia — o Event Loop nunca consegue mover o callback"].join("\n") },
+              explanation: "Isso é o que se chama de \"bloquear o Event Loop\" — um erro comum que trava toda a responsividade do programa.",
+            },
+            {
+              title: "Múltiplas fontes assíncronas, um único Event Loop",
+              context: "Timer e evento de clique competem pela mesma Call Stack.",
+              code: { language: "javascript", filename: "multiple-sources.js", code: ['setTimeout(() => console.log("timer"), 0);', 'button.addEventListener("click", () => console.log("clique"));', "// quem chegar primeiro na Task Queue (dependendo de quando o usuário clica) roda primeiro"].join("\n") },
+              explanation: "O Event Loop não distingue origem — timers, cliques, respostas de rede todos disputam a mesma fila e a mesma Call Stack vazia.",
+            },
+          ],
+          exercise: {
+            problem: "Explique, em suas próprias palavras, por que o código abaixo trava a aba do navegador (nenhum clique é processado enquanto ele roda).",
+            problemCode: {
+              language: "javascript",
+              filename: "frozen-tab.js",
+              code: ["function heavyComputation() {", "  let result = 0;", "  for (let i = 0; i < 10_000_000_000; i++) {", "    result += i;", "  }", "  return result;", "}", "heavyComputation();"].join("\n"),
+            },
+            task: "Escreva 2-3 frases explicando o travamento em termos de Call Stack e Event Loop.",
+            hint: "Pense: o que precisa estar vazio pra um clique (que gera um callback) conseguir rodar?",
+            solution: {
+              code: {
+                language: "text",
+                filename: "frozen-tab-explained.txt",
+                code: [
+                  "heavyComputation ocupa a Call Stack inteira até o loop de 10 bilhões de iterações terminar.",
+                  "O Event Loop só move callbacks da Task Queue pra Call Stack quando ela está vazia — e ela",
+                  "não fica vazia até heavyComputation retornar. Por isso nenhum callback de clique roda antes",
+                  "disso: a aba parece travada porque, tecnicamente, está — a única thread está ocupada.",
+                ].join("\n"),
+              },
+              explanation: "Isso demonstra concretamente por que operações pesadas e síncronas bloqueiam a responsividade — não é o Event Loop que está lento, é a Call Stack que nunca fica livre pra ele agir.",
+            },
+          },
+        }),
+        concept({
+          order: 70,
+          title: "Microtask Queue",
+          requires: ["Event Loop", "Task Queue"],
+          note: "específico de runtime (JS)",
+          summary:
+            "Uma segunda fila de callbacks (usada por Promises) com prioridade sobre a Task Queue: o Event " +
+            "Loop esvazia a Microtask Queue INTEIRA antes de pegar o próximo item da Task Queue.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Microtask Queue é uma fila separada da Task Queue, usada principalmente por callbacks de " +
+                "Promise (.then/.catch/.finally). A diferença crucial: sempre que a Call Stack esvazia, o " +
+                "Event Loop processa TODAS as microtasks pendentes antes de pegar sequer uma task da Task " +
+                "Queue normal.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Promises precisam de garantias mais fortes de ordem do que timers ou eventos de UI — encadear " +
+                "vários .then() só faz sentido de forma previsível se cada elo rodar o mais cedo possível, sem " +
+                "disputar espaço com timers ou cliques que já estejam na fila. Dar à Microtask Queue prioridade " +
+                "sobre a Task Queue garante que uma cadeia de Promises termine antes que qualquer nova task " +
+                "(um novo setTimeout, por exemplo) comece a rodar.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "microtask-priority.js",
+              code: [
+                "function logOrder() {",
+                '  console.log("1: síncrono");',
+                '  setTimeout(() => console.log("4: Task Queue"), 0);',
+                '  Promise.resolve().then(() => console.log("3: Microtask Queue"));',
+                '  console.log("2: síncrono");',
+                "}",
+                "logOrder();",
+                "// ordem: 1, 2, 3, 4 — a microtask sempre fura a fila na frente da task",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Mesmo o setTimeout tendo sido agendado ANTES do .then(), a Promise resolve antes — porque " +
+                "toda a Microtask Queue é drenada antes do Event Loop sequer olhar pra Task Queue.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Microtask Queue é a fila de prioridade mais alta do Event Loop, usada por Promises — ela é " +
+                "esvaziada COMPLETAMENTE toda vez que a Call Stack fica livre, antes de qualquer item da Task " +
+                "Queue (timers, eventos) ter a chance de rodar.",
+            },
+          ],
+          examples: [
+            {
+              title: "Cadeia de .then() — cada elo é uma microtask",
+              context: "Encadeamento de Promise, cada .then() gera nova microtask.",
+              code: {
+                language: "javascript",
+                filename: "then-chain.js",
+                code: ['setTimeout(() => console.log("task"), 0);', "Promise.resolve()", '  .then(() => console.log("microtask 1"))', '  .then(() => console.log("microtask 2"))', '  .then(() => console.log("microtask 3"));', "// ordem: microtask 1, 2, 3 — todas antes de \"task\""].join("\n"),
+              },
+              explanation: "A cadeia inteira de microtasks roda antes do setTimeout, mesmo tendo 3 elos — a Microtask Queue só é considerada vazia quando não sobra mais nenhuma microtask, incluindo as geradas por outras microtasks.",
+            },
+            {
+              title: "Microtask gerando nova microtask",
+              context: "Uma microtask pode enfileirar outra — o loop de drenagem continua até esgotar.",
+              code: { language: "javascript", filename: "nested-microtask.js", code: ['Promise.resolve().then(() => {', '  console.log("microtask externa");', '  Promise.resolve().then(() => console.log("microtask interna, ainda antes de qualquer task"));', "});", 'setTimeout(() => console.log("task"), 0);'].join("\n") },
+              explanation: "Mesmo a microtask interna sendo criada DEPOIS do setTimeout, ela ainda roda antes — a drenagem da Microtask Queue não para até realmente esvaziar.",
+            },
+            {
+              title: "Comparando as duas filas lado a lado",
+              context: "Task e Microtask intercaladas, prioridade sempre da microtask.",
+              code: {
+                language: "javascript",
+                filename: "compare-queues.js",
+                code: ['setTimeout(() => console.log("task 1"), 0);', 'Promise.resolve().then(() => console.log("microtask 1"));', 'setTimeout(() => console.log("task 2"), 0);', 'Promise.resolve().then(() => console.log("microtask 2"));', "// ordem: microtask 1, microtask 2, task 1, task 2"].join("\n"),
+              },
+              explanation: "Ambas as microtasks rodam antes de QUALQUER task, independente da ordem de agendamento entre elas.",
+            },
+          ],
+          exercise: {
+            problem: "Preveja a ordem de impressão, considerando a prioridade da Microtask Queue sobre a Task Queue.",
+            problemCode: {
+              language: "javascript",
+              filename: "predict-microtask.js",
+              code: ['console.log("A");', 'setTimeout(() => console.log("B"), 0);', 'Promise.resolve().then(() => console.log("C"));', 'Promise.resolve().then(() => console.log("D"));', 'console.log("E");'].join("\n"),
+            },
+            task: "Escreva a ordem exata das 5 letras.",
+            hint: "Síncrono primeiro; depois TODAS as microtasks pendentes; só então a primeira task da Task Queue.",
+            solution: {
+              code: { language: "text", filename: "predict-microtask-solved.txt", code: "Ordem: A, E, C, D, B\n\nSíncrono (A, E) → toda a Microtask Queue (C, D) → só então a Task Queue (B)." },
+              explanation: "As duas Promises geram microtasks que são drenadas completamente antes do setTimeout ter qualquer chance de rodar, mesmo tendo sido agendado primeiro.",
+            },
+          },
+        }),
+        concept({
+          order: 80,
+          title: "Promise",
+          requires: ["Callback", "Microtask Queue"],
+          revisit: ["AI / Streaming", "Platform / Web Fundamentals / Server-Sent Events (SSE)"],
+          note: "estados: pending / fulfilled / rejected",
+          summary:
+            "Um objeto que representa o resultado eventual de uma operação assíncrona — pendente, resolvida " +
+            "ou rejeitada — permitindo encadear reações com .then()/.catch() em vez de aninhar callbacks " +
+            "dentro de callbacks.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Promise é um objeto que representa o resultado (ainda não disponível) de uma operação " +
+                "assíncrona. Ela sempre está em um de três estados: pending (aguardando), fulfilled (resolvida " +
+                "com sucesso) ou rejected (falhou). Uma vez resolvida ou rejeitada, o estado nunca muda de " +
+                "novo — e qualquer .then()/.catch() registrado, mesmo depois, recebe o resultado já decidido.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Callbacks aninhados pra várias operações assíncronas em sequência formam o que ficou " +
+                "conhecido como \"callback hell\": cada passo aninhado dentro do callback anterior, cada vez " +
+                "mais indentado, e tratamento de erro duplicado em cada nível. Promise resolve isso dando um " +
+                "objeto de primeira classe pra representar \"um valor que ainda vai existir\", permitindo " +
+                "encadear passos com .then() (achatado, não aninhado) e centralizar erros num único .catch().",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "promise-basic.js",
+              code: [
+                "function fetchUser(id) {",
+                "  return new Promise((resolve, reject) => {",
+                "    setTimeout(() => {",
+                "      if (id > 0) resolve({ id, name: \"Ana\" });",
+                '      else reject(new Error("id inválido"));',
+                "    }, 100);",
+                "  });",
+                "}",
+                "fetchUser(1)",
+                "  .then((user) => console.log(user.name)) // \"Ana\"",
+                "  .catch((err) => console.error(err.message));",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "fetchUser retorna a Promise IMEDIATAMENTE, ainda pending. O resultado (resolve ou reject) só " +
+                "chega depois, via .then()/.catch() — que rodam como microtasks quando a Promise resolve.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Promise é um objeto que representa o resultado futuro de uma operação assíncrona — pending, " +
+                "fulfilled ou rejected, transição única e final — permitindo encadear .then()/.catch() de " +
+                "forma achatada em vez de aninhar callbacks, com tratamento de erro centralizado.",
+            },
+          ],
+          examples: [
+            {
+              title: "Encadeando passos sequenciais",
+              context: "Cada .then() recebe o valor retornado pelo anterior — sem aninhar.",
+              code: {
+                language: "javascript",
+                filename: "chain-steps.js",
+                code: ["fetchUser(1)", "  .then((user) => fetchPosts(user.id)) // retorna outra Promise", "  .then((posts) => console.log(posts.length))", "  .catch((err) => console.error(\"algo falhou na cadeia:\", err.message));"].join("\n"),
+              },
+              explanation: "Retornar uma Promise dentro de um .then() \"achata\" a cadeia automaticamente — o próximo .then() espera ela resolver antes de rodar.",
+            },
+            {
+              title: "Um único .catch() cobre toda a cadeia",
+              context: "Erro em qualquer ponto da cadeia pula direto pro .catch().",
+              code: { language: "javascript", filename: "single-catch.js", code: ["fetchUser(-1) // vai rejeitar", "  .then((user) => fetchPosts(user.id)) // nunca roda", "  .then((posts) => console.log(posts.length)) // nunca roda", "  .catch((err) => console.error(\"pego aqui:\", err.message)); // roda direto"].join("\n") },
+              explanation: "Diferente de callbacks aninhados (onde cada nível precisaria checar erro separadamente), uma rejeição em qualquer ponto pula todos os .then() seguintes e cai no próximo .catch().",
+            },
+            {
+              title: "Promise.resolve() para valores já disponíveis",
+              context: "Envolver um valor síncrono numa Promise pra uniformizar a interface.",
+              code: { language: "javascript", filename: "promise-resolve.js", code: ["const cached = { id: 1, name: \"Ana\" };", "Promise.resolve(cached).then((user) => console.log(user.name)); // \"Ana\", como microtask"].join("\n") },
+              explanation: "Útil quando uma função às vezes tem o dado em cache (síncrono) e às vezes precisa buscar (assíncrono) — Promise.resolve() uniformiza a interface pro chamador sempre usar .then().",
+            },
+          ],
+          exercise: {
+            problem: "O código abaixo aninha callbacks (callback hell) pra buscar um usuário e depois seus posts.",
+            problemCode: {
+              language: "javascript",
+              filename: "callback-hell.js",
+              code: [
+                "getUser(1, function (err, user) {",
+                "  if (err) return console.error(err);",
+                "  getPosts(user.id, function (err, posts) {",
+                "    if (err) return console.error(err);",
+                "    console.log(posts.length);",
+                "  });",
+                "});",
+              ].join("\n"),
+            },
+            task: "Reescreva usando Promises, assumindo que getUserAsync(id) e getPostsAsync(userId) já retornam Promise, encadeadas com .then() e um único .catch().",
+            hint: "Retorne getPostsAsync(user.id) de dentro do primeiro .then() pra encadear, e coloque só um .catch() no final.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "promise-version.js",
+                code: ["getUserAsync(1)", "  .then((user) => getPostsAsync(user.id))", "  .then((posts) => console.log(posts.length))", "  .catch((err) => console.error(err));"].join("\n"),
+              },
+              explanation: "A versão com Promise é achatada (sem indentação crescente) e trata erro de qualquer um dos dois passos num único .catch(), em vez de checar err em cada callback aninhado.",
+            },
+          },
+        }),
+        concept({
+          order: 90,
+          title: "Async/Await",
+          requires: ["Promise"],
+          note: "açúcar sintático sobre Promise",
+          summary:
+            "Sintaxe que permite escrever código assíncrono baseado em Promise com a aparência de código " +
+            "síncrono — await pausa a função (sem bloquear a thread) até a Promise resolver, sem precisar " +
+            "encadear .then().",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Async/Await é açúcar sintático sobre Promise: uma função marcada async sempre retorna uma " +
+                "Promise, e dentro dela await pausa a execução daquela função (só dela, não da thread " +
+                "inteira) até a Promise à direita resolver, entregando o valor resolvido diretamente.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Cadeias longas de .then() ainda exigem pensar \"de trás pra frente\" em certos casos (loops, " +
+                "condicionais, try/catch por cima de vários passos ficam verbosos). Async/Await permite " +
+                "escrever a mesma lógica assíncrona com a estrutura visual de código síncrono — um if, um " +
+                "for, um try/catch comuns — sem mudar o comportamento por baixo, que continua sendo Promise.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "async-await.js",
+              code: [
+                "async function getUserName(id) {",
+                "  const user = await fetchUser(id); // pausa AQUI até a Promise resolver",
+                "  return user.name;",
+                "}",
+                "getUserName(1).then((name) => console.log(name)); // getUserName sempre retorna Promise",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "await fetchUser(id) é equivalente a fetchUser(id).then(user => ...) — mas escrito como se " +
+                "fosse uma atribuição síncrona comum. getUserName continua sendo assíncrona: ela ainda retorna " +
+                "uma Promise, que precisa de .then() ou outro await pra ser consumida.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Async/Await é açúcar sintático sobre Promise — await pausa apenas a função atual (não a " +
+                "thread) até a Promise resolver, permitindo escrever lógica assíncrona com a estrutura visual " +
+                "de código síncrono, incluindo try/catch comum pra tratar rejeições.",
+            },
+          ],
+          examples: [
+            {
+              title: "try/catch no lugar de .catch()",
+              context: "Erro de uma Promise rejeitada vira uma exceção capturável.",
+              code: {
+                language: "javascript",
+                filename: "try-catch-async.js",
+                code: ["async function getUserName(id) {", "  try {", "    const user = await fetchUser(id);", "    return user.name;", "  } catch (err) {", "    console.error(\"falhou:\", err.message);", "    return null;", "  }", "}"].join("\n"),
+              },
+              explanation: "Quando a Promise de fetchUser rejeita, o await lança uma exceção — capturável com try/catch comum, em vez de um .catch() separado.",
+            },
+            {
+              title: "Vários await em sequência",
+              context: "Cada linha só segue quando a anterior resolve — leitura linear.",
+              code: { language: "javascript", filename: "sequential-await.js", code: ["async function getUserPosts(id) {", "  const user = await fetchUser(id);", "  const posts = await fetchPosts(user.id);", "  return posts;", "}"].join("\n") },
+              explanation: "Equivalente à cadeia .then().then() anterior, mas lido de cima pra baixo como código síncrono comum.",
+            },
+            {
+              title: "await NÃO bloqueia a thread",
+              context: "Enquanto uma função async espera, outro código continua rodando.",
+              code: {
+                language: "javascript",
+                filename: "non-blocking-await.js",
+                code: ["async function slow() {", '  await fetchUser(1);', '  console.log("slow terminou");', "}", "slow();", 'console.log("isso imprime ANTES de \\"slow terminou\\""); // await não trava o resto do programa'].join("\n"),
+              },
+              explanation: "await pausa só o corpo de slow — o resto do programa (e a thread) continua livre enquanto a Promise não resolve, exatamente como uma cadeia .then() se comportaria.",
+            },
+          ],
+          exercise: {
+            problem: "Converta a cadeia de Promise abaixo pra usar async/await, com tratamento de erro via try/catch.",
+            problemCode: {
+              language: "javascript",
+              filename: "chain-to-convert.js",
+              code: ["function loadDashboard(userId) {", "  return fetchUser(userId)", "    .then((user) => fetchPosts(user.id))", "    .then((posts) => posts.length)", "    .catch((err) => {", '      console.error("erro no dashboard:", err.message);', "      return 0;", "    });", "}"].join("\n"),
+            },
+            task: "Reescreva loadDashboard como uma função async equivalente.",
+            hint: "Cada .then() vira uma linha com await; o .catch() vira um bloco catch de try/catch envolvendo os awaits.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "chain-converted.js",
+                code: [
+                  "async function loadDashboard(userId) {",
+                  "  try {",
+                  "    const user = await fetchUser(userId);",
+                  "    const posts = await fetchPosts(user.id);",
+                  "    return posts.length;",
+                  "  } catch (err) {",
+                  '    console.error("erro no dashboard:", err.message);',
+                  "    return 0;",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation: "loadDashboard continua retornando uma Promise (por ser async) — o comportamento externo é idêntico, só a forma de escrever a lógica interna mudou.",
+            },
+          },
+        }),
       ],
     }),
     module({

@@ -1213,6 +1213,14 @@ for (const area of model.areas()) {
     "sorting-fundamentals",
     "recursion",
     "memoization",
+    "synchronous-vs-asynchronous",
+    "blocking-vs-non-blocking",
+    "callback",
+    "task-queue",
+    "event-loop",
+    "microtask-queue",
+    "promise",
+    "async-await",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",
