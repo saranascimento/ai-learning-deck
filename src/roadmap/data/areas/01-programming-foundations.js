@@ -6100,41 +6100,965 @@ export default area({
         "Complexity of Common Operations (cheat-sheet)",
       ],
       concepts: [
-        concept({ order: 10, title: "Time Complexity", requires: ["Data Structures"] }),
-        concept({ order: 20, title: "Space Complexity", requires: ["Time Complexity"] }),
-        concept({ order: 30, title: "Big O", requires: ["Time Complexity", "Space Complexity"], note: "a notação (pior caso assintótico)" }),
+        concept({
+          order: 10,
+          title: "Time Complexity",
+          note: "Tempo em função do tamanho",
+          requires: ["Data Structures"],
+          summary:
+            "Como o tempo de execução de um algoritmo cresce conforme o tamanho da entrada aumenta — não o " +
+            "tempo em segundos (que depende da máquina), mas a taxa de crescimento, o que permite comparar " +
+            "algoritmos de forma independente de hardware.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Time Complexity descreve como o número de operações que um algoritmo executa cresce " +
+                "conforme o tamanho da entrada (n) aumenta. Não é uma medida de tempo em segundos — é uma " +
+                "medida de taxa de crescimento, abstraída de qual máquina está rodando o código.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Medir tempo em segundos depende de hardware, linguagem, carga do sistema. Time Complexity " +
+                "abstrai tudo isso e pergunta uma coisa só: se eu dobrar o tamanho da entrada, o que acontece " +
+                "com o número de operações? Essa pergunta tem a mesma resposta em qualquer máquina, e é isso " +
+                "que torna algoritmos comparáveis de forma justa.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "find-max.js",
+              code: ["function findMax(arr) { // precisa olhar CADA elemento pelo menos uma vez", "  let max = arr[0];", "  for (const item of arr) {", "    if (item > max) max = item;", "  }", "  return max;", "}"].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "findMax sempre percorre os n elementos do array — dobrar o tamanho do array dobra " +
+                "(aproximadamente) o número de operações. Essa relação é ensinada com um nome próprio no " +
+                "próximo Concept (Big O).",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Time Complexity mede como o número de operações de um algoritmo cresce em função do tamanho " +
+                "da entrada — não tempo em segundos, mas taxa de crescimento, o que torna algoritmos " +
+                "comparáveis independente de hardware.",
+            },
+          ],
+          examples: [
+            {
+              title: "Trabalho independente do tamanho da entrada",
+              context: "Dobrar o array não muda o número de operações.",
+              code: { language: "javascript", filename: "first-item.js", code: "function firstItem(arr) {\n  return arr[0]; // sempre 1 operação, não importa o tamanho de arr\n}" },
+              explanation: "firstItem faz sempre a mesma quantidade de trabalho, não importa quantos elementos arr tem.",
+            },
+            {
+              title: "Trabalho proporcional ao tamanho da entrada",
+              context: "Dobrar o array dobra o número de operações.",
+              code: { language: "javascript", filename: "sum.js", code: ["function sum(arr) {", "  let total = 0;", "  for (const item of arr) total += item; // uma operação POR elemento", "  return total;", "}"].join("\n") },
+              explanation: "O trabalho cresce linearmente com n.",
+            },
+            {
+              title: "Trabalho crescendo muito mais rápido que a entrada",
+              context: "Dobrar o array quadruplica (aproximadamente) o trabalho.",
+              code: {
+                language: "javascript",
+                filename: "has-pair-sum.js",
+                code: ["function hasPairSum(arr, target) {", "  for (const a of arr) {", "    for (const b of arr) { // para CADA elemento, olha todos de novo", "      if (a + b === target) return true;", "    }", "  }", "  return false;", "}"].join("\n"),
+              },
+              explanation: "Os dois loops aninhados fazem o trabalho crescer muito mais rápido que n.",
+            },
+          ],
+          exercise: {
+            problem: "Para cada função abaixo, descreva se o número de operações cresce proporcionalmente a n, permanece constante, ou cresce mais rápido que n.",
+            problemCode: {
+              language: "javascript",
+              filename: "growth.js",
+              code: ["function isEmpty(arr) {", "  return arr.length === 0;", "}", "function printAll(arr) {", "  for (const item of arr) console.log(item);", "}", "function printAllPairs(arr) {", "  for (const a of arr) for (const b of arr) console.log(a, b);", "}"].join("\n"),
+            },
+            task: "Adicione o comentário de análise em cada função.",
+            hint: "Pergunte, pra cada uma: \"se eu dobrar o array, o número de operações dobra, fica igual, ou mais que dobra?\"",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "growth-annotated.js",
+                code: [
+                  "function isEmpty(arr) {",
+                  "  return arr.length === 0; // constante — 1 operação, não importa o tamanho",
+                  "}",
+                  "function printAll(arr) {",
+                  "  for (const item of arr) console.log(item); // proporcional a n",
+                  "}",
+                  "function printAllPairs(arr) {",
+                  "  for (const a of arr) for (const b of arr) console.log(a, b); // cresce muito mais rápido que n",
+                  "}",
+                ].join("\n"),
+              },
+              explanation: "isEmpty sempre faz 1 operação; printAll faz n operações; printAllPairs faz n × n operações — três taxas de crescimento bem diferentes.",
+            },
+          },
+        }),
+        concept({
+          order: 20,
+          title: "Space Complexity",
+          note: "Memória em função do tamanho",
+          requires: ["Time Complexity"],
+          summary:
+            "Como a quantidade de memória extra que um algoritmo usa cresce conforme o tamanho da entrada " +
+            "aumenta — o par natural de Time Complexity, medindo espaço em vez de tempo.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Space Complexity descreve como a quantidade de memória extra que um algoritmo precisa, além " +
+                "da entrada original, cresce em função do tamanho da entrada. Assim como Time Complexity, não " +
+                "é uma medida em bytes exatos — é uma taxa de crescimento.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Tempo não é o único recurso que importa — memória também é finita, e alguns algoritmos " +
+                "trocam mais memória por menos tempo (ou vice-versa). Nomear Space Complexity separadamente " +
+                "permite raciocinar sobre esse trade-off explicitamente.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "space.js",
+              code: [
+                "function sumInPlace(arr) { // O(1) de espaço extra",
+                "  let total = 0;",
+                "  for (const item of arr) total += item;",
+                "  return total;",
+                "}",
+                "function doubleAll(arr) { // O(n) de espaço extra",
+                "  return arr.map(x => x * 2);",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "sumInPlace usa uma única variável, não importa o tamanho de arr — espaço constante. " +
+                "doubleAll cria um array novo do mesmo tamanho do original — espaço proporcional a n.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Space Complexity mede como a memória extra usada por um algoritmo cresce em função do " +
+                "tamanho da entrada — o par de Time Complexity, e às vezes um trade-off direto contra ela.",
+            },
+          ],
+          examples: [
+            {
+              title: "Trocando espaço por tempo",
+              context: "Um Set extra custa memória, mas evita um loop aninhado.",
+              code: {
+                language: "javascript",
+                filename: "has-duplicates.js",
+                code: ["function hasDuplicates(arr) { // O(n) de espaço extra, mas O(n) de tempo em vez de O(n²)", "  const seen = new Set();", "  for (const item of arr) {", "    if (seen.has(item)) return true;", "    seen.add(item);", "  }", "  return false;", "}"].join("\n"),
+              },
+              explanation: "O trade-off clássico entre Time e Space Complexity.",
+            },
+            {
+              title: "Recursão consumindo espaço na call stack",
+              context: "Cada chamada recursiva empilha um frame.",
+              code: { language: "javascript", filename: "sum-recursive.js", code: ["function sumRecursive(arr, i = 0) { // O(n) de espaço", "  if (i >= arr.length) return 0;", "  return arr[i] + sumRecursive(arr, i + 1);", "}"].join("\n") },
+              explanation: "n chamadas empilhadas significam espaço O(n), mesmo sem nenhuma estrutura de dados explícita sendo criada.",
+            },
+            {
+              title: "Versão iterativa com espaço constante",
+              context: "Mesmo resultado, sem o custo de espaço da recursão.",
+              code: { language: "javascript", filename: "sum-iterative.js", code: ["function sumIterative(arr) { // O(1) de espaço", "  let total = 0;", "  for (const item of arr) total += item;", "  return total;", "}"].join("\n") },
+              explanation: "Sem empilhar frames proporcionalmente a n.",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo inverte um array criando uma cópia nova — O(n) de espaço extra, quando poderia usar espaço constante.",
+            problemCode: {
+              language: "javascript",
+              filename: "reverse-array.js",
+              code: ["function reverseArray(arr) {", "  const result = [];", "  for (let i = arr.length - 1; i >= 0; i--) {", "    result.push(arr[i]);", "  }", "  return result;", "}"].join("\n"),
+            },
+            task: "Reescreva para inverter o array NO LUGAR, usando O(1) de espaço extra.",
+            hint: "Troque os elementos das extremidades entre si, avançando de fora pra dentro, até os dois ponteiros se encontrarem.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "reverse-in-place.js",
+                code: ["function reverseInPlace(arr) {", "  let left = 0;", "  let right = arr.length - 1;", "  while (left < right) {", "    [arr[left], arr[right]] = [arr[right], arr[left]];", "    left++;", "    right--;", "  }", "  return arr;", "}"].join("\n"),
+              },
+              explanation: "Só duas variáveis extras, não importa o tamanho do array — espaço O(1), contra o O(n) da versão anterior.",
+            },
+          },
+        }),
+        concept({
+          order: 30,
+          title: "Big O",
+          note: "A notação",
+          requires: ["Time Complexity", "Space Complexity"],
+          summary:
+            "A notação matemática que expressa a taxa de crescimento de um algoritmo, focando no pior caso e " +
+            "ignorando constantes e termos menores — a forma padrão de comunicar Time/Space Complexity.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Big O é a notação formal usada pra expressar Time/Space Complexity — O(n), O(n²), O(log n), " +
+                "etc. Ela descreve o comportamento assintótico do pior caso, ignorando constantes " +
+                "multiplicativas e termos de menor ordem — O(2n + 100) simplifica pra O(n).",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Sem uma notação padrão, comparar algoritmos vira uma conversa vaga. Big O dá uma linguagem " +
+                "precisa e universal: dizer que um algoritmo é O(n) e outro é O(n²) comunica imediatamente que " +
+                "o segundo vai crescer muito mais rápido, sem ambiguidade.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "process.js",
+              code: ["function process(arr) {", "  console.log(arr[0]);        // O(1)", "  for (const item of arr) {   // O(n)", "    console.log(item);", "  }", "}", "// Complexidade total: O(1) + O(n) = O(n) — o termo dominante \"vence\""].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text: "Somar O(1) com O(n) dá O(n) — Big O descarta o termo menor, porque conforme n cresce, ele se torna irrelevante.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Big O é a notação que expressa a taxa de crescimento assintótica de um algoritmo, focando no " +
+                "pior caso e ignorando constantes e termos menores — a linguagem padrão pra comparar Time/Space " +
+                "Complexity entre algoritmos diferentes.",
+            },
+          ],
+          examples: [
+            {
+              title: "Ignorando constantes multiplicativas",
+              context: "2n e n crescem na mesma proporção.",
+              code: { language: "javascript", filename: "print-twice.js", code: "function printTwice(arr) {\n  for (const item of arr) console.log(item); // n\n  for (const item of arr) console.log(item); // mais n\n}\n// 2n operações, mas isso é O(n), não O(2n)" },
+              explanation: "Big O foca na forma de crescimento, não no multiplicador exato.",
+            },
+            {
+              title: "Pior caso vs. melhor caso",
+              context: "Big O convencionalmente descreve o pior caso.",
+              code: {
+                language: "javascript",
+                filename: "find-in-array.js",
+                code: ["function findInArray(arr, target) {", "  for (const item of arr) {", "    if (item === target) return true; // melhor caso: O(1)", "  }", "  return false; // pior caso: O(n)", "}"].join("\n"),
+              },
+              explanation: "Mesmo que às vezes a busca termine rápido, Big O descreve o cenário mais desfavorável.",
+            },
+            {
+              title: "Somando complexidades de blocos",
+              context: "O termo de maior ordem sempre domina.",
+              code: { language: "javascript", filename: "example.js", code: "function example(arr) {\n  for (const a of arr) console.log(a);              // O(n)\n  for (const a of arr) for (const b of arr) {}       // O(n²)\n}\n// O(n) + O(n²) = O(n²)" },
+              explanation: "Blocos sequenciais somam complexidades; o termo de maior ordem sempre vence.",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo tem uma complexidade que pode ser simplificada — o código não deixa claro qual é o Big O real.",
+            problemCode: {
+              language: "javascript",
+              filename: "process-full.js",
+              code: ['function process(arr) {', '  console.log("iniciando"); // O(1)', "  for (const item of arr) { // O(n)", "    console.log(item);", "  }", "  for (const item of arr) { // outro O(n)", "    console.log(item * 2);", "  }", '  console.log("fim"); // O(1)', "}"].join("\n"),
+            },
+            task: "Determine, em comentário, o Big O total simplificado.",
+            hint: "Some as complexidades de cada bloco sequencial, depois simplifique descartando constantes.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "process-annotated.js",
+                code: ['function process(arr) {', '  // O(1) + O(n) + O(n) + O(1) = O(2n + 2) = O(n) — simplificado', '  console.log("iniciando");', "  for (const item of arr) console.log(item);", "  for (const item of arr) console.log(item * 2);", '  console.log("fim");', "}"].join("\n"),
+              },
+              explanation: "A expressão bruta seria O(2n + 2), mas Big O descarta as constantes, simplificando pra O(n).",
+            },
+          },
+        }),
         concept({
           order: 40,
           title: "Common Time Complexities",
+          note: "As classes de crescimento",
           isNew: true,
           requires: ["Big O"],
-          note: "consolida O(1), O(log n), O(n), O(n log n), O(n²) — cada classe é subtópico, com exemplo canônico e comparação de crescimento",
           subtopics: ["O(1)", "O(log n)", "O(n)", "O(n log n)", "O(n²)"],
+          summary:
+            "Um catálogo das taxas de crescimento mais comuns — O(1), O(log n), O(n), O(n log n), O(n²) — " +
+            "cada uma com um exemplo canônico, pra reconhecer de cara qual classe um algoritmo pertence.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Common Time Complexities é o catálogo das classes de crescimento mais frequentes na " +
+                "prática, da mais rápida pra mais lenta: O(1) constante, O(log n) logarítmica, O(n) linear, " +
+                "O(n log n) linearítmica, O(n²) quadrática.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Saber a definição de Big O não basta pra reconhecer complexidade rapidamente — construir um " +
+                "repertório de exemplos canônicos acelera muito a análise de código novo, porque a maioria " +
+                "dos algoritmos do dia a dia se encaixa numa dessas classes já vistas antes.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "paragraph",
+              text: "As 5 classes, uma linha cada, do mais rápido ao mais lento:",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "classes.js",
+              code: [
+                "arr[0];                              // O(1) — acesso direto",
+                "binarySearch(sortedArr, target);     // O(log n) — descarta metade a cada passo",
+                "arr.forEach(x => console.log(x));    // O(n) — um passo por elemento",
+                "arr.slice().sort();                  // O(n log n) — a maioria dos sorts eficientes",
+                "for (const a of arr) for (const b of arr) {} // O(n²) — par a par",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Memorizar esses padrões torna reconhecer complexidade em código novo muito mais rápido.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "As classes de crescimento mais comuns, da mais rápida pra mais lenta, são O(1), O(log n), " +
+                "O(n), O(n log n), O(n²) — cada uma com um padrão de código reconhecível, que vale a pena " +
+                "memorizar pra acelerar análise de complexidade no dia a dia.",
+            },
+          ],
+          examples: [
+            {
+              title: "Comparando o crescimento das 5 classes",
+              context: "A diferença explode conforme n cresce.",
+              code: {
+                language: "text",
+                filename: "growth-table.txt",
+                code: "n=10:    O(1)=1   O(log n)≈3   O(n)=10    O(n log n)≈33      O(n²)=100\nn=1000:  O(1)=1   O(log n)≈10  O(n)=1000  O(n log n)≈10000   O(n²)=1000000",
+              },
+              explanation: "Pra n pequeno, todas as classes são gerenciáveis — a classe de complexidade importa mais em escala.",
+            },
+            {
+              title: "O(log n) — cada passo elimina metade",
+              context: "O padrão canônico de busca binária.",
+              code: {
+                language: "javascript",
+                filename: "binary-search.js",
+                code: [
+                  "function binarySearch(arr, target, low = 0, high = arr.length - 1) {",
+                  "  if (low > high) return -1;",
+                  "  const mid = Math.floor((low + high) / 2);",
+                  "  if (arr[mid] === target) return mid;",
+                  "  return arr[mid] < target",
+                  "    ? binarySearch(arr, target, mid + 1, high)",
+                  "    : binarySearch(arr, target, low, mid - 1);",
+                  "}",
+                ].join("\n"),
+              },
+              explanation: "Pra dobrar o array, só é preciso mais um passo, não o dobro de passos.",
+            },
+            {
+              title: "O(n log n) — o padrão dos sorts eficientes",
+              context: "Dividir o problema repetidamente, trabalho linear em cada nível.",
+              code: { language: "text", filename: "merge-sort-idea.txt", code: "Merge sort: divide o array em log n níveis, e cada nível processa n elementos\n→ n (trabalho por nível) × log n (número de níveis) = O(n log n)" },
+              explanation: "O(n log n) aparece tipicamente quando um algoritmo divide o problema repetidamente e faz trabalho linear em cada nível.",
+            },
+          ],
+          exercise: {
+            problem: "Para cada trecho abaixo, identifique qual das 5 classes de Common Time Complexities ele pertence.",
+            problemCode: {
+              language: "javascript",
+              filename: "classify.js",
+              code: [
+                "function a(arr) { return arr.length; }",
+                "function b(arr, target) { return arr.includes(target); }",
+                "function c(sortedArr, target) { /* implementação de busca binária */ }",
+                "function d(arr) { return [...arr].sort((x, y) => x - y); }",
+                "function e(arr) { const pairs = []; for (const x of arr) for (const y of arr) pairs.push([x, y]); return pairs; }",
+              ].join("\n"),
+            },
+            task: "Adicione o comentário de classificação em cada função.",
+            hint: "Relacione cada uma com o exemplo canônico visto no Conteúdo.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "classify-annotated.js",
+                code: [
+                  "function a(arr) { return arr.length; } // O(1)",
+                  "function b(arr, target) { return arr.includes(target); } // O(n)",
+                  "function c(sortedArr, target) { /* busca binária */ } // O(log n)",
+                  "function d(arr) { return [...arr].sort((x, y) => x - y); } // O(n log n)",
+                  "function e(arr) { const pairs = []; for (const x of arr) for (const y of arr) pairs.push([x, y]); return pairs; } // O(n²)",
+                ].join("\n"),
+              },
+              explanation: "Cada função corresponde diretamente a um dos padrões canônicos — reconhecer isso rapidamente é a habilidade que este Concept constrói.",
+            },
+          },
         }),
-        concept({ order: 50, title: "Linear Search", requires: ["Common Time Complexities", "Array"] }),
+        concept({
+          order: 50,
+          title: "Linear Search",
+          note: "O(n) — percorrer tudo",
+          requires: ["Common Time Complexities", "Array"],
+          summary:
+            "Buscar um valor percorrendo os elementos um por um, do início ao fim, até encontrar (ou " +
+            "terminar a coleção) — a estratégia mais simples possível, O(n) no pior caso, e a única opção " +
+            "quando os dados não estão ordenados.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Linear Search percorre uma coleção elemento por elemento, comparando cada um com o valor " +
+                "procurado, até encontrar uma correspondência ou chegar ao fim. É a estratégia de busca mais " +
+                "direta possível — sem nenhuma suposição sobre a organização dos dados.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "É o algoritmo de busca padrão quando não há garantia nenhuma sobre a ordem dos dados — sem " +
+                "ordenação, não tem como \"pular\" partes com segurança. No pior caso, Linear Search precisa " +
+                "examinar todos os n elementos — O(n).",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "linear-search.js",
+              code: ["function linearSearch(arr, target) {", "  for (let i = 0; i < arr.length; i++) {", "    if (arr[i] === target) return i; // encontrado", "  }", "  return -1; // não encontrado, depois de checar TUDO", "}"].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text: "No pior caso, o loop examina todos os n elementos antes de concluir que o valor não está presente — O(n).",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Linear Search percorre elemento por elemento até encontrar (ou esgotar a coleção) — O(n) no " +
+                "pior caso, simples e sem exigir ordenação prévia, mas o padrão de busca mais lento entre as " +
+                "opções deste módulo.",
+            },
+          ],
+          examples: [
+            {
+              title: "Encontrando o índice, não só se existe",
+              context: "A variação mais comum de Linear Search.",
+              code: { language: "javascript", filename: "index-of.js", code: ["function indexOf(arr, target) {", "  for (let i = 0; i < arr.length; i++) {", "    if (arr[i] === target) return i;", "  }", "  return -1;", "}"].join("\n") },
+              explanation: "Devolve ONDE o valor está, não só se ele existe.",
+            },
+            {
+              title: "Linear Search com predicado arbitrário",
+              context: "O mesmo padrão de .find(), de Functional Programming.",
+              code: { language: "javascript", filename: "find-first.js", code: ["function findFirst(arr, predicate) {", "  for (const item of arr) {", "    if (predicate(item)) return item;", "  }", "  return undefined;", "}", "findFirst(users, u => u.age >= 18);"].join("\n") },
+              explanation: ".find() é uma Linear Search com um predicado arbitrário em vez de uma comparação de igualdade fixa.",
+            },
+            {
+              title: "Melhor caso não muda o Big O",
+              context: "A garantia é sobre o pior caso, não a sorte de cada execução.",
+              code: { language: "javascript", filename: "best-case.js", code: "const arr = [42, 1, 2, 3, 4, 5];\nlinearSearch(arr, 42); // encontra na primeira posição, mas ainda é O(n) no PIOR caso" },
+              explanation: "Reforça o Concept de Big O: a classificação descreve a garantia de pior caso.",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo continua percorrendo o array inteiro mesmo depois de já ter encontrado o valor — trabalho desperdiçado.",
+            problemCode: {
+              language: "javascript",
+              filename: "count-matches.js",
+              code: ["function countMatches(arr, target) {", "  let found = false;", "  for (const item of arr) {", "    if (item === target) found = true;", "  }", "  return found;", "}"].join("\n"),
+            },
+            task: "Reescreva para parar de percorrer assim que encontrar a primeira correspondência.",
+            hint: "Um return dentro do loop, no momento certo, interrompe a busca imediatamente.",
+            solution: {
+              code: { language: "javascript", filename: "has-match.js", code: ["function hasMatch(arr, target) {", "  for (const item of arr) {", "    if (item === target) return true; // para IMEDIATAMENTE", "  }", "  return false;", "}"].join("\n") },
+              explanation: "return dentro do loop interrompe a busca assim que encontra — mais rápido na prática, mesmo que o pior caso continue O(n).",
+            },
+          },
+        }),
         concept({
           order: 60,
           title: "Binary Search",
+          note: "O(log n) — descartar metade",
           requires: ["Common Time Complexities", "Binary Search Tree"],
-          revisit: [
-            "Testing & Quality Engineering / Debugging / Binary Search Debugging",
-            "Testing & Quality Engineering / Debugging / Git Bisect",
+          revisit: ["Testing & Quality Engineering / Debugging / Binary Search Debugging", "Testing & Quality Engineering / Debugging / Git Bisect"],
+          summary:
+            "Buscar um valor descartando metade do espaço de busca a cada passo — exige dados ordenados, mas " +
+            "em troca entrega O(log n), muito mais rápido que percorrer tudo linearmente.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Binary Search busca um valor numa coleção ordenada comparando o alvo com o elemento do " +
+                "meio: se for igual, achou; se for menor, o alvo só pode estar na metade esquerda; se for " +
+                "maior, só pode estar na direita. O mesmo princípio já visto na busca dentro de uma Binary " +
+                "Search Tree.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Linear Search é O(n) porque não pode assumir nada sobre a organização dos dados. Mas se os " +
+                "dados estão ordenados, cada comparação elimina metade do que resta — O(log n). O preço é o " +
+                "pré-requisito: os dados precisam estar ordenados antes de começar.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "binary-search.js",
+              code: [
+                "function binarySearch(arr, target) {",
+                "  let low = 0, high = arr.length - 1;",
+                "  while (low <= high) {",
+                "    const mid = Math.floor((low + high) / 2);",
+                "    if (arr[mid] === target) return mid;",
+                "    if (arr[mid] < target) low = mid + 1;  // descarta a metade esquerda",
+                "    else high = mid - 1;                    // descarta a metade direita",
+                "  }",
+                "  return -1;",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Pra um array de 1 milhão de elementos, no máximo ~20 comparações são necessárias " +
+                "(log₂ 1.000.000 ≈ 20).",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Binary Search descarta metade do espaço de busca a cada comparação, dando O(log n) — muito " +
+                "mais rápido que Linear Search, mas exige que os dados estejam ordenados como pré-requisito.",
+            },
           ],
+          examples: [
+            {
+              title: "Contraste direto: Linear vs. Binary Search",
+              context: "A diferença fica dramática em escala.",
+              code: { language: "javascript", filename: "contrast.js", code: "const sorted = Array.from({ length: 1000000 }, (_, i) => i);\nlinearSearch(sorted, 999999);  // até 1.000.000 comparações\nbinarySearch(sorted, 999999);  // até ~20 comparações" },
+              explanation: "Binary Search resolve numa fração minúscula das comparações que Linear Search precisaria.",
+            },
+            {
+              title: "Binary Search recursiva",
+              context: "A profundidade da recursão é O(log n).",
+              code: {
+                language: "javascript",
+                filename: "binary-search-recursive.js",
+                code: [
+                  "function binarySearchRecursive(arr, target, low = 0, high = arr.length - 1) {",
+                  "  if (low > high) return -1;",
+                  "  const mid = Math.floor((low + high) / 2);",
+                  "  if (arr[mid] === target) return mid;",
+                  "  return arr[mid] < target",
+                  "    ? binarySearchRecursive(arr, target, mid + 1, high)",
+                  "    : binarySearchRecursive(arr, target, low, mid - 1);",
+                  "}",
+                ].join("\n"),
+              },
+              explanation: "Cada chamada recursiva é uma \"metade\" — consistente com o Concept de Recursion mais à frente.",
+            },
+            {
+              title: "Binary Search Debugging",
+              context: "O mesmo princípio aplicado a um histórico de commits (git bisect).",
+              code: {
+                language: "text",
+                filename: "git-bisect.txt",
+                code:
+                  "Achar QUAL commit introduziu um bug, entre 1000 commits, sem testar todos:\ntesta o commit do MEIO → se o bug já existe, está na metade anterior;\nse não existe, está na metade posterior. Repete — a ideia por trás de `git bisect`.",
+              },
+              explanation: "O mesmo princípio (descartar metade a cada passo) se aplica além de arrays.",
+            },
+          ],
+          exercise: {
+            problem: "A implementação abaixo tem um bug sutil — em certos casos, entra em loop infinito ou devolve um resultado errado.",
+            problemCode: {
+              language: "javascript",
+              filename: "buggy-binary-search.js",
+              code: [
+                "function buggyBinarySearch(arr, target) {",
+                "  let low = 0, high = arr.length - 1;",
+                "  while (low <= high) {",
+                "    const mid = Math.floor((low + high) / 2);",
+                "    if (arr[mid] === target) return mid;",
+                "    if (arr[mid] < target) low = mid; // bug: deveria ser mid + 1",
+                "    else high = mid - 1;",
+                "  }",
+                "  return -1;",
+                "}",
+              ].join("\n"),
+            },
+            task: "Identifique o bug (em comentário) e corrija.",
+            hint: "Se low nunca avança além de mid, e mid pode voltar a ser igual a low na próxima iteração, o que acontece com o loop?",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "fixed-binary-search.js",
+                code: [
+                  "function fixedBinarySearch(arr, target) {",
+                  "  let low = 0, high = arr.length - 1;",
+                  "  while (low <= high) {",
+                  "    const mid = Math.floor((low + high) / 2);",
+                  "    if (arr[mid] === target) return mid;",
+                  "    if (arr[mid] < target) low = mid + 1; // corrigido",
+                  "    else high = mid - 1;",
+                  "  }",
+                  "  return -1;",
+                  "}",
+                ].join("\n"),
+              },
+              explanation: "Sem o +1, quando high = low + 1, mid calcula pra low de novo — o loop pode nunca convergir. O +1 garante que o espaço de busca sempre encolhe.",
+            },
+          },
         }),
-        concept({ order: 70, title: "Sorting Fundamentals", requires: ["Common Time Complexities"], note: "comparar sort ingênuo × eficiente" }),
+        concept({
+          order: 70,
+          title: "Sorting Fundamentals",
+          note: "Ingênuo vs. eficiente",
+          requires: ["Common Time Complexities"],
+          summary:
+            "Ordenar uma coleção — o problema clássico que ilustra melhor do que qualquer outro a diferença " +
+            "prática entre uma abordagem O(n²) ingênua e uma O(n log n) eficiente.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Sorting é o problema de reorganizar os elementos de uma coleção numa ordem específica. " +
+                "Existem muitos algoritmos de sort, mas eles se dividem em duas categorias de complexidade " +
+                "bem distintas: os \"ingênuos\" (O(n²), como Bubble Sort, Selection Sort) e os \"eficientes\" " +
+                "(O(n log n), como Merge Sort, Quick Sort — os mesmos usados internamente por .sort() na " +
+                "maioria das linguagens modernas).",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Sorting é o exemplo canônico de O(n log n), o padrão que apareceu em Common Time " +
+                "Complexities. Entender por que os algoritmos ingênuos são O(n²) (comparam pares repetidamente) " +
+                "e os eficientes conseguem O(n log n) (usam divisão do problema) é uma lente que se aplica a " +
+                "muitos outros problemas de algoritmos.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "paragraph",
+              text: "Bubble Sort, o ingênuo mais didático:",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "bubble-sort.js",
+              code: [
+                "function bubbleSort(arr) {",
+                "  for (let i = 0; i < arr.length; i++) {",
+                "    for (let j = 0; j < arr.length - i - 1; j++) { // loop DENTRO de loop — O(n²)",
+                "      if (arr[j] > arr[j + 1]) {",
+                "        [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];",
+                "      }",
+                "    }",
+                "  }",
+                "  return arr;",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text: "Dois loops aninhados, comparando pares vizinhos repetidamente — o padrão clássico de O(n²).",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Sorting divide algoritmos em ingênuos O(n²) (comparações par a par repetidas) e eficientes " +
+                "O(n log n) (que dividem o problema em vez de comparar tudo com tudo) — como a estratégia de " +
+                "um algoritmo determina sua classe de complexidade, não só o problema em si.",
+            },
+          ],
+          examples: [
+            {
+              title: "Selection Sort — outro ingênuo O(n²)",
+              context: "Estratégia diferente, mesma classe de complexidade.",
+              code: {
+                language: "javascript",
+                filename: "selection-sort.js",
+                code: ["function selectionSort(arr) {", "  for (let i = 0; i < arr.length; i++) {", "    let minIndex = i;", "    for (let j = i + 1; j < arr.length; j++) {", "      if (arr[j] < arr[minIndex]) minIndex = j;", "    }", "    [arr[i], arr[minIndex]] = [arr[minIndex], arr[i]];", "  }", "  return arr;", "}"].join(
+                  "\n"
+                ),
+              },
+              explanation: "Acha o mínimo do restante a cada passo, em vez de trocar vizinhos — mas mesma classe O(n²).",
+            },
+            {
+              title: ".sort() nativo, eficiente por baixo",
+              context: "Os motores JS modernos usam algoritmos O(n log n).",
+              code: { language: "javascript", filename: "native-sort.js", code: "const arr = [5, 3, 8, 1, 9, 2];\narr.sort((a, b) => a - b); // O(n log n)" },
+              explanation: "Implementação eficiente por baixo (varia por motor JS, mas nunca O(n²)).",
+            },
+            {
+              title: "A intuição de Merge Sort",
+              context: "Dividir, ordenar as metades, juntar.",
+              code: {
+                language: "text",
+                filename: "merge-sort.txt",
+                code: "1. Divide o array ao meio (recursivamente, até sobrar 1 elemento)\n2. Junta (merge) as duas metades JÁ ORDENADAS numa única lista ordenada\nO \"dividir\" custa log n níveis; o \"juntar\" em cada nível custa n — total O(n log n)",
+              },
+              explanation: "Dividir o problema, em vez de comparar tudo com tudo, é o que muda a classe de complexidade.",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo ordena produtos por preço usando uma abordagem O(n²), sem perceber que existe uma alternativa mais simples e eficiente.",
+            problemCode: {
+              language: "javascript",
+              filename: "sort-by-price-naive.js",
+              code: [
+                "function sortByPriceNaive(products) {",
+                "  const result = [...products];",
+                "  for (let i = 0; i < result.length; i++) {",
+                "    for (let j = 0; j < result.length - i - 1; j++) {",
+                "      if (result[j].price > result[j + 1].price) {",
+                "        [result[j], result[j + 1]] = [result[j + 1], result[j]];",
+                "      }",
+                "    }",
+                "  }",
+                "  return result;",
+                "}",
+              ].join("\n"),
+            },
+            task: "Reescreva usando .sort() nativo (O(n log n)), com um comparador apropriado pro campo price.",
+            hint: ".sort((a, b) => ...) — o comparador devolve um número negativo, zero, ou positivo.",
+            solution: {
+              code: { language: "javascript", filename: "sort-by-price-fast.js", code: "function sortByPriceFast(products) {\n  return [...products].sort((a, b) => a.price - b.price);\n}" },
+              explanation: ".sort() nativo já usa um algoritmo O(n log n) por baixo — não há motivo pra reimplementar um sort O(n²) manualmente.",
+            },
+          },
+        }),
         concept({
           order: 80,
           title: "Recursion",
+          note: "Chamar a si mesma",
           requires: ["Memory & Runtime / Call Stack", "Common Time Complexities"],
-          note: "a dependência para a frente foi eliminada — Call Stack é canônico na Story Memory & Runtime",
           revisit: ["Data Structures (traversals)"],
+          summary:
+            "Uma função que se chama a si mesma pra resolver um problema, quebrando-o em versões menores do " +
+            "mesmo problema — cada chamada empilha um frame na Call Stack, até alcançar um caso base que " +
+            "interrompe a recursão.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Recursion é quando uma função se chama a si mesma pra resolver um problema, dividindo-o em " +
+                "versões progressivamente menores do mesmo problema, até chegar num caso base simples o " +
+                "bastante pra resolver diretamente. Já vimos a mecânica por trás disso em Call Stack: cada " +
+                "chamada recursiva empilha um novo frame.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Alguns problemas são naturalmente definidos em termos de si mesmos — percorrer uma Tree " +
+                "(cada filho é raiz de uma sub-árvore menor), calcular um fatorial, Binary Search (cada " +
+                "chamada é uma busca menor). Recursion expressa a solução de forma direta, espelhando a " +
+                "própria definição do problema.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "factorial.js",
+              code: ["function factorial(n) {", "  if (n <= 1) return 1;       // caso base — interrompe a recursão", "  return n * factorial(n - 1); // caso recursivo — problema menor", "}", "factorial(5); // 5 * 4 * 3 * 2 * 1 = 120"].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "factorial(5) chama factorial(4), que chama factorial(3), até factorial(1) (o caso base) " +
+                "parar a cadeia — cada chamada empilha um frame na Call Stack.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Recursion resolve um problema chamando a própria função com uma versão menor do mesmo " +
+                "problema, até um caso base — cada chamada usa um frame da Call Stack, e toda recursão " +
+                "precisa de um caso base efetivamente alcançável, ou o resultado é um stack overflow.",
+            },
+          ],
+          examples: [
+            {
+              title: "Recursão percorrendo uma Tree",
+              context: "A definição de \"soma de uma árvore\" já é recursiva.",
+              code: { language: "javascript", filename: "sum-tree.js", code: "function sumTree(node) {\n  if (!node) return 0;\n  return node.value + node.children.reduce((sum, child) => sum + sumTree(child), 0);\n}" },
+              explanation: "O código espelha diretamente a definição hierárquica de Tree.",
+            },
+            {
+              title: "Recursão com múltiplas chamadas",
+              context: "Cada chamada gera duas chamadas menores.",
+              code: { language: "javascript", filename: "fibonacci.js", code: "function fibonacci(n) {\n  if (n <= 1) return n;\n  return fibonacci(n - 1) + fibonacci(n - 2); // DUAS chamadas por nível\n}" },
+              explanation: "A \"árvore\" de chamadas cresce exponencialmente — Memoization, o próximo Concept, resolve esse problema.",
+            },
+            {
+              title: "Recursão de cauda",
+              context: "A chamada recursiva é a última operação.",
+              code: { language: "javascript", filename: "sum-tail.js", code: "function sumTail(arr, i = 0, acc = 0) {\n  if (i >= arr.length) return acc;\n  return sumTail(arr, i + 1, acc + arr[i]); // última coisa que acontece\n}" },
+              explanation: "Alguns runtimes conseguem otimizar isso (JavaScript, na prática, não garante essa otimização na maioria dos motores).",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo tenta somar os números de 1 até n recursivamente, mas nunca alcança o caso base.",
+            problemCode: {
+              language: "javascript",
+              filename: "sum-up-to.js",
+              code: ["function sumUpTo(n) {", "  return n + sumUpTo(n - 1); // nunca para!", "}", "sumUpTo(5); // RangeError: Maximum call stack size exceeded"].join("\n"),
+            },
+            task: "Corrija sumUpTo adicionando o caso base que falta.",
+            hint: "Em que valor de n a soma deveria simplesmente devolver um resultado direto, sem mais chamadas?",
+            solution: {
+              code: { language: "javascript", filename: "sum-up-to-fixed.js", code: "function sumUpToFixed(n) {\n  if (n <= 0) return 0; // caso base\n  return n + sumUpToFixed(n - 1);\n}\nsumUpToFixed(5); // 15" },
+              explanation: "Sem o caso base, a recursão nunca encontrava uma condição de parada.",
+            },
+          },
         }),
         concept({
           order: 90,
           title: "Memoization",
+          note: "Cache de resultados",
           requires: ["Recursion", "Data Structures / Hash Table", "Functional Programming / Pure Functions"],
-          note: "só funciona sobre função pura",
           revisit: ["Platform / Caching"],
+          summary:
+            "Guardar em cache os resultados de chamadas anteriores de uma função, pra evitar recalcular o " +
+            "mesmo resultado de novo — só funciona com segurança sobre Pure Functions, e resolve diretamente " +
+            "o problema de recursão exponencial visto em Fibonacci.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Memoization guarda, num cache (tipicamente uma Hash Table), os resultados já calculados de " +
+                "uma função, indexados pelos argumentos de entrada — na próxima vez que a função for chamada " +
+                "com os mesmos argumentos, o resultado é devolvido direto do cache, sem recalcular.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Já vimos que fibonacci recursivo recalcula os mesmos subproblemas repetidamente. Memoization " +
+                "elimina esse desperdício: calcula cada subproblema uma única vez, guarda o resultado, e " +
+                "reaproveita nas próximas vezes. Só é seguro fazer isso com Pure Functions — se o resultado " +
+                "pudesse variar pro mesmo input, o cache devolveria respostas erradas.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "memoize.js",
+              code: [
+                "function memoize(fn) {",
+                "  const cache = new Map();",
+                "  return function (n) {",
+                "    if (cache.has(n)) return cache.get(n); // já calculado",
+                "    const result = fn(n);",
+                "    cache.set(n, result);",
+                "    return result;",
+                "  };",
+                "}",
+                "const fibMemo = memoize(function fib(n) {",
+                "  if (n <= 1) return n;",
+                "  return fibMemo(n - 1) + fibMemo(n - 2); // reaproveita resultados já calculados",
+                "});",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "memoize é uma Higher-Order Function que envolve qualquer função pura com um cache — cada n " +
+                "só é calculado uma vez.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Memoization guarda resultados de chamadas anteriores num cache, evitando recalcular o mesmo " +
+                "resultado — só funciona com segurança sobre Pure Functions, e resolve diretamente a recursão " +
+                "exponencial redundante que algoritmos como Fibonacci recursivo ingênuo produzem.",
+            },
+          ],
+          examples: [
+            {
+              title: "O ganho de performance visível",
+              context: "Fibonacci sem e com memoization.",
+              code: { language: "javascript", filename: "fib-slow.js", code: "function fibSlow(n) { // O(2^n)\n  if (n <= 1) return n;\n  return fibSlow(n - 1) + fibSlow(n - 2);\n}\n// fibSlow(40) demora perceptivelmente; fibMemo(40) é instantâneo" },
+              explanation: "fibSlow(40) faz mais de um bilhão de chamadas redundantes; a versão memoizada faz só 40 cálculos únicos.",
+            },
+            {
+              title: "Memoization com múltiplos argumentos",
+              context: "Chave composta no cache.",
+              code: {
+                language: "javascript",
+                filename: "memoize-multi.js",
+                code: ["function memoizeMulti(fn) {", "  const cache = new Map();", "  return function (...args) {", "    const key = JSON.stringify(args);", "    if (cache.has(key)) return cache.get(key);", "    const result = fn(...args);", "    cache.set(key, result);", "    return result;", "  };", "}"].join(
+                  "\n"
+                ),
+              },
+              explanation: "O mesmo padrão de \"chave composta\" já visto em Hash Table.",
+            },
+            {
+              title: "Por que memoization não funciona sobre função impura",
+              context: "O efeito colateral fica escondido nas chamadas seguintes.",
+              code: {
+                language: "javascript",
+                filename: "impure-memo.js",
+                code: ["let requestCount = 0;", "function impureFetch(id) {", "  requestCount++;", "  return fetchData(id);", "}", "const memoizedFetch = memoize(impureFetch);", "memoizedFetch(1); // chama de verdade, requestCount = 1", "memoizedFetch(1); // do cache — requestCount NÃO incrementa"].join("\n"),
+              },
+              explanation: "Um bug sutil que só acontece porque a função não era pura.",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo calcula Fibonacci de forma recursiva ingênua, ficando extremamente lenta pra valores de n moderados.",
+            problemCode: {
+              language: "javascript",
+              filename: "fib.js",
+              code: ["function fib(n) {", "  if (n <= 1) return n;", "  return fib(n - 1) + fib(n - 2);", "}", "fib(35); // demora vários segundos"].join("\n"),
+            },
+            task: "Aplique memoization em fib, usando a função memoize genérica já vista no Conteúdo.",
+            hint: "Como fib é recursiva, a versão memoizada precisa chamar A SI MESMA, não a função original — senão o cache não é reaproveitado dentro da própria recursão.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "fib-memo.js",
+                code: [
+                  "function memoize(fn) {",
+                  "  const cache = new Map();",
+                  "  return function (n) {",
+                  "    if (cache.has(n)) return cache.get(n);",
+                  "    const result = fn(n);",
+                  "    cache.set(n, result);",
+                  "    return result;",
+                  "  };",
+                  "}",
+                  "",
+                  "const fibMemo = memoize(function (n) {",
+                  "  if (n <= 1) return n;",
+                  "  return fibMemo(n - 1) + fibMemo(n - 2); // chama a versão MEMOIZADA",
+                  "});",
+                  "fibMemo(35); // instantâneo",
+                ].join("\n"),
+              },
+              explanation: "A recursão interna precisa chamar fibMemo, não uma função separada sem memoization — só assim cada subproblema é calculado uma única vez.",
+            },
+          },
         }),
       ],
     }),

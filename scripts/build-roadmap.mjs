@@ -1204,6 +1204,15 @@ for (const area of model.areas()) {
     "binary-search-tree",
     "heap",
     "graph",
+    "time-complexity",
+    "space-complexity",
+    "big-o",
+    "common-time-complexities",
+    "linear-search",
+    "binary-search",
+    "sorting-fundamentals",
+    "recursion",
+    "memoization",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",
