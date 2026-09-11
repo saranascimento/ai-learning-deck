@@ -2564,16 +2564,1110 @@ export default area({
         "Optional / Nullable Types",
       ],
       concepts: [
-        concept({ order: 10, title: "Static vs Dynamic Typing", requires: ["Programming Fundamentals / Contract"], note: "quando os tipos são checados" }),
-        concept({ order: 20, title: "Strong vs Weak Typing", requires: ["Static vs Dynamic Typing"], note: "quão estritamente são impostos — eixo independente" }),
-        concept({ order: 30, title: "Type Inference", requires: ["Static vs Dynamic Typing"] }),
-        concept({ order: 40, title: "Type Safety", requires: ["Strong vs Weak Typing"], note: "a propriedade resultante", revisit: ["Software Design / SOLID / Dependency Inversion Principle (DIP)"] }),
-        concept({ order: 50, title: "Nominal Typing", requires: ["Type Safety"] }),
-        concept({ order: 60, title: "Structural Typing", requires: ["Nominal Typing"], note: "ensinar como contraste", revisit: ["Software Design / Design Principles / Program to an Interface"] }),
-        concept({ order: 70, title: "Generics", requires: ["Type Safety", "Programming Fundamentals / Abstraction"], revisit: ["Data Structures (coleções genéricas)"] }),
-        concept({ order: 80, title: "Union Types", requires: ["Type Safety"] }),
-        concept({ order: 90, title: "Intersection Types", requires: ["Union Types"] }),
-        concept({ order: 100, title: "Type Narrowing", requires: ["Union Types"], revisit: ["Software Craft / Guard Clauses (narrowing por guarda)"] }),
+        concept({
+          order: 10,
+          title: "Static vs Dynamic Typing",
+          note: "Tipagem estática vs. dinâmica",
+          requires: ["Programming Fundamentals / Contract"],
+          summary:
+            "Quando o tipo de uma variável é verificado — em tempo de compilação (estática) ou em tempo de " +
+            "execução (dinâmica) — determina se um erro de tipo é descoberto antes de rodar, ou só quando " +
+            "aquele código específico executa.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Static Typing verifica os tipos antes do programa rodar, em tempo de compilação — um erro de " +
+                "tipo impede o programa de sequer começar. Dynamic Typing verifica os tipos durante a " +
+                "execução — um erro de tipo só aparece quando aquela linha específica roda, nunca antes.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Cada abordagem tem um trade-off diferente. Static Typing detecta uma classe inteira de erros " +
+                "antes de qualquer usuário ver o programa rodando, ao custo de mais verbosidade e um passo de " +
+                "compilação. Dynamic Typing permite escrever e rodar código mais rápido, ao custo de erros de " +
+                "tipo só aparecerem em produção, se aquele caminho específico nunca foi exercitado em teste.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "paragraph",
+              text: "A mesma função, em TypeScript (estática) e em JavaScript puro (dinâmica):",
+            },
+            {
+              type: "code",
+              language: "typescript",
+              filename: "double.ts",
+              code: ["// TypeScript (estática): o erro é detectado ANTES de rodar", "function double(n: number) {", "  return n * 2;", "}", 'double("oi"); // erro de compilação: string não é number'].join("\n"),
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "double.js",
+              code: ["// JavaScript (dinâmica): o erro só aparece quando essa linha específica roda", "function double(n) {", "  return n * 2;", "}", 'double("oi"); // NaN — roda sem erro, mas produz um resultado sem sentido'].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A versão TypeScript recusa compilar; a versão JavaScript roda até o fim e devolve NaN, sem " +
+                "avisar de nada — o mesmo bug, descoberto em momentos completamente diferentes.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Static Typing verifica tipos antes de rodar (erro nunca chega em produção, mas exige " +
+                "compilação); Dynamic Typing verifica em tempo de execução (mais rápido de iterar, mas o erro " +
+                "só aparece se aquele código realmente rodar).",
+            },
+          ],
+          examples: [
+            {
+              title: "TypeScript pegando um erro em tempo de compilação",
+              context: "Uma propriedade obrigatória faltando é recusada antes de qualquer execução.",
+              code: {
+                language: "typescript",
+                filename: "greet.ts",
+                code: ["interface User { name: string; age: number; }", "function greet(user: User) {", "  return `Olá, ${user.name}`;", "}", 'greet({ name: "Ana" }); // erro: falta a propriedade \'age\''].join("\n"),
+              },
+              explanation: "O compilador do TypeScript recusa esse código antes de rodar — falta age, que a interface User exige.",
+            },
+            {
+              title: "JavaScript deixando passar até a hora de rodar",
+              context: "O mesmo tipo de erro só aparece quando o caminho de código específico executa.",
+              code: {
+                language: "javascript",
+                filename: "process-order.js",
+                code: ["function processOrder(order) {", "  return order.total.toFixed(2); // e se order.total for undefined?", "}", "processOrder({ items: [] }); // TypeError: Cannot read properties of undefined"].join("\n"),
+              },
+              explanation: "Nada impede processOrder({ items: [] }) de ser chamado — o erro só aparece quando essa linha específica executa, em runtime.",
+            },
+            {
+              title: "Um bug silencioso em tipagem dinâmica",
+              context: "Nada impede um valor errado de entrar; o problema só se manifesta bem depois.",
+              code: {
+                language: "javascript",
+                filename: "product.js",
+                code: ["class Product {", "  setPrice(value) {", "    this.price = value; // sem checagem de tipo — aceita qualquer coisa", "  }", "}", "const p = new Product();", "p.setPrice(undefined); // \"funciona\" silenciosamente"].join("\n"),
+              },
+              explanation: "Em dynamic typing, nada impede setPrice(undefined) — o bug só se manifesta muito depois, quando price for finalmente usado em algum cálculo.",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo assume que items é sempre um array, mas nada garante isso em tempo algum — o bug só aparece se alguém passar algo diferente.",
+            problemCode: {
+              language: "javascript",
+              filename: "total-price.js",
+              code: ["function totalPrice(items) {", "  return items.reduce((sum, item) => sum + item.price, 0);", "}", "totalPrice(null); // TypeError: Cannot read properties of null (reading 'reduce')"].join("\n"),
+            },
+            task:
+              "Reescreva a assinatura em TypeScript de forma que passar null (ou qualquer coisa que não seja " +
+              "um array de itens com price) vire um erro detectado antes de rodar.",
+            hint: "Declare o tipo do parâmetro items explicitamente — um array de objetos com uma propriedade price: number.",
+            solution: {
+              code: {
+                language: "typescript",
+                filename: "total-price.ts",
+                code: [
+                  "interface Item { price: number; }",
+                  "function totalPrice(items: Item[]) {",
+                  "  return items.reduce((sum, item) => sum + item.price, 0);",
+                  "}",
+                  "totalPrice(null); // erro de compilação: 'null' não é atribuível a 'Item[]'",
+                ].join("\n"),
+              },
+              explanation:
+                "Com o tipo Item[] declarado, o TypeScript recusa totalPrice(null) antes mesmo de rodar — o " +
+                "mesmo bug que antes só aparecia em produção agora é pego no build.",
+            },
+          },
+        }),
+        concept({
+          order: 20,
+          title: "Strong vs Weak Typing",
+          note: "Tipagem forte vs. fraca",
+          requires: ["Static vs Dynamic Typing"],
+          summary:
+            "Quão estritamente um tipo é imposto quando uma operação envolve tipos diferentes — se a " +
+            "linguagem converte automaticamente (fraca) ou exige conversão explícita (forte). Um eixo " +
+            "independente de static/dynamic.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Strong/Weak Typing mede o quanto uma linguagem permite misturar tipos diferentes numa " +
+                "operação sem reclamar. Tipagem fraca converte automaticamente (coerção implícita) quando os " +
+                "tipos não batem; tipagem forte recusa a operação até que a conversão seja feita explicitamente.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "É um eixo independente de static/dynamic — JavaScript é dinâmica e fraca (converte tipos sem " +
+                "avisar, e só descobre em runtime); Python é dinâmica mas forte (erro em runtime, mas sem " +
+                "conversão silenciosa). Entender os dois eixos separadamente evita confundir \"tem erro de " +
+                "tipo em compilação\" com \"não faz conversão implícita\" — são coisas diferentes.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "coercion.js",
+              code: ["// JavaScript: tipagem fraca — converte automaticamente", 'console.log("5" - 3); // 2 (string convertida pra number)', 'console.log("5" + 3); // "53" (number convertido pra string)'].join("\n"),
+            },
+            {
+              type: "code",
+              language: "text",
+              filename: "coercion.py",
+              code: ["# Python: tipagem dinâmica, mas FORTE — recusa misturar tipos sem conversão explícita", '"5" + 3  # TypeError: can only concatenate str (not "int") to str'].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "JavaScript converte silenciosamente entre string e number dependendo do operador — coerção " +
+                "implícita, tipagem fraca. Python recusa a mesma operação até a conversão ser explícita — " +
+                "tipagem forte, mesmo sendo dinâmica igual JavaScript.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Strong/Weak mede o quanto uma linguagem converte tipos automaticamente numa operação — é um " +
+                "eixo independente de static/dynamic. JavaScript combina dinâmica + fraca, o que multiplica as " +
+                "duas fontes de surpresa.",
+            },
+          ],
+          examples: [
+            {
+              title: "Coerção implícita em comparações",
+              context: "== aplica coerção antes de comparar; === não.",
+              code: { language: "javascript", filename: "equality.js", code: ['console.log(0 == "0");   // true — coerção implícita', 'console.log(0 === "0");  // false — sem coerção'].join("\n") },
+              explanation: "== em JS aplica coerção de tipo antes de comparar (tipagem fraca em ação); === recusa comparar tipos diferentes sem converter.",
+            },
+            {
+              title: "TypeScript não elimina a fraqueza de runtime do JS",
+              context: "Tipos estáticos e coerção fraca são eixos independentes — os dois podem coexistir.",
+              code: {
+                language: "typescript",
+                filename: "coercion.ts",
+                code: ["const total: number = 10;", 'const label: string = "R$";', "console.log(total + Number(label)); // NaN — precisa converter explicitamente pra fazer sentido"].join("\n"),
+              },
+              explanation: "Mesmo com tipos estáticos declarados, o operador + do JavaScript por baixo ainda aplica coerção fraca em runtime.",
+            },
+            {
+              title: "Uma linguagem estaticamente forte recusando de vez",
+              context: "Java combina estática + forte: a mistura nem compila.",
+              code: { language: "text", filename: "Mix.java", code: "int total = 10;\nString label = \"R$\";\n// int result = total + label; // erro de COMPILAÇÃO: incompatible types" },
+              explanation: "Java é estática e forte — a mistura de tipos incompatíveis nem compila, diferente de JS (fraca) ou Python (forte, mas dinâmica).",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo soma um valor de input de formulário (sempre string) com um número de verdade, e o resultado vira concatenação em vez de soma.",
+            problemCode: {
+              language: "javascript",
+              filename: "add-to-cart.js",
+              code: ["function addToCart(currentTotal, inputValue) {", "  return currentTotal + inputValue; // inputValue vem de um <input>, é sempre string", "}", 'addToCart(50, "25"); // "5025" — concatenação, não soma!'].join("\n"),
+            },
+            task: "Corrija addToCart para que a soma aconteça de verdade, convertendo explicitamente o tipo em vez de depender de coerção implícita.",
+            hint: "Converta inputValue explicitamente para number antes de somar.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "add-to-cart.js",
+                code: ["function addToCart(currentTotal, inputValue) {", "  return currentTotal + Number(inputValue); // conversão explícita, não implícita", "}", 'addToCart(50, "25"); // 75 — soma de verdade'].join("\n"),
+              },
+              explanation: "Number(inputValue) converte explicitamente a string pra number antes da soma, em vez de deixar o operador + decidir sozinho qual coerção aplicar.",
+            },
+          },
+        }),
+        concept({
+          order: 30,
+          title: "Type Inference",
+          note: "Inferência de tipos",
+          requires: ["Static vs Dynamic Typing"],
+          summary:
+            "A capacidade de um compilador deduzir o tipo de algo sem que ele seja declarado explicitamente — " +
+            "combina a segurança de tipagem estática com boa parte da concisão de não escrever tipos toda hora.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Type Inference é a capacidade de um sistema de tipos deduzir automaticamente o tipo de uma " +
+                "expressão a partir do contexto, sem que o tipo precise ser escrito explicitamente. Só faz " +
+                "sentido em linguagens de tipagem estática — é o compilador \"adivinhando\" o tipo certo.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Declarar o tipo de toda variável manualmente é repetitivo — na maioria dos casos, o tipo já é " +
+                "óbvio a partir do valor atribuído. Type Inference deixa o compilador preencher essa lacuna " +
+                "sozinho, mantendo a segurança da tipagem estática sem a verbosidade de escrever o tipo em " +
+                "todo lugar.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "typescript",
+              filename: "inference.ts",
+              code: ["let count = 5; // inferido como number, sem anotação explícita", 'count = "cinco"; // erro: string não é atribuível a number'].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Mesmo sem escrever : number, o TypeScript infere o tipo de count a partir do valor 5 — e " +
+                "continua aplicando a mesma checagem estática que aplicaria se o tipo fosse explícito.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Type Inference deixa o compilador deduzir tipos a partir do contexto, em vez de exigir " +
+                "anotação explícita em todo lugar — mantém a segurança da tipagem estática com a concisão de " +
+                "código dinamicamente tipado.",
+            },
+          ],
+          examples: [
+            {
+              title: "Inferência no retorno de função",
+              context: "O tipo de retorno é deduzido do que a função de fato retorna.",
+              code: { language: "typescript", filename: "double.ts", code: ["function double(n: number) {", "  return n * 2; // tipo de retorno inferido como number, sem anotação", "}"].join("\n") },
+              explanation: "Mesmo sem escrever : number depois dos parênteses, o TypeScript infere que double retorna number.",
+            },
+            {
+              title: "Inferência em arrays e objetos",
+              context: "O tipo é deduzido a partir dos valores literais.",
+              code: { language: "typescript", filename: "literals.ts", code: ["const numbers = [1, 2, 3]; // inferido como number[]", 'const user = { name: "Ana", age: 30 }; // inferido como { name: string; age: number }'].join("\n") },
+              explanation: "O tipo do array e do objeto são deduzidos a partir dos valores literais, sem declarar Array<number> ou uma interface explícita.",
+            },
+            {
+              title: "Quando a anotação explícita ainda é necessária",
+              context: "Parâmetros não têm um valor a partir do qual inferir — precisam de anotação.",
+              code: { language: "typescript", filename: "parse-age.ts", code: ["function parseAge(input: string): number { // aqui a anotação É necessária", "  return parseInt(input, 10);", "}"].join("\n") },
+              explanation: "input não tem valor atribuído (é um parâmetro) — não há nada a partir do que inferir, então o tipo precisa ser explícito.",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo tem uma anotação de tipo de retorno redundante, que Type Inference já resolveria sozinha.",
+            problemCode: {
+              language: "typescript",
+              filename: "create-user.ts",
+              code: ["function createUser(name: string, age: number): { name: string; age: number; createdAt: Date } {", "  return { name, age, createdAt: new Date() };", "}"].join("\n"),
+            },
+            task: "Remova a anotação de tipo de retorno redundante, deixando o TypeScript inferir sozinho — sem perder nenhuma segurança de tipo.",
+            hint: "O valor retornado já contém informação suficiente para o compilador deduzir o tipo.",
+            solution: {
+              code: {
+                language: "typescript",
+                filename: "create-user.ts",
+                code: ["function createUser(name: string, age: number) {", "  return { name, age, createdAt: new Date() }; // tipo de retorno inferido automaticamente", "}"].join("\n"),
+              },
+              explanation:
+                "O TypeScript infere o tipo de retorno a partir do objeto retornado — a anotação explícita não " +
+                "adicionava segurança nenhuma, só verbosidade.",
+            },
+          },
+        }),
+        concept({
+          order: 40,
+          title: "Type Safety",
+          note: "Segurança de tipos",
+          requires: ["Strong vs Weak Typing"],
+          revisit: ["Software Design / SOLID / Dependency Inversion Principle (DIP)"],
+          summary:
+            "O grau em que um sistema de tipos impede, de verdade, que operações incompatíveis entre tipos " +
+            "aconteçam — a propriedade que resulta de quando (static/dynamic) e quão estritamente (strong/weak) " +
+            "os tipos são verificados.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Type Safety é o grau em que erros de tipo são efetivamente prevenidos pelo sistema de tipos " +
+                "de uma linguagem, não apenas detectados tarde demais. Não é um eixo binário — é uma " +
+                "propriedade resultante de onde uma linguagem fica nos eixos static/dynamic e strong/weak.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Os Concepts anteriores mostraram peças separadas: quando os tipos são checados, quão " +
+                "estritamente são impostos, se são inferidos. Type Safety é a consequência prática de combinar " +
+                "essas peças — uma linguagem estática e forte tende a ser mais type-safe; uma linguagem " +
+                "dinâmica e fraca tende a ser menos. TypeScript aumenta a Type Safety do JavaScript com " +
+                "checagem estática, mesmo mantendo parte da fraqueza de runtime herdada.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "typescript",
+              filename: "safe.ts",
+              code: ["// TypeScript: mais type-safe — o compilador impede o erro antes de rodar", "function getUserName(user: { name: string }) {", "  return user.name.toUpperCase();", "}", "// getUserName(null); // erro de compilação"].join("\n"),
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "unsafe.js",
+              code: ["// JavaScript puro: menos type-safe — o mesmo erro só aparece em runtime", "function getUserName(user) {", "  return user.name.toUpperCase();", "}", "getUserName(null); // TypeError: Cannot read properties of null"].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "As duas funções fazem a mesma coisa — a diferença é quando (e se) um uso incorreto é " +
+                "impedido. Mais Type Safety significa mais categorias de erro pegas antes de virarem incidente.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Type Safety é o resultado prático de combinar quando os tipos são checados e quão " +
+                "estritamente são impostos — mais type-safe não significa \"melhor\" sempre, mas significa " +
+                "mais erros pegos antes de virarem incidente em produção.",
+            },
+          ],
+          examples: [
+            {
+              title: "any desligando a Type Safety pontualmente",
+              context: "any é uma saída explícita da checagem de tipos do TypeScript.",
+              code: {
+                language: "typescript",
+                filename: "any.ts",
+                code: ["function process(data: any) { // any = \"confie em mim, sem checagem\"", "  return data.value.toUpperCase();", "}", "process({ value: 42 }); // TypeError em runtime"].join("\n"),
+              },
+              explanation: "any opta explicitamente por sair da Type Safety que o TypeScript oferece — o erro volta a só aparecer em runtime, como em JS puro.",
+            },
+            {
+              title: "unknown como alternativa mais type-safe",
+              context: "unknown obriga a verificar o tipo antes de usar.",
+              code: {
+                language: "typescript",
+                filename: "unknown.ts",
+                code: ["function process(data: unknown) {", '  if (typeof data === "object" && data !== null && "value" in data) {', "    console.log((data as { value: string }).value);", "  }", "}"].join("\n"),
+              },
+              explanation: "Diferente de any, unknown exige uma checagem antes de acessar qualquer campo — mantém a Type Safety mesmo sem saber o tipo exato de antemão.",
+            },
+            {
+              title: "Null safety como parte prática de Type Safety",
+              context: "O compilador impede acessar propriedade de algo que pode não existir.",
+              code: { language: "typescript", filename: "null-safety.ts", code: ["function getLength(text?: string) {", "  return text.length; // erro: 'text' is possibly 'undefined'", "}"].join("\n") },
+              explanation: "O TypeScript recusa acessar .length sem antes garantir que text não é undefined.",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo usa any, então o TypeScript não pega um erro óbvio de uso incorreto.",
+            problemCode: {
+              language: "typescript",
+              filename: "discount.ts",
+              code: ["function calculateDiscount(price: any, percent: any) {", "  return price - (price * percent / 100);", "}", 'calculateDiscount("100", 10); // NaN, sem nenhum aviso do compilador'].join("\n"),
+            },
+            task: "Substitua os any por tipos concretos (number) para que o TypeScript recuse calculateDiscount(\"100\", 10) em tempo de compilação.",
+            hint: "any desliga completamente a checagem — trocar por number reativa exatamente a checagem que faltava.",
+            solution: {
+              code: {
+                language: "typescript",
+                filename: "discount.ts",
+                code: ["function calculateDiscount(price: number, percent: number) {", "  return price - (price * percent / 100);", "}", 'calculateDiscount("100", 10); // erro de compilação'].join("\n"),
+              },
+              explanation: "Com number declarado, o mesmo chamado que antes passava silenciosamente agora é recusado antes de rodar.",
+            },
+          },
+        }),
+        concept({
+          order: 50,
+          title: "Nominal Typing",
+          note: "Tipagem nominal",
+          requires: ["Type Safety"],
+          summary:
+            "Dois tipos são compatíveis só se tiverem o mesmo nome/declaração — mesmo que a estrutura interna " +
+            "seja idêntica, tipos declarados separadamente são tratados como diferentes.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Em Nominal Typing, a compatibilidade entre tipos é decidida pelo nome (a declaração), não " +
+                "pela estrutura. Dois tipos com exatamente os mesmos campos, mas declarados com nomes " +
+                "diferentes, são tratados como tipos diferentes — incompatíveis entre si, mesmo parecendo " +
+                "idênticos por dentro.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Nominal Typing existe para expressar intenção: às vezes você quer que dois tipos com a mesma " +
+                "forma sejam tratados como coisas diferentes, porque representam conceitos distintos do " +
+                "domínio — um UserId e um ProductId podem ser os dois só um number por dentro, mas misturar " +
+                "um pelo outro é um bug de domínio, não um erro estrutural.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "paragraph",
+              text: "TypeScript não é nominal por padrão — o exemplo simula via um padrão comum, \"branded types\":",
+            },
+            {
+              type: "code",
+              language: "typescript",
+              filename: "branded-id.ts",
+              code: [
+                'type UserId = number & { readonly __brand: "UserId" };',
+                'type ProductId = number & { readonly __brand: "ProductId" };',
+                "",
+                "function getUser(id: UserId) { /* ... */ }",
+                "",
+                "declare const productId: ProductId;",
+                "// getUser(productId); // erro: 'ProductId' não é atribuível a 'UserId'",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "UserId e ProductId são estruturalmente idênticos (ambos number por baixo), mas o brand força " +
+                "o compilador a tratá-los como tipos nominalmente diferentes.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Nominal Typing decide compatibilidade pelo nome do tipo, não pela estrutura — útil pra " +
+                "impedir que dois conceitos de domínio que \"por acaso\" têm a mesma forma sejam trocados um " +
+                "pelo outro por engano.",
+            },
+          ],
+          examples: [
+            {
+              title: "Nominal typing clássico, fora do TypeScript",
+              context: "Java/C# nunca tratam duas classes com a mesma forma como intercambiáveis.",
+              code: { language: "text", filename: "Units.java", code: "class Meters { double value; }\nclass Seconds { double value; }\n// Meters m = new Seconds(); // erro: tipos incompatíveis, mesmo com a mesma estrutura" },
+              explanation: "Meters e Seconds nunca são intercambiáveis, mesmo com exatamente os mesmos campos — o nome da classe é o que importa.",
+            },
+            {
+              title: "Enums como tipagem nominal no dia a dia",
+              context: "Dois enums com valores \"iguais\" continuam sendo tipos diferentes.",
+              code: {
+                language: "typescript",
+                filename: "enums.ts",
+                code: ["enum Status { Active, Inactive }", "enum Priority { Active, Inactive } // mesmos valores, nome diferente", "function process(status: Status) { /* ... */ }", "// process(Priority.Active); // erro: Priority não é Status"].join("\n"),
+              },
+              explanation: "Status.Active e Priority.Active \"parecem\" o mesmo valor, mas são de enums nominalmente diferentes.",
+            },
+            {
+              title: "Onde nominal typing evita um bug de domínio real",
+              context: "Sem o brand, confundir unidades de medida seria fácil.",
+              code: {
+                language: "typescript",
+                filename: "temperature.ts",
+                code: ['type CelsiusTemp = number & { readonly __brand: "Celsius" };', 'type FahrenheitTemp = number & { readonly __brand: "Fahrenheit" };', "", "function heatWater(temp: CelsiusTemp) { /* ... */ }"].join("\n"),
+              },
+              explanation: "Sem o brand, seria fácil passar uma temperatura em Fahrenheit pra uma função que espera Celsius — os dois são só number.",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo aceita um number simples como ID de pedido — nada impede trocar por um ID de usuário por engano.",
+            problemCode: {
+              language: "typescript",
+              filename: "cancel-order.ts",
+              code: ["function cancelOrder(orderId: number) { /* ... */ }", "const userId: number = 42;", "cancelOrder(userId); // compila sem erro — mas é um bug de domínio"].join("\n"),
+            },
+            task:
+              "Use um branded type para tornar OrderId nominalmente diferente de number, de forma que passar " +
+              "um number cru para cancelOrder vire erro de compilação.",
+            hint: "Crie OrderId como number & { readonly __brand: \"OrderId\" }, e uma função auxiliar (toOrderId) pra converter um number nele de forma explícita.",
+            solution: {
+              code: {
+                language: "typescript",
+                filename: "cancel-order.ts",
+                code: [
+                  'type OrderId = number & { readonly __brand: "OrderId" };',
+                  "function toOrderId(id: number): OrderId {",
+                  "  return id as OrderId;",
+                  "}",
+                  "",
+                  "function cancelOrder(orderId: OrderId) { /* ... */ }",
+                  "",
+                  "const userId: number = 42;",
+                  "// cancelOrder(userId); // erro: 'number' não é atribuível a 'OrderId'",
+                  "cancelOrder(toOrderId(99)); // ok — conversão explícita e intencional",
+                ].join("\n"),
+              },
+              explanation:
+                "OrderId deixou de ser compatível com number cru — a única forma de obter um é passando " +
+                "explicitamente por toOrderId, tornando impossível passar um userId por engano.",
+            },
+          },
+        }),
+        concept({
+          order: 60,
+          title: "Structural Typing",
+          note: "Tipagem estrutural",
+          requires: ["Nominal Typing"],
+          revisit: ["Software Design / Design Principles / Program to an Interface"],
+          summary:
+            "Dois tipos são compatíveis se tiverem a mesma estrutura, independente do nome ou de onde foram " +
+            "declarados — o oposto de Nominal Typing, e o modelo padrão do TypeScript.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Em Structural Typing, a compatibilidade entre tipos é decidida pela estrutura — quais campos " +
+                "existem e seus tipos — não pelo nome. Se um valor tem todos os campos que um tipo exige, ele " +
+                "é compatível com esse tipo, mesmo declarado com outro nome (ou nenhum), e mesmo com campos a mais.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Diferente de Nominal Typing, Structural Typing é o modelo padrão do TypeScript, e reflete bem " +
+                "como JavaScript já funciona por baixo — duck typing em runtime. Isso permite muito mais " +
+                "flexibilidade: uma função que espera { name: string } aceita qualquer objeto com esse campo, " +
+                "não importa como ele foi criado.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "typescript",
+              filename: "structural.ts",
+              code: [
+                "interface Named {",
+                "  name: string;",
+                "}",
+                "function greet(entity: Named) {",
+                "  return `Olá, ${entity.name}`;",
+                "}",
+                "",
+                "class Person { constructor(public name: string) {} }",
+                'const dog = { name: "Rex", breed: "Labrador" };',
+                "",
+                'greet(new Person("Ana")); // ok — Person tem \'name\'',
+                "greet(dog);                // ok também — dog tem 'name'",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Nem Person nem dog foram declarados como Named explicitamente — os dois são aceitos porque " +
+                "têm a estrutura exigida. Isso é Structural Typing: compatibilidade pela forma, não pelo nome.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Structural Typing decide compatibilidade pela estrutura — se tem os campos certos, é aceito, " +
+                "não importa o nome ou a origem do tipo. É o oposto de Nominal Typing, e o modelo que o " +
+                "TypeScript usa por padrão.",
+            },
+          ],
+          examples: [
+            {
+              title: "Compatibilidade com campos a mais",
+              context: "Structural Typing só exige os campos necessários, não uma estrutura idêntica.",
+              code: {
+                language: "typescript",
+                filename: "point.ts",
+                code: ["interface Point { x: number; y: number; }", "function distanceFromOrigin(p: Point) {", "  return Math.sqrt(p.x ** 2 + p.y ** 2);", "}", "const p3d = { x: 3, y: 4, z: 5 };", "distanceFromOrigin(p3d); // ok — tem x e y (e mais)"].join("\n"),
+              },
+              explanation: "p3d tem um campo z extra que Point nem pede — Structural Typing só exige que os campos necessários existam.",
+            },
+            {
+              title: "Interfaces diferentes, mesma estrutura, intercambiáveis",
+              context: "Duas interfaces com a mesma forma são compatíveis entre si.",
+              code: {
+                language: "typescript",
+                filename: "interchangeable.ts",
+                code: ["interface Employee { id: number; name: string; }", "interface Contractor { id: number; name: string; }", "", "function printId(entity: Employee) { console.log(entity.id); }", 'const c: Contractor = { id: 1, name: "Ana" };', "printId(c); // ok — mesma estrutura"].join("\n"),
+              },
+              explanation: "Diferente de Nominal Typing, aqui Employee e Contractor são intercambiáveis porque a estrutura bate.",
+            },
+            {
+              title: "Duck typing em runtime, a raiz de onde Structural Typing vem",
+              context: "JavaScript puro já funciona assim, sem tipos declarados.",
+              code: { language: "javascript", filename: "duck-typing.js", code: ["function makeItSpeak(entity) {", "  return entity.speak(); // não importa o QUE entity é, só que tenha .speak()", "}", 'makeItSpeak({ speak: () => "au au" });'].join("\n") },
+              explanation: "Em JavaScript puro, qualquer objeto com .speak() funciona — Structural Typing é esse mesmo princípio, verificado estaticamente.",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo foi escrita esperando só instâncias de uma classe ConsoleLogger específica — mais restritivo do que Structural Typing permitiria.",
+            problemCode: {
+              language: "typescript",
+              filename: "process.ts",
+              code: ["class ConsoleLogger {", "  log(message: string) { console.log(message); }", "}", "function process(logger: ConsoleLogger) {", '  logger.log("processando...");', "}"].join("\n"),
+            },
+            task: "Reescreva a assinatura de process para aceitar qualquer objeto com um método log(message: string), sem exigir especificamente um ConsoleLogger.",
+            hint: "Declare uma interface só com a forma necessária, e use-a como o tipo do parâmetro em vez da classe concreta.",
+            solution: {
+              code: {
+                language: "typescript",
+                filename: "process.ts",
+                code: [
+                  "interface Logger {",
+                  "  log(message: string): void;",
+                  "}",
+                  "function process(logger: Logger) {",
+                  '  logger.log("processando...");',
+                  "}",
+                  "",
+                  "class ConsoleLogger { log(message: string) { console.log(message); } }",
+                  "class FileLogger { log(message: string) { /* grava em arquivo */ } }",
+                  "",
+                  "process(new ConsoleLogger()); // ok",
+                  "process(new FileLogger());    // também ok — mesma estrutura",
+                ].join("\n"),
+              },
+              explanation: "Logger descreve só a forma necessária — qualquer coisa com log(message: string) é aceita, aproveitando Structural Typing em vez de acoplar a uma classe concreta.",
+            },
+          },
+        }),
+        concept({
+          order: 70,
+          title: "Generics",
+          note: "Genéricos",
+          requires: ["Type Safety", "Programming Fundamentals / Abstraction"],
+          revisit: ["Data Structures (coleções genéricas)"],
+          summary:
+            "Escrever código parametrizado por tipo, mantendo a relação entre entrada e saída — reutilização " +
+            "sem abrir mão da segurança de tipos.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Generics permitem escrever código parametrizado por tipo, não só por valor — uma função ou " +
+                "classe genérica funciona com qualquer tipo T, mas o compilador continua sabendo exatamente " +
+                "qual T está em jogo em cada uso, preservando a relação entre entrada e saída.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Sem generics, escrever uma função que funciona com qualquer tipo exigiria any — o que joga " +
+                "fora toda a Type Safety. Generics resolvem isso: o tipo continua desconhecido no momento de " +
+                "escrever a função, mas fica conhecido e checado no momento de usar. É Abstraction aplicada a " +
+                "tipos — a função abstrai o tipo concreto, mas a relação entre entrada e saída continua garantida.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "typescript",
+              filename: "first-element.ts",
+              code: [
+                "function firstElement<T>(arr: T[]): T {",
+                "  return arr[0];",
+                "}",
+                "const num = firstElement([1, 2, 3]);       // T é inferido como number",
+                'const str = firstElement(["a", "b", "c"]); // T é inferido como string',
+                "// num.toUpperCase(); // erro: number não tem toUpperCase",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "firstElement funciona com qualquer array, mas o TypeScript sabe que o retorno tem o mesmo " +
+                "tipo dos elementos — diferente de any, que perderia essa relação completamente.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Generics abstraem o tipo concreto, mas preservam a relação entre os tipos envolvidos — " +
+                "resolvem o mesmo problema que any resolveria, sem abrir mão da Type Safety.",
+            },
+          ],
+          examples: [
+            {
+              title: "Uma estrutura de dados genérica",
+              context: "A mesma classe funciona pra qualquer tipo, sem duplicar código.",
+              code: {
+                language: "typescript",
+                filename: "stack.ts",
+                code: ["class Stack<T> {", "  #items: T[] = [];", "  push(item: T) { this.#items.push(item); }", "  pop(): T | undefined { return this.#items.pop(); }", "}", "const numbers = new Stack<number>();", "numbers.push(1);", '// numbers.push("dois"); // erro: string não é number'].join("\n"),
+              },
+              explanation: "Stack<number> garante que só number pode entrar — a mesma classe Stack<T> funciona igual para Stack<string>, Stack<User>, etc.",
+            },
+            {
+              title: "Generics com múltiplos parâmetros de tipo",
+              context: "Cada parâmetro de tipo pode ser completamente diferente do outro.",
+              code: { language: "typescript", filename: "pair.ts", code: ["function makePair<K, V>(key: K, value: V): [K, V] {", "  return [key, value];", "}", 'const pair = makePair("age", 30); // [string, number]'].join("\n") },
+              explanation: "K e V podem ser tipos completamente diferentes um do outro — generics não exige que todos os tipos parametrizados sejam iguais.",
+            },
+            {
+              title: "Generics com restrição (constraint)",
+              context: "T extends limita o generic a tipos que cumpram um contrato mínimo.",
+              code: {
+                language: "typescript",
+                filename: "longest.ts",
+                code: ["interface HasLength { length: number; }", "function longest<T extends HasLength>(a: T, b: T): T {", "  return a.length >= b.length ? a : b;", "}", 'longest("abc", "de");        // ok — string tem length', "longest([1, 2, 3], [4, 5]);  // ok — array tem length"].join("\n"),
+              },
+              explanation: "T extends HasLength restringe o generic a tipos que tenham .length — não precisa aceitar qualquer coisa, pode exigir um contrato mínimo via Interface.",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo usa any pra funcionar com qualquer tipo de array — mas isso perde a relação entre o tipo de entrada e o de saída.",
+            problemCode: {
+              language: "typescript",
+              filename: "get-last-item.ts",
+              code: ["function getLastItem(arr: any): any {", "  return arr[arr.length - 1];", "}", "const lastNumber = getLastItem([1, 2, 3]);", "lastNumber.toUpperCase(); // sem erro de compilação — mas quebra em runtime"].join("\n"),
+            },
+            task: "Reescreva getLastItem usando Generics, de forma que o tipo de retorno seja sempre o mesmo dos elementos do array de entrada.",
+            hint: "Use um parâmetro de tipo T tanto no array de entrada (T[]) quanto no tipo de retorno (T).",
+            solution: {
+              code: {
+                language: "typescript",
+                filename: "get-last-item.ts",
+                code: ["function getLastItem<T>(arr: T[]): T {", "  return arr[arr.length - 1];", "}", "const lastNumber = getLastItem([1, 2, 3]); // T inferido como number", "// lastNumber.toUpperCase(); // agora É erro de compilação"].join("\n"),
+              },
+              explanation: "Com T preservando a relação entre entrada e saída, o TypeScript sabe que lastNumber é number — o erro que antes só aparecia em runtime agora é pego antes de rodar.",
+            },
+          },
+        }),
+        concept({
+          order: 80,
+          title: "Union Types",
+          note: "Tipos de união",
+          requires: ["Type Safety"],
+          summary:
+            "Um valor que pode ser de um tipo ou de outro — modela variação de forma explícita, em vez de " +
+            "aceitar qualquer coisa (any) ou duplicar código pra cada caso separadamente.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Union Types representam um valor que pode ser de um tipo OU de outro (A | B) — não os dois ao " +
+                "mesmo tempo, um dos dois, dependendo do caso. É a forma de expressar \"esse valor tem algumas " +
+                "formas possíveis conhecidas\" sem abrir mão de checagem de tipo.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Muitos valores do mundo real legitimamente podem ser de mais de um tipo — um ID pode ser " +
+                "string ou number, uma resposta de API pode ser sucesso ou erro. Sem Union Types, a " +
+                "alternativa seria usar any (perdendo Type Safety) ou criar uma hierarquia de classes só pra " +
+                "isso. Union Types resolvem isso diretamente, no próprio sistema de tipos.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "typescript",
+              filename: "format-id.ts",
+              code: ["function formatId(id: string | number) {", "  return `ID: ${id}`;", "}", "formatId(42);      // ok", 'formatId("abc-1"); // ok', "// formatId(true); // erro: boolean não faz parte da união"].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text: "id pode ser string OU number — nada mais é aceito. O compilador sabe exatamente quais formas são válidas.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Union Types modelam \"esse valor pode ser de um destes tipos\" de forma explícita e checada — " +
+                "mais preciso que any e mais simples que criar uma hierarquia de classes só pra representar variação.",
+            },
+          ],
+          examples: [
+            {
+              title: "Estado de carregamento como union de estados possíveis",
+              context: "A união exclui combinações inválidas por construção.",
+              code: {
+                language: "typescript",
+                filename: "request-state.ts",
+                code: ["type RequestState =", '  | { status: "loading" }', '  | { status: "success"; data: string }', '  | { status: "error"; message: string };'].join("\n"),
+              },
+              explanation: "RequestState só pode ser uma dessas três formas — impossível representar um estado inválido tipo \"success sem data\".",
+            },
+            {
+              title: "Union de tipos literais restringindo valores possíveis",
+              context: "Em vez de aceitar qualquer string, só os literais válidos.",
+              code: {
+                language: "typescript",
+                filename: "direction.ts",
+                code: ['type Direction = "up" | "down" | "left" | "right";', "function move(direction: Direction) { /* ... */ }", 'move("up");     // ok', '// move("diagonal"); // erro: não faz parte da união'].join("\n"),
+              },
+              explanation: "Direction restringe aos 4 valores válidos — o compilador recusa qualquer outro literal.",
+            },
+            {
+              title: "Union com null tornando ausência explícita",
+              context: "O compilador força lidar com o caso de ausência antes de usar o valor.",
+              code: {
+                language: "typescript",
+                filename: "find-user.ts",
+                code: ["function findUser(id: number): { name: string } | null {", '  return id === 1 ? { name: "Ana" } : null;', "}", "const user = findUser(2);", "// user.name; // erro: 'user' is possibly 'null'"].join("\n"),
+              },
+              explanation: "O retorno declara explicitamente que pode não haver usuário — o compilador força lidar com null antes de acessar .name.",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo usa any pra aceitar número ou string representando um preço, perdendo toda a checagem de tipo.",
+            problemCode: {
+              language: "typescript",
+              filename: "format-price.ts",
+              code: ["function formatPrice(price: any) {", "  return `R$ ${price.toFixed(2)}`; // quebra em runtime se price for string", "}", "formatPrice(9.9);    // \"R$ 9.90\"", 'formatPrice("9.9");  // TypeError: price.toFixed is not a function'].join("\n"),
+            },
+            task: "Reescreva formatPrice usando um Union Type (number | string) em vez de any, e trate os dois casos corretamente.",
+            hint: "Use typeof price === \"number\" pra estreitar qual dos dois tipos da união você está lidando em cada ramo (isso antecipa o próximo Concept, Type Narrowing).",
+            solution: {
+              code: {
+                language: "typescript",
+                filename: "format-price.ts",
+                code: ["function formatPrice(price: number | string) {", '  const value = typeof price === "number" ? price : parseFloat(price);', "  return `R$ ${value.toFixed(2)}`;", "}", "formatPrice(9.9);   // \"R$ 9.90\"", 'formatPrice("9.9"); // "R$ 9.90"'].join("\n"),
+              },
+              explanation: "number | string documenta exatamente as duas formas válidas — e o typeof dentro da função lida com cada uma explicitamente.",
+            },
+          },
+        }),
+        concept({
+          order: 90,
+          title: "Intersection Types",
+          note: "Tipos de interseção",
+          requires: ["Union Types"],
+          summary:
+            "Um valor que precisa cumprir múltiplos tipos ao mesmo tempo (A & B) — o oposto de Union Types, " +
+            "útil para combinar formas menores em uma maior sem herança.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Intersection Types (A & B) representam um valor que precisa ter todos os campos de A e todos " +
+                "os campos de B ao mesmo tempo — diferente de Union (A | B, um ou outro), Intersection exige " +
+                "os dois simultaneamente.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Às vezes você quer combinar formas menores e independentes numa forma maior, sem criar uma " +
+                "hierarquia de herança pra isso — Composition aplicada a tipos, do mesmo jeito que Composition " +
+                "(o Concept de objetos) combina comportamento sem Inheritance. Interfaces menores e focadas " +
+                "podem ser combinadas sob demanda, só onde fizer sentido.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "typescript",
+              filename: "intersection.ts",
+              code: [
+                "interface Named { name: string; }",
+                "interface Aged { age: number; }",
+                "type Person = Named & Aged; // precisa ter name E age",
+                "",
+                'const p: Person = { name: "Ana", age: 30 }; // ok, tem os dois',
+                "// const invalid: Person = { name: \"Ana\" }; // erro: falta 'age'",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text: "Person exige todos os campos de Named E de Aged — a interseção combina as duas formas numa forma maior, sem herança nenhuma envolvida.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Intersection Types combinam múltiplas formas menores numa forma maior que precisa cumprir " +
+                "todas ao mesmo tempo — o oposto de Union e uma alternativa a herança pra compor tipos.",
+            },
+          ],
+          examples: [
+            {
+              title: "Combinando uma interface base com uma extensão de contexto",
+              context: "Dois conceitos que fazem sentido separadamente, combinados sob demanda.",
+              code: {
+                language: "typescript",
+                filename: "user-response.ts",
+                code: ["interface ApiResponse { status: number; }", "interface UserData { name: string; email: string; }", "type UserResponse = ApiResponse & UserData;", "", 'const res: UserResponse = { status: 200, name: "Ana", email: "ana@ex.com" };'].join("\n"),
+              },
+              explanation: "UserResponse precisa dos campos de ApiResponse E de UserData juntos.",
+            },
+            {
+              title: "Intersection com Generics",
+              context: "Acrescentar metadados fixos a qualquer tipo T.",
+              code: {
+                language: "typescript",
+                filename: "with-timestamp.ts",
+                code: ["type WithTimestamp<T> = T & { createdAt: Date };", "type TimestampedUser = WithTimestamp<{ name: string }>;", "", 'const u: TimestampedUser = { name: "Ana", createdAt: new Date() };'].join("\n"),
+              },
+              explanation: "WithTimestamp<T> acrescenta createdAt a qualquer tipo T — Intersection combinada com Generics compõe essa \"marca\" em cima de qualquer forma.",
+            },
+            {
+              title: "Intersection revelando um conflito de tipos",
+              context: "Quando os dois lados exigem tipos incompatíveis para o mesmo campo.",
+              code: { language: "typescript", filename: "impossible.ts", code: ["type A = { value: string };", "type B = { value: number };", "type Impossible = A & B; // value vira \"string & number\" — nenhum valor satisfaz os dois"].join("\n") },
+              explanation: "Quando os dois lados exigem tipos incompatíveis pro mesmo campo, o resultado é um tipo praticamente impossível de satisfazer.",
+            },
+          ],
+          exercise: {
+            problem: "Duas interfaces menores já existem separadamente, mas Order precisa das duas ao mesmo tempo — hoje Order está duplicando os campos manualmente.",
+            problemCode: {
+              language: "typescript",
+              filename: "order.ts",
+              code: ["interface Timestamped { createdAt: Date; }", "interface Identifiable { id: string; }", "interface Order { // duplicando os campos em vez de reaproveitar", "  id: string;", "  createdAt: Date;", "  total: number;", "}"].join("\n"),
+            },
+            task: "Reescreva Order usando Intersection Types pra combinar Timestamped, Identifiable e um campo próprio (total: number), sem duplicar id/createdAt.",
+            hint: "Um type pode ser a interseção de duas interfaces mais um objeto de campos próprios, tudo junto com &.",
+            solution: {
+              code: {
+                language: "typescript",
+                filename: "order.ts",
+                code: [
+                  "interface Timestamped { createdAt: Date; }",
+                  "interface Identifiable { id: string; }",
+                  "type Order = Timestamped & Identifiable & { total: number };",
+                  "",
+                  'const order: Order = { id: "1", createdAt: new Date(), total: 99.9 };',
+                ].join("\n"),
+              },
+              explanation: "Order agora reaproveita Timestamped e Identifiable via interseção, em vez de duplicar id/createdAt.",
+            },
+          },
+        }),
+        concept({
+          order: 100,
+          title: "Type Narrowing",
+          note: "Estreitamento de tipos",
+          requires: ["Union Types"],
+          revisit: ["Software Craft / Guard Clauses (narrowing por guarda)"],
+          summary:
+            "Reduzir progressivamente as possibilidades de um Union Type dentro de um bloco de código, até o " +
+            "compilador saber exatamente qual tipo específico está em jogo naquele ponto.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Type Narrowing é o processo de reduzir um Union Type (A | B) para um tipo mais específico " +
+                "dentro de um bloco de código, através de checagens que o compilador entende — typeof, " +
+                "instanceof, checagem de uma propriedade. Depois de um narrowing bem-sucedido, o compilador " +
+                "trata o valor como o tipo restante.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Um Union Type sozinho só permite usar o que é comum a todos os tipos da união — pra usar algo " +
+                "específico de só um deles, o compilador precisa ter certeza (via alguma checagem no código) " +
+                "de qual tipo está em jogo naquele ponto. Type Narrowing é como você \"prova\" isso pro " +
+                "compilador, ponto a ponto do código.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            {
+              type: "code",
+              language: "typescript",
+              filename: "narrowing.ts",
+              code: [
+                "function printLength(value: string | string[]) {",
+                '  if (typeof value === "string") {',
+                "    console.log(value.length);   // aqui, TypeScript sabe: value é string",
+                "  } else {",
+                "    console.log(value.length);   // aqui, TypeScript sabe: value é string[]",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Fora do if, value é string | string[] — mas dentro de cada ramo, o typeof estreita o tipo pra " +
+                "um dos dois específicos, e o compilador acompanha essa dedução automaticamente.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Type Narrowing é como um Union Type vira um tipo específico dentro de um bloco de código, " +
+                "através de checagens que o compilador entende e usa pra refinar o que sabe sobre aquele valor.",
+            },
+          ],
+          examples: [
+            {
+              title: "Narrowing via instanceof",
+              context: "Estreitar a união pro ramo específico de uma classe.",
+              code: {
+                language: "typescript",
+                filename: "handle-error.ts",
+                code: [
+                  "class ApiError extends Error { statusCode: number = 500; }",
+                  "",
+                  "function handleError(error: Error | ApiError) {",
+                  "  if (error instanceof ApiError) {",
+                  "    console.log(error.statusCode); // aqui, TypeScript sabe: é ApiError",
+                  "  } else {",
+                  "    console.log(error.message);    // aqui, só Error garantido",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation: "instanceof ApiError estreita a união pro ramo específico — só dentro do if o compilador permite acessar statusCode.",
+            },
+            {
+              title: "Narrowing via checagem de campo (discriminated union)",
+              context: "O padrão mais comum na prática — um campo funciona como discriminador.",
+              code: {
+                language: "typescript",
+                filename: "result.ts",
+                code: [
+                  "type Result =",
+                  '  | { success: true; data: string }',
+                  '  | { success: false; error: string };',
+                  "",
+                  "function handle(result: Result) {",
+                  "  if (result.success) {",
+                  "    console.log(result.data);  // TypeScript sabe: é o ramo success:true",
+                  "  } else {",
+                  "    console.log(result.error); // aqui, é o ramo success:false",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation: "success funciona como um discriminador — checar seu valor é suficiente pro TypeScript saber exatamente qual forma da união está em jogo.",
+            },
+            {
+              title: "Narrowing via in",
+              context: "Verificar a presença de uma propriedade em tempo de execução E de compilação.",
+              code: {
+                language: "typescript",
+                filename: "area-in.ts",
+                code: [
+                  'type Circle = { kind: "circle"; radius: number };',
+                  'type Square = { kind: "square"; side: number };',
+                  "",
+                  "function area(shape: Circle | Square) {",
+                  '  if ("radius" in shape) {',
+                  "    return Math.PI * shape.radius ** 2; // TypeScript sabe: é Circle",
+                  "  }",
+                  "  return shape.side ** 2; // aqui, só pode ser Square",
+                  "}",
+                ].join("\n"),
+              },
+              explanation: "\"radius\" in shape verifica a presença do campo em runtime E estreita o tipo em compilação, os dois ao mesmo tempo.",
+            },
+          ],
+          exercise: {
+            problem: "A função abaixo acessa campos de ambos os ramos de um Union Type sem estreitar o tipo primeiro — o compilador recusa.",
+            problemCode: {
+              language: "typescript",
+              filename: "area.ts",
+              code: [
+                'type Circle = { kind: "circle"; radius: number };',
+                'type Square = { kind: "square"; side: number };',
+                "",
+                "function area(shape: Circle | Square) {",
+                "  return Math.PI * shape.radius ** 2; // erro: 'radius' não existe em 'Square'",
+                "}",
+              ].join("\n"),
+            },
+            task: "Corrija area usando Type Narrowing (baseado no campo kind) para acessar radius só quando shape for Circle, e side só quando for Square.",
+            hint: "Cheque shape.kind === \"circle\" (o campo discriminador) antes de acessar radius.",
+            solution: {
+              code: {
+                language: "typescript",
+                filename: "area.ts",
+                code: [
+                  "function area(shape: Circle | Square) {",
+                  '  if (shape.kind === "circle") {',
+                  "    return Math.PI * shape.radius ** 2; // estreitado pra Circle",
+                  "  }",
+                  "  return shape.side ** 2; // só resta Square",
+                  "}",
+                ].join("\n"),
+              },
+              explanation: "Checar shape.kind === \"circle\" é o narrowing que faltava — dentro do if, o TypeScript sabe que shape é Circle e libera radius; no else, só Square resta.",
+            },
+          },
+        }),
       ],
     }),
     module({

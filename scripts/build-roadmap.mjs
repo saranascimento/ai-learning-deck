@@ -1172,6 +1172,16 @@ for (const area of model.areas()) {
     "call-stack",
     "garbage-collection",
     "memory-leak",
+    "static-vs-dynamic-typing",
+    "strong-vs-weak-typing",
+    "type-inference",
+    "type-safety",
+    "nominal-typing",
+    "structural-typing",
+    "generics",
+    "union-types",
+    "intersection-types",
+    "type-narrowing",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",
