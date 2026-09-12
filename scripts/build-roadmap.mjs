@@ -1241,6 +1241,12 @@ for (const area of model.areas()) {
     "test-runner",
     "integration-testing",
     "e2e-testing",
+    "test-doubles",
+    "dummy",
+    "stub",
+    "fake",
+    "spy",
+    "mock",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",

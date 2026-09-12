@@ -1363,23 +1363,1082 @@ export default area({
           requires: ["Testing Fundamentals / Unit Testing", "Programming Foundations / Programming Fundamentals / Interface"],
           note: "termo guarda-chuva (taxonomia de Meszaros)",
           collision: "nome da Story = nome desta Task — esta é a Task do conceito-guarda-chuva",
+          summary:
+            "O termo guarda-chuva para qualquer objeto que substitui uma dependência real dentro de um teste — " +
+            "dummy, stub, fake, spy e mock são cinco variações dessa mesma ideia, cada uma com um propósito diferente.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Test Double é qualquer objeto que substitui, dentro de um teste, uma dependência real de que o " +
+                "código sob teste precisa — um banco de dados, uma API externa, um serviço de e-mail. O nome " +
+                "vem de \"stunt double\" (dublê de cinema): assim como um dublê substitui o ator numa cena " +
+                "perigosa, um test double substitui a dependência real num cenário onde usá-la de verdade seria " +
+                "lento, instável ou impossível.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Algumas dependências tornam um teste de unidade impraticável: chamar uma API de pagamento de " +
+                "verdade a cada teste é lento, custa dinheiro e depende de rede; ler de um banco de produção " +
+                "pode até ser destrutivo. Test Doubles existem para que o código sob teste continue recebendo " +
+                "algo que satisfaz a mesma interface, sem pagar o custo (ou o risco) da dependência real.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "A taxonomia com cinco nomes — dummy, stub, fake, spy, mock — vem do livro de Gerard Meszaros " +
+                "(xUnit Test Patterns) e existe porque \"dublê\" sozinho não diz o suficiente: cada variação " +
+                "responde de menos comportamento para mais e de nenhuma verificação para verificação ativa. " +
+                "Escolher o dublê certo é escolher o mínimo necessário para o teste, não o mais sofisticado disponível.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "um código que depende de um serviço de e-mail, e um dublê mínimo que o substitui no teste:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "welcome-email-sender.test.js",
+              code: [
+                "class WelcomeEmailSender {",
+                "  constructor(emailService) {",
+                "    this.emailService = emailService;",
+                "  }",
+                "  send(user) {",
+                "    this.emailService.send(user.email, \"Bem-vindo!\");",
+                "  }",
+                "}",
+                "",
+                "function testWelcomeEmailIsSent() {",
+                "  const fakeEmailService = { send: () => {} };",
+                "  const sender = new WelcomeEmailSender(fakeEmailService);",
+                "",
+                "  sender.send({ email: \"ana@example.com\" });",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "fakeEmailService satisfaz a mesma interface que emailService real esperaria (um método send), " +
+                "mas não envia e-mail nenhum de verdade. O teste consegue exercitar WelcomeEmailSender sem " +
+                "depender de um provedor de e-mail real — esse objeto simples já é um Test Double, mesmo antes " +
+                "de decidirmos que tipo específico ele é.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Test Double é o termo guarda-chuva para qualquer substituto de uma dependência real dentro de um " +
+                "teste — dummy, stub, fake, spy e mock são cinco variações dessa mesma ideia, cada uma " +
+                "emprestando só o comportamento que o teste precisa.",
+            },
+          ],
+          examples: [
+            {
+              title: "Substituindo uma dependência de rede",
+              context: "O caso mais comum: evitar chamadas de rede reais dentro de um unit test.",
+              code: {
+                language: "javascript",
+                filename: "weather.test.js",
+                code: ["function fetchWeather(httpClient, city) {", "  return httpClient.get(`/weather/${city}`);", "}", "", "const fakeHttpClient = { get: (url) => ({ temperature: 25 }) };", "fetchWeather(fakeHttpClient, \"São Paulo\");"].join("\n"),
+              },
+              explanation:
+                "fakeHttpClient substitui uma chamada HTTP real por uma resposta fixa, sem tocar rede — o teste " +
+                "roda em milissegundos, não em segundos.",
+            },
+            {
+              title: "Substituindo o relógio do sistema",
+              context: "Dependências de tempo também costumam ser substituídas por um dublê determinístico.",
+              code: {
+                language: "javascript",
+                filename: "token.test.js",
+                code: ["function isExpired(token, clock) {", "  return clock.now() > token.expiresAt;", "}", "", "const fixedClock = { now: () => 1700000000000 };", "isExpired({ expiresAt: 1600000000000 }, fixedClock);"].join("\n"),
+              },
+              explanation:
+                "Sem fixedClock, o teste dependeria do momento exato em que roda — um dublê de relógio torna o " +
+                "comportamento previsível e repetível, não importa quando o teste seja executado.",
+            },
+            {
+              title: "Injeção de dependência como pré-requisito",
+              context: "Um Test Double só é possível quando o código aceita a dependência de fora, em vez de criá-la internamente.",
+              code: {
+                language: "javascript",
+                filename: "report-generator.js",
+                code: ["class ReportGenerator {", "  constructor(database) {", "    this.database = database;", "  }", "  generate() {", "    return this.database.query(\"SELECT * FROM sales\");", "  }", "}"].join("\n"),
+              },
+              explanation:
+                "database é recebido no construtor (injeção de dependência), não instanciado dentro da classe — " +
+                "é isso que permite passar um dublê no lugar do banco real durante o teste (ver Testability, no " +
+                "módulo Testing Strategy).",
+            },
+          ],
+          exercise: {
+            problem:
+              "A classe abaixo cria sua própria conexão com o banco dentro do construtor, o que torna impossível " +
+              "substituí-la por um Test Double.",
+            problemCode: {
+              language: "javascript",
+              filename: "order-service.js",
+              code: ["class OrderService {", "  constructor() {", "    this.database = new PostgresConnection(PROD_DATABASE_URL);", "  }", "  save(order) {", "    return this.database.insert(\"orders\", order);", "  }", "}"].join("\n"),
+            },
+            task:
+              "Reescreva OrderService para aceitar a dependência de banco de dados como parâmetro, tornando " +
+              "possível substituí-la por um Test Double em testes.",
+            hint: "A dependência precisa entrar de fora (via construtor ou parâmetro), não ser criada dentro da classe.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "order-service.js",
+                code: [
+                  "class OrderService {",
+                  "  constructor(database) {",
+                  "    this.database = database;",
+                  "  }",
+                  "  save(order) {",
+                  "    return this.database.insert(\"orders\", order);",
+                  "  }",
+                  "}",
+                  "",
+                  "function testSaveCallsDatabase() {",
+                  "  const fakeDatabase = { insert: () => ({ id: 1 }) };",
+                  "  const service = new OrderService(fakeDatabase);",
+                  "",
+                  "  service.save({ total: 100 });",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Com database recebido no construtor, um teste pode passar fakeDatabase no lugar da conexão real " +
+                "— a classe não sabe (nem precisa saber) se está recebendo o banco de produção ou um dublê.",
+            },
+          },
         }),
-        concept({ order: 20, title: "Dummy", isNew: true, requires: ["Test Doubles"], note: "objeto passado mas nunca usado — só preenche uma assinatura" }),
-        concept({ order: 30, title: "Stub", requires: ["Test Doubles"], note: "respostas prontas, sem verificação" }),
+        concept({
+          order: 20,
+          title: "Dummy",
+          isNew: true,
+          requires: ["Test Doubles"],
+          note: "objeto passado mas nunca usado — só preenche uma assinatura",
+          summary:
+            "O dublê mais inerte de todos: um objeto passado como argumento só porque a assinatura exige, mas " +
+            "que nunca é de fato usado dentro do código sob teste.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Um dummy é um objeto que existe só para preencher um parâmetro — o código sob teste recebe o " +
+                "dummy, mas nunca chama nenhum método nele nem lê nenhuma propriedade sua. Se a assinatura de " +
+                "uma função exige três argumentos e o teste só se importa com dois deles, o terceiro pode ser um " +
+                "dummy: qualquer valor (às vezes até null ou {}) que satisfaça o tipo esperado, sem nenhum " +
+                "comportamento por trás.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Nem toda dependência precisa de um comportamento simulado — às vezes ela só precisa \"estar " +
+                "lá\" para que o código compile ou rode sem erro de tipo. Criar um dublê mais elaborado (um " +
+                "stub, um mock) para algo que nunca é usado seria trabalho desperdiçado; o dummy existe " +
+                "justamente para o caso em que nada mais é necessário.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Um dummy também comunica intenção: ao ler um teste, ver um valor claramente marcado como dummy " +
+                "(por exemplo, um objeto vazio nomeado unusedLogger) sinaliza para quem lê que aquele parâmetro " +
+                "é irrelevante para o comportamento sendo testado — sem precisar investigar se ele é usado em " +
+                "algum lugar escondido.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "uma função que recebe um logger mas, no caminho testado, nunca chama nada nele:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "calculate-total.test.js",
+              code: [
+                "function calculateTotal(items, logger) {",
+                "  return items.reduce((sum, item) => sum + item.price, 0);",
+                "}",
+                "",
+                "function testCalculateTotal() {",
+                "  const dummyLogger = {};",
+                "  const result = calculateTotal([{ price: 10 }, { price: 20 }], dummyLogger);",
+                "",
+                "  if (result !== 30) throw new Error(`esperava 30, recebeu ${result}`);",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "dummyLogger é um objeto vazio — calculateTotal recebe logger como parâmetro (a assinatura " +
+                "exige), mas nunca chama nenhum método nele. O teste passa qualquer coisa ali só para satisfazer " +
+                "a assinatura; se calculateTotal um dia passar a usar logger.info(...), esse teste quebraria e " +
+                "sinalizaria que o dummy não é mais suficiente.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Um dummy é o dublê mais inerte: existe só para preencher uma assinatura, sem nenhum " +
+                "comportamento por trás — o sinal de que aquele parâmetro é irrelevante para o que o teste está " +
+                "verificando.",
+            },
+          ],
+          examples: [
+            {
+              title: "Dummy para satisfazer um construtor",
+              context: "Quando uma classe exige uma dependência no construtor, mas o teste não exercita nenhum caminho que a use.",
+              code: {
+                language: "javascript",
+                filename: "invoice-printer.test.js",
+                code: [
+                  "class InvoicePrinter {",
+                  "  constructor(printer, auditLogger) {",
+                  "    this.printer = printer;",
+                  "    this.auditLogger = auditLogger;",
+                  "  }",
+                  "  formatTotal(invoice) {",
+                  "    return `Total: R$${invoice.total.toFixed(2)}`;",
+                  "  }",
+                  "}",
+                  "",
+                  "const dummyPrinter = {};",
+                  "const dummyAuditLogger = {};",
+                  "new InvoicePrinter(dummyPrinter, dummyAuditLogger).formatTotal({ total: 42 });",
+                ].join("\n"),
+              },
+              explanation:
+                "formatTotal não usa printer nem auditLogger — os dois são dummies só para satisfazer o " +
+                "construtor. Testar formatTotal não exige simular impressão nem auditoria.",
+            },
+            {
+              title: "Dummy vs. valor primitivo simples",
+              context: "Às vezes o dummy nem precisa ser um objeto — um valor qualquer do tipo certo já resolve.",
+              code: {
+                language: "javascript",
+                filename: "greet.test.js",
+                code: ["function greet(name, unusedRequestId) {", "  return `Olá, ${name}!`;", "}", "", "greet(\"Ana\", \"qualquer-coisa\");"].join("\n"),
+              },
+              explanation:
+                "unusedRequestId nunca é lido dentro de greet — passar a string \"qualquer-coisa\" é tão válido " +
+                "quanto um objeto elaborado, porque o valor em si é irrelevante.",
+            },
+            {
+              title: "Quando um dummy vira sinal de código mal desenhado",
+              context: "Muitos parâmetros dummy num mesmo teste podem indicar que a função tem responsabilidade demais.",
+              code: {
+                language: "javascript",
+                filename: "process-order.js",
+                code: ["function processOrder(order, paymentGateway, emailService, inventorySystem, auditLog) {", "  return order.items.length > 0;", "}"].join("\n"),
+              },
+              explanation:
+                "Se um teste de processOrder precisa passar quatro dummies para testar uma verificação simples, " +
+                "é sinal de que a função recebe dependências que a maioria dos seus caminhos nem usa — " +
+                "candidato a ser dividida (ver Cohesion, na Área 1).",
+            },
+          ],
+          exercise: {
+            problem:
+              "O teste abaixo cria um EmailService falso inteiro, com um método send() que nunca é chamado no " +
+              "caminho testado, só para satisfazer o construtor de UserRegistrar.",
+            problemCode: {
+              language: "javascript",
+              filename: "user-registrar.test.js",
+              code: [
+                "class UserRegistrar {",
+                "  constructor(emailService) {",
+                "    this.emailService = emailService;",
+                "  }",
+                "  isValidEmail(email) {",
+                "    return email.includes(\"@\");",
+                "  }",
+                "}",
+                "",
+                "function testIsValidEmail() {",
+                "  const fakeEmailService = {",
+                "    send: (to, subject, body) => { console.log(`enviando para ${to}`); },",
+                "  };",
+                "  const registrar = new UserRegistrar(fakeEmailService);",
+                "",
+                "  if (!registrar.isValidEmail(\"ana@example.com\")) throw new Error(\"deveria ser válido\");",
+                "}",
+              ].join("\n"),
+            },
+            task: "Simplifique fakeEmailService para um dummy, já que isValidEmail não usa emailService de forma nenhuma.",
+            hint: "Um dummy não precisa de nenhum método implementado — só precisa existir para satisfazer o construtor.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "user-registrar.test.js",
+                code: [
+                  "function testIsValidEmail() {",
+                  "  const dummyEmailService = {};",
+                  "  const registrar = new UserRegistrar(dummyEmailService);",
+                  "",
+                  "  if (!registrar.isValidEmail(\"ana@example.com\")) throw new Error(\"deveria ser válido\");",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "dummyEmailService não precisa de um método send simulado — isValidEmail nunca chama " +
+                "emailService.send, então qualquer objeto (mesmo vazio) satisfaz o construtor sem trabalho extra.",
+            },
+          },
+        }),
+        concept({
+          order: 30,
+          title: "Stub",
+          requires: ["Test Doubles"],
+          note: "respostas prontas, sem verificação",
+          summary:
+            "Um dublê que devolve respostas pré-programadas e fixas quando chamado — ao contrário do dummy, o " +
+            "stub é de fato usado, mas nunca verificado sobre como foi chamado.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Um stub é um dublê que, quando um de seus métodos é chamado, devolve um valor fixo e " +
+                "pré-programado — sem lógica real por trás, sem verificar dados de entrada, sem checar se e " +
+                "quantas vezes foi chamado. O código sob teste chama o stub e usa a resposta dele como se fosse " +
+                "a dependência real, mas o teste em si não faz nenhuma asserção sobre o stub — só sobre o " +
+                "resultado do código que o usou.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Muitas vezes o comportamento que se quer testar depende do valor que uma dependência devolve, " +
+                "não de como a dependência foi chamada. Um stub existe para controlar exatamente essa resposta: " +
+                "\"faça de conta que a API de câmbio devolveu 5.2\" — permitindo testar como o código reage a " +
+                "diferentes respostas (incluindo casos de erro) sem depender da dependência real produzir " +
+                "aquele cenário.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "A diferença de um dummy é que o stub é de fato chamado e seu retorno é usado pelo código sob " +
+                "teste — não é só um preenchedor de assinatura. A diferença de um spy ou mock é que ninguém " +
+                "verifica como o stub foi chamado; o teste só olha para o efeito indireto da resposta que ele devolveu.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "um stub que devolve uma taxa de câmbio fixa, para testar a conversão de moeda:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "currency.test.js",
+              code: [
+                "function convertToUSD(amountInBRL, exchangeRateProvider) {",
+                "  const rate = exchangeRateProvider.getRate(\"USD\");",
+                "  return amountInBRL / rate;",
+                "}",
+                "",
+                "function testConvertToUSD() {",
+                "  const stubProvider = { getRate: () => 5.0 };",
+                "  const result = convertToUSD(100, stubProvider);",
+                "",
+                "  if (result !== 20) throw new Error(`esperava 20, recebeu ${result}`);",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "stubProvider.getRate sempre devolve 5.0, não importa o argumento — é uma resposta fixa e " +
+                "pré-programada. O teste verifica que convertToUSD calcula corretamente a partir dessa taxa " +
+                "conhecida, sem depender de uma API de câmbio real (que poderia devolver um valor diferente a " +
+                "cada execução).",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Um stub devolve respostas fixas e pré-programadas quando chamado — usado de fato pelo código " +
+                "sob teste, mas nunca verificado quanto a como foi chamado; o teste avalia o efeito da resposta, " +
+                "não a chamada em si.",
+            },
+          ],
+          examples: [
+            {
+              title: "Stub simulando um cenário de erro",
+              context: "Stubs são especialmente úteis para forçar cenários difíceis de reproduzir com a dependência real, como uma falha.",
+              code: {
+                language: "javascript",
+                filename: "user-profile.test.js",
+                code: [
+                  "function fetchUserProfile(userId, apiClient) {",
+                  "  const response = apiClient.get(`/users/${userId}`);",
+                  "  if (response.status === 404) return null;",
+                  "  return response.body;",
+                  "}",
+                  "",
+                  "const stubClient = { get: () => ({ status: 404 }) };",
+                  "fetchUserProfile(999, stubClient);",
+                ].join("\n"),
+              },
+              explanation:
+                "Provocar um 404 real exigiria um usuário inexistente de verdade numa API real; o stub simula " +
+                "essa resposta instantaneamente e de forma determinística, permitindo testar o caminho null.",
+            },
+            {
+              title: "Stub com respostas diferentes por chamada",
+              context: "Um stub pode ser programado para devolver valores diferentes em chamadas sucessivas.",
+              code: {
+                language: "javascript",
+                filename: "retry.test.js",
+                code: [
+                  "let callCount = 0;",
+                  "const flakyStub = {",
+                  "  fetch: () => {",
+                  "    callCount++;",
+                  "    return callCount === 1 ? { status: 500 } : { status: 200, data: \"ok\" };",
+                  "  },",
+                  "};",
+                ].join("\n"),
+              },
+              explanation:
+                "flakyStub simula uma API que falha na primeira tentativa e funciona na segunda — útil para " +
+                "testar lógica de retry sem depender de uma falha real e imprevisível de rede.",
+            },
+            {
+              title: "Stub vs. asserção sobre o stub (o que NÃO fazer)",
+              context: "Verificar como um stub foi chamado mistura os papéis de stub e spy/mock.",
+              code: {
+                language: "javascript",
+                filename: "user-lookup.test.js",
+                code: ["const stubDatabase = { findById: () => ({ id: 1, name: \"Ana\" }) };", "const user = repository.findUser(1, stubDatabase);", "", "if (user.name !== \"Ana\") throw new Error(\"nome incorreto\");"].join("\n"),
+              },
+              explanation:
+                "O teste verifica o resultado (user.name), não se findById foi chamado com o argumento certo — " +
+                "essa é a linha que separa um uso de stub de um uso de spy/mock sobre o mesmo objeto.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O teste abaixo tenta testar um cenário de estoque insuficiente, mas depende de um serviço de " +
+              "inventário real que só retorna estoque baixo em condições específicas do banco de teste, " +
+              "tornando o teste instável (flaky).",
+            problemCode: {
+              language: "javascript",
+              filename: "availability.test.js",
+              code: [
+                "function checkAvailability(productId, inventoryService) {",
+                "  const stock = inventoryService.getStock(productId);",
+                "  return stock > 0;",
+                "}",
+                "",
+                "function testCheckAvailabilityWhenOutOfStock() {",
+                "  const realInventoryService = new InventoryService(testDatabase);",
+                "  const available = checkAvailability(42, realInventoryService);",
+                "  if (available) throw new Error(\"produto 42 deveria estar sem estoque no banco de teste\");",
+                "}",
+              ].join("\n"),
+            },
+            task: "Substitua realInventoryService por um stub que devolve estoque zero de forma determinística, eliminando a dependência do estado do banco de teste.",
+            hint: "Um stub para este caso só precisa de um método getStock que sempre devolve 0.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "availability.test.js",
+                code: [
+                  "function testCheckAvailabilityWhenOutOfStock() {",
+                  "  const stubInventoryService = { getStock: () => 0 };",
+                  "  const available = checkAvailability(42, stubInventoryService);",
+                  "",
+                  "  if (available) throw new Error(\"deveria estar indisponível quando estoque é 0\");",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "stubInventoryService sempre devolve 0, independente de qualquer dado no banco de teste — o " +
+                "teste passa a ser determinístico e independente de estado externo, exercitando só a lógica de checkAvailability.",
+            },
+          },
+        }),
         concept({
           order: 40,
           title: "Fake",
           requires: ["Test Doubles"],
           note: "implementação real porém simplificada (ex.: repositório em memória)",
           collision: "≠ Fake Model (AI Engineering / deck harness) — mesmo padrão, outro domínio",
+          summary:
+            "Uma implementação de fato funcional da dependência, só que simplificada — como um repositório em " +
+            "memória no lugar de um banco de dados real — em vez de respostas fixas ou verificações de chamada.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Um fake é uma implementação que realmente funciona — tem lógica de verdade por trás, não " +
+                "apenas respostas fixas — mas é simplificada em relação à dependência real de produção. O " +
+                "exemplo clássico é um repositório em memória: um objeto que guarda dados num array ou Map em " +
+                "vez de gravar em um banco de dados de verdade, mas que implementa save, findById, delete etc. " +
+                "com comportamento genuíno.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Um stub responde a uma chamada fixa; mas alguns testes precisam de comportamento consistente " +
+                "através de várias operações — salvar um item e depois buscá-lo de volta, por exemplo, exige " +
+                "que o \"banco falso\" realmente lembre o que foi salvo. Um stub sozinho não dá conta disso sem " +
+                "virar uma teia de condicionais; um fake resolve isso tendo estado e lógica real, só que mais " +
+                "simples e mais rápida que a versão de produção.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Fakes também são úteis além dos testes: às vezes servem como implementação de desenvolvimento " +
+                "local (por exemplo, rodar a aplicação inteira com um banco em memória, sem precisar instalar " +
+                "Postgres) — um fake bem feito é reutilizável em mais de um contexto.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "um repositório em memória com comportamento real de salvar e buscar:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "in-memory-user-repository.js",
+              code: [
+                "class InMemoryUserRepository {",
+                "  constructor() {",
+                "    this.users = new Map();",
+                "    this.nextId = 1;",
+                "  }",
+                "  save(user) {",
+                "    const id = this.nextId++;",
+                "    const saved = { ...user, id };",
+                "    this.users.set(id, saved);",
+                "    return saved;",
+                "  }",
+                "  findById(id) {",
+                "    return this.users.get(id) || null;",
+                "  }",
+                "}",
+                "",
+                "function testSaveAndFindUser() {",
+                "  const repository = new InMemoryUserRepository();",
+                "  const saved = repository.save({ name: \"Ana\" });",
+                "  const found = repository.findById(saved.id);",
+                "",
+                "  if (found.name !== \"Ana\") throw new Error(\"usuário não encontrado corretamente\");",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "InMemoryUserRepository tem lógica real: gera IDs, guarda em um Map, devolve o que foi salvo " +
+                "quando buscado por ID. Não é um banco de dados de verdade (some quando o processo termina, não " +
+                "tem transações, não valida constraints), mas o comportamento de save + findById é genuíno o " +
+                "bastante para exercitar o código que depende de um repositório.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Um fake é uma implementação funcional e simplificada da dependência — tem lógica e estado " +
+                "reais, ao contrário de um stub (respostas fixas), mas é mais simples e mais rápida que a versão de produção.",
+            },
+          ],
+          examples: [
+            {
+              title: "Fake de um serviço de fila de mensagens",
+              context: "Filas assíncronas também podem ganhar uma versão em memória para testes.",
+              code: {
+                language: "javascript",
+                filename: "in-memory-queue.js",
+                code: ["class InMemoryQueue {", "  constructor() {", "    this.messages = [];", "  }", "  publish(message) {", "    this.messages.push(message);", "  }", "  consume() {", "    return this.messages.shift();", "  }", "}"].join("\n"),
+              },
+              explanation:
+                "InMemoryQueue implementa publish/consume de verdade (com ordem FIFO real), sem depender de um " +
+                "broker de mensagens de verdade rodando durante o teste.",
+            },
+            {
+              title: "Fake reutilizado como ambiente de desenvolvimento local",
+              context: "Um fake bem escrito pode servir tanto para testes quanto para rodar a aplicação localmente sem infraestrutura externa.",
+              code: {
+                language: "javascript",
+                filename: "repository-factory.js",
+                code: [
+                  "const repository =",
+                  "  process.env.NODE_ENV === \"test\" || process.env.NODE_ENV === \"development\"",
+                  "    ? new InMemoryUserRepository()",
+                  "    : new PostgresUserRepository(DATABASE_URL);",
+                ].join("\n"),
+              },
+              explanation:
+                "O mesmo fake usado nos testes evita que um desenvolvedor precise instalar e configurar Postgres " +
+                "localmente só para rodar a aplicação — uma dependência a menos para começar a contribuir.",
+            },
+            {
+              title: "Fake vs. stub para o mesmo cenário",
+              context: "Quando testar salvar-e-buscar, um fake é a escolha certa; um stub não conseguiria simular esse comportamento com estado sem virar complexo demais.",
+              code: {
+                language: "javascript",
+                filename: "stub-that-tries-to-fake.js",
+                code: [
+                  "const stubThatTriesToFake = {",
+                  "  saved: null,",
+                  "  save: function (user) { this.saved = user; return user; },",
+                  "  findById: function () { return this.saved; },",
+                  "};",
+                ].join("\n"),
+              },
+              explanation:
+                "Esse objeto já começou a ganhar lógica real (guardar o valor salvo) — no momento em que um " +
+                "stub ganha estado e comportamento como esse, ele deixou de ser um stub e virou, na prática, um fake.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O teste abaixo usa um stub que sempre devolve o mesmo usuário fixo, mas o cenário testado precisa " +
+              "verificar que um usuário deletado deixa de ser encontrado — algo que um stub sem estado não " +
+              "consegue simular.",
+            problemCode: {
+              language: "javascript",
+              filename: "user-repository.test.js",
+              code: [
+                "function testDeletedUserIsNotFound() {",
+                "  const stubRepository = { findById: () => ({ id: 1, name: \"Ana\" }) };",
+                "  const repository = stubRepository;",
+                "",
+                "  repository.delete(1);",
+                "  const found = repository.findById(1);",
+                "",
+                "  if (found !== null) throw new Error(\"usuário deletado não deveria ser encontrado\");",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Substitua stubRepository por um fake com estado real (InMemoryUserRepository, com delete " +
+              "implementado), capaz de refletir a exclusão numa busca subsequente.",
+            hint: "O comportamento precisa persistir entre chamadas — delete afetando o resultado de findById — o que exige estado real, não uma resposta fixa.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "user-repository.test.js",
+                code: [
+                  "class InMemoryUserRepository {",
+                  "  constructor() {",
+                  "    this.users = new Map([[1, { id: 1, name: \"Ana\" }]]);",
+                  "  }",
+                  "  findById(id) {",
+                  "    return this.users.get(id) || null;",
+                  "  }",
+                  "  delete(id) {",
+                  "    this.users.delete(id);",
+                  "  }",
+                  "}",
+                  "",
+                  "function testDeletedUserIsNotFound() {",
+                  "  const repository = new InMemoryUserRepository();",
+                  "",
+                  "  repository.delete(1);",
+                  "  const found = repository.findById(1);",
+                  "",
+                  "  if (found !== null) throw new Error(\"usuário deletado não deveria ser encontrado\");",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "InMemoryUserRepository mantém estado real num Map — delete de fato remove a entrada, e " +
+                "findById reflete isso na chamada seguinte. Um stub sem estado nunca conseguiria esse " +
+                "comportamento sem virar, na prática, um fake.",
+            },
+          },
         }),
-        concept({ order: 50, title: "Spy", requires: ["Test Doubles"], note: "registra chamadas para asserção posterior" }),
+        concept({
+          order: 50,
+          title: "Spy",
+          requires: ["Test Doubles"],
+          note: "registra chamadas para asserção posterior",
+          summary:
+            "Um dublê que envolve um comportamento real (ou simplificado) e, além disso, registra como foi " +
+            "chamado — quantas vezes, com quais argumentos — para que o teste verifique isso depois.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Um spy é um dublê que, além de (opcionalmente) se comportar como um stub ou delegar para a " +
+                "implementação real, registra informações sobre como foi chamado: quantas vezes, com quais " +
+                "argumentos, em que ordem. Depois que o código sob teste roda, o teste consulta esses registros " +
+                "e faz asserções sobre eles — \"send foi chamado exatamente uma vez, com o e-mail correto\".",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Alguns comportamentos importantes não têm um valor de retorno para verificar — eles são " +
+                "efeitos colaterais. Enviar um e-mail, disparar um evento de analytics, chamar um serviço de " +
+                "log: a única forma de confirmar que isso aconteceu é observar que a chamada ocorreu. Um spy " +
+                "existe para tornar esse tipo de efeito colateral observável e verificável dentro de um teste.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "A diferença central para um stub é o momento da verificação: um stub é consultado só sobre o " +
+                "que ele devolve (usado durante o Act); um spy é consultado sobre como ele foi usado (verificado " +
+                "no Assert, depois do Act). É comum um spy também funcionar como stub ao mesmo tempo — " +
+                "registrando chamadas E devolvendo um valor programado.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "um spy que registra as chamadas a send, sem nenhum comportamento real por trás:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "welcome-email-sender.test.js",
+              code: [
+                "function createSpy() {",
+                "  const calls = [];",
+                "  const spy = (...args) => calls.push(args);",
+                "  spy.calls = calls;",
+                "  return spy;",
+                "}",
+                "",
+                "function testWelcomeEmailIsSentToCorrectAddress() {",
+                "  const sendSpy = createSpy();",
+                "  const sender = new WelcomeEmailSender({ send: sendSpy });",
+                "",
+                "  sender.send({ email: \"ana@example.com\" });",
+                "",
+                "  if (sendSpy.calls.length !== 1) throw new Error(\"send deveria ter sido chamado uma vez\");",
+                "  if (sendSpy.calls[0][0] !== \"ana@example.com\") throw new Error(\"e-mail incorreto\");",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "createSpy devolve uma função que, a cada chamada, registra os argumentos recebidos em calls. " +
+                "Depois de chamar sender.send, o teste inspeciona sendSpy.calls para verificar quantas vezes " +
+                "send foi chamado e com que argumento — algo que um stub comum, sem esse registro, não permitiria verificar.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Um spy registra como foi chamado — quantas vezes, com quais argumentos — para que o teste " +
+                "verifique isso depois do Act; é a ferramenta certa quando o comportamento que importa é um " +
+                "efeito colateral, não um valor de retorno.",
+            },
+          ],
+          examples: [
+            {
+              title: "Spy verificando que um evento de analytics foi disparado",
+              context: "Efeitos colaterais como telemetria são um caso clássico para spy.",
+              code: {
+                language: "javascript",
+                filename: "checkout.test.js",
+                code: [
+                  "function createSpy() {",
+                  "  const calls = [];",
+                  "  const spy = (...args) => calls.push(args);",
+                  "  spy.calls = calls;",
+                  "  return spy;",
+                  "}",
+                  "",
+                  "const trackSpy = createSpy();",
+                  "checkoutFlow.complete({ analytics: { track: trackSpy } });",
+                  "",
+                  "if (trackSpy.calls.length === 0) throw new Error(\"evento de analytics não foi disparado\");",
+                ].join("\n"),
+              },
+              explanation:
+                "O teste não se importa com o que track() devolve — se importa que ele foi chamado, confirmando " +
+                "que o evento de conversão foi registrado.",
+            },
+            {
+              title: "Spy envolvendo um objeto real (wrapping)",
+              context: "Um spy pode registrar chamadas e ainda delegar para o comportamento real por trás.",
+              code: {
+                language: "javascript",
+                filename: "spy-on.test.js",
+                code: [
+                  "function spyOn(obj, methodName) {",
+                  "  const original = obj[methodName];",
+                  "  const calls = [];",
+                  "  obj[methodName] = (...args) => {",
+                  "    calls.push(args);",
+                  "    return original.apply(obj, args);",
+                  "  };",
+                  "  obj[methodName].calls = calls;",
+                  "}",
+                  "",
+                  "spyOn(logger, \"warn\");",
+                  "riskyOperation();",
+                  "if (logger.warn.calls.length === 0) throw new Error(\"warn deveria ter sido chamado\");",
+                ].join("\n"),
+              },
+              explanation:
+                "spyOn substitui o método original por uma versão que registra a chamada e ainda executa o " +
+                "comportamento real (original.apply) — útil quando o teste quer verificar a chamada sem perder " +
+                "o efeito colateral verdadeiro.",
+            },
+            {
+              title: "Verificando os argumentos exatos de uma chamada",
+              context: "Spies não servem só para contar chamadas — também para verificar com que dados exatos algo foi chamado.",
+              code: {
+                language: "javascript",
+                filename: "checkout-order.test.js",
+                code: [
+                  "const saveSpy = createSpy();",
+                  "orderService.checkout({ repository: { save: saveSpy } });",
+                  "",
+                  "const [savedOrder] = saveSpy.calls[0];",
+                  "if (savedOrder.status !== \"pending\") throw new Error(\"pedido deveria ser salvo como pending\");",
+                ].join("\n"),
+              },
+              explanation:
+                "O teste extrai o argumento da primeira chamada a save e verifica um campo específico — spies " +
+                "dão acesso ao \"o quê\" exato que foi passado, não só \"quantas vezes\".",
+            },
+          ],
+          exercise: {
+            problem:
+              "O teste abaixo tenta verificar que uma notificação foi enviada, mas checkNotificationWasSent() " +
+              "não existe — não há como saber, olhando de fora, se send foi chamado.",
+            problemCode: {
+              language: "javascript",
+              filename: "order-service.test.js",
+              code: [
+                "function testOrderShippedNotifiesCustomer() {",
+                "  const notificationService = { send: (to, message) => {} };",
+                "  const orderService = new OrderService(notificationService);",
+                "",
+                "  orderService.markAsShipped({ customerEmail: \"ana@example.com\" });",
+                "",
+                "  if (!checkNotificationWasSent()) throw new Error(\"notificação não foi enviada\");",
+                "}",
+              ].join("\n"),
+            },
+            task: "Substitua notificationService.send por um spy, e reescreva a asserção final para usar os registros do spy em vez de checkNotificationWasSent().",
+            hint: "O spy precisa registrar as chamadas para que o teste consulte esse registro depois, no lugar de uma função externa inexistente.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "order-service.test.js",
+                code: [
+                  "function createSpy() {",
+                  "  const calls = [];",
+                  "  const spy = (...args) => calls.push(args);",
+                  "  spy.calls = calls;",
+                  "  return spy;",
+                  "}",
+                  "",
+                  "function testOrderShippedNotifiesCustomer() {",
+                  "  const sendSpy = createSpy();",
+                  "  const notificationService = { send: sendSpy };",
+                  "  const orderService = new OrderService(notificationService);",
+                  "",
+                  "  orderService.markAsShipped({ customerEmail: \"ana@example.com\" });",
+                  "",
+                  "  if (sendSpy.calls.length !== 1) throw new Error(\"notificação não foi enviada\");",
+                  "  if (sendSpy.calls[0][0] !== \"ana@example.com\") throw new Error(\"destinatário incorreto\");",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "sendSpy registra cada chamada a send — o teste passa a verificar diretamente esse registro " +
+                "(quantidade e argumento) em vez de depender de uma função externa que não existia.",
+            },
+          },
+        }),
         concept({
           order: 60,
           title: "Mock",
           requires: ["Test Doubles"],
           note: "pré-programado com expectativas; verifica interação. Conceitualmente próximo de Spy (registra + verifica) — relação, não Requires.",
           collision: "\"mock\" coloquial = qualquer dublê; aqui é o sentido preciso",
+          summary:
+            "Um dublê pré-programado com expectativas sobre como deve ser chamado, que verifica essa interação " +
+            "sozinho — se a expectativa não é cumprida, o próprio mock falha o teste, em vez de o teste " +
+            "consultar um registro depois.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Um mock é configurado, antes do Act, com uma expectativa explícita sobre como deve ser chamado " +
+                "— \"espero que save seja chamado exatamente uma vez, com este argumento\". Depois que o código " +
+                "sob teste roda, o próprio mock (ou um passo de verificação dedicado) confirma se a expectativa " +
+                "foi cumprida. Se não foi, o mock reporta a falha — a lógica de verificação vive dentro do " +
+                "dublê, não só no bloco Assert do teste.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Um spy exige que o teste, depois do Act, escreva a lógica de verificação (\"tinha uma chamada? " +
+                "com quais argumentos?\"). Um mock inverte isso: a expectativa é declarada antes, e o mock sabe " +
+                "sozinho dizer se foi satisfeita. Para interações complexas — várias chamadas esperadas, em " +
+                "ordem específica, com argumentos variados — declarar a expectativa de antemão pode deixar o " +
+                "teste mais direto de ler do que reconstruir a verificação manualmente depois.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Mock é também o termo mais usado coloquialmente para \"qualquer dublê\" — mas no sentido " +
+                "técnico da taxonomia, mock é especificamente o dublê que verifica interação com base numa " +
+                "expectativa pré-programada. É o mais próximo de spy (ambos verificam como foram chamados), mas " +
+                "a verificação de um mock é interna e declarada antes; a de um spy é externa e consultada depois.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "um mock simples, com expectativa declarada antes e verificação explícita depois:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "welcome-email-sender.test.js",
+              code: [
+                "function createMock() {",
+                "  const calls = [];",
+                "  let expectedCalls = null;",
+                "",
+                "  const mock = (...args) => calls.push(args);",
+                "  mock.expectCalledTimes = (n) => { expectedCalls = n; };",
+                "  mock.verify = () => {",
+                "    if (expectedCalls !== null && calls.length !== expectedCalls) {",
+                "      throw new Error(`esperava ${expectedCalls} chamadas, recebeu ${calls.length}`);",
+                "    }",
+                "  };",
+                "  return mock;",
+                "}",
+                "",
+                "function testSendIsCalledExactlyOnce() {",
+                "  const sendMock = createMock();",
+                "  sendMock.expectCalledTimes(1);",
+                "",
+                "  const sender = new WelcomeEmailSender({ send: sendMock });",
+                "  sender.send({ email: \"ana@example.com\" });",
+                "",
+                "  sendMock.verify();",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "sendMock.expectCalledTimes(1) declara a expectativa antes do Act; sendMock.verify() depois " +
+                "confirma (ou lança erro) se ela foi cumprida. A diferença para o exemplo de Spy é sutil no " +
+                "código, mas conceitual: aqui a expectativa é explícita e verificada por um método do próprio " +
+                "dublê, não reconstruída manualmente pelo teste a partir de um array de chamadas.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Um mock é pré-programado com uma expectativa sobre como deve ser chamado e verifica essa " +
+                "expectativa sozinho — a interação, não só o valor de retorno, é o que decide se o teste passa.",
+            },
+          ],
+          examples: [
+            {
+              title: "Mock verificando ordem de chamadas",
+              context: "Alguns cenários dependem da ordem em que métodos são chamados, não só de quantas vezes.",
+              code: {
+                language: "javascript",
+                filename: "transaction.test.js",
+                code: [
+                  "function createOrderedMock() {",
+                  "  const calls = [];",
+                  "  return {",
+                  "    call: (name) => calls.push(name),",
+                  "    verifyOrder: (expected) => {",
+                  "      if (JSON.stringify(calls) !== JSON.stringify(expected)) {",
+                  "        throw new Error(`ordem incorreta: ${calls.join(\", \")}`);",
+                  "      }",
+                  "    },",
+                  "  };",
+                  "}",
+                  "",
+                  "const transactionMock = createOrderedMock();",
+                  "transactionMock.call(\"begin\");",
+                  "transactionMock.call(\"commit\");",
+                  "transactionMock.verifyOrder([\"begin\", \"commit\"]);",
+                ].join("\n"),
+              },
+              explanation:
+                "transactionMock verifica não só que begin e commit foram chamados, mas que begin veio antes de " +
+                "commit — uma expectativa sobre ordem que um stub ou spy simples não capturariam sem lógica extra.",
+            },
+            {
+              title: "Mock de biblioteca (estilo Jest)",
+              context: "Frameworks de teste oferecem mocks prontos, com a mesma ideia de expectativa declarada.",
+              code: {
+                language: "javascript",
+                filename: "welcome-email-sender.test.js",
+                code: [
+                  "const sendMock = jest.fn();",
+                  "const sender = new WelcomeEmailSender({ send: sendMock });",
+                  "",
+                  "sender.send({ email: \"ana@example.com\" });",
+                  "",
+                  "expect(sendMock).toHaveBeenCalledWith(\"ana@example.com\", \"Bem-vindo!\");",
+                  "expect(sendMock).toHaveBeenCalledTimes(1);",
+                ].join("\n"),
+              },
+              explanation:
+                "jest.fn() cria um mock pronto para uso; toHaveBeenCalledWith e toHaveBeenCalledTimes são as " +
+                "asserções específicas de interação que só fazem sentido para um dublê que registra e verifica chamadas.",
+            },
+            {
+              title: "Quando um mock é exagero (over-mocking)",
+              context: "Mockar demais acopla o teste aos detalhes de implementação, não ao comportamento.",
+              code: {
+                language: "javascript",
+                filename: "cart-service.test.js",
+                code: [
+                  "expect(cartService.calculateSubtotal).toHaveBeenCalled();",
+                  "expect(cartService.applyDiscount).toHaveBeenCalled();",
+                  "expect(cartService.calculateTax).toHaveBeenCalled();",
+                  "expect(cartService.formatTotal).toHaveBeenCalled();",
+                ].join("\n"),
+              },
+              explanation:
+                "Verificar que quatro métodos internos foram chamados, em vez de verificar só o total final, " +
+                "acopla o teste a como checkout() é implementado por dentro — qualquer refatoração interna " +
+                "(mesmo sem mudar o comportamento externo) quebraria esse teste.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O teste abaixo declara uma expectativa no mock, mas nunca chama verify() — então o mock nunca " +
+              "reportaria uma falha mesmo que send não tivesse sido chamado.",
+            problemCode: {
+              language: "javascript",
+              filename: "welcome-email-sender.test.js",
+              code: [
+                "function testWelcomeEmailIsSent() {",
+                "  const sendMock = createMock();",
+                "  sendMock.expectCalledTimes(1);",
+                "",
+                "  const sender = new WelcomeEmailSender({ send: sendMock });",
+                "  sender.send({ email: \"ana@example.com\" });",
+                "}",
+              ].join("\n"),
+            },
+            task: "Corrija o teste para que a expectativa declarada no mock seja de fato verificada antes do teste terminar.",
+            hint: "createMock() (do exemplo mínimo) expõe um método verify() — ele precisa ser chamado explicitamente.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "welcome-email-sender.test.js",
+                code: [
+                  "function testWelcomeEmailIsSent() {",
+                  "  const sendMock = createMock();",
+                  "  sendMock.expectCalledTimes(1);",
+                  "",
+                  "  const sender = new WelcomeEmailSender({ send: sendMock });",
+                  "  sender.send({ email: \"ana@example.com\" });",
+                  "",
+                  "  sendMock.verify();",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Sem chamar sendMock.verify(), a expectativa declarada fica só documentada, nunca checada — o " +
+                "teste passaria mesmo que send jamais fosse chamado. verify() é o passo que efetivamente compara " +
+                "o que aconteceu com o que era esperado.",
+            },
+          },
         }),
       ],
     }),
