@@ -1233,6 +1233,14 @@ for (const area of model.areas()) {
     "deadlock",
     "starvation",
     "thread-safety",
+    "unit-testing",
+    "assertion",
+    "arrange-act-assert",
+    "given-when-then",
+    "test-fixture",
+    "test-runner",
+    "integration-testing",
+    "e2e-testing",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",
