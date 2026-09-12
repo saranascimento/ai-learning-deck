@@ -2807,6 +2807,151 @@ export default area({
           title: "Test Pyramid",
           requires: ["Testing Fundamentals / Integration Testing", "Testing Fundamentals / E2E Testing"],
           note: "como distribuir tipos de teste (unit ≫ integration ≫ e2e) — as camadas são esses tipos",
+          summary:
+            "Um modelo que orienta a proporção entre os tipos de teste de um sistema: muitos unit tests rápidos " +
+            "e baratos na base, menos integration tests no meio, e poucos E2E tests caros no topo.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Test Pyramid é um modelo visual — proposto por Mike Cohn — que representa como distribuir o " +
+                "esforço de teste entre as diferentes camadas: uma base larga de unit tests (muitos, rápidos, " +
+                "baratos), uma camada intermediária de integration tests (menos numerosos, mais lentos), e um " +
+                "topo estreito de E2E tests (poucos, os mais lentos e caros de todos). A forma de pirâmide " +
+                "comunica a proporção esperada, não um número exato.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Sem uma diretriz, times tendem a inverter a pirâmide sem perceber: confiar demais em E2E tests " +
+                "porque \"parecem mais realistas\", e de menos em unit tests. O resultado é uma suíte lenta " +
+                "(minutos ou horas para rodar), frágil (qualquer mudança de UI quebra dezenas de testes) e " +
+                "difícil de depurar quando falha. A pirâmide existe para lembrar que a maior parte da confiança " +
+                "deveria vir da camada mais barata e mais precisa: o unit test.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Cada camada tem um papel diferente, não redundante: unit tests provam que as peças funcionam " +
+                "isoladamente; integration tests provam que elas se encaixam; E2E tests provam que a jornada " +
+                "completa do usuário funciona. A pirâmide não diz \"não faça E2E\" — diz \"faça pouco E2E, o " +
+                "suficiente para os fluxos mais críticos\".",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "uma suíte de testes representada como contagem por camada, ilustrando a proporção esperada:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "test-suite-shape.js",
+              code: [
+                "const testSuite = {",
+                "  unit: 240,       // rápidos, isolados — a base larga",
+                "  integration: 30, // componentes reais combinados",
+                "  e2e: 5,          // fluxos críticos completos, pela UI",
+                "};",
+                "",
+                "function testSuiteFollowsPyramidShape(suite) {",
+                "  return suite.unit > suite.integration && suite.integration > suite.e2e;",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "testSuiteFollowsPyramidShape não verifica números exatos — verifica a forma relativa: unit " +
+                "tests são a maioria, integration tests vêm em seguida, E2E tests são os mais raros. Uma suíte " +
+                "com 5 unit tests e 50 E2E tests teria a pirâmide invertida, mesmo tendo o mesmo total de 55 testes.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "O Test Pyramid orienta a proporção entre tipos de teste — muitos unit tests na base, menos " +
+                "integration no meio, poucos E2E no topo — porque cada camada abaixo é mais rápida, mais barata " +
+                "e mais precisa que a de cima.",
+            },
+          ],
+          examples: [
+            {
+              title: "Uma suíte com a pirâmide invertida (anti-padrão)",
+              context: "É comum, especialmente em times que começam testando pela UI, acabar com o formato invertido — um \"cone de sorvete\".",
+              code: {
+                language: "javascript",
+                filename: "ice-cream-cone.js",
+                code: ["const iceCreamCone = {", "  unit: 10,", "  integration: 15,", "  e2e: 80,", "};"].join("\n"),
+              },
+              explanation:
+                "Com 80 E2E tests contra apenas 10 unit tests, essa suíte provavelmente demora dezenas de " +
+                "minutos para rodar e é frágil a qualquer mudança de interface — o formato oposto do que a " +
+                "pirâmide recomenda.",
+            },
+            {
+              title: "Escolhendo em que camada testar um caso específico",
+              context: "A pirâmide também orienta a decisão de onde testar um comportamento novo.",
+              code: {
+                language: "javascript",
+                filename: "test-placement.js",
+                code: ["function shouldTestAsUnit(scenario) {", "  return !scenario.involvesRealDatabase && !scenario.involvesRealUI;", "}"].join("\n"),
+              },
+              explanation:
+                "Antes de escrever um novo teste, perguntar se ele realmente precisa de integração ou de um " +
+                "navegador ajuda a manter a suíte na base da pirâmide — testar como unit sempre que o " +
+                "comportamento permitir.",
+            },
+            {
+              title: "Cobertura da mesma regra de negócio em duas camadas diferentes",
+              context: "A mesma regra pode (e deve) ser verificada tanto em unit quanto, uma única vez, em E2E.",
+              code: {
+                language: "javascript",
+                filename: "discount-layers.test.js",
+                code: [
+                  "// Camada unit — várias variações da regra, rápido",
+                  "function testDiscountAppliesAbove100() {",
+                  "  if (calculateDiscount(150) !== 15) throw new Error(\"desconto incorreto\");",
+                  "}",
+                  "",
+                  "// Camada E2E — só o caminho feliz, uma vez, pela UI real",
+                  "async function testCheckoutShowsDiscountedTotal(page) {",
+                  "  await page.goto(\"/cart\");",
+                  "  const total = await page.textContent(\"#total\");",
+                  "  if (!total.includes(\"R$135\")) throw new Error(\"desconto não refletido na tela\");",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "As variações da regra de desconto (limites, casos extremos) ficam nos unit tests, rápidos de " +
+                "rodar em quantidade; o E2E confirma só que a regra chega até a tela, sem repetir todas as " +
+                "variações ali.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O time decidiu testar toda regra de negócio via E2E, \"porque é mais parecido com o que o " +
+              "usuário vê\". A suíte atual tem 3 unit tests e 60 E2E tests, e leva 40 minutos para rodar no CI.",
+            task:
+              "Proponha, em código, o critério que decidiria quais E2E tests virar unit tests, sem escrever os " +
+              "60 testes.",
+            hint: "Pergunte, para cada E2E test: ele está verificando uma regra de negócio isolada (candidata a unit) ou uma jornada completa que depende de várias camadas reais (deveria continuar E2E)?",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "reclassify-tests.js",
+                code: [
+                  "function shouldRemainE2E(testCase) {",
+                  "  return testCase.isCriticalUserJourney && testCase.spansMultipleSystems;",
+                  "}",
+                  "// Aplicar esse critério aos 60 E2E tests: os que testam uma única",
+                  "// regra de cálculo/validação viram unit tests; só os que de fato",
+                  "// exercitam uma jornada completa continuam E2E.",
+                ].join("\n"),
+              },
+              explanation:
+                "A maioria das 60 regras testadas por E2E provavelmente são cálculos ou validações isoladas que " +
+                "não precisam de navegador nem backend real — reescritas como unit tests, rodam em milissegundos " +
+                "em vez de segundos, e só um punhado de jornadas críticas de fato precisa continuar em E2E.",
+            },
+          },
         }),
         concept({
           order: 20,
@@ -2816,6 +2961,165 @@ export default area({
           note: "% de código exercitado pelos testes. Cuidado com \"coverage as a target\" (Goodhart)",
           subtopics: ["line", "statement", "branch", "path coverage"],
           revisit: ["CI/CD Pipeline", "Software Craft / Code Review"],
+          summary:
+            "A porcentagem do código-fonte que é de fato executada quando a suíte de testes roda — uma métrica " +
+            "útil para achar código não testado, perigosa quando vira meta em si mesma.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Code Coverage mede que fração do código-fonte é executada durante a suíte de testes, " +
+                "geralmente expressa em porcentagem. Existem variações do que exatamente é medido: line coverage " +
+                "(linhas executadas), statement coverage (instruções executadas), branch coverage (cada ramo de " +
+                "um if/else exercitado) e path coverage (cada caminho possível através do código) — cada uma " +
+                "mais rigorosa que a anterior.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Coverage responde a uma pergunta objetiva e fácil de automatizar: \"que parte do código nunca " +
+                "roda durante os testes?\". Isso ajuda a encontrar pontos cegos — uma função inteira, ou um " +
+                "ramo de erro, que nenhum teste toca. Ferramentas de coverage instrumentam o código e produzem " +
+                "um relatório visual (linhas verdes/vermelhas) sem esforço manual.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "O perigo é a Lei de Goodhart: quando uma métrica vira meta, ela deixa de medir bem o que " +
+                "queria medir. \"100% de coverage\" não significa \"sem bugs\" — código pode ser executado por " +
+                "um teste sem que nenhuma assertion relevante verifique o resultado. Coverage mede execução, " +
+                "não verificação; um número alto pode esconder testes fracos, não ausentes.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "uma função com um ramo não coberto, e o que o relatório de coverage revelaria:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "classify-age.test.js",
+              code: [
+                "function classifyAge(age) {",
+                "  if (age < 0) {",
+                "    throw new Error(\"idade inválida\");",
+                "  }",
+                "  if (age < 18) {",
+                "    return \"menor\";",
+                "  }",
+                "  return \"adulto\";",
+                "}",
+                "",
+                "function testClassifyAgeAdult() {",
+                "  if (classifyAge(30) !== \"adulto\") throw new Error(\"esperava adulto\");",
+                "}",
+                "// Só este teste existe: o ramo \"menor\" e o ramo de erro nunca rodam",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Com só testClassifyAgeAdult, um relatório de branch coverage mostraria dois ramos de " +
+                "classifyAge nunca exercitados: o if (age < 0) e o if (age < 18). O código funciona; a suíte, " +
+                "não — coverage é exatamente o tipo de sinal que aponta esse ponto cego, sem alguém precisar " +
+                "revisar o código linha por linha.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Code Coverage mede que fração do código roda durante os testes — útil para achar pontos cegos, " +
+                "mas mede execução, não correção; perseguir um número alto sem cuidar da qualidade das " +
+                "assertions é otimizar a métrica errada.",
+            },
+          ],
+          examples: [
+            {
+              title: "Coverage alto, verificação fraca (o alerta de Goodhart)",
+              context: "É possível ter 100% de coverage numa função e ainda assim não testar nada de útil.",
+              code: {
+                language: "javascript",
+                filename: "weak-coverage.test.js",
+                code: ["function calculateTotal(items) {", "  return items.reduce((sum, item) => sum + item.price, 0);", "}", "", "function testCalculateTotal() {", "  calculateTotal([{ price: 10 }]); // executa a função, mas não verifica nada", "}"].join("\n"),
+              },
+              explanation:
+                "Esse teste dá 100% de coverage em calculateTotal — a linha roda — mas não tem nenhuma " +
+                "assertion. Se a função tivesse um bug e devolvesse o valor errado, esse teste passaria do mesmo jeito.",
+            },
+            {
+              title: "Branch coverage revelando um caso de erro esquecido",
+              context: "Branch coverage é mais rigoroso que line coverage porque cobra cada ramo de decisão, não só cada linha.",
+              code: {
+                language: "javascript",
+                filename: "divide.test.js",
+                code: ["function divide(a, b) {", "  if (b === 0) throw new Error(\"divisão por zero\");", "  return a / b;", "}", "", "function testDivide() {", "  if (divide(10, 2) !== 5) throw new Error(\"esperava 5\");", "}"].join("\n"),
+              },
+              explanation:
+                "Line coverage marcaria as três linhas como \"cobertas\" (a função inteira roda), mas branch " +
+                "coverage revelaria que o ramo if (b === 0) nunca foi exercitado — falta um teste para o caso de " +
+                "divisão por zero.",
+            },
+            {
+              title: "Usando coverage para achar um ponto cego, não como meta de PR",
+              context: "O uso saudável de coverage é diagnóstico, não um portão obrigatório de \"todo PR precisa manter 100%\".",
+              code: {
+                language: "javascript",
+                filename: "find-gaps.js",
+                code: ["function findUncoveredBranches(coverageReport) {", "  return coverageReport.branches.filter((branch) => branch.hits === 0);", "}"].join("\n"),
+              },
+              explanation:
+                "Consultar o relatório para achar ramos com zero execuções e decidir, caso a caso, se merecem " +
+                "um teste é um uso melhor de coverage do que travar o merge em um número fixo — um branch de " +
+                "log de debug pode legitimamente não precisar de teste.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O time definiu uma regra de \"coverage mínimo de 90% por PR\", e para bater a meta alguém " +
+              "escreveu o teste abaixo, que passa e aumenta o número, mas não verifica nada de útil.",
+            problemCode: {
+              language: "javascript",
+              filename: "apply-discount.test.js",
+              code: [
+                "function applyDiscount(price, percent) {",
+                "  if (percent < 0 || percent > 100) throw new Error(\"percentual inválido\");",
+                "  return price - price * (percent / 100);",
+                "}",
+                "",
+                "function testApplyDiscount() {",
+                "  applyDiscount(100, 20);",
+                "  applyDiscount(100, -5);",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Reescreva o teste para de fato verificar o comportamento de applyDiscount (incluindo o caso de " +
+              "erro), em vez de só executar as linhas para inflar o coverage.",
+            hint: "Cada chamada precisa de uma assertion que verifique o resultado esperado — inclusive o caso que deveria lançar erro.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "apply-discount.test.js",
+                code: [
+                  "function testApplyDiscountCalculatesCorrectly() {",
+                  "  const result = applyDiscount(100, 20);",
+                  "  if (result !== 80) throw new Error(`esperava 80, recebeu ${result}`);",
+                  "}",
+                  "",
+                  "function testApplyDiscountRejectsInvalidPercent() {",
+                  "  try {",
+                  "    applyDiscount(100, -5);",
+                  "    throw new Error(\"deveria ter lançado erro para percentual inválido\");",
+                  "  } catch (error) {",
+                  "    if (error.message !== \"percentual inválido\") throw error;",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Agora cada chamada tem uma assertion que verifica o resultado — inclusive o caso de erro, que " +
+                "antes só era executado sem checar se o erro certo foi lançado. O coverage numérico pode até ser " +
+                "o mesmo, mas a suíte de fato verifica o comportamento, não só o executa.",
+            },
+          },
         }),
         concept({
           order: 30,
@@ -2823,18 +3127,471 @@ export default area({
           requires: ["Test Doubles", "Programming Foundations / Programming Fundamentals / Coupling"],
           note: "propriedades do código que permitem testá-lo (seams, injeção de dependência, poucos colaboradores)",
           revisit: ["Functional Programming / Pure Functions (o caso ideal)", "Software Design / Dependency Injection & IoC (DI é aplicação da testabilidade)"],
+          summary:
+            "As propriedades de um código que determinam quão fácil (ou difícil) é escrever testes para ele — " +
+            "poucos colaboradores, dependências injetáveis, pontos de costura onde um dublê pode entrar.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Testability é a qualidade de um código ser fácil de testar: poucas dependências acopladas " +
+                "internamente, pontos onde uma dependência pode ser trocada por um dublê (\"seams\", costuras), " +
+                "funções que recebem o que precisam como parâmetro em vez de buscar de variáveis globais ou " +
+                "instanciar colaboradores internamente. Código testável permite escrever um teste de unidade " +
+                "rápido; código não testável exige contorcer o teste (ou desistir de testar aquele trecho).",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Testability não é uma propriedade acidental — é resultado de decisões de design tomadas antes " +
+                "de qualquer teste ser escrito. Um código que cria sua própria conexão de banco dentro do " +
+                "construtor, ou que lê uma variável global, é difícil de testar não porque \"os testes são " +
+                "ruins\", mas porque o próprio design não deixou nenhum ponto de entrada para um dublê. Entender " +
+                "testability como propriedade do design, não do teste, é o que permite melhorá-la de propósito.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Testability se conecta diretamente com princípios de design já conhecidos: baixo Coupling " +
+                "facilita testar uma peça isoladamente; funções puras (sem efeito colateral) são as mais fáceis " +
+                "de testar de todas, porque não precisam de nenhum dublê. Melhorar a testabilidade de um " +
+                "código, portanto, costuma melhorar seu design de forma mais geral, não só a experiência de " +
+                "escrever testes.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "a mesma responsabilidade, antes e depois de ganhar um seam para injeção de dependência:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "report-service.js",
+              code: [
+                "// Difícil de testar: cria sua própria dependência internamente",
+                "class ReportService {",
+                "  generate() {",
+                "    const db = new PostgresConnection(PROD_DATABASE_URL);",
+                "    return db.query(\"SELECT * FROM sales\");",
+                "  }",
+                "}",
+                "",
+                "// Testável: a dependência entra de fora (o \"seam\")",
+                "class ReportService {",
+                "  constructor(database) {",
+                "    this.database = database;",
+                "  }",
+                "  generate() {",
+                "    return this.database.query(\"SELECT * FROM sales\");",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Na primeira versão, não existe nenhum ponto onde um teste possa entrar com um dublê — " +
+                "PostgresConnection é criado dentro do método, inacessível de fora. Na segunda versão, o " +
+                "construtor é o seam: um teste passa um fakeDatabase no lugar da conexão real, sem precisar de " +
+                "um banco de verdade rodando.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Testability é a propriedade de um código permitir a entrada de dublês e o controle de suas " +
+                "dependências — resultado de decisões de design (seams, injeção de dependência, poucos " +
+                "colaboradores), não uma característica dos testes em si.",
+            },
+          ],
+          examples: [
+            {
+              title: "Um seam criado por injeção de dependência",
+              context: "O caso mais comum: receber a dependência de fora em vez de criá-la internamente.",
+              code: {
+                language: "javascript",
+                filename: "notification-service.js",
+                code: ["class NotificationService {", "  constructor(emailClient) {", "    this.emailClient = emailClient;", "  }", "  notify(user, message) {", "    this.emailClient.send(user.email, message);", "  }", "}"].join("\n"),
+              },
+              explanation:
+                "emailClient é o seam — um teste substitui por um dublê; código de produção passa o client " +
+                "real. A classe não sabe (nem precisa saber) a diferença.",
+            },
+            {
+              title: "Funções puras: o caso ideal de testabilidade",
+              context: "Uma função pura não precisa de nenhum dublê — ela já não tem dependências para substituir.",
+              code: {
+                language: "javascript",
+                filename: "shipping.js",
+                code: ["function calculateShippingCost(weightKg, distanceKm) {", "  return weightKg * 0.5 + distanceKm * 0.1;", "}"].join("\n"),
+              },
+              explanation:
+                "calculateShippingCost não lê banco, não chama rede, não depende de tempo — um teste chama a " +
+                "função com valores conhecidos e compara o resultado, sem preparar dublê nenhum.",
+            },
+            {
+              title: "Testabilidade prejudicada por muitos colaboradores",
+              context: "Quanto mais dependências uma classe recebe, mais dublês um teste precisa montar antes de sequer chegar ao comportamento que quer verificar.",
+              code: {
+                language: "javascript",
+                filename: "checkout-service.js",
+                code: ["class CheckoutService {", "  constructor(cart, payment, inventory, shipping, notification, analytics, audit) {", "    // sete colaboradores — cada teste precisa montar sete dublês", "  }", "}"].join("\n"),
+              },
+              explanation:
+                "Um construtor com sete dependências torna qualquer teste de CheckoutService caro de montar, " +
+                "mesmo que o comportamento testado use só duas delas — sinal de que a classe provavelmente tem " +
+                "responsabilidade demais (ver Cohesion, na Área 1).",
+            },
+          ],
+          exercise: {
+            problem:
+              "A função abaixo lê a taxa de câmbio de uma variável global, o que a torna impossível de testar " +
+              "de forma determinística sem manipular estado global antes e depois de cada teste.",
+            problemCode: {
+              language: "javascript",
+              filename: "currency.js",
+              code: ["let currentExchangeRate = 5.0;", "", "function convertToUSD(amountInBRL) {", "  return amountInBRL / currentExchangeRate;", "}"].join("\n"),
+            },
+            task: "Melhore a testabilidade de convertToUSD tornando a taxa de câmbio um parâmetro em vez de uma variável global.",
+            hint: "Um seam para essa dependência é simplesmente recebê-la como argumento da função.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "currency.js",
+                code: ["function convertToUSD(amountInBRL, exchangeRate) {", "  return amountInBRL / exchangeRate;", "}", "", "function testConvertToUSD() {", "  const result = convertToUSD(100, 5.0);", "  if (result !== 20) throw new Error(`esperava 20, recebeu ${result}`);", "}"].join("\n"),
+              },
+              explanation:
+                "Com exchangeRate como parâmetro, cada teste passa a taxa que quiser, sem tocar em estado global " +
+                "— a função se torna tão testável quanto uma função pura, porque, de fato, agora é uma.",
+            },
+          },
         }),
         concept({
           order: 40,
           title: "Test Isolation",
           requires: ["Testing Fundamentals / Test Fixture", "Programming Foundations / Concurrency / Shared State"],
           note: "testes não dependem uns dos outros nem de estado compartilhado; ordem-agnósticos",
+          summary:
+            "A propriedade de um teste não depender de nenhum outro teste, nem de estado deixado para trás — " +
+            "cada teste passa (ou falha) da mesma forma, não importa em que ordem a suíte roda.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Test Isolation é a garantia de que um teste não depende do resultado, da ordem de execução ou " +
+                "do estado deixado por outro teste. Um teste isolado pode rodar sozinho, em qualquer posição da " +
+                "suíte, em paralelo com outros, e ainda assim produzir o mesmo resultado. A falta de isolamento " +
+                "aparece quando um teste só passa se rodar depois de outro específico, ou quando rodar a suíte " +
+                "inteira duas vezes seguidas dá resultados diferentes.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Testes existem para dar confiança rápida e confiável. Se o resultado de um teste depende da " +
+                "ordem em que a suíte roda, essa confiança desaparece: um teste que passava sozinho pode falhar " +
+                "quando outro roda antes dele (porque deixou o banco, um arquivo ou uma variável global em um " +
+                "estado inesperado). Isolamento também é o que permite rodar testes em paralelo para acelerar o " +
+                "CI — testes que compartilham estado não podem ser paralelizados com segurança.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Isolamento se conecta diretamente com Test Fixture: cada teste deve receber uma fixture " +
+                "fresca, não reaproveitar uma instância compartilhada entre testes. Também se conecta com " +
+                "Shared State (Área 1, Concurrency) — a mesma classe de problema que causa race conditions em " +
+                "produção (múltiplas partes mexendo no mesmo estado) causa testes não isolados quando esse " +
+                "estado é global aos testes.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "um par de testes que quebra sem isolamento, e a correção com fixture nova por teste:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "cart.test.js",
+              code: [
+                "// SEM isolamento — os dois testes compartilham a mesma lista",
+                "const sharedCart = [];",
+                "",
+                "function testAddItem() {",
+                "  sharedCart.push({ id: 1 });",
+                "  if (sharedCart.length !== 1) throw new Error(\"esperava 1 item\");",
+                "}",
+                "",
+                "function testCartStartsEmpty() {",
+                "  if (sharedCart.length !== 0) throw new Error(\"carrinho deveria começar vazio\");",
+                "  // falha se testAddItem rodar antes deste teste",
+                "}",
+                "",
+                "// COM isolamento — cada teste cria seu próprio cart",
+                "function testCartStartsEmptyIsolated() {",
+                "  const cart = [];",
+                "  if (cart.length !== 0) throw new Error(\"carrinho deveria começar vazio\");",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "testCartStartsEmpty só passa se rodar antes de testAddItem — uma dependência de ordem " +
+                "escondida. testCartStartsEmptyIsolated cria seu próprio array a cada execução, então o " +
+                "resultado é sempre o mesmo, não importa quando (ou se) outros testes rodaram antes.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Test Isolation garante que um teste não depende de nenhum outro nem de estado deixado para " +
+                "trás — o mesmo resultado, em qualquer ordem, sozinho ou junto de toda a suíte, o que também é " +
+                "o que torna a paralelização segura.",
+            },
+          ],
+          examples: [
+            {
+              title: "Isolamento em testes que usam banco de dados",
+              context: "Testes de integração precisam de uma estratégia explícita para não vazar estado entre execuções.",
+              code: {
+                language: "javascript",
+                filename: "user-repository.integration.test.js",
+                code: [
+                  "async function setup() {",
+                  "  await testDatabase.clear();",
+                  "}",
+                  "",
+                  "async function testSaveUser() {",
+                  "  await setup();",
+                  "  await repository.save({ name: \"Ana\" });",
+                  "  const users = await repository.findAll();",
+                  "  if (users.length !== 1) throw new Error(\"esperava 1 usuário\");",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "setup() limpa o banco de teste antes de cada execução — sem isso, rodar testSaveUser duas " +
+                "vezes (ou depois de outro teste que também salva usuários) acumularia registros e quebraria a " +
+                "asserção de \"1 usuário\".",
+            },
+            {
+              title: "Isolamento quebrado por uma variável de módulo mutável",
+              context: "Estado compartilhado nem sempre é óbvio — pode estar escondido no escopo do módulo.",
+              code: {
+                language: "javascript",
+                filename: "request-tracker.js",
+                code: ["let requestCount = 0;", "", "function trackRequest() {", "  requestCount++;", "  return requestCount;", "}"].join("\n"),
+              },
+              explanation:
+                "Qualquer teste que chame trackRequest afeta o resultado de todos os testes seguintes que " +
+                "também a chamem, porque requestCount nunca é resetado entre execuções — um exemplo de estado " +
+                "compartilhado silencioso.",
+            },
+            {
+              title: "Paralelização segura graças ao isolamento",
+              context: "Um test runner só pode rodar testes em paralelo com segurança se eles forem isolados entre si.",
+              code: {
+                language: "javascript",
+                filename: "runner-config.js",
+                code: ["const config = { workers: 4, testIsolation: \"process-per-file\" };"].join("\n"),
+              },
+              explanation:
+                "Rodar cada arquivo de teste em um processo separado é uma forma de garantir isolamento mesmo " +
+                "quando o código sob teste usa alguma forma de estado global — cada processo tem sua própria " +
+                "cópia, evitando interferência entre execuções paralelas.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Os dois testes abaixo passam quando rodados na ordem em que aparecem, mas falham se a suíte " +
+              "rodar testUserCountAfterDeletion antes de testUserCountAfterCreation.",
+            problemCode: {
+              language: "javascript",
+              filename: "user-count.test.js",
+              code: [
+                "const users = [];",
+                "",
+                "function testUserCountAfterCreation() {",
+                "  users.push({ id: 1 });",
+                "  if (users.length !== 1) throw new Error(\"esperava 1 usuário\");",
+                "}",
+                "",
+                "function testUserCountAfterDeletion() {",
+                "  users.pop();",
+                "  if (users.length !== 0) throw new Error(\"esperava 0 usuários\");",
+                "}",
+              ].join("\n"),
+            },
+            task: "Reescreva os dois testes para que cada um monte seu próprio estado inicial, eliminando a dependência de ordem entre eles.",
+            hint: "Cada teste precisa criar (ou receber via fixture) sua própria lista de usuários, em vez de compartilhar o array users do módulo.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "user-count.test.js",
+                code: [
+                  "function testUserCountAfterCreation() {",
+                  "  const users = [];",
+                  "  users.push({ id: 1 });",
+                  "  if (users.length !== 1) throw new Error(\"esperava 1 usuário\");",
+                  "}",
+                  "",
+                  "function testUserCountAfterDeletion() {",
+                  "  const users = [{ id: 1 }];",
+                  "  users.pop();",
+                  "  if (users.length !== 0) throw new Error(\"esperava 0 usuários\");",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada teste agora começa com seu próprio array users, criado dentro da função — não importa " +
+                "mais em que ordem rodam, nem se rodam sozinhos ou junto de toda a suíte, o resultado é sempre o mesmo.",
+            },
+          },
         }),
         concept({
           order: 50,
           title: "Flaky Tests",
           requires: ["Test Isolation", "Programming Foundations / Concurrency / Race Condition"],
           note: "testes não determinísticos: corrida, tempo, ordem, rede",
+          summary:
+            "Um teste que às vezes passa e às vezes falha, sem que o código sob teste tenha mudado — um " +
+            "sintoma de não determinismo escondido em corrida, tempo, ordem ou rede.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Um teste flaky é aquele cujo resultado varia entre execuções do mesmo código, sem que nada " +
+                "relevante tenha mudado: às vezes passa, às vezes falha, de forma aparentemente aleatória. " +
+                "Diferente de um teste que falha consistentemente (sinal de um bug real), um flaky test mina a " +
+                "confiança na suíte inteira — ninguém sabe se uma falha é um bug de verdade ou \"só aquele " +
+                "teste de novo\".",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Flakiness quase sempre vem de alguma fonte de não determinismo que o teste não controla: uma " +
+                "race condition entre operações assíncronas, um timeout apertado demais para uma máquina " +
+                "ocasionalmente mais lenta, uma dependência de ordem de execução (falta de Test Isolation), ou " +
+                "uma chamada de rede real sujeita a latência variável. O teste em si está correto sobre o " +
+                "comportamento esperado — o problema é que algo fora do seu controle às vezes interfere.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "O custo de ignorar flaky tests é alto: times acabam re-rodando a suíte \"até passar\", ou " +
+                "pior, ignorando falhas reais achando que \"é só flakiness\". Identificar e corrigir (ou " +
+                "isolar) testes flaky é necessário para que uma falha vermelha continue significando \"algo " +
+                "quebrou\", não \"tente de novo\".",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "um teste flaky causado por uma corrida entre duas operações assíncronas, e a correção esperando o resultado certo:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "user-save.test.js",
+              code: [
+                "// FLAKY — não espera a operação assíncrona terminar",
+                "function testUserIsSaved() {",
+                "  saveUserAsync({ name: \"Ana\" }); // não aguardado",
+                "  const user = repository.findByName(\"Ana\"); // pode rodar antes de salvar",
+                "  if (!user) throw new Error(\"usuário deveria existir\");",
+                "}",
+                "",
+                "// CORRIGIDO — aguarda a operação antes de verificar",
+                "async function testUserIsSaved() {",
+                "  await saveUserAsync({ name: \"Ana\" });",
+                "  const user = repository.findByName(\"Ana\");",
+                "  if (!user) throw new Error(\"usuário deveria existir\");",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Na versão flaky, saveUserAsync dispara a gravação mas o teste não espera ela terminar antes de " +
+                "consultar o repositório — às vezes a gravação termina a tempo (teste passa), às vezes não " +
+                "(teste falha), dependendo de fatores como carga da máquina naquele momento. Adicionar await " +
+                "elimina a corrida: o teste só verifica depois que a gravação de fato terminou.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Um flaky test passa ou falha de forma inconsistente porque depende de algo não controlado — " +
+                "corrida assíncrona, tempo, ordem ou rede — e corrigi-lo significa eliminar essa fonte de não " +
+                "determinismo, não só re-rodar até passar.",
+            },
+          ],
+          examples: [
+            {
+              title: "Flakiness por timeout apertado demais",
+              context: "Um limite de tempo rígido demais pode falhar ocasionalmente em máquinas mais lentas ou sob carga.",
+              code: {
+                language: "javascript",
+                filename: "api-latency.test.js",
+                code: ["async function testApiRespondsQuickly() {", "  const start = Date.now();", "  await fetchData();", "  const elapsed = Date.now() - start;", "  if (elapsed > 100) throw new Error(\"resposta demorou demais\");", "}"].join("\n"),
+              },
+              explanation:
+                "100ms pode ser suficiente na máquina de quem escreveu o teste, mas falhar ocasionalmente num " +
+                "CI compartilhado sob carga variável — um sintoma clássico de flakiness relacionada a tempo.",
+            },
+            {
+              title: "Flakiness por dependência de ordem (falta de isolamento)",
+              context: "Testes que dependem do estado deixado por outros são flaky por natureza — passam ou falham dependendo da ordem em que o runner os executa.",
+              code: {
+                language: "javascript",
+                filename: "user-order.test.js",
+                code: [
+                  "let lastCreatedUserId = null;",
+                  "",
+                  "function testCreateUser() {",
+                  "  lastCreatedUserId = createUser({ name: \"Ana\" }).id;",
+                  "}",
+                  "",
+                  "function testFindLastUser() {",
+                  "  const user = findById(lastCreatedUserId); // depende de testCreateUser ter rodado antes",
+                  "  if (!user) throw new Error(\"usuário não encontrado\");",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Se o runner rodar testFindLastUser antes de testCreateUser (paralelização, reordenação, ou " +
+                "rodar um teste isolado), lastCreatedUserId é null e o teste falha — não por um bug, mas por " +
+                "falta de Test Isolation.",
+            },
+            {
+              title: "Flakiness por dependência de rede real",
+              context: "Testes que fazem chamadas de rede reais herdam a instabilidade da própria rede.",
+              code: {
+                language: "javascript",
+                filename: "external-api.test.js",
+                code: ["async function testExternalApiIsUp() {", "  const response = await fetch(\"https://api.terceiro.com/status\");", "  if (response.status !== 200) throw new Error(\"API deveria estar disponível\");", "}"].join("\n"),
+              },
+              explanation:
+                "Esse teste depende de uma API externa estar no ar, sem latência excessiva, no exato momento em " +
+                "que o CI roda — qualquer instabilidade momentânea da rede ou do serviço terceiro faz o teste " +
+                "falhar sem que o código tenha nenhum problema (candidato a virar um Stub, ver módulo Test Doubles).",
+            },
+          ],
+          exercise: {
+            problem:
+              "O teste abaixo falha aproximadamente 1 vez a cada 10 execuções, sem nenhuma mudança no código. A " +
+              "causa é uma corrida entre a chamada de processQueue (assíncrona) e a verificação do resultado.",
+            problemCode: {
+              language: "javascript",
+              filename: "queue.test.js",
+              code: ["function testQueueIsProcessed() {", "  processQueue(); // função assíncrona, não aguardada", "  if (queue.length !== 0) throw new Error(\"fila deveria estar vazia após processamento\");", "}"].join("\n"),
+            },
+            task: "Corrija o teste para eliminar a flakiness, garantindo que a verificação só rode depois que processQueue realmente terminar.",
+            hint: "Se processQueue devolve uma Promise, a correção é a mesma do exemplo mínimo: aguardar antes de verificar.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "queue.test.js",
+                code: ["async function testQueueIsProcessed() {", "  await processQueue();", "  if (queue.length !== 0) throw new Error(\"fila deveria estar vazia após processamento\");", "}"].join("\n"),
+              },
+              explanation:
+                "Com await, o teste só chega à linha de verificação depois que processQueue de fato terminou — " +
+                "elimina a corrida entre a operação assíncrona e a asserção, tornando o resultado determinístico " +
+                "em toda execução.",
+            },
+          },
         }),
         concept({
           order: 60,
@@ -2842,6 +3599,158 @@ export default area({
           requires: ["Testing Fundamentals / Unit Testing", "Testing Fundamentals / Test Runner"],
           note: "re-executar testes para impedir que bugs corrigidos voltem",
           revisit: ["AI Engineering / AI Evaluation / Regression Evaluation"],
+          summary:
+            "Re-executar a suíte de testes existente depois de uma mudança, para confirmar que nenhum " +
+            "comportamento que já funcionava — incluindo bugs já corrigidos — voltou a quebrar.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Regression Testing é a prática de rodar novamente testes já existentes depois de uma mudança " +
+                "no código, para garantir que nada que já funcionava passou a falhar. O termo \"regressão\" vem " +
+                "exatamente disso: o sistema regrediu, voltou a ter um problema que já tinha sido resolvido " +
+                "antes. Não é um tipo novo de teste — é o reuso disciplinado de unit, integration e E2E tests " +
+                "já escritos, rodados de novo a cada mudança.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Sistemas de software mudam o tempo todo, e cada mudança tem o risco de quebrar algo que não " +
+                "tinha relação aparente — um efeito colateral inesperado numa parte distante do código. " +
+                "Regression testing existe para pegar exatamente esse tipo de quebra silenciosa, sem depender " +
+                "de um humano lembrar de testar manualmente todos os cantos do sistema a cada mudança.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Um padrão específico e valioso é o teste de regressão nascido de um bug real: quando um bug é " +
+                "corrigido, escrever um teste que reproduz exatamente aquele cenário garante que, se alguém " +
+                "(inclusive a própria pessoa que corrigiu) reintroduzir o mesmo problema no futuro, a suíte " +
+                "aponta imediatamente — sem depender de o bug ser notado de novo em produção.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "um teste de regressão escrito depois de corrigir um bug real de divisão por zero:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "average.test.js",
+              code: [
+                "// Bug encontrado em produção: calculateAverage([]) lançava",
+                "// \"Division by zero\" em vez de devolver 0.",
+                "",
+                "function calculateAverage(numbers) {",
+                "  if (numbers.length === 0) return 0; // correção",
+                "  return numbers.reduce((sum, n) => sum + n, 0) / numbers.length;",
+                "}",
+                "",
+                "// Teste de regressão: garante que esse bug específico não volta",
+                "function testCalculateAverageOfEmptyArrayDoesNotThrow() {",
+                "  const result = calculateAverage([]);",
+                "  if (result !== 0) throw new Error(`esperava 0, recebeu ${result}`);",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "testCalculateAverageOfEmptyArrayDoesNotThrow existe especificamente por causa do bug que já " +
+                "aconteceu — não é um teste genérico de \"boas práticas\", é a prova de que aquele cenário " +
+                "exato continua funcionando. Se uma refatoração futura remover acidentalmente o if " +
+                "(numbers.length === 0), esse teste falha imediatamente.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Regression Testing é reexecutar a suíte existente a cada mudança para garantir que nada que já " +
+                "funcionava quebrou — e, quando nasce de um bug real corrigido, garante especificamente que " +
+                "aquele problema não volta a acontecer.",
+            },
+          ],
+          examples: [
+            {
+              title: "Um teste de regressão nascido de um incidente de produção",
+              context: "O padrão mais valioso de regression test: reproduzir exatamente o cenário que já quebrou uma vez.",
+              code: {
+                language: "javascript",
+                filename: "discount-edge-case.test.js",
+                code: [
+                  "// Incidente: desconto de 100% resultava em preço negativo",
+                  "// por causa de arredondamento de ponto flutuante.",
+                  "function testDiscountOf100PercentNeverGoesNegative() {",
+                  "  const result = applyDiscount(99.99, 100);",
+                  "  if (result < 0) throw new Error(\"desconto não deveria resultar em valor negativo\");",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Esse teste não existiria se o incidente nunca tivesse acontecido — ele documenta, em código " +
+                "executável, um caso extremo real que já surpreendeu o time uma vez.",
+            },
+            {
+              title: "Rodando a suíte de regressão inteira a cada mudança",
+              context: "Regression testing acontece de forma automática sempre que a suíte completa roda no CI, não é uma etapa separada.",
+              code: {
+                language: "javascript",
+                filename: "pipeline-config.js",
+                code: ["const pipeline = {", "  onEveryCommit: [\"runUnitTests\", \"runIntegrationTests\"],", "  onEveryMerge: [\"runUnitTests\", \"runIntegrationTests\", \"runE2ETests\"],", "};"].join("\n"),
+              },
+              explanation:
+                "Não existe uma suíte \"de regressão\" separada da suíte normal — a suíte inteira, rodada de " +
+                "novo a cada commit, É o mecanismo de regression testing (ponte com CI/CD Pipeline, na Área de " +
+                "Platform Engineering).",
+            },
+            {
+              title: "Regression testing pegando uma quebra não intencional",
+              context: "O caso comum: uma mudança em uma área quebra, sem querer, um comportamento em outra.",
+              code: {
+                language: "javascript",
+                filename: "discount.test.js",
+                code: ["function testExistingDiscountLogicStillWorks() {", "  // Esse teste já existia antes da nova feature de cupons", "  const result = applyDiscount(100, 10);", "  if (result !== 90) throw new Error(\"lógica de desconto existente quebrou\");", "}"].join("\n"),
+              },
+              explanation:
+                "Ao adicionar uma feature de cupons, alguém pode ter alterado applyDiscount sem perceber que " +
+                "quebraria o caso de desconto simples — esse teste, que já existia antes da nova feature, é o " +
+                "que pega essa regressão.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Um bug em produção causou que sortByDate([]) (lista vazia) lançasse um erro em vez de devolver " +
+              "uma lista vazia. O bug foi corrigido, mas nenhum teste foi escrito para documentar a correção.",
+            problemCode: {
+              language: "javascript",
+              filename: "sort-by-date.js",
+              code: [
+                "function sortByDate(items) {",
+                "  return items.sort((a, b) => a.date - b.date);",
+                "}",
+                "// Correção aplicada (não mostrada) — lista vazia agora funciona.",
+                "// Nenhum teste garante que o bug não volta.",
+              ].join("\n"),
+            },
+            task: "Escreva o teste de regressão que faltou, capturando exatamente o cenário que causou o bug original.",
+            hint: "O teste de regressão deve reproduzir o input exato que quebrou em produção — uma lista vazia — e verificar o comportamento correto.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "sort-by-date.test.js",
+                code: [
+                  "function testSortByDateWithEmptyArrayDoesNotThrow() {",
+                  "  const result = sortByDate([]);",
+                  "  if (!Array.isArray(result) || result.length !== 0) {",
+                  "    throw new Error(\"sortByDate([]) deveria devolver uma lista vazia sem lançar erro\");",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Esse teste reproduz exatamente o cenário que já causou um incidente — uma lista vazia — e vira " +
+                "parte permanente da suíte. Se uma futura mudança em sortByDate reintroduzir esse bug, o teste " +
+                "falha imediatamente, antes de chegar a produção de novo.",
+            },
+          },
         }),
         concept({
           order: 70,
@@ -2850,6 +3759,194 @@ export default area({
           requires: ["Testing Fundamentals / Unit Testing", "Programming Foundations / Programming Fundamentals / Contract"],
           note: "gerar muitas entradas a partir de propriedades/invariantes, em vez de exemplos",
           revisit: ["Functional Programming / Pure Functions (onde funciona melhor)"],
+          summary:
+            "Em vez de escrever exemplos específicos de entrada e saída, descrever uma propriedade que deve " +
+            "valer para qualquer entrada — e deixar a ferramenta gerar centenas de entradas aleatórias tentando " +
+            "quebrá-la.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Property-based testing inverte a forma tradicional de escrever um teste: em vez de escolher " +
+                "exemplos específicos (\"reverse([1,2,3]) deveria devolver [3,2,1]\"), você descreve uma " +
+                "propriedade — um invariante que deve ser verdade para qualquer entrada válida (\"reverter uma " +
+                "lista duas vezes deveria devolver a lista original\") — e uma ferramenta gera automaticamente " +
+                "centenas ou milhares de entradas aleatórias, tentando encontrar uma que quebre essa propriedade.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Testes baseados em exemplos só provam que o código funciona para os casos específicos " +
+                "escolhidos por quem escreveu o teste — e quem escreve o teste tende a pensar nos mesmos casos " +
+                "óbvios que pensou ao escrever a implementação, deixando pontos cegos comuns. Property-based " +
+                "testing existe para explorar o espaço de entradas de forma muito mais ampla do que um humano " +
+                "conseguiria escrever à mão, incluindo casos extremos (listas vazias, números negativos, " +
+                "strings com caracteres especiais) que ninguém pensaria em testar manualmente.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Quando a ferramenta encontra uma entrada que quebra a propriedade, ela normalmente faz " +
+                "\"shrinking\": reduz essa entrada ao menor caso possível que ainda reproduz a falha, para " +
+                "facilitar a depuração. Property-based testing funciona melhor sobre funções puras e com " +
+                "contratos claros (pré/pós-condições) — é por isso que se conecta tão naturalmente a Pure Functions.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "uma propriedade sobre reverter uma lista, verificada com entradas geradas aleatoriamente:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "reverse.property.test.js",
+              code: [
+                "function reverseList(list) {",
+                "  return [...list].reverse();",
+                "}",
+                "",
+                "function testReversingTwiceReturnsOriginal() {",
+                "  for (let i = 0; i < 100; i++) {",
+                "    const randomList = generateRandomArray();",
+                "    const result = reverseList(reverseList(randomList));",
+                "    if (JSON.stringify(result) !== JSON.stringify(randomList)) {",
+                "      throw new Error(`propriedade quebrada para entrada: ${JSON.stringify(randomList)}`);",
+                "    }",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Em vez de um único exemplo fixo, o teste gera 100 listas aleatórias diferentes e verifica, " +
+                "para cada uma, que reverter duas vezes devolve a lista original — a propriedade que deve valer " +
+                "sempre, não importa o conteúdo específico da lista. Ferramentas reais de property-based " +
+                "testing (como fast-check em JavaScript) fazem essa geração de forma mais sofisticada, incluindo " +
+                "casos extremos deliberados.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Property-based testing descreve uma propriedade que deve valer para qualquer entrada e deixa a " +
+                "ferramenta gerar muitas entradas tentando quebrá-la — encontrando casos extremos que testes " +
+                "baseados em exemplos específicos tendem a deixar passar.",
+            },
+          ],
+          examples: [
+            {
+              title: "Propriedade de idempotência",
+              context: "Uma propriedade comum: aplicar uma operação duas vezes dá o mesmo resultado que aplicar uma vez.",
+              code: {
+                language: "javascript",
+                filename: "normalize-email.property.test.js",
+                code: [
+                  "function normalizeEmail(email) {",
+                  "  return email.trim().toLowerCase();",
+                  "}",
+                  "",
+                  "function testNormalizeIsIdempotent() {",
+                  "  for (const email of generateRandomEmails(50)) {",
+                  "    const once = normalizeEmail(email);",
+                  "    const twice = normalizeEmail(once);",
+                  "    if (once !== twice) throw new Error(`não é idempotente para: ${email}`);",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "A propriedade \"normalizar já normalizado não muda nada\" deveria valer para qualquer e-mail, " +
+                "não só para um exemplo escolhido a dedo — gerar vários e-mails aleatórios aumenta a chance de " +
+                "achar um caso que quebre essa expectativa.",
+            },
+            {
+              title: "Propriedade sobre uma invariante estrutural",
+              context: "Propriedades também podem verificar que uma estrutura de dados permanece consistente, não só um valor final.",
+              code: {
+                language: "javascript",
+                filename: "insert-sorted.property.test.js",
+                code: [
+                  "function insertSorted(sortedArray, value) {",
+                  "  return [...sortedArray, value].sort((a, b) => a - b);",
+                  "}",
+                  "",
+                  "function testResultIsAlwaysSorted() {",
+                  "  for (let i = 0; i < 100; i++) {",
+                  "    const arr = generateRandomSortedArray();",
+                  "    const value = Math.floor(Math.random() * 1000);",
+                  "    const result = insertSorted(arr, value);",
+                  "    for (let j = 1; j < result.length; j++) {",
+                  "      if (result[j] < result[j - 1]) throw new Error(\"resultado não está ordenado\");",
+                  "    }",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "A propriedade verificada — \"o resultado está sempre ordenado\" — não depende de nenhum valor " +
+                "específico de entrada; vale para qualquer array ordenado e qualquer valor inserido.",
+            },
+            {
+              title: "Shrinking: reduzindo a entrada que quebrou a propriedade",
+              context: "Quando uma propriedade falha, encontrar o menor caso que reproduz o problema facilita a depuração.",
+              code: {
+                language: "javascript",
+                filename: "shrink.js",
+                code: ["function shrink(failingInput, property) {", "  let smallest = failingInput;", "  for (const candidate of generateSmallerVariants(failingInput)) {", "    if (!property(candidate)) smallest = candidate;", "  }", "  return smallest;", "}"].join("\n"),
+              },
+              explanation:
+                "Se uma propriedade falha para uma lista de 50 elementos aleatórios, shrinking tenta variantes " +
+                "cada vez menores (49, 30, 5, 1 elemento) até achar a menor lista que ainda reproduz a falha — " +
+                "muito mais fácil de depurar do que a original.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O teste abaixo verifica a função sortArray só com um único exemplo fixo, deixando passar " +
+              "despercebido um bug que só aparece com arrays contendo números negativos.",
+            problemCode: {
+              language: "javascript",
+              filename: "sort-array.test.js",
+              code: [
+                "function sortArray(arr) {",
+                "  return arr.sort(); // bug: sort() sem comparador ordena como string",
+                "}",
+                "",
+                "function testSortArray() {",
+                "  const result = sortArray([3, 1, 2]);",
+                "  if (JSON.stringify(result) !== JSON.stringify([1, 2, 3])) throw new Error(\"não ordenou corretamente\");",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Escreva uma propriedade (não um exemplo fixo) que verifique que o array resultante está sempre " +
+              "ordenado, para várias entradas aleatórias incluindo números negativos, e mostre como ela " +
+              "revelaria o bug.",
+            hint: "A propriedade \"cada elemento é ≥ o anterior\" deve valer para qualquer array de números, positivos ou negativos.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "sort-array.property.test.js",
+                code: [
+                  "function testSortArrayResultIsAlwaysAscending() {",
+                  "  for (let i = 0; i < 50; i++) {",
+                  "    const arr = generateRandomIntArray({ includeNegatives: true });",
+                  "    const result = sortArray(arr);",
+                  "    for (let j = 1; j < result.length; j++) {",
+                  "      if (result[j] < result[j - 1]) {",
+                  "        throw new Error(`resultado não ordenado para entrada: ${JSON.stringify(arr)}`);",
+                  "      }",
+                  "    }",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Com números negativos incluídos na geração aleatória, essa propriedade eventualmente gera um " +
+                "array como [-1, -20, 3] — sort() sem comparador o ordenaria como string (\"-1\" < \"-20\" " +
+                "lexicograficamente), quebrando a propriedade e revelando o bug que o teste de exemplo único " +
+                "nunca pegaria.",
+            },
+          },
         }),
         concept({
           order: 80,
@@ -2858,6 +3955,177 @@ export default area({
           note: "provedor e consumidor concordam numa interface",
           collision: "≠ Contract (Epic 01 / PF) · ≠ API Contract (Platform / API)",
           revisit: ["Platform / API (API Contract)", "Architecture / Service Communication (consumer-driven contracts)"],
+          summary:
+            "Verificar que um provedor de uma API e seus consumidores concordam sobre o formato da interface " +
+            "entre eles — sem precisar rodar os dois sistemas inteiros juntos para descobrir uma incompatibilidade.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Contract testing verifica que dois serviços que se comunicam — um provedor (que expõe uma " +
+                "API) e um consumidor (que a chama) — concordam sobre o formato dessa comunicação: quais campos " +
+                "existem, quais tipos têm, quais são obrigatórios. Em vez de subir os dois serviços reais " +
+                "juntos para um teste de integração completo, cada lado testa separadamente contra um " +
+                "\"contrato\" compartilhado — um documento (geralmente gerado automaticamente) que descreve " +
+                "exatamente o que é esperado.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Em sistemas com múltiplos serviços desenvolvidos por times diferentes, testar a integração " +
+                "completa entre todos eles a cada mudança é caro e lento — exigiria subir o sistema inteiro " +
+                "para testar uma mudança pequena em um único serviço. Contract testing existe para pegar " +
+                "incompatibilidades de interface (um campo renomeado, um tipo alterado) sem esse custo: o " +
+                "provedor verifica que ainda cumpre o contrato, o consumidor verifica que ainda usa o contrato " +
+                "corretamente, cada um isoladamente.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Uma variação comum é o consumer-driven contract: o consumidor define o que espera da API (só " +
+                "os campos que de fato usa), e esse contrato vira o critério que o provedor precisa respeitar. " +
+                "Isso evita que o provedor quebre consumidores por mudar um campo que nenhum consumidor sequer " +
+                "usava, e detecta cedo quando o provedor muda algo que um consumidor específico realmente depende.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "um contrato simples e os dois lados verificados contra ele, separadamente:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "user-api.contract.test.js",
+              code: [
+                "// O contrato: o que o consumidor espera da resposta da API",
+                "const userApiContract = {",
+                "  id: \"number\",",
+                "  name: \"string\",",
+                "  email: \"string\",",
+                "};",
+                "",
+                "// Lado do provedor: a resposta real cumpre o contrato?",
+                "function testProviderFulfillsContract() {",
+                "  const response = userApiHandler({ id: 1 });",
+                "  for (const field in userApiContract) {",
+                "    if (typeof response[field] !== userApiContract[field]) {",
+                "      throw new Error(`campo ${field} não cumpre o contrato`);",
+                "    }",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "userApiContract descreve o formato esperado, independente de qual serviço o implementa. O " +
+                "lado do provedor roda esse teste contra sua implementação real, sem precisar de nenhum " +
+                "consumidor de verdade rodando; um teste espelhado do lado do consumidor verificaria que ele " +
+                "consegue processar uma resposta nesse mesmo formato, sem precisar do provedor real no ar.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Contract Testing verifica que provedor e consumidor concordam sobre a interface entre eles, " +
+                "cada lado testado isoladamente contra um contrato compartilhado — pegando incompatibilidades " +
+                "de formato sem o custo de subir o sistema inteiro.",
+            },
+          ],
+          examples: [
+            {
+              title: "Consumer-driven contract",
+              context: "O consumidor define o contrato com base só no que de fato usa da resposta.",
+              code: {
+                language: "javascript",
+                filename: "consumer-contract.js",
+                code: ["const consumerExpectation = {", "  // Este consumidor só usa id e email — não se importa com outros campos", "  id: \"number\",", "  email: \"string\",", "};"].join("\n"),
+              },
+              explanation:
+                "Se o provedor adicionar um campo novo, ou remover um campo que este consumidor específico não " +
+                "usa, o contrato continua válido — o provedor só quebra o contrato se mexer em algo que o " +
+                "consumidor de fato depende.",
+            },
+            {
+              title: "Detectando uma quebra de contrato antes da integração real",
+              context: "O objetivo central: pegar a incompatibilidade cedo, sem precisar dos dois sistemas reais rodando juntos.",
+              code: {
+                language: "javascript",
+                filename: "user-api-handler.js",
+                code: [
+                  "// Provedor mudou o campo \"email\" para \"emailAddress\" sem avisar",
+                  "function userApiHandler(query) {",
+                  "  return { id: query.id, name: \"Ana\", emailAddress: \"ana@example.com\" };",
+                  "}",
+                  "// testProviderFulfillsContract falharia aqui: \"email\" não existe mais na resposta",
+                ].join("\n"),
+              },
+              explanation:
+                "O teste de contrato do lado do provedor falha imediatamente com essa mudança — antes de " +
+                "qualquer consumidor real tentar integrar e quebrar em produção por depender de um campo email " +
+                "que não existe mais.",
+            },
+            {
+              title: "Contract testing vs. integration testing completo",
+              context: "Contract testing é mais barato porque não exige os dois sistemas reais simultaneamente.",
+              code: {
+                language: "javascript",
+                filename: "test-strategy.js",
+                code: [
+                  "// Integration testing completo: exige provedor E consumidor rodando juntos",
+                  "// Contract testing: cada lado roda contra o contrato, separadamente",
+                  "const testStrategy = {",
+                  "  fullIntegration: { providerRunning: true, consumerRunning: true },",
+                  "  contractTesting: { providerRunning: true, consumerRunning: false },",
+                  "};",
+                ].join("\n"),
+              },
+              explanation:
+                "Contract testing troca a certeza total de um teste de integração completo (os dois sistemas " +
+                "reais, juntos) por um teste muito mais barato e rápido que ainda pega a maioria das " +
+                "incompatibilidades reais — o formato da interface.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O provedor abaixo renomeou o campo total para totalAmount numa resposta de pedido, sem " +
+              "coordenar com o time consumidor, que ainda espera total.",
+            problemCode: {
+              language: "javascript",
+              filename: "order-api.js",
+              code: [
+                "function orderApiHandler(orderId) {",
+                "  return { id: orderId, totalAmount: 150.0, status: \"pending\" };",
+                "}",
+                "",
+                "const consumerContract = {",
+                "  id: \"number\",",
+                "  total: \"number\",",
+                "  status: \"string\",",
+                "};",
+              ].join("\n"),
+            },
+            task: "Escreva o teste de contrato do lado do provedor que detectaria essa quebra antes que o consumidor real fosse afetado.",
+            hint: "O teste percorre os campos do contrato e verifica se cada um existe (com o tipo certo) na resposta real do provedor.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "order-api.contract.test.js",
+                code: [
+                  "function testProviderFulfillsConsumerContract() {",
+                  "  const response = orderApiHandler(42);",
+                  "  for (const field in consumerContract) {",
+                  "    if (typeof response[field] !== consumerContract[field]) {",
+                  "      throw new Error(`contrato quebrado: campo \"${field}\" ausente ou com tipo incorreto`);",
+                  "    }",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Esse teste falha imediatamente com a mensagem \"contrato quebrado: campo 'total' ausente\" — a " +
+                "incompatibilidade é detectada do lado do provedor, sem precisar que o time consumidor descubra " +
+                "em produção que seu código quebrou.",
+            },
+          },
         }),
       ],
     }),

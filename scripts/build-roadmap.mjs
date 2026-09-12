@@ -1249,6 +1249,14 @@ for (const area of model.areas()) {
     "mock",
     "test-driven-development",
     "red-green-refactor",
+    "test-pyramid",
+    "code-coverage",
+    "testability",
+    "test-isolation",
+    "flaky-tests",
+    "regression-testing",
+    "property-based-testing",
+    "contract-testing",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",
