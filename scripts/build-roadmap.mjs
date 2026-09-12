@@ -1247,6 +1247,8 @@ for (const area of model.areas()) {
     "fake",
     "spy",
     "mock",
+    "test-driven-development",
+    "red-green-refactor",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",

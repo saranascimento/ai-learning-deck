@@ -2460,7 +2460,151 @@ export default area({
         "Test-Induced Design Damage",
       ],
       concepts: [
-        concept({ order: 10, title: "Test-Driven Development", requires: ["Testing Fundamentals / Arrange-Act-Assert"], note: "disciplina test-first; por que TDD dirige o design; benefícios e custos" }),
+        concept({
+          order: 10,
+          title: "Test-Driven Development",
+          requires: ["Testing Fundamentals / Arrange-Act-Assert"],
+          note: "disciplina test-first; por que TDD dirige o design; benefícios e custos",
+          summary:
+            "Escrever o teste antes do código que ele testa — uma disciplina que usa o próprio ato de testar " +
+            "para guiar o design da solução, não só para verificá-la depois de pronta.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Test-Driven Development (TDD) é uma disciplina de desenvolvimento em que o teste de um " +
+                "comportamento é escrito antes do código de produção que o implementa. Em vez de \"escrever a " +
+                "função, depois testar\", a ordem se inverte: escrever um teste que descreve o comportamento " +
+                "esperado (e que, nesse momento, falha — porque o código ainda não existe), e só então escrever " +
+                "o código mínimo necessário para fazer esse teste passar.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Escrever o teste primeiro força quem programa a pensar na interface e no comportamento " +
+                "desejado antes de pensar na implementação — o teste é, na prática, a primeira especificação " +
+                "executável do que o código deve fazer. Isso tende a produzir código mais simples: só existe o " +
+                "que é necessário para passar em algum teste, nada especulativo.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "TDD também garante, por construção, que todo código de produção tem cobertura de teste — é " +
+                "impossível escrever código sem antes ter escrito (e visto falhar) o teste correspondente. O " +
+                "custo é disciplina: escrever testes primeiro exige uma mudança de hábito e desacelera o ritmo " +
+                "no curto prazo, em troca de design mais limpo e uma rede de segurança mais completa no longo prazo.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "o teste é escrito e roda (falhando) antes de calculateTotal existir:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "cart-total.test.js",
+              code: [
+                "// Passo 1 — escrever o teste primeiro (ainda falha: calculateTotal não existe)",
+                "function testCalculateTotalWithTwoItems() {",
+                "  const result = calculateTotal([{ price: 10 }, { price: 20 }]);",
+                "  if (result !== 30) throw new Error(`esperava 30, recebeu ${result}`);",
+                "}",
+                "",
+                "// Passo 2 — só agora escrever o código mínimo para o teste passar",
+                "function calculateTotal(items) {",
+                "  return items.reduce((sum, item) => sum + item.price, 0);",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O comentário marca a ordem real dos eventos: testCalculateTotalWithTwoItems foi escrito e " +
+                "executado (e falhou, com \"calculateTotal is not defined\") antes de calculateTotal existir. Só " +
+                "depois de ver essa falha é que calculateTotal foi escrito — o mínimo necessário para o teste " +
+                "passar, nada além disso.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "TDD inverte a ordem tradicional: o teste vem primeiro, e o código de produção existe só para " +
+                "fazê-lo passar — uma disciplina que usa o teste para guiar o design, não só para verificá-lo depois.",
+            },
+          ],
+          examples: [
+            {
+              title: "TDD guiando uma decisão de interface",
+              context: "Escrever o teste primeiro obriga a decidir como a função será chamada antes de decidir como ela funciona por dentro.",
+              code: {
+                language: "javascript",
+                filename: "password.test.js",
+                code: ["function testIsValidPassword() {", "  if (!isValidPassword(\"Senha123!\")) throw new Error(\"deveria ser válida\");", "  if (isValidPassword(\"123\")) throw new Error(\"deveria ser inválida\");", "}"].join("\n"),
+              },
+              explanation:
+                "Antes de implementar qualquer regra de validação, esse teste já decidiu que isValidPassword " +
+                "recebe uma string e devolve um boolean — uma decisão de design tomada antes de qualquer linha " +
+                "de implementação existir.",
+            },
+            {
+              title: "TDD produzindo só o código necessário",
+              context: "Sem um teste pedindo por mais, TDD tende a evitar código especulativo.",
+              code: {
+                language: "javascript",
+                filename: "currency.test.js",
+                code: ["function testFormatCurrency() {", "  if (formatCurrency(10) !== \"R$10.00\") throw new Error(\"formato incorreto\");", "}", "", "function formatCurrency(value) {", "  return `R$${value.toFixed(2)}`;", "}"].join("\n"),
+              },
+              explanation:
+                "formatCurrency não suporta outras moedas, localização ou negativos porque nenhum teste ainda " +
+                "pediu por isso — TDD implementa o suficiente para os testes existentes passarem, não o que " +
+                "\"pode ser útil um dia\".",
+            },
+            {
+              title: "Um ciclo TDD completo em miniatura",
+              context: "TDD em ação: teste → falha → implementação mínima → passa.",
+              code: {
+                language: "javascript",
+                filename: "sum.test.js",
+                code: ["// 1. Teste (falha: sum não existe)", "function testSumOfEmptyArray() {", "  if (sum([]) !== 0) throw new Error(\"soma de array vazio deveria ser 0\");", "}", "", "// 2. Implementação mínima (passa)", "function sum(numbers) {", "  return 0;", "}"].join("\n"),
+              },
+              explanation:
+                "Note que sum sempre devolve 0 — é o código mínimo para passar nesse único teste. Um próximo " +
+                "teste (\"soma de [1, 2, 3] deveria ser 6\") forçaria a implementação real; TDD avança em passos " +
+                "pequenos, um teste de cada vez.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O código abaixo foi escrito antes de qualquer teste (test-after), e já inclui suporte a moedas " +
+              "que ninguém pediu ainda.",
+            problemCode: {
+              language: "javascript",
+              filename: "currency.js",
+              code: ["function formatCurrency(value, currency = \"BRL\", locale = \"pt-BR\") {", "  const symbols = { BRL: \"R$\", USD: \"$\", EUR: \"€\" };", "  return `${symbols[currency]}${value.toFixed(2)}`;", "}"].join("\n"),
+            },
+            task:
+              "Escreva o teste que, seguindo TDD, justificaria a existência do parâmetro currency — e " +
+              "identifique se algum comportamento no código atual NÃO tem teste que o justifique.",
+            hint: "Em TDD, cada trecho de comportamento só existe porque um teste específico o exige — se não há teste para algo, é código especulativo.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "currency.test.js",
+                code: [
+                  "function testFormatCurrencyDefaultsToBRL() {",
+                  "  if (formatCurrency(10) !== \"R$10.00\") throw new Error(\"padrão deveria ser BRL\");",
+                  "}",
+                  "",
+                  "function testFormatCurrencySupportsUSD() {",
+                  "  if (formatCurrency(10, \"USD\") !== \"$10.00\") throw new Error(\"deveria suportar USD\");",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Esses dois testes justificam o parâmetro currency e o suporte a BRL/USD. Mas o parâmetro locale " +
+                "nunca é lido dentro da função — nenhum teste o exercitaria, porque é código especulativo que " +
+                "TDD, seguido à risca, nunca teria produzido.",
+            },
+          },
+        }),
         concept({
           order: 20,
           title: "Red-Green-Refactor",
@@ -2469,6 +2613,175 @@ export default area({
           note:
             "o loop concreto: teste mínimo que falha → código mínimo que passa → melhorar com a barra verde. " +
             "Passo \"Refactor\": aprofundamento posterior em Epic 03 / Software Craft / Refactoring — pointer, não Requires.",
+          summary:
+            "O loop concreto de três passos que dá vida ao TDD: escrever um teste mínimo que falha (Red), " +
+            "escrever o código mínimo que o faz passar (Green), melhorar o código com a segurança da barra " +
+            "verde (Refactor) — e repetir.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Red-Green-Refactor é o ciclo operacional concreto por trás do TDD: Red — escrever um teste " +
+                "para um comportamento que ainda não existe, e vê-lo falhar (a \"barra vermelha\"); Green — " +
+                "escrever o código mais simples possível que faz esse teste passar (a \"barra verde\"), mesmo " +
+                "que a implementação não seja elegante; Refactor — com o teste passando como rede de segurança, " +
+                "melhorar a estrutura do código sem mudar seu comportamento externo.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "TDD como filosofia diz \"escreva o teste primeiro\", mas não diz, por si só, o que fazer minuto " +
+                "a minuto. Red-Green-Refactor é a receita prática: um ciclo curto e repetível que qualquer " +
+                "pessoa consegue seguir, com um critério objetivo de \"o que fazer agora\" em cada passo — nunca " +
+                "mais de uma coisa por vez (só fazer passar, ou só melhorar, nunca os dois ao mesmo tempo).",
+            },
+            {
+              type: "paragraph",
+              text:
+                "O passo Refactor é o que garante que TDD não vira só \"escrever testes antes\" sem cuidar da " +
+                "qualidade do código — a barra verde dá a confiança de que refatorar não vai quebrar nada " +
+                "silenciosamente. Sem esse passo, código escrito só para \"passar no teste mais rápido " +
+                "possível\" tende a acumular dívida técnica.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "os três passos do ciclo, em sequência, sobre a mesma função:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "double.test.js",
+              code: [
+                "// RED — teste escrito primeiro, falha (double não existe ainda)",
+                "function testDouble() {",
+                "  if (double(5) !== 10) throw new Error(\"esperava 10\");",
+                "}",
+                "",
+                "// GREEN — implementação mais simples possível, só para passar",
+                "function double(n) {",
+                "  return 10; // \"hardcoded\" — só precisa passar neste único teste",
+                "}",
+                "",
+                "// Um segundo teste força a generalização",
+                "function testDoubleOfThree() {",
+                "  if (double(3) !== 6) throw new Error(\"esperava 6\");",
+                "}",
+                "",
+                "// GREEN de novo — agora precisa de uma implementação real",
+                "function double(n) {",
+                "  return n * 2;",
+                "}",
+                "",
+                "// REFACTOR — código já correto, sem mudança de comportamento a fazer aqui",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O primeiro Green (return 10) parece estranho, mas é o passo mínimo válido para o primeiro " +
+                "teste sozinho — é assim mesmo que o ciclo funciona em passos pequenos. Só quando um segundo " +
+                "teste (testDoubleOfThree) exige mais é que a implementação precisa generalizar. O Refactor, " +
+                "nesse exemplo simples, não teve o que melhorar; em exemplos maiores, é aqui que nomes, " +
+                "duplicação e estrutura são revisados com a segurança da barra verde.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Red-Green-Refactor é o motor operacional do TDD: falhar de propósito, passar com o mínimo, " +
+                "depois melhorar em segurança — um passo de cada vez, nunca os três ao mesmo tempo.",
+            },
+          ],
+          examples: [
+            {
+              title: "Red — um teste que intencionalmente ainda falha",
+              context: "O primeiro passo do ciclo é sempre ver o teste falhar por um motivo esperado (função inexistente), não por um erro de digitação.",
+              code: {
+                language: "javascript",
+                filename: "palindrome.test.js",
+                code: ["function testIsPalindrome() {", "  if (!isPalindrome(\"arara\")) throw new Error(\"arara deveria ser palíndromo\");", "}", "// Rodar agora: falha com \"isPalindrome is not defined\" — Red esperado"].join("\n"),
+              },
+              explanation:
+                "Ver a falha correta (função não existe) antes de implementar confirma que o teste de fato " +
+                "exercita algo que ainda não está pronto — evita o erro de escrever um teste que passaria mesmo " +
+                "sem implementação nenhuma.",
+            },
+            {
+              title: "Green — a implementação mais simples possível, não a mais elegante",
+              context: "O objetivo do passo Green não é código bonito, é a barra verde no menor caminho possível.",
+              code: {
+                language: "javascript",
+                filename: "palindrome.js",
+                code: ["function isPalindrome(text) {", "  return text === text.split(\"\").reverse().join(\"\");", "}"].join("\n"),
+              },
+              explanation:
+                "Essa implementação não lida com maiúsculas, acentos ou espaços — mas é suficiente para o único " +
+                "teste existente. Refinamentos vêm de novos testes (Red) seguidos de novo Green, não de antecipação.",
+            },
+            {
+              title: "Refactor — melhorando sem quebrar o teste",
+              context: "Refactor só é seguro porque o teste (verde) continua rodando durante e depois da mudança.",
+              code: {
+                language: "javascript",
+                filename: "palindrome.js",
+                code: [
+                  "function isPalindrome(text) {",
+                  "  const normalized = text.toLowerCase().replace(/[^a-z0-9]/g, \"\");",
+                  "  return normalized === normalized.split(\"\").reverse().join(\"\");",
+                  "}",
+                  "// testIsPalindrome ainda passa — comportamento externo preservado",
+                ].join("\n"),
+              },
+              explanation:
+                "A implementação mudou (agora normaliza antes de comparar), mas o teste original continua " +
+                "passando sem alteração — prova de que o Refactor não alterou o comportamento observável, só a " +
+                "estrutura interna.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O código abaixo foi escrito misturando Green e Refactor no mesmo passo: a pessoa tentou fazer o " +
+              "teste passar e deixar o código \"genérico\" ao mesmo tempo, e acabou com um bug na tentativa de " +
+              "generalização precoce.",
+            problemCode: {
+              language: "javascript",
+              filename: "sum.test.js",
+              code: [
+                "function testSumTwoNumbers() {",
+                "  if (sum(2, 3) !== 5) throw new Error(\"esperava 5\");",
+                "}",
+                "",
+                "function sum(...numbers) {",
+                "  return numbers.reduce((acc, n) => acc * n, 0); // bug: deveria somar, não multiplicar",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Separe em dois passos corretos: primeiro um Green mínimo que só faz sum(2, 3) passar sem tentar " +
+              "generalizar para N argumentos; depois, mostre como um novo teste evoluiria a implementação.",
+            hint: "Green mínimo para este único teste não precisa de rest parameters nem de reduce — só precisa somar dois números.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "sum.js",
+                code: [
+                  "// GREEN mínimo — só o necessário para este teste",
+                  "function sum(a, b) {",
+                  "  return a + b;",
+                  "}",
+                  "",
+                  "// Se um novo teste pedir suporte a N números, aí sim generaliza:",
+                  "// function testSumThreeNumbers() { if (sum(1, 2, 3) !== 6) throw new Error(...); }",
+                  "function sum(...numbers) {",
+                  "  return numbers.reduce((acc, n) => acc + n, 0);",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "O primeiro Green resolve só o teste que existe, sem generalização prematura. A generalização " +
+                "para N argumentos só aconteceria depois, guiada por um novo teste (Red) — é assim que " +
+                "Red-Green-Refactor evita bugs como o do reduce com operador errado: cada passo é pequeno o bastante para não errar.",
+            },
+          },
         }),
       ],
     }),
