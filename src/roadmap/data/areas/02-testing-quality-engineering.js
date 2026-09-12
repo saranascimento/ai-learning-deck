@@ -4155,32 +4155,910 @@ export default area({
         "Observability-Driven Debugging (ponte para Platform)",
       ],
       concepts: [
-        concept({ order: 10, title: "Reproduction", requires: ["Testing Fundamentals / Unit Testing"], note: "tornar o bug confiável antes de investigar — um teste que falha é a repro ideal" }),
-        concept({ order: 20, title: "Hypothesis-Driven Debugging", requires: ["Reproduction"], note: "método científico: hipótese → previsão → teste" }),
+        concept({
+          order: 10,
+          title: "Reproduction",
+          requires: ["Testing Fundamentals / Unit Testing"],
+          note: "tornar o bug confiável antes de investigar — um teste que falha é a repro ideal",
+          summary:
+            "Tornar um bug confiável e repetível antes de investigar sua causa — sem uma reprodução confiável, " +
+            "qualquer tentativa de correção é só um palpite.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Reproduction é o passo de conseguir fazer um bug acontecer de forma confiável, sob controle, " +
+                "sempre que necessário — em vez de depender de esperar que ele aconteça de novo por acaso. Um " +
+                "bug \"reproduzido\" tem passos conhecidos (ou uma entrada conhecida) que, seguidos, disparam o " +
+                "comportamento incorreto de forma consistente.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Sem reprodução, depurar vira adivinhação: qualquer mudança feita no código pode parecer ter " +
+                "corrigido o bug simplesmente porque ele não aconteceu de novo por acaso — sem prova de que a " +
+                "causa real foi endereçada. Reproduction transforma um evento incerto (\"aconteceu uma vez, não " +
+                "sei por quê\") em um experimento repetível, condição necessária para qualquer investigação séria.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "A forma ideal de reprodução é um teste automatizado que falha exatamente pelo motivo do bug — " +
+                "isso cria uma ponte direta com Regression Testing (módulo Testing Strategy): o mesmo teste que " +
+                "serve para reproduzir o bug agora vira, depois da correção, a prova permanente de que ele não volta.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "um bug relatado de forma vaga, transformado num teste que o reproduz de forma confiável:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "discount-bug.repro.js",
+              code: [
+                "// Relato vago: \"às vezes o total do carrinho vem errado com desconto\"",
+                "",
+                "function testReproduceDiscountBug() {",
+                "  const cart = { items: [{ price: 33.33 }, { price: 33.33 }, { price: 33.33 }] };",
+                "  const result = applyDiscount(cart, 10);",
+                "  if (result.total !== 90) {",
+                "    throw new Error(`bug reproduzido: esperava 90, recebeu ${result.total}`);",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Em vez de continuar com um relato vago (\"às vezes dá errado\"), testReproduceDiscountBug fixa " +
+                "uma entrada exata (três itens de 33.33) que reproduz a falha de forma determinística. Agora " +
+                "existe um experimento repetível para investigar — e, quando corrigido, o mesmo código vira um " +
+                "teste de regressão permanente.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Reproduction transforma um bug incerto em um experimento repetível — sem essa base, qualquer " +
+                "tentativa de correção é um palpite sem forma de confirmar se de fato resolveu o problema.",
+            },
+          ],
+          examples: [
+            {
+              title: "De um relato vago a uma reprodução mínima",
+              context: "O primeiro passo é sempre reduzir o relato original ao menor caso que ainda dispara o problema.",
+              code: {
+                language: "javascript",
+                filename: "import-crash.repro.js",
+                code: ["// Relato original: \"o app trava ao importar uma planilha grande\"", "function testReproduceImportCrash() {", "  const minimalSpreadsheet = [{ id: 1, value: null }]; // reduzido de 10.000 linhas", "  importSpreadsheet(minimalSpreadsheet); // ainda trava", "}"].join("\n"),
+              },
+              explanation:
+                "Reduzir de uma planilha de 10.000 linhas para uma única linha com um valor null revela que o " +
+                "problema não é volume — é um valor específico que a lógica de importação não trata.",
+            },
+            {
+              title: "Reprodução via teste automatizado (o caso ideal)",
+              context: "Sempre que possível, a reprodução vira um teste, não um passo manual repetido.",
+              code: {
+                language: "javascript",
+                filename: "null-profile.repro.js",
+                code: ["function testReproduceNullPointerOnEmptyProfile() {", "  const user = { name: \"Ana\", profile: null };", "  const result = formatUserSummary(user); // deveria lidar com profile ausente", "}"].join("\n"),
+              },
+              explanation:
+                "Ter isso como um teste (em vez de um passo a passo manual num ticket) significa que qualquer " +
+                "pessoa do time pode rodar e ver a falha, sem precisar seguir instruções escritas em prosa.",
+            },
+            {
+              title: "Quando a reprodução exige condições específicas de ambiente",
+              context: "Alguns bugs só reproduzem sob condições específicas — identificar exatamente quais é parte do trabalho de reprodução.",
+              code: {
+                language: "javascript",
+                filename: "race-condition.repro.js",
+                code: ["function testReproduceRaceConditionUnderConcurrentRequests() {", "  const requests = Array.from({ length: 50 }, () => incrementCounter());", "  return Promise.all(requests); // só falha com concorrência real, não sequencial", "}"].join("\n"),
+              },
+              explanation:
+                "Esse bug não reproduz com uma chamada sequencial — só aparece com 50 chamadas concorrentes, o " +
+                "que precisou ser descoberto experimentando com a condição até isolar o que de fato disparava a falha.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Um usuário relatou: \"quando eu clico em salvar duas vezes rápido, às vezes cria dois registros " +
+              "duplicados\". Ninguém ainda tentou reproduzir isso de forma confiável.",
+            task:
+              "Escreva, em código, uma reprodução determinística desse bug — não uma explicação, uma chamada de " +
+              "função (ou sequência delas) que dispara o comportamento incorreto de forma repetível.",
+            hint: "\"Duas vezes rápido\" sugere uma condição de concorrência — duas chamadas próximas no tempo, não necessariamente sequenciais uma esperando a outra.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "duplicate-save.repro.js",
+                code: [
+                  "async function testReproduceDuplicateOnDoubleClick() {",
+                  "  const savePromises = [saveRecord({ title: \"Nota\" }), saveRecord({ title: \"Nota\" })];",
+                  "  await Promise.all(savePromises);",
+                  "",
+                  "  const records = await findAllByTitle(\"Nota\");",
+                  "  if (records.length > 1) {",
+                  "    console.log(`bug reproduzido: ${records.length} registros duplicados`);",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Disparar as duas chamadas de saveRecord ao mesmo tempo (sem esperar a primeira terminar) " +
+                "simula o clique duplo rápido — se o bug for uma race condition na criação, essa reprodução " +
+                "deveria disparar o mesmo comportamento de forma consistente, transformando o relato vago em um " +
+                "experimento repetível.",
+            },
+          },
+        }),
+        concept({
+          order: 20,
+          title: "Hypothesis-Driven Debugging",
+          requires: ["Reproduction"],
+          note: "método científico: hipótese → previsão → teste",
+          summary:
+            "Aplicar o método científico à depuração: formular uma hipótese sobre a causa do bug, prever o que " +
+            "ela implicaria, testar essa previsão — e repetir, descartando ou confirmando hipóteses uma de cada vez.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Hypothesis-Driven Debugging é a prática de investigar um bug formulando hipóteses explícitas " +
+                "sobre sua causa, cada uma testável: \"eu acho que o problema é X; se for X, então observar Y " +
+                "deveria confirmar isso\". Em vez de mudar código aleatoriamente na esperança de que algo " +
+                "resolva, cada passo é uma pergunta específica com uma resposta que confirma ou descarta uma hipótese.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Sem uma hipótese explícita, é fácil cair em depuração por tentativa e erro: mudar várias " +
+                "coisas ao mesmo tempo, sem saber qual mudança (se alguma) resolveu o problema, ou pior, sem " +
+                "saber por que o problema acontecia. Método científico aplicado à depuração garante que, ao " +
+                "final, você sabe exatamente por que o bug acontecia — não só que ele parou de acontecer.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "O ciclo se apoia em Reproduction: sem uma reprodução confiável, não é possível testar uma " +
+                "previsão de forma confiável. Cada hipótese testada e descartada também reduz o espaço de " +
+                "possibilidades — mesmo uma hipótese errada produz informação (\"não é isso, então deve ser " +
+                "outra coisa\"), o que evita repetir a mesma investigação.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "uma hipótese formulada, testada e refinada até a causa real:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "age-nan.debug.js",
+              code: [
+                "// Bug reproduzido: getUserAge(user) às vezes devolve NaN",
+                "",
+                "// Hipótese 1: user.birthDate está no formato errado",
+                "function testHypothesis1() {",
+                "  console.log(typeof user.birthDate); // previsão: deveria ser \"string\" ou Date",
+                "}",
+                "// Resultado: user.birthDate é undefined em alguns casos — hipótese 1 confirmada em parte",
+                "",
+                "// Hipótese refinada: getUserAge não trata birthDate ausente",
+                "function getUserAge(user) {",
+                "  if (!user.birthDate) return null; // correção baseada na causa confirmada",
+                "  return calculateAgeFromDate(user.birthDate);",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A primeira hipótese (\"formato errado\") levou a uma observação inesperada (birthDate " +
+                "undefined), que por sua vez gerou uma hipótese mais precisa. Cada passo teve uma previsão " +
+                "clara antes de rodar código, e o resultado observado (não uma suposição) guiou o próximo passo.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Hypothesis-Driven Debugging aplica hipótese → previsão → teste de forma iterativa, garantindo " +
+                "que cada mudança seja guiada por evidência, não por tentativa e erro — ao final, você sabe por " +
+                "que o bug acontecia, não só que parou.",
+            },
+          ],
+          examples: [
+            {
+              title: "Descartando uma hipótese com uma observação simples",
+              context: "Uma hipótese errada ainda é útil — ela elimina uma possibilidade.",
+              code: {
+                language: "javascript",
+                filename: "cache-hypothesis.debug.js",
+                code: ["// Hipótese: o cache está devolvendo dados desatualizados", "function testHypothesisCacheIsStale() {", "  cache.clear();", "  const result = getUserProfile(42);", "  console.log(result); // se o bug ainda acontece sem cache, a hipótese está errada", "}"].join("\n"),
+              },
+              explanation:
+                "Limpar o cache e ver o bug persistir descarta a hipótese do cache — a causa está em outro " +
+                "lugar, e essa informação evita continuar investigando essa direção.",
+            },
+            {
+              title: "Uma previsão específica, não vaga",
+              context: "Uma boa hipótese gera uma previsão concreta que pode ser confirmada ou refutada com uma única observação.",
+              code: {
+                language: "javascript",
+                filename: "type-hypothesis.debug.js",
+                code: ["// Hipótese: a função está recebendo strings quando espera números", "function testHypothesisTypeIsWrong() {", "  console.log(typeof calculateTotal.arguments); // previsão: deveria mostrar \"string\" em algum ponto", "}"].join("\n"),
+              },
+              explanation:
+                "A previsão é específica (\"vou ver um tipo string onde esperava number\"), não genérica " +
+                "(\"algo está errado com os tipos\") — isso torna a hipótese realmente testável, com um " +
+                "resultado claro de confirmação ou refutação.",
+            },
+            {
+              title: "Ciclo completo até a causa confirmada",
+              context: "Múltiplas iterações do ciclo, cada uma restringindo o espaço de possibilidades.",
+              code: {
+                language: "javascript",
+                filename: "date-null.debug.js",
+                code: [
+                  "// H1: é um problema de timezone → testado, descartado",
+                  "// H2: é um problema de arredondamento → testado, descartado",
+                  "// H3: a data vem de uma API que às vezes devolve null → testado, CONFIRMADO",
+                  "function testHypothesis3ApiReturnsNull() {",
+                  "  const response = { date: null }; // reproduz a resposta real observada",
+                  "  const result = formatDate(response.date);",
+                  "  if (result === \"Invalid Date\") console.log(\"H3 confirmada\");",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Três hipóteses testadas em sequência, cada uma eliminando uma possibilidade até chegar à causa " +
+                "real (a API às vezes devolve null) — o processo documentado mostra exatamente o caminho da " +
+                "investigação, não só o resultado final.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Um bug faz um relatório de vendas mostrar valores duplicados às vezes. Alguém já suspeita de " +
+              "\"algo com o banco\", mas ainda não formulou uma hipótese testável nem fez nenhuma previsão específica.",
+            task: "Formule uma hipótese testável específica para essa suspeita vaga, com uma previsão concreta que confirmaria ou refutaria.",
+            hint: "\"Algo com o banco\" não é testável; \"a query tem um JOIN que duplica linhas quando um vendedor tem mais de um pedido\" é.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "join-duplicates.debug.js",
+                code: [
+                  "// Hipótese: o JOIN entre orders e sellers duplica linhas quando",
+                  "// um vendedor aparece em mais de um pedido no período.",
+                  "function testHypothesisJoinDuplicatesRows() {",
+                  "  const rawRows = runReportQuery({ sellerId: 7, period: \"2026-Q1\" });",
+                  "  const uniqueOrderIds = new Set(rawRows.map((r) => r.orderId));",
+                  "",
+                  "  // Previsão: se a hipótese estiver certa, rawRows.length > uniqueOrderIds.size",
+                  "  console.log(rawRows.length, uniqueOrderIds.size);",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "A previsão é concreta e verificável: se rawRows.length for maior que o número de orderId " +
+                "únicos, a hipótese do JOIN duplicando linhas está confirmada — uma pergunta específica com uma " +
+                "resposta objetiva, em vez de continuar suspeitando vagamente \"do banco\".",
+            },
+          },
+        }),
         concept({
           order: 30,
           title: "Stack Trace",
           requires: ["Programming Foundations / Memory & Runtime / Call Stack"],
           note: "ler a pilha de chamadas no ponto da falha — é uma renderização do call stack",
           collision: "≠ Call Stack (Epic 01 / Memory & Runtime) · ≠ Stack ADT (Epic 01 / Data Structures)",
+          summary:
+            "A pilha de chamadas capturada no momento exato de uma falha — uma renderização legível do Call " +
+            "Stack que mostra, função por função, o caminho que levou até o erro.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Um stack trace é a lista de chamadas de função ativas no momento em que um erro ocorreu, da " +
+                "mais recente (onde o erro aconteceu) até a mais antiga (o ponto de entrada que iniciou toda a " +
+                "cadeia). É, na prática, uma fotografia do call stack naquele instante — cada linha mostra uma " +
+                "função, e geralmente o arquivo e o número da linha onde ela chamou a próxima.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Quando um erro acontece, saber só \"deu erro\" é quase inútil — o stack trace responde \"onde " +
+                "exatamente, e por qual caminho de chamadas chegou até lá\". Ele existe porque o runtime já " +
+                "mantém essa informação naturalmente (é o próprio call stack em execução); capturá-la no " +
+                "momento da falha é essencialmente gratuito, e economiza a etapa de adivinhar manualmente qual " +
+                "função poderia ter causado o problema.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Ler um stack trace de baixo para cima (ou de cima para baixo, dependendo da linguagem) revela " +
+                "a cadeia causal: a função no topo é onde o erro estourou, mas a causa raiz pode estar várias " +
+                "chamadas abaixo — quem passou um dado inválido para quem, e de onde esse dado veio.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "um erro lançado em uma função chamada por outras duas, e o stack trace resultante:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "app.js",
+              code: [
+                "function parseAge(value) {",
+                "  if (typeof value !== \"number\") {",
+                "    throw new Error(\"idade deve ser um número\");",
+                "  }",
+                "  return value;",
+                "}",
+                "",
+                "function buildUserProfile(data) {",
+                "  return { name: data.name, age: parseAge(data.age) };",
+                "}",
+                "",
+                "function handleUserRequest(request) {",
+                "  return buildUserProfile(request.body);",
+                "}",
+                "",
+                "// Stack trace resultante ao chamar handleUserRequest({ body: { name: \"Ana\", age: \"30\" } }):",
+                "// Error: idade deve ser um número",
+                "//     at parseAge (app.js:3)",
+                "//     at buildUserProfile (app.js:9)",
+                "//     at handleUserRequest (app.js:13)",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O stack trace mostra exatamente o caminho: o erro estourou em parseAge (linha 3), chamada por " +
+                "buildUserProfile (linha 9), chamada por handleUserRequest (linha 13). Sem essa informação, " +
+                "seria preciso adivinhar em qual das três funções (ou em outra parte do sistema) o problema começou.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Um stack trace mostra a cadeia exata de chamadas até o ponto da falha — uma renderização " +
+                "gratuita do call stack no momento do erro, que transforma \"algo deu errado\" em \"isto deu " +
+                "errado, chamado por isto, chamado por isto\".",
+            },
+          ],
+          examples: [
+            {
+              title: "Lendo um stack trace de bibliotecas de terceiros",
+              context: "Nem toda linha de um stack trace é código próprio — algumas vêm de dependências.",
+              code: {
+                language: "javascript",
+                filename: "trace-example.txt",
+                code: ["// TypeError: Cannot read properties of undefined (reading 'map')", "//     at formatItems (utils.js:12)", "//     at node_modules/lodash/lodash.js:5432", "//     at renderList (components.js:8)"].join("\n"),
+              },
+              explanation:
+                "A linha do meio vem de uma biblioteca (lodash) — geralmente o foco de investigação está nas " +
+                "linhas de código próprio (formatItems, renderList), já que o bug quase sempre está em como a " +
+                "biblioteca foi chamada, não na biblioteca em si.",
+            },
+            {
+              title: "Stack trace de uma exceção assíncrona",
+              context: "Código assíncrono pode produzir stack traces menos óbvios, cortados no ponto onde o await aconteceu.",
+              code: {
+                language: "javascript",
+                filename: "fetch-user.js",
+                code: [
+                  "async function fetchUserData(id) {",
+                  "  const response = await fetch(`/users/${id}`);",
+                  "  return response.json();",
+                  "}",
+                  "// Stack trace de um erro de rede pode mostrar só fetchUserData,",
+                  "// sem quem a chamou originalmente — depende do runtime e das flags de stack trace assíncrono",
+                ].join("\n"),
+              },
+              explanation:
+                "Stack traces assíncronos às vezes perdem parte da cadeia de chamada original por causa de como " +
+                "promises são agendadas — algumas ferramentas (e flags do runtime) existem justamente para " +
+                "preservar esse contexto.",
+            },
+            {
+              title: "Usando o stack trace para decidir onde colocar o primeiro breakpoint",
+              context: "O stack trace é frequentemente o ponto de partida para uma sessão de debugging com breakpoints.",
+              code: {
+                language: "javascript",
+                filename: "pricing.js",
+                code: ["// Stack trace aponta para calculateDiscount (pricing.js:45)", "// Próximo passo: colocar um breakpoint ali, não em todo o arquivo", "function calculateDiscount(price, percent) {", "  debugger; // dentro de calculateDiscount, no ponto indicado pelo stack trace", "  return price - price * (percent / 100);", "}"].join("\n"),
+              },
+              explanation:
+                "Em vez de colocar breakpoints espalhados por todo o código, o stack trace já indica exatamente " +
+                "onde a execução estava — o ponto natural para começar a inspecionar variáveis com Breakpoints.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O stack trace abaixo foi capturado, mas a pessoa investigando só olhou a primeira linha e " +
+              "concluiu (errado) que o bug está em validateInput.",
+            problemCode: {
+              language: "javascript",
+              filename: "trace.txt",
+              code: ["// Error: Cannot convert undefined to a number", "//     at validateInput (validators.js:20)", "//     at processOrder (orders.js:15)", "//     at handleCheckoutRequest (checkout.js:8)"].join("\n"),
+            },
+            task:
+              "Interprete o stack trace completo e escreva, em código, qual das três funções provavelmente " +
+              "causou o valor undefined que chegou até validateInput — não apenas onde o erro estourou.",
+            hint: "O erro estoura onde o valor inválido é finalmente usado, mas a causa costuma estar mais acima na cadeia — em quem produziu ou passou adiante esse valor.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "checkout.js",
+                code: [
+                  "function handleCheckoutRequest(request) {",
+                  "  // Se request.body.quantity não existir, processOrder recebe undefined",
+                  "  // e repassa para validateInput sem checar antes.",
+                  "  return processOrder(request.body);",
+                  "}",
+                  "",
+                  "function processOrder(orderData) {",
+                  "  return validateInput(orderData.quantity); // não verifica se quantity existe",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "O stack trace mostra onde o erro estourou (validateInput), mas a causa provável está em " +
+                "handleCheckoutRequest ou processOrder não terem garantido que quantity existia antes de " +
+                "repassá-lo — ler a cadeia inteira, não só o topo, é o que revela onde o valor inválido de fato se originou.",
+            },
+          },
         }),
         concept({
           order: 40,
           title: "Breakpoints",
           requires: ["Programming Foundations / Memory & Runtime / Call Stack"],
           note: "pausar a execução para inspecionar estado/frames. Complementa Stack Trace",
+          summary:
+            "Um ponto marcado no código onde a execução pausa completamente, permitindo inspecionar o valor de " +
+            "cada variável e o estado exato do programa naquele instante — sem precisar prever de antemão o que " +
+            "um print mostraria.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Um breakpoint é um ponto marcado numa linha de código onde, ao rodar sob um debugger, a " +
+                "execução para completamente. Com o programa pausado, é possível inspecionar o valor de " +
+                "qualquer variável visível naquele escopo, percorrer o call stack completo (ver o estado de " +
+                "cada função que chamou a atual), e avançar a execução linha por linha (step) para observar " +
+                "exatamente como o estado muda.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Um stack trace mostra onde um erro já aconteceu, depois do fato; um breakpoint permite " +
+                "observar o estado antes e durante a execução, mesmo quando não há erro nenhum lançado — útil " +
+                "para entender por que um valor está errado silenciosamente, sem lançar exceção alguma. Também " +
+                "elimina a necessidade de adivinhar antecipadamente que um print mostraria algo útil: o " +
+                "debugger dá acesso a tudo que está no escopo, não só ao que alguém pensou em imprimir.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Breakpoints complementam o stack trace: depois de ler um stack trace e identificar a linha " +
+                "suspeita, colocar um breakpoint ali (em vez de em todo o arquivo) foca a investigação " +
+                "exatamente onde é mais provável que a causa esteja, sem gastar tempo pausando em código irrelevante.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "um breakpoint colocado dentro de uma função para inspecionar por que um cálculo dá resultado errado:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "discount.js",
+              code: [
+                "function calculateDiscount(price, percent) {",
+                "  const discountAmount = price * (percent / 100);",
+                "  debugger; // execução pausa aqui quando rodado com um debugger anexado",
+                "  return price - discountAmount;",
+                "}",
+                "",
+                "calculateDiscount(100, 20);",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A instrução debugger pausa a execução exatamente naquele ponto, quando rodada com as " +
+                "ferramentas de desenvolvedor (ou um debugger de IDE) conectadas. Com a execução parada, é " +
+                "possível inspecionar price, percent e discountAmount ao mesmo tempo, ver se algum tem um valor " +
+                "inesperado, e decidir se o problema está antes ou depois daquela linha.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Um breakpoint pausa a execução num ponto exato, dando acesso completo ao estado do programa " +
+                "naquele instante — a ferramenta certa para observar como e por que um valor chega errado, não " +
+                "só onde um erro foi lançado.",
+            },
+          ],
+          examples: [
+            {
+              title: "Breakpoint condicional",
+              context: "Um breakpoint pode ser configurado para só pausar quando uma condição específica é verdadeira, útil dentro de um loop.",
+              code: {
+                language: "javascript",
+                filename: "process-orders.js",
+                code: ["function processOrders(orders) {", "  for (const order of orders) {", "    // Breakpoint condicional configurado na IDE: só pausa quando order.total < 0", "    processOrder(order);", "  }", "}"].join("\n"),
+              },
+              explanation:
+                "Sem um breakpoint condicional, pausar dentro de um loop de 1000 pedidos exigiria continuar " +
+                "manualmente 1000 vezes até achar o pedido problemático — a condição faz o debugger pausar só " +
+                "na iteração que interessa.",
+            },
+            {
+              title: "Inspecionando o call stack inteiro a partir de um breakpoint",
+              context: "Um breakpoint dá acesso não só ao escopo local, mas a todo o call stack até ali.",
+              code: {
+                language: "javascript",
+                filename: "config-flow.js",
+                code: ["function outer() {", "  const config = { retries: 3 };", "  inner(config);", "}", "", "function inner(config) {", "  debugger; // aqui, a IDE mostra também o frame de outer() e o valor de config lá", "  return config.retries * 2;", "}"].join("\n"),
+              },
+              explanation:
+                "Parado dentro de inner, um debugger permite navegar para o frame de outer e ver o valor de " +
+                "config naquele escopo também — útil para entender de onde um argumento veio, sem precisar " +
+                "adicionar logs manualmente em cada função.",
+            },
+            {
+              title: "Step over vs. step into",
+              context: "Debugadores oferecem controle fino sobre como avançar a partir de um breakpoint.",
+              code: {
+                language: "javascript",
+                filename: "payment.js",
+                code: [
+                  "function processPayment(order) {",
+                  "  debugger;",
+                  "  const total = calculateTotal(order); // step over: executa e vai para a próxima linha",
+                  "                                         // step into: entra dentro de calculateTotal",
+                  "  chargeCard(total);",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "step over executa calculateTotal inteira de uma vez e para na linha seguinte; step into entra " +
+                "dentro da função para observar seu comportamento interno passo a passo — a escolha depende de " +
+                "onde a suspeita da causa está.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Um relatório de vendas mostra um total errado, sem lançar nenhum erro — o código roda até o fim " +
+              "silenciosamente com o valor incorreto. Não há stack trace, porque nada quebrou.",
+            problemCode: {
+              language: "javascript",
+              filename: "report-total.js",
+              code: ["function calculateReportTotal(sales) {", "  let total = 0;", "  for (const sale of sales) {", "    total += sale.amount;", "  }", "  return total; // valor final está errado, mas nenhuma exceção foi lançada", "}"].join("\n"),
+            },
+            task:
+              "Escreva onde colocar um breakpoint (debugger;) e mostre em código o que inspecionar para " +
+              "descobrir por que o total está incorreto, já que não há erro lançado para gerar um stack trace.",
+            hint: "Sem erro lançado, o breakpoint precisa ficar dentro do loop, não depois dele — para observar o valor de sale.amount a cada iteração e achar a iteração onde algo estranho acontece.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "report-total.js",
+                code: ["function calculateReportTotal(sales) {", "  let total = 0;", "  for (const sale of sales) {", "    debugger; // pausa a cada iteração — inspecionar sale.amount e total aqui", "    total += sale.amount;", "  }", "  return total;", "}"].join("\n"),
+              },
+              explanation:
+                "Colocar o breakpoint dentro do loop permite inspecionar sale.amount a cada iteração — " +
+                "revelando, por exemplo, que um sale.amount é uma string (\"10\") em vez de número, o que faria " +
+                "total += sale.amount concatenar em vez de somar em algumas iterações, sem nunca lançar um erro.",
+            },
+          },
         }),
         concept({
           order: 50,
           title: "Binary Search Debugging",
           requires: ["Programming Foundations / Algorithms & Complexity / Binary Search", "Hypothesis-Driven Debugging"],
           note: "bisseccionar o espaço de código/entrada para localizar",
+          summary:
+            "Localizar a causa de um bug bisseccionando repetidamente o espaço de possibilidades — código, " +
+            "histórico ou dados — em vez de inspecionar tudo sequencialmente do início ao fim.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Binary Search Debugging aplica a mesma ideia de Binary Search (Área 1, Algorithms & " +
+                "Complexity) para localizar a causa de um bug: em vez de investigar sequencialmente do início " +
+                "ao fim de um trecho grande de código (ou de um conjunto grande de dados), você testa o ponto " +
+                "médio, decide de que lado está o problema, e repete só naquela metade — reduzindo o espaço de " +
+                "busca pela metade a cada passo.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Investigar sequencialmente uma função de 500 linhas, ou um histórico de 1000 commits, um por " +
+                "um, é lento e desnecessário quando existe uma forma de testar se o problema está \"antes\" ou " +
+                "\"depois\" de um ponto específico. Bisseccionar reduz um espaço de N possibilidades a log₂(N) " +
+                "testes — 1000 commits, por exemplo, levam no máximo 10 verificações para isolar o culpado, não 1000.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "A técnica exige uma forma de \"testar o meio e saber de que lado está o problema\" — " +
+                "normalmente através de uma reprodução confiável (Reproduction) combinada com uma hipótese " +
+                "sobre o formato da falha (Hypothesis-Driven Debugging): \"se o bug estiver antes deste ponto, " +
+                "X deveria falhar; se estiver depois, X deveria passar\".",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "isolando qual das várias etapas de um pipeline de processamento introduz um dado corrompido:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "pipeline.debug.js",
+              code: [
+                "function pipeline(data) {",
+                "  const step1 = normalize(data);",
+                "  const step2 = deduplicate(step1);",
+                "  const step3 = enrich(step2);",
+                "  const step4 = validate(step3);",
+                "  return step4;",
+                "}",
+                "",
+                "// Em vez de inspecionar as 4 etapas em ordem, testar o ponto médio primeiro:",
+                "function testMidpoint(data) {",
+                "  const afterStep2 = deduplicate(normalize(data));",
+                "  console.log(isDataValid(afterStep2)); // true: problema em enrich/validate",
+                "                                          // false: problema em normalize/deduplicate",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Em vez de checar normalize, depois deduplicate, depois enrich, depois validate em sequência, " +
+                "testMidpoint verifica o estado depois da segunda etapa — o \"meio\" do pipeline. Um único " +
+                "teste já elimina metade das possibilidades, restando investigar só duas etapas em vez de quatro.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Binary Search Debugging bisseciona o espaço de possibilidades — código, histórico de commits, " +
+                "ou dados — testando o meio a cada passo, reduzindo uma investigação sequencial de N passos " +
+                "para log₂(N) testes.",
+            },
+          ],
+          examples: [
+            {
+              title: "Bisseccionando um arquivo grande de configuração",
+              context: "Quando um bug some ao remover metade das configurações, o culpado está naquela metade.",
+              code: {
+                language: "javascript",
+                filename: "config-bisect.js",
+                code: ["function testWithHalfConfig(fullConfig) {", "  const firstHalf = fullConfig.slice(0, fullConfig.length / 2);", "  return runAppWithConfig(firstHalf); // bug some? culpado está na segunda metade", "}"].join("\n"),
+              },
+              explanation:
+                "Remover metade das entradas de configuração e observar se o bug desaparece ou persiste indica " +
+                "em qual metade a entrada problemática está, sem precisar remover uma por uma.",
+            },
+            {
+              title: "Bisseccionando um dataset grande",
+              context: "Um bug de processamento que só aparece com certos registros pode ser isolado dividindo o dataset ao meio repetidamente.",
+              code: {
+                language: "javascript",
+                filename: "dataset-bisect.js",
+                code: ["function testWithFirstHalf(records) {", "  const half = records.slice(0, Math.floor(records.length / 2));", "  return processRecords(half); // ainda falha? o registro problemático está aqui", "}"].join("\n"),
+              },
+              explanation:
+                "Dividir um dataset de 10.000 registros em metades sucessivas até isolar um único registro " +
+                "problemático leva cerca de 14 testes (log₂ 10000 ≈ 14), muito menos que inspecionar registro " +
+                "por registro.",
+            },
+            {
+              title: "Bisseccionando código comentando metade dele",
+              context: "Quando não há uma forma óbvia de dividir o problema, comentar temporariamente metade de uma sequência de operações é uma forma direta de bissecção.",
+              code: {
+                language: "javascript",
+                filename: "code-bisect.js",
+                code: [
+                  "function suspiciousFunction(input) {",
+                  "  const a = stepOne(input);",
+                  "  const b = stepTwo(a);",
+                  "  // const c = stepThree(b); // comentado temporariamente",
+                  "  // const d = stepFour(c);",
+                  "  return b; // se o bug some aqui, ele está em stepThree ou stepFour",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Comentar a segunda metade das operações e observar se o problema desaparece localiza o bug na " +
+                "metade removida, sem precisar entender ainda o que cada etapa faz.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Uma função de renderização com 12 etapas sequenciais produz uma imagem corrompida. Investigar " +
+              "etapa por etapa (12 verificações manuais) seria lento.",
+            problemCode: {
+              language: "javascript",
+              filename: "render.js",
+              code: [
+                "function render(scene) {",
+                "  const s1 = loadAssets(scene);",
+                "  const s2 = applyLighting(s1);",
+                "  const s3 = applyShadows(s2);",
+                "  const s4 = applyTextures(s3);",
+                "  const s5 = applyReflections(s4);",
+                "  const s6 = applyPostProcessing(s5);",
+                "  // ... mais 6 etapas até s12",
+                "  return s12;",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Escreva o primeiro teste de bissecção que reduziria o espaço de 12 etapas pela metade, e explique " +
+              "o que cada resultado possível indicaria.",
+            hint: "O ponto médio de 12 etapas é a etapa 6 — testar o estado logo depois dela decide se o problema está nas 6 primeiras ou nas 6 últimas.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "render.debug.js",
+                code: [
+                  "function testAfterStep6(scene) {",
+                  "  const s1 = loadAssets(scene);",
+                  "  const s2 = applyLighting(s1);",
+                  "  const s3 = applyShadows(s2);",
+                  "  const s4 = applyTextures(s3);",
+                  "  const s5 = applyReflections(s4);",
+                  "  const s6 = applyPostProcessing(s5);",
+                  "  console.log(isImageValid(s6));",
+                  "  // true  → problema está nas etapas 7-12",
+                  "  // false → problema está nas etapas 1-6",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Um único teste no ponto médio (depois da etapa 6) já elimina metade das 12 etapas — restando 6 " +
+                "candidatas, não 12. Repetir a bissecção nessa metade restante leva a isolar a etapa exata em " +
+                "cerca de 4 testes no total, em vez de até 12.",
+            },
+          },
         }),
         concept({
           order: 60,
           title: "Git Bisect",
           requires: ["Binary Search Debugging", "Software Craft / Git"],
           note: "busca binária automatizada sobre o histórico de commits. Canônico aqui — Bisect no Epic 03 / Git é revisita/referência",
+          summary:
+            "A busca binária automatizada sobre o histórico de commits: em vez de bisseccionar código ou dados " +
+            "manualmente, o Git testa commits sucessivos até isolar exatamente qual commit introduziu um bug.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "git bisect é uma ferramenta do Git que aplica Binary Search Debugging diretamente sobre o " +
+                "histórico de commits. Você informa um commit \"bom\" (onde o bug não existia) e um commit " +
+                "\"ruim\" (onde o bug existe); o Git faz checkout automaticamente do commit no meio desse " +
+                "intervalo, você testa se o bug está presente ali, informa o resultado (good ou bad), e o Git " +
+                "bissecciona de novo — repetindo até isolar o commit exato que introduziu o problema.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Quando um bug aparece depois de um período sem investigação (\"isso funcionava semana " +
+                "passada\"), e o histórico de commits entre então e agora tem centenas de mudanças, procurar " +
+                "manualmente qual commit causou o problema seria proibitivamente lento. git bisect automatiza " +
+                "exatamente o processo de bissecção — reduzindo, por exemplo, 500 commits candidatos a cerca de " +
+                "9 testes (log₂ 500 ≈ 9).",
+            },
+            {
+              type: "paragraph",
+              text:
+                "O requisito para usar git bisect de forma eficiente é ter uma forma rápida e confiável de " +
+                "testar se um commit específico tem o bug — idealmente um teste automatizado que passa/falha " +
+                "(conectando de volta com Reproduction). Com git bisect run, esse teste pode até ser executado " +
+                "automaticamente a cada passo, sem intervenção manual nenhuma.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "uma sessão de git bisect isolando o commit que introduziu uma regressão:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "bisect-session.js",
+              code: [
+                "// No terminal (comandos git, não JavaScript):",
+                "// git bisect start",
+                "// git bisect bad HEAD              // o commit atual tem o bug",
+                "// git bisect good v1.2.0           // essa tag antiga não tinha o bug",
+                "// (o Git faz checkout do commit do meio automaticamente)",
+                "// git bisect good                  // ou \"git bisect bad\", conforme o teste manual",
+                "// ... repete até o Git apontar o commit exato ...",
+                "// git bisect reset                 // volta para o HEAD original",
+                "",
+                "function isBugPresent() {",
+                "  const result = calculateDiscount(100, 50);",
+                "  return result !== 50; // true = commit ruim, false = commit bom",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A cada passo, o Git faz checkout de um commit no meio do intervalo restante; a pessoa (ou o " +
+                "script isBugPresent, via git bisect run) verifica se o bug está presente ali e informa good ou " +
+                "bad. Depois de log₂(N) testes, o Git aponta exatamente qual commit introduziu o problema — sem " +
+                "ninguém precisar ler o diff de cada commit intermediário.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "git bisect automatiza Binary Search Debugging sobre o histórico de commits: informa um bom e " +
+                "um mau, testa o meio repetidamente, e isola o commit exato que introduziu o bug em log₂(N) passos.",
+            },
+          ],
+          examples: [
+            {
+              title: "git bisect run com um teste automatizado",
+              context: "Quando existe um teste que detecta o bug, o processo inteiro pode rodar sem intervenção manual.",
+              code: {
+                language: "javascript",
+                filename: "bisect-run.js",
+                code: ["// git bisect start", "// git bisect bad HEAD", "// git bisect good v1.2.0", "// git bisect run npm test -- --grep \"discount calculation\""].join("\n"),
+              },
+              explanation:
+                "git bisect run executa o comando de teste em cada commit candidato automaticamente, " +
+                "interpretando exit code 0 como good e diferente de 0 como bad — o Git isola o commit culpado " +
+                "sem nenhuma verificação manual.",
+            },
+            {
+              title: "Marcando um commit como 'skip' quando não é testável",
+              context: "Alguns commits intermediários podem não compilar ou não serem testáveis por razões alheias ao bug investigado.",
+              code: {
+                language: "javascript",
+                filename: "bisect-skip.js",
+                code: ["// git bisect skip", "// (usado quando o commit atual não pode ser testado — build quebrado por outro motivo)"].join("\n"),
+              },
+              explanation:
+                "git bisect skip avisa o Git para escolher outro ponto médio próximo, sem invalidar a bissecção " +
+                "em andamento — útil quando um commit específico está temporariamente quebrado por um motivo " +
+                "não relacionado ao bug procurado.",
+            },
+            {
+              title: "Bisect encontrando o commit e sua mensagem",
+              context: "Ao final, o Git aponta o commit específico, com hash e mensagem, pronto para investigação do diff.",
+              code: {
+                language: "javascript",
+                filename: "bisect-result.js",
+                code: ["// Saída final típica do git bisect:", "// a3f9c21 is the first bad commit", "// commit a3f9c21", "// Author: ...", "// Date: ...", "//     fix: simplify discount rounding logic"].join("\n"),
+              },
+              explanation:
+                "A mensagem do commit encontrado (\"simplify discount rounding logic\") já é uma pista forte da " +
+                "causa — o próximo passo natural é olhar o diff exato desse commit para confirmar a hipótese.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Um bug de performance apareceu em algum ponto dos últimos 200 commits, mas ninguém sabe qual. " +
+              "Existe um script de benchmark (npm run benchmark) que sai com código diferente de zero quando a " +
+              "performance está abaixo do esperado.",
+            task: "Escreva a sequência de comandos git bisect (incluindo bisect run) que isolaria automaticamente o commit responsável, usando esse benchmark.",
+            hint: "git bisect run aceita qualquer comando que termine com exit code 0 (bom) ou diferente de zero (ruim) — o benchmark já se comporta assim.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "bisect-perf.js",
+                code: [
+                  "// git bisect start",
+                  "// git bisect bad HEAD",
+                  "// git bisect good HEAD~200",
+                  "// git bisect run npm run benchmark",
+                  "// (o Git testa automaticamente commits sucessivos, interpretando",
+                  "//  o exit code do benchmark, até isolar o commit culpado)",
+                  "// git bisect reset",
+                ].join("\n"),
+              },
+              explanation:
+                "Como o benchmark já sinaliza sucesso/falha via exit code, git bisect run automatiza todo o " +
+                "processo — sem precisar rodar manualmente o benchmark em cada um dos possíveis ~8 commits " +
+                "candidatos (log₂ 200 ≈ 8) até chegar ao culpado.",
+            },
+          },
         }),
         concept({
           order: 70,
@@ -4188,6 +5066,162 @@ export default area({
           requires: ["Hypothesis-Driven Debugging"],
           note: "ir além do sintoma; 5 Whys — teste de hipótese iterativo",
           revisit: ["Platform / Reliability Engineering"],
+          summary:
+            "Continuar investigando além do primeiro sintoma óbvio até chegar à causa real e mais profunda de " +
+            "um problema — perguntando \"por quê\" repetidamente em vez de corrigir só o que aparece na superfície.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Root Cause Analysis (RCA) é a prática de não parar a investigação no primeiro sintoma " +
+                "encontrado, mas continuar perguntando \"por que isso aconteceu?\" repetidamente até chegar à " +
+                "causa real e mais profunda — muitas vezes uma decisão de design, um processo, ou uma suposição " +
+                "incorreta, não só a linha de código onde o sintoma apareceu. A técnica dos \"5 Whys\" é a " +
+                "versão mais conhecida: perguntar \"por quê\" cinco vezes seguidas, cada resposta alimentando a " +
+                "próxima pergunta.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Corrigir só o sintoma mais visível de um bug frequentemente deixa a causa real intacta — o " +
+                "mesmo problema reaparece de outra forma, ou em outro lugar do sistema, mais tarde. RCA existe " +
+                "para que uma correção resolva o problema de verdade, não apenas faça o sintoma imediato desaparecer.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "RCA é, na prática, Hypothesis-Driven Debugging aplicado de forma iterativa e mais ampla: cada " +
+                "\"por quê\" é uma nova hipótese sobre uma causa mais profunda, testada contra a evidência " +
+                "disponível, até que a cadeia de causas pare em algo que, se corrigido, realmente impede a " +
+                "recorrência — não necessariamente em exatamente cinco perguntas; o número é uma heurística, " +
+                "não uma regra rígida.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "uma cadeia de \"por quês\" partindo de um sintoma até uma causa raiz acionável:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "rca.js",
+              code: [
+                "// Sintoma: o servidor caiu às 3h da manhã.",
+                "// Por quê? -> Ficou sem memória (OutOfMemoryError).",
+                "// Por quê ficou sem memória? -> Um cache cresceu sem limite.",
+                "// Por quê o cache cresceu sem limite? -> Nunca havia política de expiração configurada.",
+                "// Por quê não havia política de expiração? -> Não fazia parte do checklist de code review.",
+                "// CAUSA RAIZ ACIONÁVEL: adicionar verificação de política de expiração",
+                "// ao checklist de code review para qualquer cache novo.",
+                "",
+                "function cacheReviewChecklist() {",
+                "  return [\"tem limite de tamanho?\", \"tem política de expiração (TTL)?\", \"é thread-safe?\"];",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Corrigir só o sintoma imediato (reiniciar o servidor, ou até só limitar o tamanho daquele " +
+                "cache específico) deixaria a causa raiz intacta: nenhum processo garante que o próximo cache " +
+                "criado por outra pessoa também terá uma política de expiração. A causa raiz encontrada — falta " +
+                "de um item no checklist de revisão — é o que, corrigido, evita a recorrência em qualquer cache " +
+                "futuro, não só neste.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Root Cause Analysis vai além do sintoma perguntando \"por quê\" repetidamente até chegar a uma " +
+                "causa acionável e profunda o bastante para que corrigi-la evite a recorrência — não só faça o " +
+                "sintoma atual desaparecer.",
+            },
+          ],
+          examples: [
+            {
+              title: "Parando cedo demais (contra-exemplo)",
+              context: "Parar na primeira resposta é o erro mais comum ao tentar aplicar RCA.",
+              code: {
+                language: "javascript",
+                filename: "shallow-rca.js",
+                code: ["// Sintoma: usuário não conseguiu fazer login.", "// Por quê? -> A senha estava incorreta.", "// CORREÇÃO (insuficiente): resetar a senha do usuário.", "// Isso resolve o caso individual, mas não investiga", "// se há um padrão maior (ex.: UX de senha confuso levando a muitos resets)."].join("\n"),
+              },
+              explanation:
+                "Parar em \"a senha estava incorreta\" resolve o ticket individual, mas se dezenas de usuários " +
+                "erram a senha pelo mesmo motivo (um requisito de senha mal comunicado, por exemplo), a causa " +
+                "real do problema recorrente nunca é investigada.",
+            },
+            {
+              title: "5 Whys aplicado a uma falha de deploy",
+              context: "A técnica funciona também para incidentes de infraestrutura, não só bugs de código.",
+              code: {
+                language: "javascript",
+                filename: "deploy-rca.js",
+                code: ["// Por quê o deploy falhou? -> A migration de banco deu timeout.", "// Por quê deu timeout? -> A tabela tinha 50 milhões de linhas e faltava um índice.", "// Por quê faltava o índice? -> A migration foi testada só em ambiente de dev, com poucos dados.", "// CAUSA RAIZ: ambiente de teste de migrations não reflete volume de produção."].join("\n"),
+              },
+              explanation:
+                "A cadeia de \"por quês\" chega a uma causa estrutural (ambiente de teste não representativo) " +
+                "que, corrigida, evita futuras migrations com o mesmo tipo de falha — não só resolve o deploy " +
+                "travado daquela vez.",
+            },
+            {
+              title: "RCA registrado como parte de um post-mortem",
+              context: "O resultado de uma RCA geralmente vira um documento reutilizável, não só uma correção silenciosa.",
+              code: {
+                language: "javascript",
+                filename: "post-mortem.js",
+                code: ["const postMortem = {", "  symptom: \"servidor caiu às 3h\",", "  rootCause: \"checklist de code review não cobria política de expiração de cache\",", "  actionItems: [\"atualizar checklist\", \"adicionar alerta de crescimento de memória\"],", "};"].join("\n"),
+              },
+              explanation:
+                "Documentar a causa raiz (não só o sintoma) permite que o time inteiro aprenda com o incidente, " +
+                "e os actionItems focam em prevenir a classe do problema, não só consertar a instância " +
+                "específica que já aconteceu.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Um time corrigiu um bug de \"pedido duplicado\" simplesmente adicionando uma checagem de " +
+              "duplicidade na função de criar pedido, sem investigar por que o pedido estava sendo enviado " +
+              "duas vezes em primeiro lugar.",
+            problemCode: {
+              language: "javascript",
+              filename: "create-order.js",
+              code: ["function createOrder(orderData) {", "  if (recentDuplicateExists(orderData)) return null; // corrige o sintoma", "  return saveOrder(orderData);", "}"].join("\n"),
+            },
+            task:
+              "Aplique a técnica dos 5 Whys (em comentário de código) para investigar a causa raiz provável de " +
+              "pedidos duplicados serem enviados, além do sintoma já corrigido, e proponha uma correção estrutural.",
+            hint: "A pergunta \"por que o pedido foi enviado duas vezes\" provavelmente leva ao frontend, não ao backend — considere cliques duplos, retries automáticos, ou falta de desabilitar o botão após o clique.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "submit-button.js",
+                code: [
+                  "// Por quê pedidos duplicados chegavam ao backend?",
+                  "//   -> O botão \"Finalizar Compra\" permitia múltiplos cliques.",
+                  "// Por quê o botão permitia múltiplos cliques?",
+                  "//   -> Não havia lógica de desabilitar o botão após o primeiro clique.",
+                  "// Por quê essa lógica não existia?",
+                  "//   -> Não fazia parte do padrão de componentes de formulário do time.",
+                  "// CAUSA RAIZ: falta de um padrão de componente reutilizável para",
+                  "// botões de submit que previna duplo clique.",
+                  "",
+                  "function createSubmitButton(onClick) {",
+                  "  let isSubmitting = false;",
+                  "  return async function handleClick() {",
+                  "    if (isSubmitting) return;",
+                  "    isSubmitting = true;",
+                  "    await onClick();",
+                  "    isSubmitting = false;",
+                  "  };",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "A checagem de duplicidade no backend continua sendo uma boa defesa, mas a causa raiz (falta de " +
+                "proteção contra duplo clique na UI) é o que, corrigido de forma reutilizável, evita a classe " +
+                "inteira de problemas — não só pedidos, mas qualquer formulário futuro que sofresse do mesmo " +
+                "padrão de duplo clique.",
+            },
+          },
         }),
       ],
     }),

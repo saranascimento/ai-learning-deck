@@ -1257,6 +1257,13 @@ for (const area of model.areas()) {
     "regression-testing",
     "property-based-testing",
     "contract-testing",
+    "reproduction",
+    "hypothesis-driven-debugging",
+    "stack-trace",
+    "breakpoints",
+    "binary-search-debugging",
+    "git-bisect",
+    "root-cause-analysis",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",
