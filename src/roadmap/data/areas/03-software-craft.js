@@ -1901,26 +1901,1234 @@ export default area({
           requires: ["Design Heuristics / DRY"],
           note: "o smell = a violação visível do princípio",
           collision: "≠ DRY (Design Heuristics) — manifestação concreta × princípio abstrato",
+          summary:
+            "O sinal visível de que o mesmo conhecimento foi escrito mais de uma vez: trechos copiados ou quase " +
+            "idênticos que precisam ser alterados juntos — a violação de DRY vista no código pronto.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Duplicate Code é o code smell mais reconhecível: blocos de código iguais, ou quase iguais com " +
+                "uma pequena variação, em mais de um lugar. Um smell não é um bug — o código funciona —, é um " +
+                "sintoma na estrutura que indica que vale investigar. DRY é o princípio (não repita conhecimento); " +
+                "Duplicate Code é como essa violação aparece quando você olha o código.",
+            },
+            { type: "heading", text: "Por que é um problema?" },
+            {
+              type: "paragraph",
+              text:
+                "Cada cópia é uma chance de divergir. Uma correção de bug feita em uma cópia e esquecida na outra " +
+                "deixa o sistema com o mesmo defeito escondido em outro caminho; uma mudança de regra exige " +
+                "achar todas as ocorrências. Também é ruído: quem lê precisa comparar os trechos linha a linha " +
+                "para descobrir em que exatamente eles diferem.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Como reconhecer: copiar e colar seguido de pequenos ajustes, ramos de um if com o mesmo trecho no " +
+                "início ou no fim, e funções que só diferem por um valor ou por uma condição. A correção usual é " +
+                "extrair o trecho comum para uma função (Extract Function, módulo Refactoring) e transformar a " +
+                "diferença em parâmetro. Atenção: nem toda semelhança é duplicação de conhecimento — se os " +
+                "trechos vão evoluir por razões distintas, mantê-los separados pode ser a melhor escolha.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "duas funções que só diferem por um critério, e a versão sem duplicação:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "duplicate-code.js",
+              code: [
+                "// Antes: o mesmo laço duas vezes, só o critério muda",
+                "function getActiveUserNames(users) {",
+                "  const names = [];",
+                "  for (const user of users) {",
+                "    if (user.isActive) names.push(user.name);",
+                "  }",
+                "  return names;",
+                "}",
+                "",
+                "function getAdminUserNames(users) {",
+                "  const names = [];",
+                "  for (const user of users) {",
+                "    if (user.isAdmin) names.push(user.name);",
+                "  }",
+                "  return names;",
+                "}",
+                "",
+                "// Depois: a diferença virou parâmetro",
+                "function getUserNames(users, predicate) {",
+                "  return users.filter(predicate).map((user) => user.name);",
+                "}",
+                "",
+                "getUserNames(users, (user) => user.isActive);",
+                "getUserNames(users, (user) => user.isAdmin);",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A estrutura comum (percorrer, filtrar, extrair o nome) existe em um só lugar, e o que muda entre " +
+                "os casos — o critério — é passado de fora. Um terceiro critério passa a custar uma linha.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Duplicate Code é o sintoma de DRY violado: quando dois trechos precisam mudar juntos, eles " +
+                "deveriam ser um só — mas só quando a semelhança é de conhecimento, não de coincidência.",
+            },
+          ],
+          examples: [
+            {
+              title: "Copiar e colar com pequenos ajustes",
+              context: "O sinal mais comum: um bloco copiado, com um ou dois valores alterados.",
+              code: {
+                language: "javascript",
+                filename: "copy-paste.js",
+                code: [
+                  "// Antes: cálculo de imposto repetido com alíquotas diferentes",
+                  "const productTax = product.price * 0.18;",
+                  "const productTotal = product.price + productTax;",
+                  "",
+                  "const serviceTax = service.price * 0.05;",
+                  "const serviceTotal = service.price + serviceTax;",
+                  "",
+                  "// Depois: uma função, com a alíquota como parâmetro",
+                  "function priceWithTax(price, taxRate) {",
+                  "  return price + price * taxRate;",
+                  "}",
+                  "",
+                  "const productTotal = priceWithTax(product.price, 0.18);",
+                  "const serviceTotal = priceWithTax(service.price, 0.05);",
+                ].join("\n"),
+              },
+              explanation:
+                "A regra \"preço mais imposto\" existe uma vez. Se o cálculo mudar (arredondamento, por exemplo), a " +
+                "correção vale para os dois usos ao mesmo tempo.",
+            },
+            {
+              title: "Trecho repetido em todos os ramos de um if",
+              context: "Quando os dois ramos começam ou terminam do mesmo jeito, esse pedaço não pertence a nenhum dos ramos.",
+              code: {
+                language: "javascript",
+                filename: "branch-duplication.js",
+                code: [
+                  "// Antes: o log e o registro de auditoria se repetem nos dois ramos",
+                  "if (isPremium) {",
+                  "  charge(user, premiumPrice);",
+                  "  logPurchase(user);",
+                  "  saveAuditTrail(user);",
+                  "} else {",
+                  "  charge(user, regularPrice);",
+                  "  logPurchase(user);",
+                  "  saveAuditTrail(user);",
+                  "}",
+                  "",
+                  "// Depois: só o que é diferente fica dentro do if",
+                  "const price = isPremium ? premiumPrice : regularPrice;",
+                  "charge(user, price);",
+                  "logPurchase(user);",
+                  "saveAuditTrail(user);",
+                ].join("\n"),
+              },
+              explanation:
+                "O que realmente varia é o preço. Isolar essa diferença deixa claro qual é a única decisão do trecho " +
+                "e impede que alguém esqueça de acrescentar o novo passo em um dos ramos.",
+            },
+            {
+              title: "Mesmo algoritmo, passo diferente",
+              context: "Duplicação estrutural: o esqueleto é igual e só um passo muda — o passo diferente pode ser passado como função.",
+              code: {
+                language: "javascript",
+                filename: "structural-duplication.js",
+                code: [
+                  "// Antes: a mesma tentativa com retry, duas vezes",
+                  "async function fetchUsers() {",
+                  "  for (let attempt = 1; attempt <= 3; attempt++) {",
+                  "    try { return await api.get(\"/users\"); } catch (e) { if (attempt === 3) throw e; }",
+                  "  }",
+                  "}",
+                  "async function fetchOrders() {",
+                  "  for (let attempt = 1; attempt <= 3; attempt++) {",
+                  "    try { return await api.get(\"/orders\"); } catch (e) { if (attempt === 3) throw e; }",
+                  "  }",
+                  "}",
+                  "",
+                  "// Depois: o esqueleto do retry existe uma vez",
+                  "async function withRetry(action, maxAttempts = 3) {",
+                  "  for (let attempt = 1; attempt <= maxAttempts; attempt++) {",
+                  "    try { return await action(); } catch (e) { if (attempt === maxAttempts) throw e; }",
+                  "  }",
+                  "}",
+                  "const fetchUsers = () => withRetry(() => api.get(\"/users\"));",
+                  "const fetchOrders = () => withRetry(() => api.get(\"/orders\"));",
+                ].join("\n"),
+              },
+              explanation:
+                "A política de retry — quantas vezes, quando desistir — passa a viver em withRetry. Mudar de 3 para " +
+                "5 tentativas é uma mudança só, e novos endpoints ganham a mesma política sem copiar o laço.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Estas duas funções montam uma linha de texto para um relatório e só diferem no rótulo e no campo " +
+              "usado. A cada mudança de formato, é preciso lembrar de alterar as duas.",
+            problemCode: {
+              language: "javascript",
+              filename: "report-lines.js",
+              code: [
+                "function customerLine(customer) {",
+                "  const name = customer.name.trim().toUpperCase();",
+                "  return \"CLIENTE: \" + name.padEnd(20) + customer.total.toFixed(2);",
+                "}",
+                "",
+                "function supplierLine(supplier) {",
+                "  const name = supplier.name.trim().toUpperCase();",
+                "  return \"FORNECEDOR: \" + name.padEnd(20) + supplier.balance.toFixed(2);",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Elimine a duplicação: extraia o que é comum e faça as duas funções (ou uma só) usarem esse trecho, " +
+              "deixando explícito o que varia.",
+            hint: "Compare as duas linha a linha. O que muda é o rótulo (\"CLIENTE\"/\"FORNECEDOR\") e de onde vem o valor numérico.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "report-lines.refactored.js",
+                code: [
+                  "function reportLine(label, name, amount) {",
+                  "  const formattedName = name.trim().toUpperCase();",
+                  "  return label + \": \" + formattedName.padEnd(20) + amount.toFixed(2);",
+                  "}",
+                  "",
+                  "const customerLine = (customer) => reportLine(\"CLIENTE\", customer.name, customer.total);",
+                  "const supplierLine = (supplier) => reportLine(\"FORNECEDOR\", supplier.name, supplier.balance);",
+                ].join("\n"),
+              },
+              explanation:
+                "A regra de formatação (limpar o nome, alinhar em 20 colunas, duas casas decimais) existe em reportLine, " +
+                "e cada função só informa o que é específico dela. Mudar a largura da coluna vira uma alteração única.",
+            },
+          },
         }),
-        concept({ order: 20, title: "Long Method", note: "função grande demais para entender de uma vez" }),
+        concept({
+          order: 20,
+          title: "Long Method",
+          note: "função grande demais para entender de uma vez",
+          summary:
+            "Uma função que cresceu tanto que não dá para entender de uma vez: faz várias coisas, exige rolar a " +
+            "tela e costuma ter comentários separando \"seções\" — sinal de que precisa ser dividida.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Long Method (ou Long Function) é o smell de uma função grande demais para ser compreendida de " +
+                "relance. O número de linhas é só um indicador; o problema de fato é que ela reúne várias tarefas, " +
+                "vários níveis de abstração e muitas variáveis locais que o leitor precisa manter na cabeça. É a " +
+                "violação, vista no código, do que Functions (módulo Clean Code) recomenda.",
+            },
+            { type: "heading", text: "Por que é um problema?" },
+            {
+              type: "paragraph",
+              text:
+                "Funções longas escondem bugs (é fácil perder uma condição no meio de cinquenta linhas), são " +
+                "difíceis de testar (é preciso montar todo o cenário para exercitar um trecho) e resistem a mudanças " +
+                "(alterar uma parte arrisca quebrar outra que compartilha variáveis). Também acumulam mais " +
+                "razões para mudar do que uma função deveria ter.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Sinais de que uma função está longa demais: comentários que funcionam como títulos de seção (\"// " +
+                "valida\", \"// calcula\", \"// grava\"), blocos que poderiam ter um nome próprio, muitas variáveis " +
+                "temporárias e vários níveis de aninhamento. A correção usual é Extract Function (módulo " +
+                "Refactoring): cada bloco com um propósito reconhecível vira uma função com um bom nome — e o " +
+                "comentário-título, que já dava o nome, deixa de ser necessário.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "uma função com \"seções\" marcadas por comentários, e a versão dividida:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "long-method.js",
+              code: [
+                "// Antes: três seções, separadas por comentários",
+                "function checkout(cart, user) {",
+                "  // valida",
+                "  if (cart.items.length === 0) throw new Error(\"carrinho vazio\");",
+                "  if (!user.address) throw new Error(\"endereço ausente\");",
+                "",
+                "  // calcula",
+                "  let total = 0;",
+                "  for (const item of cart.items) total += item.price * item.quantity;",
+                "  if (user.isPremium) total *= 0.9;",
+                "",
+                "  // grava",
+                "  return orders.save({ userId: user.id, items: cart.items, total });",
+                "}",
+                "",
+                "// Depois: os comentários viraram nomes de funções",
+                "function checkout(cart, user) {",
+                "  validateCheckout(cart, user);",
+                "  const total = calculateTotal(cart, user);",
+                "  return orders.save({ userId: user.id, items: cart.items, total });",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Cada comentário-título virou o nome de uma função (validateCheckout, calculateTotal). Agora " +
+                "checkout se lê como um índice e cada parte pode ser testada e alterada sozinha.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Se você precisa de comentários para marcar seções dentro de uma função, cada seção provavelmente " +
+                "quer ser uma função com esse nome.",
+            },
+          ],
+          examples: [
+            {
+              title: "Comentários como cabeçalhos de seção",
+              context: "O sinal mais confiável: os comentários já são os nomes das funções que ainda não foram extraídas.",
+              code: {
+                language: "javascript",
+                filename: "section-comments.js",
+                code: [
+                  "function processPayroll(employees) {",
+                  "  // filtra quem está ativo",
+                  "  const active = employees.filter((e) => e.status === \"active\");",
+                  "  // calcula salários",
+                  "  const payslips = active.map((e) => ({ id: e.id, net: e.gross - e.gross * e.taxRate }));",
+                  "  // arredonda e formata",
+                  "  return payslips.map((p) => ({ ...p, net: Math.round(p.net * 100) / 100 }));",
+                  "}",
+                  "",
+                  "// Extraindo: filterActive, calculatePayslips, roundPayslips",
+                  "function processPayroll(employees) {",
+                  "  return roundPayslips(calculatePayslips(filterActive(employees)));",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Os três comentários eram, na prática, os nomes de três funções. Depois de extraídas, o fluxo cabe " +
+                "em uma linha legível, e cada etapa pode ser testada individualmente.",
+            },
+            {
+              title: "Corpo de laço grande",
+              context: "Um laço com dezenas de linhas dentro dele é um forte candidato: o corpo normalmente é uma função com nome.",
+              code: {
+                language: "javascript",
+                filename: "big-loop-body.js",
+                code: [
+                  "// Antes: o que acontece com cada pedido está enterrado no laço",
+                  "for (const order of orders) {",
+                  "  const lines = order.items.map((i) => i.name + \" x\" + i.quantity);",
+                  "  const subtotal = order.items.reduce((s, i) => s + i.price * i.quantity, 0);",
+                  "  const tax = subtotal * 0.1;",
+                  "  console.log(order.id, lines.join(\", \"), subtotal + tax);",
+                  "}",
+                  "",
+                  "// Depois: o laço diz o que faz; os detalhes têm nome",
+                  "for (const order of orders) {",
+                  "  printOrderSummary(order);",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "O laço agora descreve o quê (imprimir o resumo de cada pedido), e o como fica em printOrderSummary, " +
+                "que pode ser lida, testada e reaproveitada sem o laço.",
+            },
+            {
+              title: "Nem toda função longa é um Long Method",
+              context: "O critério é dificuldade de compreensão, não a contagem de linhas: uma função longa, mas linear e uniforme, pode estar bem.",
+              code: {
+                language: "javascript",
+                filename: "long-but-fine.js",
+                code: [
+                  "// Longa, porém simples: uma lista uniforme, sem ramificações complexas",
+                  "function buildDefaultSettings() {",
+                  "  return {",
+                  "    theme: \"dark\",",
+                  "    language: \"pt-BR\",",
+                  "    notifications: true,",
+                  "    autoSave: true,",
+                  "    fontSize: 14,",
+                  "    // ...mais quinze opções do mesmo tipo",
+                  "  };",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Não há vários níveis de abstração nem lógica para manter na cabeça: é uma tabela. Dividir só por " +
+                "causa do tamanho espalharia o que hoje se lê de uma vez. O smell indica dificuldade de " +
+                "entender, não simplesmente muitas linhas.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Esta função gera uma fatura, mas mistura validação, cálculo e formatação, separados por comentários. " +
+              "Testar apenas o cálculo do total exige montar um pedido completo.",
+            problemCode: {
+              language: "javascript",
+              filename: "generate-invoice.js",
+              code: [
+                "function generateInvoice(order) {",
+                "  // valida",
+                "  if (!order.customer) throw new Error(\"cliente ausente\");",
+                "  if (order.items.length === 0) throw new Error(\"pedido vazio\");",
+                "",
+                "  // calcula",
+                "  let total = 0;",
+                "  for (const item of order.items) total += item.price * item.quantity;",
+                "  const tax = total * 0.1;",
+                "",
+                "  // formata",
+                "  return \"Fatura de \" + order.customer.name + \": R$ \" + (total + tax).toFixed(2);",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Divida generateInvoice em funções menores, usando os comentários como guia para os nomes, e deixe " +
+              "generateInvoice apenas coordenando os passos.",
+            hint: "Cada comentário marca uma seção. Comece extraindo a que não depende das outras (a validação) e devolva de cada função o que a seguinte precisa.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "generate-invoice.refactored.js",
+                code: [
+                  "function generateInvoice(order) {",
+                  "  validateOrder(order);",
+                  "  const total = calculateTotalWithTax(order.items);",
+                  "  return formatInvoice(order.customer, total);",
+                  "}",
+                  "",
+                  "function validateOrder(order) {",
+                  "  if (!order.customer) throw new Error(\"cliente ausente\");",
+                  "  if (order.items.length === 0) throw new Error(\"pedido vazio\");",
+                  "}",
+                  "",
+                  "function calculateTotalWithTax(items) {",
+                  "  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);",
+                  "  return subtotal + subtotal * 0.1;",
+                  "}",
+                  "",
+                  "function formatInvoice(customer, total) {",
+                  "  return \"Fatura de \" + customer.name + \": R$ \" + total.toFixed(2);",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Agora calculateTotalWithTax pode ser testada só com uma lista de itens, sem cliente nem texto. Os " +
+                "comentários-título desapareceram porque os nomes das funções fazem esse papel.",
+            },
+          },
+        }),
         concept({
           order: 30,
           title: "Long Parameter List",
           note: "relaciona-se com Function Arguments (Clean Code) e Introduce Parameter Object (Refactoring) — trio intencional: escrever bem → reconhecer violação → corrigir",
+          summary:
+            "Uma função com parâmetros demais: chamadas difíceis de ler, fáceis de errar na ordem e sinal de que " +
+            "os dados deveriam viajar juntos ou a função faz mais do que deveria.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Long Parameter List é o smell de funções que recebem mais argumentos do que se consegue manter " +
+                "na cabeça — em geral, mais de três ou quatro. É a violação vista no código do que Function " +
+                "Arguments (módulo Clean Code) recomenda escrever; os três Concepts formam uma sequência: escrever " +
+                "bem, reconhecer a violação e corrigir (com Introduce Parameter Object, no módulo Refactoring).",
+            },
+            { type: "heading", text: "Por que é um problema?" },
+            {
+              type: "paragraph",
+              text:
+                "Chamadas com muitos valores posicionais são ilegíveis (o que é o quinto argumento?) e trocar a " +
+                "ordem de dois do mesmo tipo passa sem erro. A assinatura fica difícil de evoluir: acrescentar um " +
+                "parâmetro exige alterar todas as chamadas. E uma lista longa muitas vezes revela um problema de " +
+                "fundo — a função faz demais, ou há dados que sempre andam juntos e ainda não ganharam um nome.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Como reconhecer: chamadas com vários literais (true, false, 0, null) em sequência, os mesmos três ou " +
+                "quatro parâmetros aparecendo juntos em várias funções, e parâmetros extraídos de um objeto que já " +
+                "estava ao alcance de quem chama. As correções usuais: agrupar os dados relacionados em um objeto " +
+                "(Introduce Parameter Object), passar o objeto inteiro em vez de seus campos, ou dividir a função " +
+                "em partes que precisam de menos dados.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "parâmetros que sempre viajam juntos, agrupados em um objeto:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "long-parameter-list.js",
+              code: [
+                "// Antes: quatro números que descrevem uma única coisa",
+                "function drawRectangle(x, y, width, height, color) { /* ... */ }",
+                "function isInside(x, y, width, height, pointX, pointY) { /* ... */ }",
+                "",
+                "drawRectangle(10, 20, 100, 50, \"red\");",
+                "",
+                "// Depois: o retângulo ganhou um nome e viaja como um valor",
+                "function drawRectangle(rect, color) { /* ... */ }",
+                "function isInside(rect, point) { /* ... */ }",
+                "",
+                "const box = { x: 10, y: 20, width: 100, height: 50 };",
+                "drawRectangle(box, \"red\");",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "x, y, width e height são as partes de uma coisa só. Ao agrupá-las, as assinaturas ficam mais curtas " +
+                "e mais claras, e o retângulo passa a existir como conceito no código.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Muitos parâmetros costumam esconder um conceito sem nome (dados que andam juntos) ou uma função que " +
+                "faz demais — ache qual dos dois é antes de simplesmente reordenar os argumentos.",
+            },
+          ],
+          examples: [
+            {
+              title: "Parâmetros que sempre andam juntos",
+              context: "Quando o mesmo grupo de valores aparece em várias assinaturas, ele é um conceito do domínio esperando um nome.",
+              code: {
+                language: "javascript",
+                filename: "data-clump.js",
+                code: [
+                  "// Antes: intervalo de datas repetido em toda função",
+                  "function salesReport(startDate, endDate, region) { /* ... */ }",
+                  "function refundsReport(startDate, endDate, region) { /* ... */ }",
+                  "",
+                  "// Depois: DateRange é um conceito com nome",
+                  "function salesReport(range, region) { /* ... */ }",
+                  "function refundsReport(range, region) { /* ... */ }",
+                  "",
+                  "const range = { start: \"2026-01-01\", end: \"2026-03-31\" };",
+                  "salesReport(range, \"sul\");",
+                ].join("\n"),
+              },
+              explanation:
+                "O intervalo passa a ser um valor único. Quando surgir a regra \"o fim não pode ser anterior ao " +
+                "início\", ela terá um lugar natural para viver, em vez de repetida em cada relatório.",
+            },
+            {
+              title: "Passar o objeto inteiro",
+              context: "Extrair vários campos de um objeto só para passá-los adiante cria uma lista longa sem necessidade.",
+              code: {
+                language: "javascript",
+                filename: "preserve-whole-object.js",
+                code: [
+                  "// Antes: quem chama desmonta o objeto para montar os argumentos",
+                  "const fee = shippingFee(order.weight, order.destination, order.isFragile, order.isExpress);",
+                  "",
+                  "// Depois: a função recebe o pedido e usa o que precisa",
+                  "const fee = shippingFee(order);",
+                  "",
+                  "function shippingFee(order) {",
+                  "  const base = order.weight * 1.5;",
+                  "  return order.isExpress ? base * 2 : base;",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Se shippingFee passar a considerar outro campo do pedido, nenhuma chamada precisa mudar. O custo é " +
+                "que a função passa a depender do formato do pedido — uma troca razoável quando ela é, de fato, " +
+                "sobre pedidos.",
+            },
+            {
+              title: "A lista longa como sintoma de função que faz demais",
+              context: "Às vezes o problema não é o agrupamento: a função recebe tantos dados porque tem responsabilidades demais.",
+              code: {
+                language: "javascript",
+                filename: "doing-too-much.js",
+                code: [
+                  "// Antes: valida, cobra e notifica — por isso precisa de tudo isso",
+                  "function completePurchase(user, card, items, address, couponCode, sendEmail) { /* ... */ }",
+                  "",
+                  "// Depois: cada etapa recebe só os dados que usa",
+                  "function chargeCard(card, amount) { /* ... */ }",
+                  "function scheduleDelivery(address, items) { /* ... */ }",
+                  "function sendReceipt(user) { /* ... */ }",
+                ].join("\n"),
+              },
+              explanation:
+                "Agrupar os seis argumentos em um objeto só esconderia o problema. Dividir a função reduz o que cada " +
+                "parte precisa saber, e a lista longa some como consequência.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Esta função de desenho recebe sete argumentos posicionais, e as chamadas espalhadas pelo código " +
+              "ficam praticamente ilegíveis.",
+            problemCode: {
+              language: "javascript",
+              filename: "draw-box.js",
+              code: [
+                "function drawBox(x, y, width, height, fillColor, borderWidth, borderColor) {",
+                "  // ...",
+                "}",
+                "",
+                "drawBox(10, 20, 100, 50, \"white\", 2, \"black\");",
+              ].join("\n"),
+            },
+            task:
+              "Reagrupe os parâmetros de forma que a assinatura fique curta e a chamada se explique sozinha, " +
+              "identificando quais dados pertencem juntos.",
+            hint: "Há três grupos naturais: onde a caixa está e qual o seu tamanho, como ela é preenchida e como é a sua borda.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "draw-box.refactored.js",
+                code: [
+                  "function drawBox(bounds, style) {",
+                  "  // ...",
+                  "}",
+                  "",
+                  "drawBox(",
+                  "  { x: 10, y: 20, width: 100, height: 50 },",
+                  "  { fillColor: \"white\", borderWidth: 2, borderColor: \"black\" }",
+                  ");",
+                ].join("\n"),
+              },
+              explanation:
+                "Dois parâmetros, cada um com nome e significado: onde e com que tamanho, e com que aparência. Uma " +
+                "propriedade nova de estilo (sombra, por exemplo) entra no objeto de estilo sem alterar a " +
+                "assinatura nem as demais chamadas.",
+            },
+          },
         }),
         concept({
           order: 40,
           title: "Large Class",
           requires: ["Programming Foundations / Programming Fundamentals / Cohesion"],
           note: "sintoma concreto de baixa coesão",
+          summary:
+            "Uma classe que acumulou responsabilidades demais — muitos campos e métodos sem relação entre si — " +
+            "o sintoma concreto de baixa coesão, e o ponto de partida para dividi-la.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Large Class é o smell de uma classe grande demais: muitos campos, muitos métodos, muitas " +
+                "razões para mudar. Como Cohesion (módulo Programming Fundamentals) mede o quanto as partes de uma " +
+                "classe pertencem juntas, uma classe grande normalmente é o sintoma de baixa coesão: vários " +
+                "assuntos diferentes acabaram morando no mesmo lugar.",
+            },
+            { type: "heading", text: "Por que é um problema?" },
+            {
+              type: "paragraph",
+              text:
+                "Uma classe assim é difícil de entender (é preciso ler tudo para saber o que ela faz), difícil de " +
+                "testar (cada teste precisa montar um objeto enorme) e fonte constante de conflitos e regressões, " +
+                "já que qualquer mudança em qualquer um dos assuntos toca o mesmo arquivo e o mesmo estado.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Como reconhecer: nomes genéricos como Manager, Helper, Utils ou Service que tudo abrangem; grupos " +
+                "de campos que só alguns métodos usam; métodos que nunca tocam a maior parte do estado; e prefixos " +
+                "repetidos nos nomes (addressStreet, addressCity, addressZip) sinalizando um conceito que pede " +
+                "sua própria classe. A correção é Extract Class (módulo Refactoring): separar cada assunto na sua " +
+                "classe, mantendo cada uma coesa.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "uma classe com dois assuntos distintos, e a divisão:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "large-class.js",
+              code: [
+                "// Antes: dados pessoais e endereço misturados; métodos usam só um dos grupos",
+                "class User {",
+                "  constructor(name, email, street, city, zip) {",
+                "    this.name = name;",
+                "    this.email = email;",
+                "    this.street = street;",
+                "    this.city = city;",
+                "    this.zip = zip;",
+                "  }",
+                "  greeting() { return \"Olá, \" + this.name; }",
+                "  fullAddress() { return this.street + \", \" + this.city + \" - \" + this.zip; }",
+                "}",
+                "",
+                "// Depois: cada classe cuida de um assunto",
+                "class Address {",
+                "  constructor(street, city, zip) {",
+                "    this.street = street;",
+                "    this.city = city;",
+                "    this.zip = zip;",
+                "  }",
+                "  full() { return this.street + \", \" + this.city + \" - \" + this.zip; }",
+                "}",
+                "",
+                "class User {",
+                "  constructor(name, email, address) {",
+                "    this.name = name;",
+                "    this.email = email;",
+                "    this.address = address;",
+                "  }",
+                "  greeting() { return \"Olá, \" + this.name; }",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "greeting só usava name; fullAddress só usava o endereço. Essa divisão nítida dos métodos entre os " +
+                "campos é o sinal. Separadas, cada classe é pequena, coesa e pode mudar sem afetar a outra.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Se grupos diferentes de métodos usam grupos diferentes de campos, você tem mais de uma classe " +
+                "morando no mesmo arquivo — separe-as.",
+            },
+          ],
+          examples: [
+            {
+              title: "Métodos que usam só uma parte dos campos",
+              context: "O teste mais concreto: liste quais campos cada método usa — se os grupos não se cruzam, são classes diferentes.",
+              code: {
+                language: "javascript",
+                filename: "disjoint-fields.js",
+                code: [
+                  "class Invoice {",
+                  "  // grupo A: itens e total",
+                  "  addItem(item) { this.items.push(item); }",
+                  "  total() { return this.items.reduce((s, i) => s + i.price, 0); }",
+                  "",
+                  "  // grupo B: envio por e-mail — nunca toca em itens",
+                  "  setRecipient(email) { this.recipient = email; }",
+                  "  send() { mailer.send(this.recipient, this.render()); }",
+                  "}",
+                  "// Grupo A e grupo B poderiam ser Invoice e InvoiceMailer",
+                ].join("\n"),
+              },
+              explanation:
+                "Os dois grupos de métodos compartilham apenas a existência da mesma classe. Separar torna possível " +
+                "testar o total sem e-mail, e trocar o envio (para SMS, por exemplo) sem tocar no cálculo.",
+            },
+            {
+              title: "Nomes genéricos como Manager e Utils",
+              context: "Um nome vago geralmente indica que a classe não tem um assunto claro — e por isso aceita qualquer coisa.",
+              code: {
+                language: "javascript",
+                filename: "vague-names.js",
+                code: [
+                  "// Antes: UserManager faz um pouco de tudo",
+                  "class UserManager {",
+                  "  register(data) { /* ... */ }",
+                  "  hashPassword(password) { /* ... */ }",
+                  "  sendWelcomeEmail(user) { /* ... */ }",
+                  "  exportUsersToCsv(users) { /* ... */ }",
+                  "}",
+                  "",
+                  "// Depois: nomes que dizem o assunto de cada classe",
+                  "class UserRegistration { register(data) { /* ... */ } }",
+                  "class PasswordHasher { hash(password) { /* ... */ } }",
+                  "class WelcomeMailer { send(user) { /* ... */ } }",
+                  "class UserCsvExporter { export(users) { /* ... */ } }",
+                ].join("\n"),
+              },
+              explanation:
+                "Se é difícil dar à classe um nome que não seja Manager, Helper ou Utils, geralmente é porque ela " +
+                "não tem uma responsabilidade única. Um bom nome é também um teste de coesão.",
+            },
+            {
+              title: "Prefixos repetidos: um conceito escondido",
+              context: "Campos com o mesmo prefixo (address..., billing...) indicam um conceito que pede sua própria classe.",
+              code: {
+                language: "javascript",
+                filename: "repeated-prefixes.js",
+                code: [
+                  "// Antes: três campos com o mesmo prefixo dentro de Order",
+                  "class Order {",
+                  "  constructor() {",
+                  "    this.shippingStreet = \"\";",
+                  "    this.shippingCity = \"\";",
+                  "    this.shippingZip = \"\";",
+                  "  }",
+                  "}",
+                  "",
+                  "// Depois: o conceito ganhou uma classe",
+                  "class Order {",
+                  "  constructor(shippingAddress) {",
+                  "    this.shippingAddress = shippingAddress;",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "O prefixo shipping era o nome de uma classe que ainda não existia. Ao extraí-la, Order deixa de " +
+                "precisar conhecer os detalhes de um endereço, e o endereço passa a poder ser reutilizado (e " +
+                "validado) em outros lugares.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Esta classe mistura a lógica de um pedido com os dados e as regras do cliente que o fez. Repare em " +
+              "quais campos cada método usa.",
+            problemCode: {
+              language: "javascript",
+              filename: "order.js",
+              code: [
+                "class Order {",
+                "  constructor(items, customerName, customerEmail, customerCity) {",
+                "    this.items = items;",
+                "    this.customerName = customerName;",
+                "    this.customerEmail = customerEmail;",
+                "    this.customerCity = customerCity;",
+                "  }",
+                "  total() { return this.items.reduce((s, i) => s + i.price, 0); }",
+                "  customerLabel() { return this.customerName + \" (\" + this.customerCity + \")\"; }",
+                "  customerHasValidEmail() { return this.customerEmail.includes(\"@\"); }",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Aplique Extract Class: separe o que é do cliente do que é do pedido, de modo que cada classe " +
+              "seja coesa e Order passe a se relacionar com o cliente por composição.",
+            hint: "Os três campos com prefixo customer... e os dois métodos que só os usam formam uma classe própria.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "order.refactored.js",
+                code: [
+                  "class Customer {",
+                  "  constructor(name, email, city) {",
+                  "    this.name = name;",
+                  "    this.email = email;",
+                  "    this.city = city;",
+                  "  }",
+                  "  label() { return this.name + \" (\" + this.city + \")\"; }",
+                  "  hasValidEmail() { return this.email.includes(\"@\"); }",
+                  "}",
+                  "",
+                  "class Order {",
+                  "  constructor(items, customer) {",
+                  "    this.items = items;",
+                  "    this.customer = customer;",
+                  "  }",
+                  "  total() { return this.items.reduce((s, i) => s + i.price, 0); }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Order agora só trata de itens e total; Customer cuida de tudo que é do cliente. Cada classe pode " +
+                "ser testada isoladamente e mudar sem arrastar a outra.",
+            },
+          },
         }),
         concept({
           order: 50,
           title: "Feature Envy",
           requires: ["Programming Foundations / Programming Fundamentals / Coupling"],
           note: "sintoma concreto de acoplamento excessivo",
+          summary:
+            "Um método que usa mais os dados de outro objeto do que os do próprio — sinal de que o comportamento " +
+            "está no lugar errado e de acoplamento excessivo entre as duas classes.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Feature Envy é o smell de um método que parece \"invejar\" outra classe: gasta a maior parte do " +
+                "tempo lendo e manipulando dados de outro objeto (vários getters ou campos dele), e quase " +
+                "nada do objeto onde mora. É o sintoma concreto de acoplamento excessivo (Coupling, módulo " +
+                "Programming Fundamentals): duas classes conhecem detalhes demais uma da outra.",
+            },
+            { type: "heading", text: "Por que é um problema?" },
+            {
+              type: "paragraph",
+              text:
+                "O comportamento e os dados sobre os quais ele opera deveriam ficar juntos. Quando não ficam, uma " +
+                "mudança na estrutura de um objeto obriga a alterar quem o usa de fora, a regra fica espalhada em " +
+                "vez de concentrada, e a lógica acaba duplicada por cada cliente que precisa dela.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Como reconhecer: um método que chama repetidamente order.algo, order.outraCoisa e order.maisUma, " +
+                "cadeias longas como a.getB().getC().getD(), ou uma classe \"Calculator\" que só lê campos de " +
+                "outra. A correção usual é Move Function (módulo Refactoring): levar o método para a classe cujos dados " +
+                "ele usa. Há exceções deliberadas — separar dados de comportamento em padrões como Strategy ou " +
+                "em formatadores de apresentação —, mas então é uma escolha consciente, não um acidente.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "um método que só mexe nos dados de outro objeto, e a versão com o comportamento no lugar certo:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "feature-envy.js",
+              code: [
+                "// Antes: InvoicePrinter só usa dados de Order",
+                "class InvoicePrinter {",
+                "  totalWithDiscount(order) {",
+                "    const subtotal = order.items.reduce((s, i) => s + i.price * i.quantity, 0);",
+                "    return subtotal - subtotal * order.discountRate;",
+                "  }",
+                "}",
+                "",
+                "// Depois: o cálculo mora onde estão os dados",
+                "class Order {",
+                "  totalWithDiscount() {",
+                "    const subtotal = this.items.reduce((s, i) => s + i.price * i.quantity, 0);",
+                "    return subtotal - subtotal * this.discountRate;",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "totalWithDiscount só usava items e discountRate, ambos de Order. No novo lugar, a regra do total " +
+                "passa a ser uma propriedade do pedido, e qualquer cliente (impressão, e-mail, API) usa a mesma regra.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Se um método usa mais os dados de outra classe do que os da sua, ele provavelmente pertence a " +
+                "essa outra classe — leve o comportamento para perto dos dados.",
+            },
+          ],
+          examples: [
+            {
+              title: "Cálculo que só usa campos de outro objeto",
+              context: "O caso clássico: uma classe \"de serviço\" faz contas inteiras com o estado de outra.",
+              code: {
+                language: "javascript",
+                filename: "envious-calculator.js",
+                code: [
+                  "// Antes: ShippingCalculator só lê campos de Package",
+                  "class ShippingCalculator {",
+                  "  cost(pkg) {",
+                  "    const volume = pkg.width * pkg.height * pkg.depth;",
+                  "    return pkg.isFragile ? volume * 0.02 + 10 : volume * 0.02;",
+                  "  }",
+                  "}",
+                  "",
+                  "// Depois: Package sabe o próprio custo de envio",
+                  "class Package {",
+                  "  shippingCost() {",
+                  "    const volume = this.width * this.height * this.depth;",
+                  "    return this.isFragile ? volume * 0.02 + 10 : volume * 0.02;",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Se Package ganhar um campo novo que afete o frete, a mudança fica dentro dela. Antes, seria " +
+                "preciso lembrar de atualizar uma classe separada que conhecia todos os detalhes internos.",
+            },
+            {
+              title: "Cadeia de chamadas por dentro de outros objetos",
+              context: "Navegar por vários objetos em sequência (a.b.c.d) é a mesma inveja em outro formato: quem chama conhece a estrutura interna de todos.",
+              code: {
+                language: "javascript",
+                filename: "chain-of-calls.js",
+                code: [
+                  "// Antes: quem chama precisa conhecer Order → Customer → Address → City",
+                  "const city = order.getCustomer().getAddress().getCity();",
+                  "",
+                  "// Depois: Order expõe o que os clientes querem saber",
+                  "class Order {",
+                  "  deliveryCity() {",
+                  "    return this.customer.address.city;",
+                  "  }",
+                  "}",
+                  "const city = order.deliveryCity();",
+                ].join("\n"),
+              },
+              explanation:
+                "Agora, se o endereço passar a ficar em outro lugar, só Order muda; nenhum cliente que pergunta a " +
+                "cidade de entrega precisa ser tocado.",
+            },
+            {
+              title: "Quando separar dados e comportamento é intencional",
+              context: "Nem todo método que lê dados de fora é inveja: alguns padrões separam as duas coisas de propósito.",
+              code: {
+                language: "javascript",
+                filename: "deliberate-separation.js",
+                code: [
+                  "// Formatar para exibição é responsabilidade da camada de apresentação —",
+                  "// a Order não deve saber como uma tela ou um PDF a mostra.",
+                  "function renderOrderSummary(order) {",
+                  "  return \"Pedido #\" + order.id + \" — \" + order.items.length + \" itens\";",
+                  "}",
+                  "",
+                  "// Trocar o formato (HTML, PDF, JSON) não deve exigir alterar Order.",
+                ].join("\n"),
+              },
+              explanation:
+                "Aqui a separação é uma decisão de projeto (manter a apresentação fora do domínio). O smell " +
+                "aponta para um acidente — comportamento de negócio no lugar errado —, não para a existência " +
+                "de qualquer função que lê dados de outro objeto.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Esta classe de relatório decide se um aluno foi aprovado, mas toda a lógica usa apenas dados do aluno.",
+            problemCode: {
+              language: "javascript",
+              filename: "report-card.js",
+              code: [
+                "class ReportCard {",
+                "  isApproved(student) {",
+                "    const average = student.grades.reduce((s, g) => s + g, 0) / student.grades.length;",
+                "    return average >= student.passingGrade && student.absences <= student.maxAbsences;",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Identifique a inveja de funcionalidade e mova o método para o lugar cujos dados ele usa, ajustando " +
+              "a forma como é chamado.",
+            hint: "Todos os campos usados (grades, passingGrade, absences, maxAbsences) pertencem a Student. Nenhum pertence a ReportCard.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "student.js",
+                code: [
+                  "class Student {",
+                  "  constructor(grades, passingGrade, absences, maxAbsences) {",
+                  "    this.grades = grades;",
+                  "    this.passingGrade = passingGrade;",
+                  "    this.absences = absences;",
+                  "    this.maxAbsences = maxAbsences;",
+                  "  }",
+                  "",
+                  "  average() {",
+                  "    return this.grades.reduce((s, g) => s + g, 0) / this.grades.length;",
+                  "  }",
+                  "",
+                  "  isApproved() {",
+                  "    return this.average() >= this.passingGrade && this.absences <= this.maxAbsences;",
+                  "  }",
+                  "}",
+                  "",
+                  "// Uso: student.isApproved() — sem passar por ReportCard",
+                ].join("\n"),
+              },
+              explanation:
+                "A regra de aprovação agora está com os dados que ela usa, e average() vira um método reutilizável. " +
+                "Uma mudança na regra (por exemplo, incluir uma nota de recuperação) altera só Student.",
+            },
+          },
         }),
-        concept({ order: 60, title: "Primitive Obsession", note: "usar primitivos onde um tipo/objeto próprio comunicaria melhor a intenção" }),
+        concept({
+          order: 60,
+          title: "Primitive Obsession",
+          note: "usar primitivos onde um tipo/objeto próprio comunicaria melhor a intenção",
+          summary:
+            "Usar strings e números soltos para representar conceitos do domínio (dinheiro, e-mail, CPF) em vez " +
+            "de tipos próprios — o que espalha validação e permite misturar valores que não deveriam se misturar.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Primitive Obsession é o hábito de representar conceitos do domínio com tipos primitivos — string, " +
+                "number, boolean — em vez de criar um tipo próprio. Um e-mail, um valor em reais, um CPF, um " +
+                "intervalo de datas: todos viram simples strings ou números, e o significado e as regras ficam " +
+                "só na cabeça de quem programa.",
+            },
+            { type: "heading", text: "Por que é um problema?" },
+            {
+              type: "paragraph",
+              text:
+                "Um primitivo aceita qualquer valor do seu tipo, válido ou não: a string \"abc\" é um e-mail tão " +
+                "\"válido\" quanto qualquer outro para o sistema de tipos. Por isso a validação se espalha — cada " +
+                "função que recebe um e-mail precisa conferir de novo — e a regra acaba duplicada ou esquecida. " +
+                "Além disso, valores com significados diferentes se confundem: um id de usuário e um id de pedido " +
+                "são ambos números, e nada impede de passar um no lugar do outro.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Como reconhecer: strings com formato esperado (e-mail, telefone, CEP), números com unidade ou " +
+                "moeda implícitas, códigos de status como texto e vários parâmetros do mesmo tipo primitivo em " +
+                "sequência. A correção é criar um tipo pequeno que valide ao ser criado e carregue as operações " +
+                "do conceito (um value object): depois de construído, o valor é sempre válido, e o restante do " +
+                "código não precisa conferir de novo.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "um e-mail como string solta, e como um tipo que garante a própria validade:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "primitive-obsession.js",
+              code: [
+                "// Antes: qualquer string passa; cada função repete a checagem",
+                "function sendNewsletter(email) {",
+                "  if (!email.includes(\"@\")) throw new Error(\"e-mail inválido\");",
+                "  // ...",
+                "}",
+                "",
+                "// Depois: o tipo só existe se for válido",
+                "class Email {",
+                "  constructor(value) {",
+                "    if (!value.includes(\"@\")) throw new Error(\"e-mail inválido\");",
+                "    this.value = value;",
+                "  }",
+                "}",
+                "",
+                "function sendNewsletter(email) {",
+                "  // email é um Email: já foi validado ao ser criado",
+                "  mailer.send(email.value);",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A validação acontece uma vez, na criação. Toda função que recebe um Email pode confiar que ele é " +
+                "válido, e o próprio parâmetro documenta o que se espera — algo que a palavra string nunca dirá.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Se um valor tem regras, formato ou significado próprio, ele merece um tipo próprio — em vez de " +
+                "ser uma string ou um número que todo mundo precisa lembrar de validar.",
+            },
+          ],
+          examples: [
+            {
+              title: "Dinheiro como número solto",
+              context: "Um number não sabe de que moeda é, nem evita os erros de arredondamento de ponto flutuante.",
+              code: {
+                language: "javascript",
+                filename: "money.js",
+                code: [
+                  "// Antes: 0.1 + 0.2 !== 0.3, e a moeda é implícita",
+                  "const total = 0.1 + 0.2; // 0.30000000000000004",
+                  "",
+                  "// Depois: valor em centavos (inteiro) com moeda explícita",
+                  "class Money {",
+                  "  constructor(cents, currency) {",
+                  "    this.cents = cents;",
+                  "    this.currency = currency;",
+                  "  }",
+                  "  plus(other) {",
+                  "    if (other.currency !== this.currency) throw new Error(\"moedas diferentes\");",
+                  "    return new Money(this.cents + other.cents, this.currency);",
+                  "  }",
+                "}",
+                  "",
+                  "const total = new Money(10, \"BRL\").plus(new Money(20, \"BRL\")); // 30 centavos",
+                ].join("\n"),
+              },
+              explanation:
+                "O tipo Money resolve o arredondamento (usa inteiros) e impede a soma de moedas diferentes — erros " +
+                "que, com dois números soltos, passariam em silêncio.",
+            },
+            {
+              title: "Argumentos do mesmo tipo que se confundem",
+              context: "Quando duas coisas diferentes têm o mesmo tipo primitivo, trocá-las de posição não gera nenhum aviso.",
+              code: {
+                language: "javascript",
+                filename: "swapped-ids.js",
+                code: [
+                  "// Antes: os dois ids são números — trocar a ordem não gera erro",
+                  "function transfer(fromAccountId, toAccountId, amount) { /* ... */ }",
+                  "transfer(20, 10, 500); // quem é a origem, quem é o destino?",
+                  "",
+                  "// Depois: chamada com nomes, cada valor é identificável",
+                  "function transfer({ from, to, amount }) { /* ... */ }",
+                  "transfer({ from: accountA, to: accountB, amount: new Money(50000, \"BRL\") });",
+                ].join("\n"),
+              },
+              explanation:
+                "Nomear os argumentos elimina a troca silenciosa, e o valor como Money deixa claro que 500 são " +
+                "centavos, não reais. Em linguagens com tipos estáticos, ids distintos também poderiam ser tipos " +
+                "diferentes, e o compilador recusaria a troca.",
+            },
+            {
+              title: "Unidades implícitas",
+              context: "Um número sem unidade obriga a lembrar (ou adivinhar) se são metros, quilômetros, segundos ou milissegundos.",
+              code: {
+                language: "javascript",
+                filename: "units.js",
+                code: [
+                  "// Antes: 5 é km, milhas ou metros?",
+                  "function estimateTravelTime(distance) { /* ... */ }",
+                  "estimateTravelTime(5);",
+                  "",
+                  "// Depois: a unidade faz parte do valor",
+                  "class Distance {",
+                  "  constructor(meters) { this.meters = meters; }",
+                  "  static fromKilometers(km) { return new Distance(km * 1000); }",
+                  "}",
+                  "",
+                  "function estimateTravelTime(distance) { /* usa distance.meters */ }",
+                  "estimateTravelTime(Distance.fromKilometers(5));",
+                ].join("\n"),
+              },
+              explanation:
+                "Distance.fromKilometers(5) diz a unidade na própria chamada, e internamente tudo usa metros. A " +
+                "conversão errada deixa de ser possível por descuido.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O telefone do cliente é uma string solta, e cada função que o recebe repete uma checagem de " +
+              "formato — com pequenas diferenças entre elas.",
+            problemCode: {
+              language: "javascript",
+              filename: "phone.js",
+              code: [
+                "function sendSms(phone, text) {",
+                "  if (!/^\\d{11}$/.test(phone)) throw new Error(\"telefone inválido\");",
+                "  sms.send(phone, text);",
+                "}",
+                "",
+                "function formatPhone(phone) {",
+                "  if (phone.length !== 11) throw new Error(\"telefone inválido\");",
+                "  return \"(\" + phone.slice(0, 2) + \") \" + phone.slice(2, 7) + \"-\" + phone.slice(7);",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Crie um tipo PhoneNumber que valide na criação e carregue a formatação, e ajuste as duas funções " +
+              "para receberem o tipo em vez da string.",
+            hint: "A validação deve acontecer uma vez, no construtor. Depois disso, as funções não precisam mais checar — e formatPhone vira um método do tipo.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "phone.refactored.js",
+                code: [
+                  "class PhoneNumber {",
+                  "  constructor(digits) {",
+                  "    if (!/^\\d{11}$/.test(digits)) throw new Error(\"telefone inválido\");",
+                  "    this.digits = digits;",
+                  "  }",
+                  "",
+                  "  formatted() {",
+                  "    const d = this.digits;",
+                  "    return \"(\" + d.slice(0, 2) + \") \" + d.slice(2, 7) + \"-\" + d.slice(7);",
+                  "  }",
+                  "}",
+                  "",
+                  "function sendSms(phone, text) {",
+                  "  sms.send(phone.digits, text);",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "A regra do telefone válido existe em um só lugar, e as funções que recebem um PhoneNumber podem " +
+                "confiar nele. A formatação, que era uma função solta, passou a ser um comportamento do próprio tipo.",
+            },
+          },
+        }),
       ],
     }),
     module({

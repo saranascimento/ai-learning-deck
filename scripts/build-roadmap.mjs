@@ -1274,6 +1274,12 @@ for (const area of model.areas()) {
     "kiss",
     "yagni",
     "principle-of-least-astonishment",
+    "duplicate-code",
+    "long-method",
+    "long-parameter-list",
+    "large-class",
+    "feature-envy",
+    "primitive-obsession",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",
