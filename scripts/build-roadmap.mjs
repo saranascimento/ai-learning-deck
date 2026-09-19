@@ -1298,6 +1298,10 @@ for (const area of model.areas()) {
     "fail-fast",
     "result-pattern",
     "error-boundaries",
+    "code-review",
+    "review-dimensions",
+    "review-scope",
+    "giving-and-receiving-feedback",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",

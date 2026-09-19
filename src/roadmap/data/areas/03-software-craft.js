@@ -6797,7 +6797,192 @@ export default area({
       requires: ["Clean Code"],
       summary: "Guarda-chuva (o que é, por que é gate de qualidade) → as lentes de avaliação → escopo do PR → a camada humana de comunicação.",
       concepts: [
-        concept({ order: 10, title: "Code Review", requires: ["Clean Code"], isNew: true, note: "guarda-chuva: o que é, por que é gate de qualidade" }),
+        concept({
+          order: 10,
+          title: "Code Review",
+          requires: ["Clean Code"],
+          isNew: true,
+          note: "guarda-chuva: o que é, por que é gate de qualidade",
+          summary:
+            "Uma ou mais pessoas examinam uma mudança de código antes de ela entrar na base principal — para " +
+            "achar problemas cedo, compartilhar conhecimento e manter a qualidade e a consistência do código.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Code Review é a prática de outra pessoa (o revisor) examinar uma mudança feita por quem a escreveu " +
+                "(o autor) antes de ela ser integrada. Costuma acontecer em um pull request (ou merge request): " +
+                "o autor propõe a mudança, o revisor lê, comenta, pede ajustes ou aprova, e só então o código entra.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "É um dos filtros mais baratos de qualidade: um bug encontrado na revisão custa minutos, e o mesmo " +
+                "bug em produção custa horas (e clientes). Quem escreve o código está próximo demais dele para ver " +
+                "certas falhas — outra pessoa enxerga suposições não ditas, casos esquecidos e trechos confusos. " +
+                "Além de achar defeitos, a revisão espalha conhecimento (mais gente entende cada parte do " +
+                "sistema), mantém convenções consistentes e é uma forma natural de mentoria em ambos os sentidos.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "O que a revisão não é: uma caça a culpados nem um substituto para testes automatizados e " +
+                "ferramentas. O que uma máquina pode verificar (formatação, lint, testes) deve ser automatizado, para " +
+                "que o tempo humano vá para o que só pessoas conseguem avaliar: se a solução resolve o problema " +
+                "certo, se o desenho faz sentido, se há casos que ninguém pensou. Há responsabilidades dos dois " +
+                "lados: o autor entrega uma mudança pequena, revisada por ele mesmo primeiro e bem descrita; o " +
+                "revisor responde em tempo razoável e comenta com foco no código, não na pessoa.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "um trecho em revisão e o comentário que evita um bug antes do merge:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "pr-under-review.js",
+              code: [
+                "// PR: \"mostra os 10 pedidos mais recentes do cliente\"",
+                "function latestOrders(orders) {",
+                "  const sorted = orders.sort((a, b) => b.createdAt - a.createdAt);",
+                "  return sorted.slice(0, 10);",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "code",
+              language: "text",
+              filename: "review-comment.txt",
+              code: [
+                "[revisor] Linha 3: `sort` ordena o array original no lugar. Como `orders` vem do estado",
+                "compartilhado da tela, isso muda a ordem de outras telas que usam a mesma lista.",
+                "Sugestão: `[...orders].sort(...)` para ordenar uma cópia.",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O código funcionava nos testes do autor e passaria em uma leitura rápida. Uma segunda pessoa, " +
+                "conhecendo o contexto (de onde vem a lista), encontrou o efeito colateral antes de chegar à " +
+                "produção — o tipo de bug que a revisão existe para pegar.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Revisão de código é um filtro barato e um meio de compartilhar conhecimento — automatize o mecânico " +
+                "e use o olhar humano no que só pessoas conseguem avaliar.",
+            },
+          ],
+          examples: [
+            {
+              title: "Um bug que só uma segunda leitura enxerga",
+              context: "O autor testa o caminho que imaginou; o revisor questiona o que ficou fora dele.",
+              code: {
+                language: "javascript",
+                filename: "edge-case.js",
+                code: [
+                  "function averageRating(reviews) {",
+                  "  const total = reviews.reduce((sum, review) => sum + review.stars, 0);",
+                  "  return total / reviews.length;",
+                  "}",
+                  "// Comentário do revisor: e se o produto ainda não tiver avaliações?",
+                  "// reviews.length é 0 → o resultado é NaN, e a tela mostraria \"NaN estrelas\".",
+                ].join("\n"),
+              },
+              explanation:
+                "O autor provavelmente testou com produtos que tinham avaliações. Uma pergunta simples — \"e se " +
+                "estiver vazio?\" — revela o caso esquecido antes que um usuário o encontre.",
+            },
+            {
+              title: "Automatizar o mecânico para revisar o essencial",
+              context: "Se a revisão gasta tempo com espaços e ponto e vírgula, sobra pouco para o que importa.",
+              code: {
+                language: "javascript",
+                filename: "lint-config.js",
+                code: [
+                  "// Regras verificadas por ferramenta no CI — não precisam de comentário humano",
+                  "const lintConfig = {",
+                  "  rules: {",
+                  "    \"no-unused-vars\": \"error\",",
+                  "    \"eqeqeq\": \"error\",",
+                  "    \"prefer-const\": \"warn\",",
+                  "  },",
+                  "};",
+                  "// Formatação: um formatador automático (ex.: Prettier) decide, ninguém discute.",
+                ].join("\n"),
+              },
+              explanation:
+                "Com formatação e lint no CI, a revisão humana pode se concentrar em desenho, lógica e casos " +
+                "de borda. Comentários como \"faltou um espaço aqui\" são um sinal de que algo deveria estar automatizado.",
+            },
+            {
+              title: "O autor prepara a revisão",
+              context: "Uma boa descrição e uma leitura prévia do próprio diff poupam o tempo de todos.",
+              code: {
+                language: "text",
+                filename: "pr-description.md",
+                code: [
+                  "## O que muda",
+                  "Limita a lista de pedidos a 10 itens na tela inicial.",
+                  "",
+                  "## Por que",
+                  "A tela demora 4s com clientes de mais de 500 pedidos (issue #231).",
+                  "",
+                  "## Como testar",
+                  "Abrir a tela com o cliente de teste \"big-customer\" e conferir que carrega em menos de 1s.",
+                  "",
+                  "## Atenção",
+                  "A ordenação agora é feita no banco; a função antiga `sortOrders` foi removida.",
+                ].join("\n"),
+              },
+              explanation:
+                "O revisor sabe o que esperar, por que a mudança existe e como verificá-la, e onde olhar com mais " +
+                "cuidado. Sem isso, ele precisa deduzir a intenção lendo cada linha do diff.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Você foi convidado a revisar o trecho abaixo, que faz parte de um PR intitulado \"adiciona filtro " +
+              "de produtos por categoria\". Há um problema real, uma melhoria de legibilidade e um detalhe de " +
+              "estilo.",
+            problemCode: {
+              language: "javascript",
+              filename: "filter-products.js",
+              code: [
+                "function filterProducts(products, cat) {",
+                "  const result = products;",
+                "  result.forEach((p, i) => {",
+                "    if (p.category != cat) result.splice(i, 1);",
+                "  })",
+                "  return result",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Escreva os comentários de revisão que você deixaria, indicando qual é bloqueante (precisa ser " +
+              "corrigido antes do merge), qual é uma sugestão e qual é só um detalhe de estilo.",
+            hint: "Repare no que acontece com o array original e com os índices ao remover elementos durante o laço.",
+            solution: {
+              code: {
+                language: "text",
+                filename: "review-comments.txt",
+                code: [
+                  "[bloqueante] Linhas 2–4: `result` aponta para o mesmo array de `products`, e `splice` dentro do",
+                  "`forEach` altera o array enquanto ele é percorrido — elementos são pulados e a lista original",
+                  "do chamador é modificada. Sugestão: `return products.filter((p) => p.category === category)`.",
+                  "",
+                  "[sugestão] `cat` e `p` são difíceis de ler; `category` e `product` deixariam a função clara.",
+                  "",
+                  "[nit] Faltam ponto e vírgula nas linhas 5 e 6 (o lint do projeto poderia checar isso).",
+                ].join("\n"),
+              },
+              explanation:
+                "O primeiro comentário é bloqueante porque a função produz resultados errados e altera dados do " +
+                "chamador. Os outros dois melhoram a qualidade sem impedir o merge. Marcar a severidade deixa " +
+                "claro para o autor onde concentrar o esforço.",
+            },
+          },
+        }),
         concept({
           order: 20,
           title: "Review Dimensions",
@@ -6805,9 +6990,528 @@ export default area({
           note: "consolida 5 Tasks do rascunho original (\"Review for Correctness/Readability/Maintainability/Testability/Security\") — revisita Testing & Quality Engineering / Testing Strategy / Testability (uma das lentes)",
           subtopics: ["Correctness", "Readability", "Maintainability", "Testability", "Security"],
           collision: "≠ Testability (Testing & Quality Engineering / Testing Strategy) — uma lente de revisão × a propriedade em si",
+          summary:
+            "As lentes pelas quais uma mudança é avaliada em uma revisão — correção, legibilidade, " +
+            "manutenibilidade, testabilidade e segurança — para que a revisão seja sistemática em vez de " +
+            "depender do que chama a atenção primeiro.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Ao revisar, é fácil se prender ao que salta aos olhos (um nome estranho, uma linha longa) e perder " +
+                "problemas mais importantes. As dimensões de revisão são um conjunto de lentes que ajudam a " +
+                "percorrer a mudança de forma sistemática: Correctness (faz o que deveria?), Readability (dá " +
+                "para entender?), Maintainability (é fácil de mudar depois?), Testability (dá para verificar?) e " +
+                "Security (abre alguma brecha?).",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Cada lente faz uma pergunta diferente, e cada uma encontra problemas que as outras deixam passar. Uma " +
+                "função pode estar perfeitamente legível e ainda calcular o valor errado; pode estar correta e " +
+                "impossível de testar; pode ser testável e ter uma injeção de SQL. Passar pelas dimensões, mesmo que " +
+                "de forma rápida, reduz a chance de aprovar algo por ter \"cara de bom\".",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Perguntas-guia: Correctness — trata os casos de borda, a lógica cobre o requisito? Readability — " +
+                "nomes e estrutura comunicam a intenção? Maintainability — mudar isso no futuro exigirá alterar " +
+                "muitos lugares, há duplicação, acoplamento? Testability — existem testes que cobrem o " +
+                "comportamento novo, o código permite ser testado sem grandes montagens? Security — a entrada é " +
+                "validada, há dados sensíveis expostos, as permissões são checadas? Atenção: aqui Testability é " +
+                "uma lente de avaliação da mudança; a propriedade Testability em si é assunto do módulo Testing " +
+                "Strategy.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "uma função pequena e um problema encontrado em cada lente:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "review-dimensions.js",
+              code: [
+                "function getUserOrders(req) {",
+                "  const rows = db.query(\"SELECT * FROM orders WHERE user_id = \" + req.query.id);",
+                "  let t = 0;",
+                "  for (const r of rows) t += r.total;",
+                "  return { t, rows };",
+                "}",
+                "",
+                "// Security:        SQL montado por concatenação → injeção de SQL; e nada checa se",
+                "//                  o usuário logado pode ver os pedidos de req.query.id.",
+                "// Correctness:     `db.query` provavelmente é assíncrono — falta um await.",
+                "// Readability:     `t`, `r`: o que são? `total` e `order` dariam o significado.",
+                "// Maintainability: SELECT * acopla o código ao formato da tabela; a soma poderia ser",
+                "//                  uma função própria.",
+                "// Testability:     a função depende diretamente do `db` global, então não dá para",
+                "//                  testá-la sem um banco real.",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Cinco lentes, cinco tipos de achado em seis linhas. Uma leitura sem método provavelmente pararia nos " +
+                "nomes ruins e deixaria passar a injeção de SQL — o problema mais grave do trecho.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Percorra a mudança por lentes diferentes — correção, legibilidade, manutenibilidade, " +
+                "testabilidade, segurança — para não aprovar algo apenas porque uma dimensão parecia boa.",
+            },
+          ],
+          examples: [
+            {
+              title: "Lente de correção: os casos de borda",
+              context: "A pergunta é se o código faz o certo em todos os casos — inclusive os limites e os vazios.",
+              code: {
+                language: "javascript",
+                filename: "correctness-lens.js",
+                code: [
+                  "// Regra: \"frete grátis para pedidos a partir de R$ 200\"",
+                  "function hasFreeShipping(order) {",
+                  "  return order.total > 200;",
+                  "}",
+                  "// Revisor: o requisito diz \"a partir de\" — um pedido de exatamente R$ 200 deveria ter",
+                  "// frete grátis. Falta o >=. Vale um teste na fronteira (199,99 / 200 / 200,01).",
+                ].join("\n"),
+              },
+              explanation:
+                "O código parece correto à primeira vista, e a diferença entre > e >= só aparece quando se " +
+                "compara com o requisito e se pensa no valor exato do limite.",
+            },
+            {
+              title: "Lente de segurança: entrada e permissão",
+              context: "Toda entrada externa é suspeita, e toda operação sobre dados de alguém precisa checar quem pediu.",
+              code: {
+                language: "javascript",
+                filename: "security-lens.js",
+                code: [
+                  "app.get(\"/invoices/:id\", async (req, res) => {",
+                  "  const invoice = await db.invoices.find(req.params.id);",
+                  "  res.json(invoice);",
+                  "});",
+                  "// Revisor: qualquer usuário autenticado pode ler qualquer fatura só trocando o id na URL.",
+                  "// Falta checar se `invoice.userId === req.user.id` (ou se o usuário é administrador).",
+                ].join("\n"),
+              },
+              explanation:
+                "O código funciona e é legível, mas expõe dados de outros usuários. Esse é o tipo de falha que " +
+                "só aparece quando a revisão pergunta explicitamente \"quem pode chamar isso e sobre quais dados?\".",
+            },
+            {
+              title: "Lente de testabilidade da mudança",
+              context: "Aqui a pergunta é se esta mudança vem acompanhada de testes adequados e se pode ser verificada com facilidade.",
+              code: {
+                language: "javascript",
+                filename: "testability-lens.js",
+                code: [
+                  "function isOfferValid(offer) {",
+                  "  return offer.expiresAt > new Date();   // depende do relógio real",
+                  "}",
+                  "// Revisor: o resultado muda conforme a hora em que o teste roda. Sugiro receber a data",
+                  "// atual como parâmetro (`isOfferValid(offer, now)`) para testar com datas fixas —",
+                  "// e o PR não traz nenhum teste para o novo comportamento.",
+                ].join("\n"),
+              },
+              explanation:
+                "A lente de revisão avalia duas coisas: se há testes para a mudança e se o código é escrito de um " +
+                "modo que permita testá-lo. Cada uma é um comentário legítimo, mesmo que o código esteja correto hoje.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Revise a função abaixo, que aplica um cupom de desconto, buscando pelo menos um problema em cada uma " +
+              "das cinco lentes.",
+            problemCode: {
+              language: "javascript",
+              filename: "apply-coupon.js",
+              code: [
+                "async function applyCoupon(userId, code) {",
+                "  const coupon = await db.query(`SELECT * FROM coupons WHERE code = '${code}'`);",
+                "  if (coupon.used = true) return 0;",
+                "  const d = coupon.value * 0.1;",
+                "  return d;",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Liste um achado para cada dimensão (correção, legibilidade, manutenibilidade, testabilidade e " +
+              "segurança), com uma frase explicando o problema.",
+            hint: "Procure a atribuição no lugar de comparação, o SQL montado com texto do usuário, o número solto 0.1 e a dependência direta do banco.",
+            solution: {
+              code: {
+                language: "text",
+                filename: "review-findings.txt",
+                code: [
+                  "Correctness:     `coupon.used = true` é uma atribuição, não uma comparação — o cupom sempre",
+                  "                 será marcado como usado e a função retorna 0 para todos. Além disso, não",
+                  "                 há tratamento para cupom inexistente (`coupon` undefined).",
+                  "Readability:     `d` não diz nada; e o 0.1 parece ser um percentual — quem lê não sabe.",
+                  "Maintainability: o percentual 0.1 está fixo no código; deveria ser uma constante nomeada ou",
+                  "                 vir do próprio cupom.",
+                  "Testability:     a função depende de `db` diretamente; injetar o acesso a dados permitiria",
+                  "                 testar sem banco.",
+                  "Security:        o SQL é montado com `code` do usuário → injeção de SQL. Usar consulta",
+                  "                 parametrizada. Também não se verifica se o cupom pertence ao usuário.",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada lente encontrou algo diferente, e os achados de correção e segurança são os bloqueantes. Passar " +
+                "por todas as dimensões evita parar no primeiro problema visível (os nomes) e deixar os mais " +
+                "graves para trás.",
+            },
+          },
         }),
-        concept({ order: 30, title: "Review Scope", requires: ["Code Review"], note: "tamanho/foco de um PR — mudanças de propósito único" }),
-        concept({ order: 40, title: "Giving & Receiving Feedback", requires: ["Code Review"], note: "camada de comunicação/soft-skill" }),
+        concept({
+          order: 30,
+          title: "Review Scope",
+          requires: ["Code Review"],
+          note: "tamanho/foco de um PR — mudanças de propósito único",
+          summary:
+            "Manter cada mudança submetida a revisão pequena e com um propósito único — porque revisões de mudanças " +
+            "grandes ou misturadas são lentas, superficiais e deixam passar problemas.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Review Scope é o tamanho e o foco de uma mudança enviada para revisão. A regra prática: cada " +
+                "pull request deve ter um único propósito (uma funcionalidade, uma correção, uma refatoração) e ser " +
+                "pequeno o bastante para ser lido com atenção em uma sessão — em geral, algumas centenas de linhas " +
+                "no máximo, e menos é melhor.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "A qualidade da revisão cai bruscamente com o tamanho. Uma mudança de vinte linhas recebe comentários " +
+                "detalhados; uma de dois mil recebe um \"parece ok\", porque ninguém consegue manter tudo na " +
+                "cabeça. Mudanças grandes também demoram a ser revisadas, ficam abertas e acumulam conflitos com o " +
+                "restante do código, e são mais arriscadas de integrar (e mais difíceis de desfazer se algo der " +
+                "errado).",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Misturar propósitos piora tudo: quando uma funcionalidade nova, uma refatoração e um monte de " +
+                "mudanças de formatação vêm no mesmo PR, o revisor não distingue o que muda comportamento do que " +
+                "só reorganiza (a ideia dos \"dois chapéus\" do módulo Refactoring). Como dividir: separe " +
+                "refatorações preparatórias da funcionalidade, entregue por camadas (dados, lógica, interface), use " +
+                "feature flags para integrar código ainda incompleto sem ativá-lo e deixe mudanças automáticas " +
+                "de formatação para seu próprio PR.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "uma funcionalidade grande dividida em PRs pequenos, com o código novo protegido por uma flag:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "review-scope.js",
+              code: [
+                "// PR 1: só o modelo de dados (fácil de revisar, sem mudar comportamento)",
+                "// PR 2: a lógica nova, escondida atrás de uma feature flag",
+                "function checkout(cart, flags) {",
+                "  if (flags.newPricingEngine) {",
+                "    return calculateWithNewEngine(cart);   // novo, desligado por padrão",
+                "  }",
+                "  return calculateLegacy(cart);            // comportamento atual, intacto",
+                "}",
+                "// PR 3: a interface que usa o novo cálculo",
+                "// PR 4: liga a flag e remove o código legado",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Cada PR é pequeno, tem um propósito e pode ser integrado sem quebrar nada, porque o " +
+                "comportamento novo só é ativado no final. Em vez de um PR de dois mil linhas, o revisor recebe " +
+                "quatro que consegue avaliar de verdade.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Um PR, um propósito, pequeno o bastante para ser lido com atenção — mudanças grandes não recebem " +
+                "revisões melhores, recebem revisões piores.",
+            },
+          ],
+          examples: [
+            {
+              title: "Um PR que mistura três propósitos",
+              context: "O revisor não consegue separar o que muda comportamento do que só reorganiza ou reformata.",
+              code: {
+                language: "text",
+                filename: "mixed-pr.txt",
+                code: [
+                  "PR \"melhorias no checkout\" (1.400 linhas alteradas)",
+                  "  - adiciona pagamento por Pix                       ← funcionalidade",
+                  "  - reorganiza o módulo de pagamentos em 6 arquivos  ← refatoração",
+                  "  - reformata 30 arquivos com o novo Prettier        ← formatação",
+                  "",
+                  "Dividido:",
+                  "  PR 1: formatação automática (revisão rápida: só confirmar que é mecânica)",
+                  "  PR 2: reorganização do módulo (sem mudar comportamento; testes iguais)",
+                  "  PR 3: pagamento por Pix (agora o diff só mostra a funcionalidade)",
+                ].join("\n"),
+              },
+              explanation:
+                "Separados, cada PR pode ser revisado com o foco certo: o primeiro só exige confirmar que é " +
+                "mecânico, o segundo que nada mudou de comportamento, e o terceiro que a funcionalidade está correta.",
+            },
+            {
+              title: "Fatiar uma mudança grande em passos revisáveis",
+              context: "Uma funcionalidade grande pode entrar aos poucos, cada passo pequeno e seguro por si só.",
+              code: {
+                language: "javascript",
+                filename: "vertical-slices.js",
+                code: [
+                  "// Objetivo: notificações por e-mail e push",
+                  "// PR 1: interface Notifier + implementação de e-mail (com testes)",
+                  "class EmailNotifier {",
+                  "  send(user, message) { /* ... */ }",
+                  "}",
+                  "// PR 2: implementação de push, mesma interface",
+                  "// PR 3: escolha do canal por preferência do usuário",
+                  "// Cada passo compila, passa nos testes e pode ir para produção sozinho.",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada entrega é pequena, funciona por si só e permite feedback cedo. Se a abordagem estiver errada, " +
+                "descobre-se no PR 1, não depois de semanas de trabalho.",
+            },
+            {
+              title: "Mudanças \"de passagem\" poluem o diff",
+              context: "Aproveitar para renomear ou arrumar coisas não relacionadas esconde a mudança real.",
+              code: {
+                language: "text",
+                filename: "drive-by-changes.txt",
+                code: [
+                  "PR \"corrige cálculo de frete\" (diff de 12 arquivos)",
+                  "  shipping.js       ← a correção (3 linhas)",
+                  "  11 outros arquivos ← renomeações e limpezas \"que encontrei pelo caminho\"",
+                  "",
+                  "O revisor gasta o tempo verificando renomeações e pode deixar passar",
+                  "justamente as 3 linhas que importam.",
+                  "",
+                  "Melhor: a correção em um PR pequeno; as limpezas, em outro.",
+                ].join("\n"),
+              },
+              explanation:
+                "O tamanho do diff não é a medida de esforço da revisão — o ruído é. Manter cada PR focado " +
+                "faz com que o revisor gaste a atenção onde ela é necessária.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Uma pessoa da equipe abriu um único PR com a lista de alterações abaixo, e o revisor pediu que " +
+              "ele fosse dividido.",
+            problemCode: {
+              language: "text",
+              filename: "big-pr.txt",
+              code: [
+                "PR \"módulo de relatórios\" — 2.100 linhas",
+                "  1. Renomeia 40 funções para o novo padrão de nomes",
+                "  2. Corrige um bug no cálculo de totais mensais (5 linhas)",
+                "  3. Adiciona exportação de relatórios em CSV (novo)",
+                "  4. Atualiza a biblioteca de gráficos para a versão 5",
+                "  5. Reformata todos os arquivos do módulo",
+              ].join("\n"),
+            },
+            task:
+              "Proponha uma divisão em PRs menores, cada um com um único propósito, e indique a ordem em que " +
+              "deveriam ser integrados e por quê.",
+            hint: "Comece pelo que é mecânico e de baixo risco, coloque a correção de bug em um PR isolado (para poder ser aplicada rápido) e deixe a funcionalidade nova por último.",
+            solution: {
+              code: {
+                language: "text",
+                filename: "split-plan.txt",
+                code: [
+                  "PR 1 — Reformatação dos arquivos do módulo (mecânica; revisão rápida)",
+                  "PR 2 — Correção do bug de totais mensais (5 linhas; pode ir para produção logo)",
+                  "PR 3 — Renomeação das 40 funções (sem mudar comportamento; testes existentes iguais)",
+                  "PR 4 — Atualização da biblioteca de gráficos (isolada, para facilitar reverter)",
+                  "PR 5 — Exportação em CSV (a funcionalidade, sobre uma base já limpa)",
+                ].join("\n"),
+              },
+              explanation:
+                "A correção do bug ficou isolada para ser entregue sem esperar o resto. As mudanças mecânicas vêm " +
+                "primeiro para não poluírem os diffs seguintes, a atualização da biblioteca fica sozinha (se " +
+                "quebrar algo, reverte-se só ela) e a funcionalidade nova vem por último, com um diff limpo.",
+            },
+          },
+        }),
+        concept({
+          order: 40,
+          title: "Giving & Receiving Feedback",
+          requires: ["Code Review"],
+          note: "camada de comunicação/soft-skill",
+          summary:
+            "Como comentar e como responder em uma revisão: focar no código e não na pessoa, ser específico e " +
+            "explicar o porquê, distinguir o essencial do opcional e assumir boa-fé dos dois lados.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Uma revisão é uma conversa entre pessoas, e a forma como o feedback é dado e recebido decide se ela " +
+                "melhora o código e o time — ou gera atrito. Giving & Receiving Feedback é a camada de comunicação " +
+                "da revisão: o que dizer, como dizer, e como reagir ao que se ouve.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "O mesmo achado técnico pode ser comunicado de um jeito que ensina (\"esse laço altera a lista " +
+                "original; que tal filter?\") ou de um jeito que humilha (\"você não sabe o que é imutabilidade?\"). " +
+                "O segundo pode até estar certo, mas faz a pessoa se defender em vez de aprender, e com o tempo " +
+                "as pessoas passam a evitar revisões ou a esconder dúvidas. Um time em que feedback é seguro " +
+                "encontra mais problemas, porque as pessoas se expõem sem medo.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Para quem revisa: comente o código, não a pessoa (\"este trecho\", não \"você\"); seja específico e " +
+                "acionável; explique o porquê; prefira perguntas e sugestões a ordens quando houver mais de " +
+                "um caminho; marque a severidade (bloqueante, sugestão, nit) e reconheça o que ficou bom. Para " +
+                "quem recebe: assuma boa-fé, responda a cada comentário (corrigiu, discorda com razões, ou pediu " +
+                "esclarecimento), não trate crítica ao código como crítica pessoal e agradeça. Em impasses, " +
+                "uma conversa rápida resolve o que dez comentários não resolvem.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "o mesmo achado, comunicado de forma dura e de forma construtiva:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "code-under-review.js",
+              code: [
+                "const d = items.filter((i) => i.a).map((i) => i.p);",
+              ].join("\n"),
+            },
+            {
+              type: "code",
+              language: "text",
+              filename: "feedback.txt",
+              code: [
+                "Duro:",
+                "  \"Que nomes horríveis. Ninguém entende isso. Refaça.\"",
+                "",
+                "Construtivo:",
+                "  \"[sugestão] `d`, `i`, `a` e `p` me obrigam a decifrar o que cada um guarda. Nomes como",
+                "   `activePrices`, `item.isActive` e `item.price` deixariam a intenção óbvia — assim quem ler",
+                "   depois (inclusive nós, em três meses) entende de relance. Faz sentido?\"",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Os dois apontam o mesmo problema, mas o segundo diz o que exatamente incomoda, sugere um " +
+                "caminho, explica o motivo, marca que é uma sugestão e convida a uma conversa. É o que faz o autor " +
+                "querer corrigir, em vez de se defender.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Critique o código, não a pessoa: seja específico, explique o porquê, marque a severidade — e " +
+                "quem recebe, responda com boa-fé e sem levar para o lado pessoal.",
+            },
+          ],
+          examples: [
+            {
+              title: "Marcar a severidade dos comentários",
+              context: "Sem marcação, o autor não sabe o que precisa mudar antes do merge e o que é só uma opinião.",
+              code: {
+                language: "text",
+                filename: "severity-labels.txt",
+                code: [
+                  "[bloqueante] Esta consulta não filtra por usuário: qualquer pessoa consegue ver dados alheios.",
+                  "[sugestão]   Extrair esse bloco para uma função (`calculateDiscount`) deixaria o fluxo mais legível.",
+                  "[nit]        Falta uma linha em branco antes do `return` (não precisa corrigir agora).",
+                  "[pergunta]   Por que usamos 30 dias aqui? Existe uma regra de negócio por trás desse número?",
+                  "[elogio]     Gostei da separação entre validação e gravação — ficou bem fácil de acompanhar.",
+                ].join("\n"),
+              },
+              explanation:
+                "Com os rótulos, o autor prioriza sem adivinhar: começa pelos bloqueantes, decide sobre as " +
+                "sugestões, e sabe que os nits podem esperar. O elogio importa: reforça o que fazer de novo.",
+            },
+            {
+              title: "Do comando para a pergunta",
+              context: "Quando há mais de um caminho razoável, uma pergunta abre a conversa; uma ordem a fecha.",
+              code: {
+                language: "text",
+                filename: "question-vs-order.txt",
+                code: [
+                  "Ordem:    \"Troque esse for por map.\"",
+                  "",
+                  "Pergunta: \"Esse laço só transforma cada item — `map` seria mais direto? Se você preferiu o",
+                  "           `for` por algum motivo (desempenho, legibilidade), me conta que eu aprendo.\"",
+                ].join("\n"),
+              },
+              explanation:
+                "Às vezes o autor tem uma razão que o revisor não viu. A pergunta permite descobrir isso sem " +
+                "confronto — e, se a sugestão for boa, o autor a adota por convicção, não por obrigação.",
+            },
+            {
+              title: "Responder como autor",
+              context: "Receber feedback também é uma habilidade: a resposta mostra o que foi feito e o que não.",
+              code: {
+                language: "text",
+                filename: "author-replies.txt",
+                code: [
+                  "Aceito:        \"Boa pegada, corrigi em a1b2c3d e adicionei um teste para esse caso.\"",
+                  "Discordância:  \"Entendo o ponto, mas prefiro manter assim porque essa função é chamada em",
+                  "               loop crítico e o `for` evita uma alocação (medi: 40% mais rápido). Coloquei",
+                  "               um comentário explicando o motivo. Te parece razoável?\"",
+                  "Dúvida:        \"Não entendi bem a sugestão — você quer mover a validação para o controller",
+                  "               ou para o serviço? Um exemplo ajudaria.\"",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada resposta fecha um ciclo: mostra que o comentário foi lido, o que foi decidido e por quê. A " +
+                "discordância vem com dados e uma abertura para o revisor, não com defesa.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Estes três comentários de revisão são tecnicamente corretos, mas foram escritos de um jeito que " +
+              "tende a gerar atrito.",
+            problemCode: {
+              language: "text",
+              filename: "harsh-comments.txt",
+              code: [
+                "1. \"Você esqueceu de tratar o caso de lista vazia. Isso é básico.\"",
+                "2. \"Esse código está uma bagunça.\"",
+                "3. \"Por que você fez isso desse jeito? Está errado.\"",
+              ].join("\n"),
+            },
+            task:
+              "Reescreva os três comentários de forma construtiva: focados no código, específicos, com o porquê e " +
+              "com a severidade indicada.",
+            hint: "Troque \"você\" por \"este trecho\", diga exatamente o que acontece (e onde), sugira um caminho e marque se bloqueia ou não.",
+            solution: {
+              code: {
+                language: "text",
+                filename: "constructive-comments.txt",
+                code: [
+                  "1. \"[bloqueante] Se `items` vier vazio, `items[0].price` lança um erro na linha 12. Que tal",
+                  "    retornar cedo com `if (items.length === 0) return 0;`? Vale um teste para esse caso.\"",
+                  "",
+                  "2. \"[sugestão] A função `process` faz validação, cálculo e gravação, o que dificulta testar cada",
+                  "    parte. Separar em três funções pequenas ajudaria. Posso ajudar com isso, se quiser.\"",
+                  "",
+                  "3. \"[pergunta] Não entendi por que o cálculo foi feito no cliente em vez de no servidor.",
+                  "    Se for por desempenho, um comentário explicando ajuda quem ler depois. Se não, pode ser",
+                  "    mais seguro fazê-lo no servidor, porque o cliente pode alterar o valor.\"",
+                ].join("\n"),
+              },
+              explanation:
+                "Os três comentários agora apontam onde está o problema, dizem por que importa e oferecem um caminho, " +
+                "sem julgar a pessoa. O terceiro virou uma pergunta, porque o revisor não sabe se havia uma razão " +
+                "válida — e assim deixa espaço para descobri-la.",
+            },
+          },
+        }),
       ],
     }),
     module({
