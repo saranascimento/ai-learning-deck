@@ -1127,14 +1127,764 @@ export default area({
       requires: ["Programming Foundations / Programming Fundamentals"],
       summary: "Paralela a Clean Code — heurísticas de design que não dependem dela. DRY → KISS → YAGNI → Principle of Least Astonishment.",
       concepts: [
-        concept({ order: 10, title: "DRY", note: "Don't Repeat Yourself" }),
-        concept({ order: 20, title: "KISS", note: "Keep It Simple" }),
+        concept({
+          order: 10,
+          title: "DRY",
+          note: "Don't Repeat Yourself",
+          summary:
+            "Cada pedaço de conhecimento — uma regra, uma constante, uma decisão — deve ter uma única " +
+            "representação no sistema, para que mudá-lo exija mexer em um lugar só.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "DRY (Don't Repeat Yourself) diz que todo conhecimento do sistema deve ter uma representação única e " +
+                "autoritativa. Repare na palavra: conhecimento, não texto. O alvo não é código que \"parece igual\", " +
+                "e sim a mesma regra ou decisão escrita em mais de um lugar.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Quando a mesma regra vive em vários lugares, toda mudança vira uma caça: se você atualiza três dos " +
+                "quatro pontos e esquece um, o sistema passa a se contradizer — e o bug aparece só no caminho que " +
+                "ninguém lembrou de atualizar. Centralizar a regra transforma \"lembrar de mudar em todo lugar\" em " +
+                "\"mudar uma vez\".",
+            },
+            {
+              type: "paragraph",
+              text:
+                "O cuidado é não aplicar DRY de forma mecânica. Dois trechos que parecem iguais mas existem por " +
+                "razões diferentes (duplicação acidental) vão evoluir separados; uni-los cria uma abstração que " +
+                "passa a exigir parâmetros e exceções para acomodar os dois, e isso costuma ser pior que a " +
+                "repetição. Uma regra prática é esperar a terceira ocorrência antes de abstrair. A manifestação " +
+                "concreta da violação, vista no código, é o smell Duplicate Code (módulo Code Smells).",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "a mesma regra de negócio escrita em dois lugares, e depois centralizada:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "dry.js",
+              code: [
+                "// Antes: a regra \"frete grátis acima de 200\" está em dois lugares",
+                "function cartSummary(cart) {",
+                "  const shipping = cart.total >= 200 ? 0 : 15;",
+                "  return cart.total + shipping;",
+                "}",
+                "",
+                "function checkoutLabel(cart) {",
+                "  return cart.total >= 200 ? \"Frete grátis\" : \"Frete: R$ 15\";",
+                "}",
+                "",
+                "// Depois: uma única fonte da regra",
+                "const FREE_SHIPPING_MIN_TOTAL = 200;",
+                "const SHIPPING_FEE = 15;",
+                "",
+                "function shippingFor(cart) {",
+                "  return cart.total >= FREE_SHIPPING_MIN_TOTAL ? 0 : SHIPPING_FEE;",
+                "}",
+                "",
+                "function cartSummary(cart) {",
+                "  return cart.total + shippingFor(cart);",
+                "}",
+                "",
+                "function checkoutLabel(cart) {",
+                "  return shippingFor(cart) === 0 ? \"Frete grátis\" : `Frete: R$ ${SHIPPING_FEE}`;",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Se o frete grátis passar a valer a partir de 250, a mudança é uma linha, e a tela e o cálculo " +
+                "continuam concordando — porque as duas leem a mesma regra.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "DRY é sobre não duplicar conhecimento, não sobre não repetir texto — centralize a regra que precisa " +
+                "mudar junto, e deixe separado o que só parece igual.",
+            },
+          ],
+          examples: [
+            {
+              title: "Regra de validação repetida",
+              context: "A mesma validação copiada em dois fluxos é um caso clássico: quando a regra mudar, um deles vai ficar para trás.",
+              code: {
+                language: "javascript",
+                filename: "duplicated-validation.js",
+                code: [
+                  "// Antes: a regra de e-mail existe duas vezes",
+                  "function register(email) {",
+                  "  if (!email.includes(\"@\") || email.length < 5) throw new Error(\"e-mail inválido\");",
+                  "}",
+                  "function updateProfile(email) {",
+                  "  if (!email.includes(\"@\") || email.length < 5) throw new Error(\"e-mail inválido\");",
+                  "}",
+                  "",
+                  "// Depois: uma função, dois usos",
+                  "function assertValidEmail(email) {",
+                  "  if (!email.includes(\"@\") || email.length < 5) throw new Error(\"e-mail inválido\");",
+                  "}",
+                  "function register(email) { assertValidEmail(email); }",
+                  "function updateProfile(email) { assertValidEmail(email); }",
+                ].join("\n"),
+              },
+              explanation:
+                "Se a regra ficar mais rígida (por exemplo, exigir um domínio), basta alterar assertValidEmail — o " +
+                "cadastro e a edição de perfil passam a aceitar exatamente os mesmos e-mails.",
+            },
+            {
+              title: "Duplicação acidental: parecido não é igual",
+              context: "Dois trechos com o mesmo formato podem representar conhecimentos diferentes que vão mudar por motivos diferentes.",
+              code: {
+                language: "javascript",
+                filename: "accidental-duplication.js",
+                code: [
+                  "// Parecem iguais, mas são regras de negócio distintas",
+                  "function isEligibleForStudentDiscount(user) {",
+                  "  return user.age < 26;",
+                  "}",
+                  "function isEligibleForYouthTicket(user) {",
+                  "  return user.age < 26;",
+                  "}",
+                  "",
+                  "// Unificar em isUnder26(user) amarraria duas regras que podem mudar",
+                  "// de forma independente (e uma delas vai mudar).",
+                ].join("\n"),
+              },
+              explanation:
+                "O desconto de estudante e o ingresso jovem hoje usam o mesmo limite por coincidência. Se o ingresso " +
+                "jovem passar a valer até os 29, uma função compartilhada obrigaria a inventar parâmetros ou a " +
+                "quebrar o desconto de estudante sem querer.",
+            },
+            {
+              title: "Uma única fonte de verdade para dados derivados",
+              context: "DRY vale também para dados: se uma lista pode ser derivada de outra, não a escreva duas vezes.",
+              code: {
+                language: "javascript",
+                filename: "single-source.js",
+                code: [
+                  "// Antes: os mesmos status listados em dois lugares",
+                  "const STATUSES = [\"pending\", \"shipped\", \"canceled\"];",
+                  "const STATUS_LABELS = { pending: \"Pendente\", shipped: \"Enviado\", canceled: \"Cancelado\" };",
+                  "",
+                  "// Depois: a lista de status sai do próprio mapa de rótulos",
+                  "const STATUS_LABELS = { pending: \"Pendente\", shipped: \"Enviado\", canceled: \"Cancelado\" };",
+                  "const STATUSES = Object.keys(STATUS_LABELS);",
+                ].join("\n"),
+              },
+              explanation:
+                "Ao adicionar um status novo, basta incluí-lo no mapa; a lista STATUSES se atualiza sozinha, sem o " +
+                "risco de existir um rótulo sem status ou o contrário.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Estas duas funções calculam o preço final com desconto de cliente fiel, e a regra do desconto está " +
+              "escrita nas duas. Semana que vem, o desconto passa de 10% para 12%.",
+            problemCode: {
+              language: "javascript",
+              filename: "pricing.js",
+              code: [
+                "function bookPrice(book, customer) {",
+                "  if (customer.years >= 3) return book.price * 0.9;",
+                "  return book.price;",
+                "}",
+                "",
+                "function subscriptionPrice(plan, customer) {",
+                "  if (customer.years >= 3) return plan.price * 0.9;",
+                "  return plan.price;",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Reorganize o código para que a regra do desconto de cliente fiel exista em um único lugar, de modo " +
+              "que a mudança para 12% seja feita em uma linha.",
+            hint: "O que é comum às duas funções é a regra \"cliente com 3 anos ou mais ganha desconto\". Extraia só essa regra, deixando o preço de cada produto onde está.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "pricing.refactored.js",
+                code: [
+                  "const LOYALTY_MIN_YEARS = 3;",
+                  "const LOYALTY_DISCOUNT_RATE = 0.1;",
+                  "",
+                  "function applyLoyaltyDiscount(price, customer) {",
+                  "  if (customer.years >= LOYALTY_MIN_YEARS) return price * (1 - LOYALTY_DISCOUNT_RATE);",
+                  "  return price;",
+                  "}",
+                  "",
+                  "function bookPrice(book, customer) {",
+                  "  return applyLoyaltyDiscount(book.price, customer);",
+                  "}",
+                  "",
+                  "function subscriptionPrice(plan, customer) {",
+                  "  return applyLoyaltyDiscount(plan.price, customer);",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "A regra do desconto agora está em applyLoyaltyDiscount, e passar de 10% para 12% é trocar " +
+                "LOYALTY_DISCOUNT_RATE por 0.12. Repare que só a regra foi centralizada: bookPrice e " +
+                "subscriptionPrice continuam separadas, porque cada uma pode mudar por motivos próprios.",
+            },
+          },
+        }),
+        concept({
+          order: 20,
+          title: "KISS",
+          note: "Keep It Simple",
+          summary:
+            "Preferir a solução mais simples que resolve o problema — complexidade tem custo de leitura, de teste " +
+            "e de manutenção, e só se justifica quando compra algo que a versão simples não compra.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "KISS (Keep It Simple) é a heurística de escolher, entre as soluções que resolvem o problema, a mais " +
+                "simples de entender e de mudar. Simples aqui não quer dizer \"curta\" nem \"fácil de escrever\": " +
+                "quer dizer com poucas partes móveis e com um caminho de leitura direto.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Todo código precisa ser lido, depurado e alterado por alguém — muitas vezes por você mesmo meses " +
+                "depois, sem lembrar do contexto. Cada camada, padrão ou truque a mais é algo que essa pessoa " +
+                "precisa entender antes de poder mudar qualquer coisa. Complexidade também é onde os bugs se " +
+                "escondem: quanto mais partes interagem, mais casos existem que ninguém pensou em testar.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Os desvios mais comuns são o código \"esperto\" (uma linha compacta que exige decifração), o " +
+                "excesso de engenharia (uma arquitetura flexível para um problema pequeno) e reinventar o que a " +
+                "linguagem ou a biblioteca padrão já oferece. KISS não é contra a complexidade necessária: se o " +
+                "problema é complexo, a solução será. A pergunta é se cada parte complexa está pagando o seu custo.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "uma solução \"esperta\" e uma simples para o mesmo problema:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "kiss.js",
+              code: [
+                "// Antes: compacto, mas exige decifrar para entender",
+                "const label = (n) => (n % 15 ? (n % 5 ? (n % 3 ? n : \"Fizz\") : \"Buzz\") : \"FizzBuzz\");",
+                "",
+                "// Depois: mais linhas, mas cada uma se lê sozinha",
+                "function label(n) {",
+                "  if (n % 15 === 0) return \"FizzBuzz\";",
+                "  if (n % 3 === 0) return \"Fizz\";",
+                "  if (n % 5 === 0) return \"Buzz\";",
+                "  return n;",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A segunda versão é mais longa, mas é a mais simples de ler: cada regra é uma linha, na ordem em que " +
+                "é verificada, sem condições aninhadas ou lógica invertida para decifrar.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Simples é o que se entende rápido e se muda com segurança — não o que tem menos linhas. Só aceite " +
+                "complexidade que esteja comprando algo real.",
+            },
+          ],
+          examples: [
+            {
+              title: "Código esperto versus código claro",
+              context: "Uma expressão compacta pode ser impressionante de escrever e cara de ler.",
+              code: {
+                language: "javascript",
+                filename: "clever-vs-clear.js",
+                code: [
+                  "// Antes: reduce + spread para contar ocorrências",
+                  "const counts = words.reduce((acc, w) => ({ ...acc, [w]: (acc[w] || 0) + 1 }), {});",
+                  "",
+                  "// Depois: um laço simples faz o mesmo, sem truque",
+                  "const counts = {};",
+                  "for (const word of words) {",
+                  "  counts[word] = (counts[word] || 0) + 1;",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "O laço comunica \"para cada palavra, some um\" sem exigir que se entenda o acumulador reconstruído " +
+                "a cada volta. Ele também evita, sem esforço, o custo de copiar o objeto inteiro a cada palavra.",
+            },
+            {
+              title: "Engenharia demais para um problema pequeno",
+              context: "Quando a solução tem mais estrutura do que o problema pede, a estrutura vira o problema.",
+              code: {
+                language: "javascript",
+                filename: "over-engineering.js",
+                code: [
+                  "// Antes: um motor de regras configurável para duas verificações",
+                  "class RuleEngine {",
+                  "  constructor(rules) { this.rules = rules; }",
+                  "  run(input) { return this.rules.every((rule) => rule.check(input)); }",
+                  "}",
+                  "const engine = new RuleEngine([{ check: (u) => u.age >= 18 }, { check: (u) => u.hasConsent }]);",
+                  "engine.run(user);",
+                  "",
+                  "// Depois: as duas regras, escritas diretamente",
+                  "const canSignUp = user.age >= 18 && user.hasConsent;",
+                ].join("\n"),
+              },
+              explanation:
+                "Para duas condições fixas, a expressão direta é mais fácil de ler e de testar do que uma classe " +
+                "configurável. Se as regras crescerem de verdade, dá para introduzir a estrutura então.",
+            },
+            {
+              title: "Usar o que a linguagem já oferece",
+              context: "Reimplementar algo que a biblioteca padrão já resolve cria código a mais para manter, e possíveis bugs.",
+              code: {
+                language: "javascript",
+                filename: "use-the-standard-library.js",
+                code: [
+                  "// Antes: remoção de duplicados feita à mão",
+                  "function unique(items) {",
+                  "  const result = [];",
+                  "  for (const item of items) {",
+                  "    if (!result.includes(item)) result.push(item);",
+                  "  }",
+                  "  return result;",
+                  "}",
+                  "",
+                  "// Depois: a própria linguagem faz isso",
+                  "const uniqueItems = [...new Set(items)];",
+                ].join("\n"),
+              },
+              explanation:
+                "Uma linha com um recurso conhecido substitui uma função inteira para manter e testar — e quem lê " +
+                "reconhece o idioma imediatamente.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Esta função devolve o nível de um usuário conforme seus pontos, mas usa ternários aninhados e uma " +
+              "variável auxiliar que dificultam a leitura.",
+            problemCode: {
+              language: "javascript",
+              filename: "level.js",
+              code: [
+                "function getLevel(points) {",
+                "  let level;",
+                "  level = points >= 1000 ? \"ouro\" : points >= 500 ? \"prata\" : points >= 100 ? \"bronze\" : \"iniciante\";",
+                "  return level;",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Reescreva a função da forma mais simples de ler possível, mantendo exatamente o mesmo resultado para " +
+              "qualquer valor de pontos.",
+            hint: "Não precisa de variável auxiliar nem de ternário aninhado: verifique do maior limite para o menor, retornando assim que encontrar um caso.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "level.refactored.js",
+                code: [
+                  "function getLevel(points) {",
+                  "  if (points >= 1000) return \"ouro\";",
+                  "  if (points >= 500) return \"prata\";",
+                  "  if (points >= 100) return \"bronze\";",
+                  "  return \"iniciante\";",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada faixa é uma linha, na ordem em que é verificada, e a variável level desapareceu porque nunca " +
+                "foi necessária. Para adicionar uma faixa nova, basta inserir uma linha no lugar certo.",
+            },
+          },
+        }),
         concept({
           order: 30,
           title: "YAGNI",
           note: "You Aren't Gonna Need It — ver colisão conceitual com Speculative Generality (Code Smells, não incluída como Task)",
+          summary:
+            "Não construir funcionalidade nem flexibilidade antes de existir uma necessidade real — o que se " +
+            "prevê que vai ser preciso quase sempre custa mais do que rende.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "YAGNI (You Aren't Gonna Need It) é a regra de não implementar algo só porque \"talvez seja útil no " +
+                "futuro\". Ela vale para funcionalidades, opções, parâmetros e camadas de abstração: só entram no " +
+                "código quando há uma necessidade concreta e presente.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Código especulativo tem custo imediato e benefício incerto. É preciso escrevê-lo, testá-lo, " +
+                "documentá-lo e mantê-lo, e ele complica todo o código ao redor — tudo por algo que pode nunca ser " +
+                "usado. Pior: quando a necessidade real chega, ela quase nunca tem a forma que se imaginou, e o " +
+                "código construído \"para o futuro\" acaba sendo reescrito ou contornado.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "YAGNI não é ausência de planejamento nem licença para código desleixado: significa manter o " +
+                "código simples e fácil de mudar, para que acrescentar a funcionalidade quando ela for necessária " +
+                "seja barato. A exceção são as decisões muito caras de reverter depois (o formato de dados " +
+                "persistidos ou de uma API pública), onde alguma previsão compensa. Vale distinguir do smell " +
+                "Speculative Generality (módulo Code Smells): YAGNI é o princípio, que se aplica antes de escrever; o " +
+                "smell é o resultado visível de tê-lo ignorado, ao olhar o código pronto.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "um recurso \"para o futuro\" que ninguém usa, e a versão sem ele:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "yagni.js",
+              code: [
+                "// Antes: suporte a vários formatos \"caso precise\" — só CSV é usado",
+                "function exportReport(report, format = \"csv\") {",
+                "  if (format === \"csv\") return toCsv(report);",
+                "  if (format === \"xml\") return toXml(report);",
+                "  if (format === \"pdf\") return toPdf(report);",
+                "  throw new Error(\"formato desconhecido\");",
+                "}",
+                "",
+                "// Depois: só o que existe hoje",
+                "function exportReport(report) {",
+                "  return toCsv(report);",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "toXml e toPdf precisariam ser escritos, testados e mantidos sem que ninguém peça. Se um dia XML for " +
+                "realmente necessário, o requisito real (versão, schema, campos) provavelmente será diferente do " +
+                "que se imaginaria hoje — e adicioná-lo a uma função simples é barato.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Construa para o que é preciso agora e mantenha o código fácil de mudar — o futuro imaginado quase " +
+                "nunca chega do jeito previsto.",
+            },
+          ],
+          examples: [
+            {
+              title: "Parâmetro que ninguém usa",
+              context: "Opções adicionadas \"para dar flexibilidade\" viram superfície a testar e a explicar, mesmo sem uso.",
+              code: {
+                language: "javascript",
+                filename: "unused-option.js",
+                code: [
+                  "// Antes: locale e timezone nunca são passados por nenhum chamador",
+                  "function formatDate(date, locale = \"pt-BR\", timezone = \"America/Sao_Paulo\", style = \"short\") {",
+                  "  return date.toLocaleDateString(locale, { timeZone: timezone, dateStyle: style });",
+                  "}",
+                  "",
+                  "// Depois: o que de fato é usado",
+                  "function formatDate(date) {",
+                  "  return date.toLocaleDateString(\"pt-BR\", { dateStyle: \"short\" });",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Três parâmetros a menos para documentar e testar. Se um chamador precisar de outro idioma, o " +
+                "parâmetro é acrescentado nesse dia, guiado por um uso real.",
+            },
+            {
+              title: "Abstração para uma troca que talvez nunca aconteça",
+              context: "Criar uma interface \"caso um dia mudemos o banco\" adiciona uma camada que só terá uma implementação.",
+              code: {
+                language: "javascript",
+                filename: "premature-abstraction.js",
+                code: [
+                  "// Antes: uma camada extra com uma única implementação possível",
+                  "class UserRepository {",
+                  "  findById(id) { throw new Error(\"não implementado\"); }",
+                  "}",
+                  "class PostgresUserRepository extends UserRepository {",
+                  "  findById(id) { return db.query(\"SELECT * FROM users WHERE id = $1\", [id]); }",
+                  "}",
+                  "",
+                  "// Depois: a função que faz o trabalho",
+                  "function findUserById(id) {",
+                  "  return db.query(\"SELECT * FROM users WHERE id = $1\", [id]);",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Se algum dia houver um segundo banco, extrair a interface a partir de uma função concreta é uma " +
+                "refatoração pequena — e o desenho sairá dos dois casos reais, não de um palpite.",
+            },
+            {
+              title: "Exceção: o que é caro de mudar depois",
+              context: "YAGNI não proíbe toda previsão — decisões difíceis de reverter, como o formato de dados já gravados, merecem um cuidado a mais.",
+              code: {
+                language: "javascript",
+                filename: "cheap-insurance.js",
+                code: [
+                  "// Um campo de versão custa uma linha hoje e evita migrações dolorosas depois,",
+                  "// quando já existirem milhares de arquivos salvos no formato antigo.",
+                  "function saveSettings(settings) {",
+                  "  const file = { version: 1, ...settings };",
+                  "  fs.writeFileSync(\"settings.json\", JSON.stringify(file));",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Aqui a previsão é barata e o custo de errar é alto (dados já espalhados por aí). O critério é " +
+                "sempre a assimetria: se acrescentar depois for fácil, espere; se for muito caro, um pequeno " +
+                "investimento agora pode valer a pena.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Uma equipe pediu apenas o envio de e-mail de boas-vindas. Alguém antecipou \"necessidades futuras\" e " +
+              "construiu um sistema de notificações com canais e registro de provedores que ninguém usa.",
+            problemCode: {
+              language: "javascript",
+              filename: "notifier.js",
+              code: [
+                "const channels = new Map();",
+                "function registerChannel(name, sender) { channels.set(name, sender); }",
+                "registerChannel(\"email\", (user, msg) => mailer.send(user.email, msg));",
+                "registerChannel(\"sms\", (user, msg) => sms.send(user.phone, msg));",
+                "registerChannel(\"push\", (user, msg) => push.send(user.deviceId, msg));",
+                "",
+                "function notify(user, msg, channel = \"email\") {",
+                "  return channels.get(channel)(user, msg);",
+                "}",
+                "",
+                "notify(user, \"Bem-vindo!\");",
+              ].join("\n"),
+            },
+            task:
+              "Simplifique o código para fazer somente o que é pedido hoje — enviar o e-mail de boas-vindas — " +
+              "removendo o que é especulativo.",
+            hint: "Só existe uma chamada, e ela usa o canal padrão (e-mail). O que acontece com o registro de canais, o SMS e o push?",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "notifier.refactored.js",
+                code: [
+                  "function sendWelcomeEmail(user) {",
+                  "  return mailer.send(user.email, \"Bem-vindo!\");",
+                  "}",
+                  "",
+                  "sendWelcomeEmail(user);",
+                ].join("\n"),
+              },
+              explanation:
+                "O registro de canais, o SMS e o push não têm nenhum uso hoje — são código para manter sem " +
+                "benefício. Quando surgir a necessidade de um segundo canal, o desenho poderá partir de um " +
+                "requisito real (que canais? com que regras?) em vez de um palpite.",
+            },
+          },
         }),
-        concept({ order: 40, title: "Principle of Least Astonishment", note: "o código não deve surpreender quem lê" }),
+        concept({
+          order: 40,
+          title: "Principle of Least Astonishment",
+          note: "o código não deve surpreender quem lê",
+          summary:
+            "O código deve se comportar do jeito que quem lê ou usa espera — nomes, convenções e efeitos que " +
+            "surpreendem são fonte de bugs, mesmo quando \"funcionam\".",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "O Princípio da Menor Surpresa diz que uma função, uma API ou um módulo deve fazer o que o nome e o " +
+                "contexto levam alguém a esperar. Se o comportamento real diverge da expectativa razoável — um " +
+                "getter que altera estado, um retorno de tipo diferente conforme o caso — o código está " +
+                "surpreendendo quem o usa.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Quem usa uma função raramente lê a implementação: confia no nome, na assinatura e nas convenções " +
+                "do resto do código. Uma surpresa quebra essa confiança de forma silenciosa. O código \"funciona\", " +
+                "mas a pessoa que o chamou assumiu algo diferente, e o bug aparece longe do lugar onde a " +
+                "expectativa foi violada — o tipo de defeito mais caro de investigar.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Alguns focos: nomes que descrevem o comportamento inteiro (incluindo efeitos colaterais), " +
+                "convenções consistentes dentro do mesmo código (se uma função devolve um novo array, as vizinhas " +
+                "também), retornos de tipo previsível e padrões que não escondem comportamentos perigosos. Em " +
+                "dúvida, escolha o comportamento que a maioria das pessoas assumiria.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "uma função cujo nome promete uma coisa e o corpo faz duas:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "least-astonishment.js",
+              code: [
+                "// Antes: quem chama getUser não espera que ele altere o banco",
+                "function getUser(id) {",
+                "  const user = db.users.find(id);",
+                "  user.lastSeenAt = Date.now();",
+                "  db.users.save(user);",
+                "  return user;",
+                "}",
+                "",
+                "// Depois: leitura é leitura; o efeito tem nome e é chamado de forma explícita",
+                "function getUser(id) {",
+                "  return db.users.find(id);",
+                "}",
+                "",
+                "function markUserSeen(id) {",
+                "  const user = db.users.find(id);",
+                "  user.lastSeenAt = Date.now();",
+                "  db.users.save(user);",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Na primeira versão, qualquer tela que apenas consulta um usuário passaria a marcá-lo como \"visto\" " +
+                "e gravaria no banco — um efeito que ninguém procuraria ao ler o nome getUser. Na segunda, o que " +
+                "cada função faz está na cara do nome.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Se quem lê o nome espera uma coisa e a função faz outra, o problema é do código, não de quem " +
+                "chamou — faça o comportamento coincidir com a expectativa razoável.",
+            },
+          ],
+          examples: [
+            {
+              title: "Convenção inconsistente dentro do mesmo módulo",
+              context: "Funções irmãs devem seguir a mesma regra; quando uma altera o original e outra devolve uma cópia, alguém vai errar.",
+              code: {
+                language: "javascript",
+                filename: "inconsistent-convention.js",
+                code: [
+                  "// Antes: addItem altera o carrinho; removeItem devolve um novo — quem chama erra",
+                  "function addItem(cart, item) {",
+                  "  cart.items.push(item);",
+                  "}",
+                  "function removeItem(cart, itemId) {",
+                  "  return { ...cart, items: cart.items.filter((i) => i.id !== itemId) };",
+                  "}",
+                  "",
+                  "// Depois: as duas seguem a mesma convenção (devolvem um novo carrinho)",
+                  "function addItem(cart, item) {",
+                  "  return { ...cart, items: [...cart.items, item] };",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Na versão inconsistente, é fácil chamar removeItem(cart, id) e ignorar o retorno (o carrinho não " +
+                "muda), ou esperar um retorno de addItem que não existe. Com uma convenção só, o que uma função " +
+                "faz permite prever as demais.",
+            },
+            {
+              title: "Retornos de tipos diferentes para o mesmo caso",
+              context: "Uma função que devolve um valor, um booleano ou uma string conforme a situação obriga o chamador a checar tudo.",
+              code: {
+                language: "javascript",
+                filename: "mixed-returns.js",
+                code: [
+                  "// Antes: 'não encontrado' pode ser -1, false ou texto dependendo do caminho",
+                  "function findPrice(sku) {",
+                  "  if (!sku) return false;",
+                  "  const product = catalog.get(sku);",
+                  "  if (!product) return \"não encontrado\";",
+                  "  return product.price;",
+                  "}",
+                  "",
+                  "// Depois: um único sinal de ausência",
+                  "function findPrice(sku) {",
+                  "  const product = catalog.get(sku);",
+                  "  return product ? product.price : null;",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Com a primeira versão, um `if (price)` trataria o preço zero como ausência e o texto \"não " +
+                "encontrado\" poderia ser somado como se fosse um número. Um único sinal de ausência (null) é " +
+                "previsível e fácil de tratar.",
+            },
+            {
+              title: "Valor padrão que surpreende",
+              context: "Padrões devem ser o comportamento mais seguro e esperado, não uma ação destrutiva escondida.",
+              code: {
+                language: "javascript",
+                filename: "surprising-default.js",
+                code: [
+                  "// Antes: omitir o parâmetro apaga os dados — uma surpresa perigosa",
+                  "function resetDatabase(confirm = true) {",
+                  "  if (confirm) db.dropAll();",
+                  "}",
+                  "resetDatabase(); // apagou tudo sem o chamador pedir",
+                  "",
+                  "// Depois: o padrão é o seguro; a ação destrutiva exige intenção explícita",
+                  "function resetDatabase({ confirmed = false } = {}) {",
+                  "  if (!confirmed) throw new Error(\"passe { confirmed: true } para apagar os dados\");",
+                  "  db.dropAll();",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Um padrão deve ser o que a maioria esperaria acontecer quando nada é dito. Aqui, \"não disse nada\" " +
+                "passa a significar \"não faça nada perigoso\", e a operação destrutiva só ocorre quando " +
+                "pedida de forma explícita.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Esta função tem \"isAdmin\" no nome, mas se comporta de formas que quem a chama não esperaria em uma " +
+              "verificação de permissão.",
+            problemCode: {
+              language: "javascript",
+              filename: "is-admin.js",
+              code: [
+                "function isAdmin(user) {",
+                "  user.lastCheckedAt = Date.now();",
+                "  if (!user.roles) return \"sem papéis\";",
+                "  return user.roles.includes(\"admin\");",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Identifique o que surpreende quem chama isAdmin e reescreva para que o comportamento coincida com o " +
+              "que o nome promete.",
+            hint: "Uma pergunta como \"é admin?\" deveria ter efeito colateral? E que tipos de resposta você esperaria receber dela?",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "is-admin.refactored.js",
+                code: [
+                  "function isAdmin(user) {",
+                  "  return Boolean(user.roles) && user.roles.includes(\"admin\");",
+                  "}",
+                  "",
+                  "// Se o registro do momento da checagem for necessário, tem nome próprio:",
+                  "function markUserChecked(user) {",
+                  "  user.lastCheckedAt = Date.now();",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Duas surpresas foram removidas: a pergunta alterava o usuário (efeito colateral escondido) e " +
+                "devolvia às vezes um texto em vez de verdadeiro ou falso. Agora isAdmin só responde e sempre " +
+                "devolve um booleano, e o registro do horário, se ainda for necessário, é uma função à parte.",
+            },
+          },
+        }),
       ],
     }),
     module({

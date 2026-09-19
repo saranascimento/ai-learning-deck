@@ -1270,6 +1270,10 @@ for (const area of model.areas()) {
     "guard-clauses",
     "comments",
     "magic-numbers",
+    "dry",
+    "kiss",
+    "yagni",
+    "principle-of-least-astonishment",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",
