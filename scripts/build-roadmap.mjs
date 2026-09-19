@@ -1291,6 +1291,13 @@ for (const area of model.areas()) {
     "replace-conditional-with-polymorphism",
     "introduce-parameter-object",
     "refactoring-with-tests",
+    "errors-vs-exceptions",
+    "exceptions",
+    "error-propagation",
+    "custom-errors",
+    "fail-fast",
+    "result-pattern",
+    "error-boundaries",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",

@@ -5390,30 +5390,1403 @@ export default area({
           title: "Errors vs Exceptions",
           isNew: true,
           note: "framing agnóstico de linguagem: erro (conceito) × exceção (mecanismo específico)",
+          summary:
+            "Erro é a situação em que uma operação não consegue cumprir o que promete; exceção é apenas um dos " +
+            "mecanismos (ao lado de códigos de retorno e valores de resultado) que algumas linguagens oferecem " +
+            "para sinalizá-lo.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Um erro é um conceito: o momento em que uma operação não consegue fazer o que seu contrato " +
+                "promete — o arquivo não existe, o dado é inválido, a rede caiu. Uma exceção é um mecanismo: uma " +
+                "forma específica (throw/catch) que certas linguagens oferecem para sinalizar e tratar erros, " +
+                "interrompendo o fluxo normal. Confundir os dois leva a achar que \"tratar erros\" é sinônimo de " +
+                "\"usar try/catch\".",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Separar o conceito do mecanismo permite escolher a ferramenta certa. Linguagens diferentes " +
+                "sinalizam erros de formas diferentes: exceções (Java, Python, JavaScript), códigos de retorno " +
+                "ou valores de erro explícitos (C, Go), tipos de resultado (Rust, e o Result Pattern deste módulo). " +
+                "As decisões de projeto — quem deve ser avisado, o que é recuperável, o que fazer depois — " +
+                "são as mesmas, independentemente do mecanismo.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Uma distinção útil dentro do conceito: erros esperados (operacionais) e erros de programação. Os " +
+                "esperados fazem parte da vida do programa — entrada inválida, arquivo ausente, timeout — e " +
+                "devem ser tratados. Os de programação são bugs (acessar uma propriedade de undefined, violar " +
+                "uma pré-condição) e o certo é corrigi-los, não \"tratá-los\" e seguir em frente. E nem toda " +
+                "ausência de resultado é um erro: uma busca que não encontra nada é um resultado normal.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "o mesmo erro (\"idade inválida\") sinalizado por três mecanismos diferentes:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "errors-vs-exceptions.js",
+              code: [
+                "// 1. Exceção: interrompe o fluxo, sobe até alguém tratar",
+                "function parseAgeOrThrow(text) {",
+                "  const age = Number(text);",
+                "  if (Number.isNaN(age)) throw new Error(\"idade inválida\");",
+                "  return age;",
+                "}",
+                "",
+                "// 2. Valor especial de retorno: quem chama precisa lembrar de checar",
+                "function parseAgeOrNull(text) {",
+                "  const age = Number(text);",
+                "  return Number.isNaN(age) ? null : age;",
+                "}",
+                "",
+                "// 3. Resultado explícito: o tipo de retorno carrega o sucesso ou a falha",
+                "function parseAgeResult(text) {",
+                "  const age = Number(text);",
+                "  if (Number.isNaN(age)) return { ok: false, error: \"idade inválida\" };",
+                "  return { ok: true, value: age };",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O erro é o mesmo nos três casos — o que muda é como ele chega a quem chamou. Cada mecanismo tem " +
+                "vantagens e custos, e o restante do módulo explora quando usar cada um.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Erro é o conceito, exceção é um dos mecanismos — primeiro decida que tipo de falha é (esperada, " +
+                "bug ou apenas ausência), depois escolha como sinalizá-la.",
+            },
+          ],
+          examples: [
+            {
+              title: "Um mesmo erro, três mecanismos",
+              context: "A escolha do mecanismo muda o custo de esquecer de tratar o erro.",
+              code: {
+                language: "javascript",
+                filename: "same-error-three-ways.js",
+                code: [
+                  "// Exceção: esquecer de tratar derruba a execução (barulhento, difícil de ignorar)",
+                  "const user = loadUserOrThrow(id);",
+                  "",
+                  "// Retorno nulo: esquecer de checar vira um erro mais adiante, longe da causa",
+                  "const user = loadUserOrNull(id);",
+                  "console.log(user.name); // TypeError se user for null",
+                  "",
+                  "// Resultado: o código não avança sem olhar os dois casos",
+                  "const result = loadUserResult(id);",
+                  "if (!result.ok) return showError(result.error);",
+                  "console.log(result.value.name);",
+                ].join("\n"),
+              },
+              explanation:
+                "A exceção falha alto e no lugar certo; o retorno nulo falha baixo e longe; o resultado explícito " +
+                "obriga a decidir. Nenhuma é a resposta universal — depende de quão comum e recuperável é a falha.",
+            },
+            {
+              title: "Erro esperado versus bug",
+              context: "Os dois exigem respostas diferentes: um se trata, o outro se corrige.",
+              code: {
+                language: "javascript",
+                filename: "expected-vs-bug.js",
+                code: [
+                  "// Erro esperado: acontece no uso normal — trate e siga",
+                  "function readConfig(path) {",
+                  "  if (!fs.existsSync(path)) return defaultConfig; // arquivo pode não existir",
+                  "  return JSON.parse(fs.readFileSync(path, \"utf8\"));",
+                  "}",
+                  "",
+                  "// Bug: violação de contrato — não \"trate\", corrija o chamador",
+                  "function average(numbers) {",
+                  "  if (!Array.isArray(numbers)) throw new TypeError(\"numbers deve ser um array\");",
+                  "  return numbers.reduce((a, b) => a + b, 0) / numbers.length;",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Um arquivo de configuração ausente é uma situação normal e tem um comportamento definido. Passar " +
+                "algo que não é array para average é um erro de programação: esconder isso com um valor padrão " +
+                "apenas adiaria a descoberta do bug.",
+            },
+            {
+              title: "Ausência de resultado não é erro",
+              context: "Uma busca sem resultados é uma resposta legítima; tratá-la como falha polui o código com exceções.",
+              code: {
+                language: "javascript",
+                filename: "not-an-error.js",
+                code: [
+                  "// Não é erro: a resposta é \"não há usuário com esse e-mail\"",
+                  "function findUserByEmail(email) {",
+                  "  return users.find((user) => user.email === email) ?? null;",
+                  "}",
+                  "",
+                  "// É erro: a operação prometia sempre ter sucesso",
+                  "function getUserByIdOrThrow(id) {",
+                  "  const user = users.find((u) => u.id === id);",
+                  "  if (!user) throw new Error(`usuário ${id} não existe`);",
+                  "  return user;",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "O nome e o contrato definem o que é erro: find... admite que talvez não haja resultado; " +
+                "get...OrThrow promete que o registro existe, e se ele não existir, algo está errado.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Quatro situações aparecem em um sistema de biblioteca. Para cada uma é preciso decidir se é um " +
+              "erro esperado (tratar), um erro de programação (corrigir) ou uma situação que nem é um erro.",
+            problemCode: {
+              language: "javascript",
+              filename: "situations.js",
+              code: [
+                "// A) O usuário digita \"abc\" no campo de número de páginas.",
+                "// B) Uma busca por título não retorna nenhum livro.",
+                "// C) Uma função recebe undefined onde deveria haver um livro, por um erro do chamador.",
+                "// D) A conexão com o banco cai no meio de uma consulta.",
+              ].join("\n"),
+            },
+            task:
+              "Classifique cada situação (erro esperado, erro de programação ou não é erro) e diga, em uma " +
+              "frase, como a resposta deve ser diferente em cada caso.",
+            hint: "Pergunte: isso pode acontecer com um programa correto? Se sim, é esperado (ou nem é erro). Se só acontece com um bug, é de programação.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "situations.answer.js",
+                code: [
+                  "// A) Erro esperado: entrada inválida é normal → validar e mostrar mensagem ao usuário.",
+                  "// B) Não é erro: resultado vazio é uma resposta legítima → exibir \"nenhum livro encontrado\".",
+                  "// C) Erro de programação: contrato violado pelo chamador → falhar de forma clara e corrigir o código.",
+                  "// D) Erro esperado (operacional): falhas de infraestrutura acontecem → tratar, tentar de novo ou avisar.",
+                ].join("\n"),
+              },
+              explanation:
+                "A classificação define a resposta: A e D pedem tratamento (com mensagens e políticas diferentes), " +
+                "B é só um resultado normal, e C pede correção do código — tratar C \"silenciosamente\" esconderia o bug.",
+            },
+          },
         }),
-        concept({ order: 20, title: "Exceptions", requires: ["Errors vs Exceptions"], note: "throw/catch, hierarquia de exceções" }),
+        concept({
+          order: 20,
+          title: "Exceptions",
+          requires: ["Errors vs Exceptions"],
+          note: "throw/catch, hierarquia de exceções",
+          summary:
+            "O mecanismo de sinalizar um erro interrompendo o fluxo normal (throw) e tratá-lo em outro ponto do " +
+            "código (catch) — com cuidado para capturar só o que se sabe tratar.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Uma exceção é um objeto que representa uma falha e interrompe a execução normal: quem detecta o " +
+                "problema faz throw, o fluxo salta para fora das funções em curso e só para quando encontra um " +
+                "catch que o trate — ou derruba o programa, se ninguém tratar. O bloco finally executa " +
+                "sempre, com ou sem erro, e serve para liberar recursos. Na maioria das linguagens, as exceções " +
+                "formam uma hierarquia de tipos (Error → TypeError, RangeError…).",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Sem exceções, cada função precisaria devolver um código de erro, e cada chamador teria de checá-lo " +
+                "após cada chamada — o caminho feliz se perderia no meio das verificações. A exceção separa o " +
+                "fluxo normal do fluxo de falha e garante que um erro não passe despercebido: se ninguém o tratar, " +
+                "o programa falha de forma visível, em vez de continuar com dados corrompidos.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Boas práticas: capture apenas os erros que você sabe tratar (e deixe os demais subirem); nunca deixe " +
+                "um catch vazio, que engole a falha sem deixar rastro; mantenha o bloco try pequeno, cobrindo só " +
+                "a operação que pode falhar; use finally para limpeza; e reserve exceções para situações " +
+                "excepcionais, não para controle de fluxo comum.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "throw, catch de um tipo específico e finally para liberar o recurso:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "exceptions.js",
+              code: [
+                "function readJsonFile(path) {",
+                "  const file = openFile(path);",
+                "  try {",
+                "    return JSON.parse(file.read());",
+                "  } catch (error) {",
+                "    if (error instanceof SyntaxError) {",
+                "      throw new Error(`arquivo ${path} não é um JSON válido`);",
+                "    }",
+                "    throw error; // outro tipo de erro: não sabemos tratar, deixa subir",
+                "  } finally {",
+                "    file.close(); // sempre executa, com ou sem erro",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O catch trata só o que entende (JSON malformado, com uma mensagem mais útil) e repassa o resto. O " +
+                "finally garante que o arquivo é fechado em qualquer caminho, inclusive quando algo falha.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Capture só o que sabe tratar, nunca engula um erro em silêncio, e use finally para liberar " +
+                "recursos — o resto deve subir.",
+            },
+          ],
+          examples: [
+            {
+              title: "finally para liberar recursos",
+              context: "Recursos abertos (arquivos, conexões, locks) precisam ser liberados mesmo quando algo falha.",
+              code: {
+                language: "javascript",
+                filename: "finally-cleanup.js",
+                code: [
+                  "async function runQuery(sql) {",
+                  "  const connection = await pool.acquire();",
+                  "  try {",
+                  "    return await connection.query(sql);",
+                  "  } finally {",
+                  "    pool.release(connection); // sem isso, cada falha vaza uma conexão",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Sem o finally, uma consulta que falha deixaria a conexão presa para sempre, e depois de poucas " +
+                "falhas o pool estaria esgotado. O finally executa em qualquer saída da função.",
+            },
+            {
+              title: "Capturar de forma específica",
+              context: "Um catch genérico trata como iguais erros que exigem respostas diferentes — inclusive bugs.",
+              code: {
+                language: "javascript",
+                filename: "specific-catch.js",
+                code: [
+                  "// Antes: qualquer erro vira \"usuário não encontrado\", até um bug no código",
+                  "try {",
+                  "  return await loadUser(id);",
+                  "} catch (error) {",
+                  "  return null;",
+                  "}",
+                  "",
+                  "// Depois: trata só o caso conhecido; o resto sobe",
+                  "try {",
+                  "  return await loadUser(id);",
+                  "} catch (error) {",
+                  "  if (error.code === \"USER_NOT_FOUND\") return null;",
+                  "  throw error;",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Na primeira versão, um TypeError causado por um bug aparece para o usuário como \"não encontrado\" " +
+                "e ninguém investiga. Na segunda, só o caso previsto é tratado, e as demais falhas continuam visíveis.",
+            },
+            {
+              title: "O catch vazio: engolir o erro",
+              context: "O pior padrão: a falha acontece e não deixa nenhum rastro para quem tentar entender depois.",
+              code: {
+                language: "javascript",
+                filename: "empty-catch.js",
+                code: [
+                  "// Antes: se salvar falhar, ninguém saberá",
+                  "try {",
+                  "  saveOrder(order);",
+                  "} catch (error) {}",
+                  "",
+                  "// Depois: ou trata de verdade, ou deixa subir",
+                  "try {",
+                  "  saveOrder(order);",
+                  "} catch (error) {",
+                  "  logger.error(\"falha ao salvar pedido\", { orderId: order.id, error });",
+                  "  throw error;",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "O primeiro código segue como se o pedido tivesse sido salvo, o que produz inconsistências que só " +
+                "aparecem depois. Registrar e repassar preserva a informação e mantém a falha visível.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Esta função lê um arquivo de configuração, mas o try cobre tudo e o catch engole qualquer erro, " +
+              "devolvendo um valor padrão.",
+            problemCode: {
+              language: "javascript",
+              filename: "load-config.js",
+              code: [
+                "function loadConfig(path) {",
+                "  try {",
+                "    const file = openFile(path);",
+                "    const config = JSON.parse(file.read());",
+                "    config.retries = config.retries ?? 3;",
+                "    file.close();",
+                "    return config;",
+                "  } catch (error) {",
+                "    return { retries: 3 };",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Corrija: mantenha o try pequeno, trate só o erro conhecido (JSON inválido), libere o arquivo " +
+              "sempre e não engula os demais erros.",
+            hint: "Três correções: apenas o JSON.parse dentro do try, um finally para fechar o arquivo, e relançar o que não for SyntaxError.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "load-config.refactored.js",
+                code: [
+                  "function loadConfig(path) {",
+                  "  const file = openFile(path);",
+                  "  try {",
+                  "    const config = JSON.parse(file.read());",
+                  "    return { retries: 3, ...config };",
+                  "  } catch (error) {",
+                  "    if (error instanceof SyntaxError) {",
+                  "      throw new Error(`configuração em ${path} não é um JSON válido`);",
+                  "    }",
+                  "    throw error;",
+                  "  } finally {",
+                  "    file.close();",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "O arquivo é sempre fechado, JSON inválido gera uma mensagem clara em vez de um valor padrão " +
+                "silencioso, e falhas inesperadas (permissão, disco) continuam subindo. O padrão retries: 3 é " +
+                "aplicado no caminho feliz, sem depender do catch.",
+            },
+          },
+        }),
         concept({
           order: 30,
           title: "Error Propagation",
           requires: ["Programming Foundations / Memory & Runtime / Call Stack"],
           note: "o erro sobe pela pilha de chamadas",
+          summary:
+            "Um erro sobe pela pilha de chamadas até ser tratado — e cada camada por onde passa decide se trata, " +
+            "acrescenta contexto ou simplesmente deixa subir.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Propagação de erro é o caminho que a falha percorre entre onde acontece e onde é tratada. Com " +
+                "exceções, o erro sobe pela pilha de chamadas (Call Stack, módulo Memory & Runtime): cada " +
+                "função que não o captura é abandonada, até que uma camada acima o trate. Com resultados " +
+                "explícitos, o erro é devolvido de função em função. Em ambos os casos, o ponto essencial é " +
+                "decidir em qual camada agir.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Quem detecta o erro geralmente não sabe o que fazer com ele. Uma função de acesso ao banco descobre que " +
+                "a conexão caiu, mas quem sabe se deve tentar de novo, mostrar uma mensagem ou abortar a operação " +
+                "é uma camada acima, que conhece o contexto de negócio. Por isso a regra é tratar o erro no nível que " +
+                "tem informação suficiente para agir — e deixá-lo subir até lá.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Cada camada por onde o erro passa tem três opções: tratar (se sabe o que fazer), enriquecer " +
+                "(capturar, acrescentar contexto e relançar, preservando a causa original) ou ignorar (deixar " +
+                "subir intacto). Dois cuidados: não registrar e relançar a cada camada (o mesmo erro aparece " +
+                "várias vezes no log) e não perder a causa original ao envolver o erro em outro.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "um erro atravessando três camadas até chegar a quem sabe tratá-lo:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "error-propagation.js",
+              code: [
+                "// Camada baixa: detecta a falha, não sabe o que fazer com ela",
+                "function readUserRow(id) {",
+                "  throw new Error(\"conexão com o banco perdida\");",
+                "}",
+                "",
+                "// Camada de serviço: não captura — o erro passa direto",
+                "function getUserProfile(id) {",
+                "  const row = readUserRow(id);",
+                "  return { name: row.name };",
+                "}",
+                "",
+                "// Camada de entrada: sabe como responder ao usuário",
+                "function handleRequest(id) {",
+                "  try {",
+                "    return { status: 200, body: getUserProfile(id) };",
+                "  } catch (error) {",
+                "    return { status: 503, body: \"serviço indisponível, tente novamente\" };",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "getUserProfile não tem nada de útil a fazer com a falha, então não a captura. Só handleRequest " +
+                "sabe traduzir o problema para uma resposta ao usuário, e é onde o erro é tratado.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Deixe o erro subir até a camada que tem contexto para agir — no caminho, acrescente informação se " +
+                "ajudar, mas trate uma única vez.",
+            },
+          ],
+          examples: [
+            {
+              title: "Acrescentar contexto sem perder a causa",
+              context: "Uma camada intermediária pode enriquecer o erro com informação de negócio, preservando o erro original.",
+              code: {
+                language: "javascript",
+                filename: "error-with-cause.js",
+                code: [
+                  "async function chargeOrder(order) {",
+                  "  try {",
+                  "    return await paymentGateway.charge(order.total, order.cardToken);",
+                  "  } catch (error) {",
+                  "    throw new Error(`falha ao cobrar o pedido ${order.id}`, { cause: error });",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Quem receber o erro sabe qual pedido falhou (contexto que o gateway não tinha), e a propriedade " +
+                "cause mantém o erro original com sua pilha, para investigação.",
+            },
+            {
+              title: "Registrar e relançar em toda camada",
+              context: "Um anti-padrão comum: cada camada loga o erro e o relança, e o mesmo problema aparece várias vezes no log.",
+              code: {
+                language: "javascript",
+                filename: "log-and-rethrow.js",
+                code: [
+                  "// Antes: três entradas de log para uma única falha",
+                  "function repository() { try { db.query(); } catch (e) { log(e); throw e; } }",
+                  "function service()    { try { repository(); } catch (e) { log(e); throw e; } }",
+                  "function controller() { try { service(); } catch (e) { log(e); respond(500); } }",
+                  "",
+                  "// Depois: só quem trata registra",
+                  "function repository() { db.query(); }",
+                  "function service()    { repository(); }",
+                  "function controller() { try { service(); } catch (e) { log(e); respond(500); } }",
+                ].join("\n"),
+              },
+              explanation:
+                "Um único registro, no ponto em que o erro é tratado, mostra a falha com a pilha completa. As " +
+                "entradas repetidas só dificultam a leitura do log e a contagem real de ocorrências.",
+            },
+            {
+              title: "Propagação em código assíncrono",
+              context: "Com async/await, um erro numa função assíncrona também sobe: o await o relança para quem chamou.",
+              code: {
+                language: "javascript",
+                filename: "async-propagation.js",
+                code: [
+                  "async function loadDashboard(userId) {",
+                  "  const profile = await fetchProfile(userId);  // se falhar, sobe daqui",
+                  "  const orders = await fetchOrders(userId);",
+                  "  return { profile, orders };",
+                  "}",
+                  "",
+                  "async function showDashboard(userId) {",
+                  "  try {",
+                  "    render(await loadDashboard(userId));",
+                  "  } catch (error) {",
+                  "    renderError(\"não foi possível carregar o painel\");",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "loadDashboard não precisa de try/catch: qualquer rejeição interna se propaga para showDashboard, " +
+                "que é quem decide como mostrar o problema ao usuário.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Esta cadeia de funções registra o erro em todas as camadas e, na camada de repositório, perde a " +
+              "informação sobre qual usuário falhou.",
+            problemCode: {
+              language: "javascript",
+              filename: "layers.js",
+              code: [
+                "function findUser(id) {",
+                "  try {",
+                "    return db.query(\"SELECT * FROM users WHERE id = $1\", [id]);",
+                "  } catch (error) {",
+                "    console.log(error);",
+                "    throw new Error(\"erro no banco\");",
+                "  }",
+                "}",
+                "",
+                "function handleRequest(id) {",
+                "  try {",
+                "    return { status: 200, body: findUser(id) };",
+                "  } catch (error) {",
+                "    console.log(error);",
+                "    return { status: 500, body: \"erro\" };",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Ajuste a propagação: preserve a causa original com contexto na camada de repositório e registre o " +
+              "erro apenas uma vez, na camada que o trata.",
+            hint: "findUser pode acrescentar contexto (o id) com cause, mas não precisa logar. O log fica só em handleRequest.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "layers.refactored.js",
+                code: [
+                  "function findUser(id) {",
+                  "  try {",
+                  "    return db.query(\"SELECT * FROM users WHERE id = $1\", [id]);",
+                  "  } catch (error) {",
+                  "    throw new Error(`falha ao buscar o usuário ${id}`, { cause: error });",
+                  "  }",
+                  "}",
+                  "",
+                  "function handleRequest(id) {",
+                  "  try {",
+                  "    return { status: 200, body: findUser(id) };",
+                  "  } catch (error) {",
+                  "    console.error(\"falha na requisição\", error); // único ponto de log",
+                  "    return { status: 500, body: \"não foi possível processar a solicitação\" };",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "O erro do banco não se perde (cause) e ganha o contexto do usuário afetado. O log é feito uma vez, " +
+                "com a cadeia completa de causas, e a resposta ao usuário não expõe detalhes internos.",
+            },
+          },
         }),
-        concept({ order: 40, title: "Custom Errors", requires: ["Exceptions"], note: "tipos de erro com significado de domínio" }),
+        concept({
+          order: 40,
+          title: "Custom Errors",
+          requires: ["Exceptions"],
+          note: "tipos de erro com significado de domínio",
+          summary:
+            "Criar seus próprios tipos de erro para falhas do domínio (saldo insuficiente, pedido não " +
+            "encontrado), para que o código possa distinguir e tratar cada situação sem interpretar mensagens de texto.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Um erro personalizado é uma classe que estende o tipo base de erro da linguagem e representa uma " +
+                "falha com significado no domínio da aplicação — InsufficientFundsError, OrderNotFoundError. " +
+                "Além da mensagem, ela pode carregar dados úteis (o saldo atual, o id procurado) e um código " +
+                "estável para uso em respostas de API ou em logs.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Um Error genérico só tem uma mensagem em texto, e quem quer reagir de forma diferente a cada tipo de " +
+                "falha acaba examinando a mensagem (error.message.includes(\"saldo\")) — frágil, porque qualquer " +
+                "alteração na frase quebra a lógica. Com tipos próprios, o código decide pelo tipo " +
+                "(instanceof) ou por um código estável, e a mensagem volta a ser só texto para humanos.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Cuidados: mantenha o conjunto pequeno — crie um tipo quando o código de fato precisar reagir " +
+                "de forma diferente, não para cada mensagem; defina o name da classe para que apareça " +
+                "corretamente nos logs; carregue dados estruturados em campos (não só no texto); e preserve " +
+                "a causa original quando o erro envolver outro (cause).",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "um erro de domínio com dados úteis e o código que reage ao tipo:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "custom-errors.js",
+              code: [
+                "class InsufficientFundsError extends Error {",
+                "  constructor(balance, requested) {",
+                "    super(`saldo ${balance} insuficiente para sacar ${requested}`);",
+                "    this.name = \"InsufficientFundsError\";",
+                "    this.balance = balance;",
+                "    this.requested = requested;",
+                "  }",
+                "}",
+                "",
+                "function withdraw(account, amount) {",
+                "  if (amount > account.balance) throw new InsufficientFundsError(account.balance, amount);",
+                "  account.balance -= amount;",
+                "}",
+                "",
+                "try {",
+                "  withdraw(account, 500);",
+                "} catch (error) {",
+                "  if (error instanceof InsufficientFundsError) showMessage(`Faltam ${error.requested - error.balance}`);",
+                "  else throw error;",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O código que trata o erro não depende do texto da mensagem: decide pelo tipo e usa os campos " +
+                "balance e requested para uma resposta útil ao usuário. A mensagem pode ser reescrita sem quebrar nada.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Crie tipos de erro quando o código precisar reagir de forma diferente a cada falha — decidir " +
+                "pelo tipo, nunca pelo texto da mensagem.",
+            },
+          ],
+          examples: [
+            {
+              title: "Trocar a análise de mensagem por tipo",
+              context: "Examinar o texto do erro é frágil: qualquer mudança de redação quebra o tratamento.",
+              code: {
+                language: "javascript",
+                filename: "message-parsing.js",
+                code: [
+                  "// Antes: depende do texto exato",
+                  "try {",
+                  "  await createUser(data);",
+                  "} catch (error) {",
+                  "  if (error.message.includes(\"já existe\")) return respond(409);",
+                  "  throw error;",
+                  "}",
+                  "",
+                  "// Depois: depende do tipo",
+                  "class EmailAlreadyRegisteredError extends Error {",
+                  "  constructor(email) {",
+                  "    super(`o e-mail ${email} já está cadastrado`);",
+                  "    this.name = \"EmailAlreadyRegisteredError\";",
+                  "  }",
+                  "}",
+                  "",
+                  "try {",
+                  "  await createUser(data);",
+                  "} catch (error) {",
+                  "  if (error instanceof EmailAlreadyRegisteredError) return respond(409);",
+                  "  throw error;",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Se alguém mudar a mensagem de \"já existe\" para \"já está cadastrado\", a primeira versão deixa " +
+                "de funcionar sem nenhum aviso. Na segunda, o tratamento continua correto.",
+            },
+            {
+              title: "Uma base comum com código estável",
+              context: "Para não criar uma classe por variação, uma base com um campo code cobre o que precisa ser mapeado (respostas, métricas).",
+              code: {
+                language: "javascript",
+                filename: "base-app-error.js",
+                code: [
+                  "class AppError extends Error {",
+                  "  constructor(code, message, options) {",
+                  "    super(message, options);",
+                  "    this.name = \"AppError\";",
+                  "    this.code = code; // estável: pode ser usado por APIs e métricas",
+                  "  }",
+                  "}",
+                  "",
+                  "throw new AppError(\"ORDER_NOT_FOUND\", `pedido ${id} não encontrado`);",
+                  "",
+                  "// Quem trata mapeia pelo código:",
+                  "const STATUS_BY_CODE = { ORDER_NOT_FOUND: 404, PAYMENT_DECLINED: 402 };",
+                ].join("\n"),
+              },
+              explanation:
+                "Um código estável evita uma explosão de classes e permite mapear falhas para respostas HTTP, " +
+                "mensagens localizadas ou métricas sem depender do texto.",
+            },
+            {
+              title: "Quando não criar um tipo",
+              context: "Um tipo novo só se justifica quando alguém vai tratá-lo de um jeito diferente dos demais.",
+              code: {
+                language: "javascript",
+                filename: "dont-overdo-it.js",
+                code: [
+                  "// Excesso: um tipo para cada frase, ninguém trata de forma diferente",
+                  "class NameTooShortError extends Error {}",
+                  "class NameTooLongError extends Error {}",
+                  "class NameHasDigitsError extends Error {}",
+                  "",
+                  "// Suficiente: um tipo de validação, com o detalhe em um campo",
+                  "class ValidationError extends Error {",
+                  "  constructor(field, reason) {",
+                  "    super(`${field}: ${reason}`);",
+                  "    this.name = \"ValidationError\";",
+                  "    this.field = field;",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Se toda validação é tratada da mesma forma (mostrar a mensagem no campo), um tipo com os " +
+                "detalhes em campos basta. Muitos tipos aumentam a superfície a manter sem trazer decisões novas.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Este código distingue duas falhas do pagamento pelo texto da mensagem — e a equipe de produto " +
+              "acabou de mudar a redação das mensagens.",
+            problemCode: {
+              language: "javascript",
+              filename: "payment.js",
+              code: [
+                "function pay(order) {",
+                "  if (order.total > order.limit) throw new Error(\"limite excedido\");",
+                "  if (!order.card) throw new Error(\"cartão ausente\");",
+                "  // ...",
+                "}",
+                "",
+                "try {",
+                "  pay(order);",
+                "} catch (error) {",
+                "  if (error.message === \"limite excedido\") askForHigherLimit();",
+                "  else if (error.message === \"cartão ausente\") askForCard();",
+                "  else throw error;",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Crie erros personalizados para as duas falhas e faça o tratamento depender do tipo, não do texto.",
+            hint: "Duas classes que estendem Error, cada uma definindo this.name; o catch usa instanceof.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "payment.refactored.js",
+                code: [
+                  "class LimitExceededError extends Error {",
+                  "  constructor(total, limit) {",
+                  "    super(`total ${total} excede o limite ${limit}`);",
+                  "    this.name = \"LimitExceededError\";",
+                  "  }",
+                  "}",
+                  "",
+                  "class MissingCardError extends Error {",
+                  "  constructor() {",
+                  "    super(\"nenhum cartão associado ao pedido\");",
+                  "    this.name = \"MissingCardError\";",
+                  "  }",
+                  "}",
+                  "",
+                  "function pay(order) {",
+                  "  if (order.total > order.limit) throw new LimitExceededError(order.total, order.limit);",
+                  "  if (!order.card) throw new MissingCardError();",
+                  "  // ...",
+                  "}",
+                  "",
+                  "try {",
+                  "  pay(order);",
+                  "} catch (error) {",
+                  "  if (error instanceof LimitExceededError) askForHigherLimit();",
+                  "  else if (error instanceof MissingCardError) askForCard();",
+                  "  else throw error;",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "O tratamento agora não depende de nenhuma frase, então as mensagens podem ser reescritas à vontade. " +
+                "Como bônus, LimitExceededError carrega dados que a mensagem só descrevia em texto.",
+            },
+          },
+        }),
         concept({
           order: 50,
           title: "Fail Fast",
           requires: ["Programming Foundations / Programming Fundamentals / Contract"],
           note: "pré-condição violada → falhar imediatamente",
+          summary:
+            "Detectar e sinalizar um problema o mais cedo possível, no ponto onde ele surge, em vez de deixar " +
+            "dados inválidos seguirem adiante e causarem um erro obscuro em outro lugar.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Fail Fast é a prática de verificar as condições necessárias logo no início — argumentos " +
+                "válidos, configuração completa, estado esperado — e falhar imediatamente, com uma mensagem " +
+                "clara, quando alguma delas for violada. Ela aplica a ideia de Contract (módulo Programming " +
+                "Fundamentals): se uma pré-condição do contrato foi quebrada, o chamador é avisado na hora.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Um dado inválido que passa despercebido não desaparece: ele viaja pelo sistema, contamina " +
+                "resultados e explode mais tarde, longe da causa — quando descobrir a origem custa muito mais. " +
+                "Falhar cedo aproxima o erro do lugar em que foi cometido, o que torna o diagnóstico rápido, e " +
+                "impede efeitos parciais (gravar metade dos dados antes de descobrir que faltava algo).",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Aplicações típicas: validar argumentos no início da função, antes de qualquer efeito colateral; " +
+                "validar a configuração ao iniciar a aplicação (falhar no boot, não na primeira requisição); e " +
+                "não \"consertar\" silenciosamente dados errados com valores padrão que escondem o problema. " +
+                "Fail Fast se aplica a violações de contrato e bugs — para erros esperados em uso normal (a " +
+                "digitação do usuário), a resposta é tratar e informar, não abortar.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "a validação no topo, antes de qualquer efeito, com uma mensagem que aponta a causa:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "fail-fast.js",
+              code: [
+                "// Antes: entrada inválida segue adiante e o erro aparece longe da causa",
+                "function transfer(from, to, amount) {",
+                "  from.balance -= amount;",
+                "  to.balance += amount; // e se 'to' for undefined? o débito já aconteceu",
+                "}",
+                "",
+                "// Depois: valida tudo antes de mexer em qualquer coisa",
+                "function transfer(from, to, amount) {",
+                "  if (!from || !to) throw new Error(\"transfer: contas de origem e destino são obrigatórias\");",
+                "  if (!(amount > 0)) throw new Error(`transfer: valor inválido (${amount})`);",
+                "  if (from.balance < amount) throw new Error(\"transfer: saldo insuficiente\");",
+                "",
+                "  from.balance -= amount;",
+                "  to.balance += amount;",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Na primeira versão, uma conta de destino ausente faz o dinheiro sair da origem e sumir. Na segunda, " +
+                "nada é alterado se qualquer condição falhar, e a mensagem diz exatamente qual foi violada.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Se algo está errado, avise imediatamente e antes de causar efeitos — o erro fica perto da causa " +
+                "e nenhum dado ruim se espalha.",
+            },
+          ],
+          examples: [
+            {
+              title: "Validar a configuração na inicialização",
+              context: "Uma configuração ausente descoberta só na primeira requisição falha em produção, para um usuário.",
+              code: {
+                language: "javascript",
+                filename: "startup-check.js",
+                code: [
+                  "function loadSettings(env) {",
+                  "  const required = [\"DATABASE_URL\", \"API_KEY\"];",
+                  "  const missing = required.filter((name) => !env[name]);",
+                  "  if (missing.length > 0) {",
+                  "    throw new Error(`variáveis de ambiente ausentes: ${missing.join(\", \")}`);",
+                  "  }",
+                  "  return { databaseUrl: env.DATABASE_URL, apiKey: env.API_KEY };",
+                  "}",
+                  "",
+                  "const settings = loadSettings(process.env); // falha ao iniciar, com a lista completa",
+                ].join("\n"),
+              },
+              explanation:
+                "A aplicação nem sobe com configuração incompleta, e a mensagem lista tudo o que falta de uma " +
+                "vez, em vez de revelar um problema por vez a cada tentativa.",
+            },
+            {
+              title: "Valor padrão silencioso que esconde um bug",
+              context: "Corrigir automaticamente uma entrada inválida evita o erro imediato, mas mantém o bug vivo.",
+              code: {
+                language: "javascript",
+                filename: "silent-default.js",
+                code: [
+                  "// Antes: se 'items' faltar por um bug do chamador, o total sai 0 e ninguém percebe",
+                  "function orderTotal(items) {",
+                  "  return (items || []).reduce((sum, item) => sum + item.price, 0);",
+                  "}",
+                  "",
+                  "// Depois: a violação do contrato aparece na hora",
+                  "function orderTotal(items) {",
+                  "  if (!Array.isArray(items)) throw new TypeError(\"orderTotal: items deve ser um array\");",
+                  "  return items.reduce((sum, item) => sum + item.price, 0);",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "O valor padrão faria a fatura sair com R$ 0 e só alguém notaria depois. Falhar cedo revela o bug " +
+                "do chamador no primeiro teste, quando ainda é barato corrigir.",
+            },
+            {
+              title: "Onde fail fast não se aplica",
+              context: "Para erros esperados de uso normal, abortar é a resposta errada — o certo é tratar e informar.",
+              code: {
+                language: "javascript",
+                filename: "expected-input.js",
+                code: [
+                  "// Entrada do usuário: erros são esperados → devolver a mensagem, não lançar",
+                  "function validateSignUpForm(form) {",
+                  "  const errors = [];",
+                  "  if (!form.email.includes(\"@\")) errors.push(\"e-mail inválido\");",
+                  "  if (form.password.length < 8) errors.push(\"senha muito curta\");",
+                  "  return errors; // a interface mostra todas as mensagens de uma vez",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Um formulário com erro de digitação é uma situação normal, não um bug. Interromper com uma " +
+                "exceção no primeiro erro seria pior para o usuário do que listar todos os problemas juntos.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Esta função de envio de e-mail continua mesmo com dados inválidos, e falhas estranhas aparecem " +
+              "depois que parte do trabalho já foi feita.",
+            problemCode: {
+              language: "javascript",
+              filename: "send-newsletter.js",
+              code: [
+                "function sendNewsletter(subscribers, subject) {",
+                "  markCampaignAsStarted();",
+                "  for (const subscriber of subscribers) {",
+                "    mailer.send(subscriber.email, subject || \"(sem assunto)\");",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Aplique Fail Fast: valide as condições no início, antes de qualquer efeito, e remova o valor padrão " +
+              "que esconde o problema do assunto ausente.",
+            hint: "A campanha é marcada como iniciada antes de qualquer verificação — se a lista for inválida, ela ficará marcada mesmo sem envio.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "send-newsletter.refactored.js",
+                code: [
+                  "function sendNewsletter(subscribers, subject) {",
+                  "  if (!Array.isArray(subscribers) || subscribers.length === 0) {",
+                  "    throw new Error(\"sendNewsletter: informe ao menos um destinatário\");",
+                  "  }",
+                  "  if (!subject) throw new Error(\"sendNewsletter: o assunto é obrigatório\");",
+                  "",
+                  "  markCampaignAsStarted();",
+                  "  for (const subscriber of subscribers) {",
+                  "    mailer.send(subscriber.email, subject);",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "As verificações vêm antes de markCampaignAsStarted, então nada é alterado se os dados forem inválidos. " +
+                "O assunto ausente deixou de ser mascarado por um texto padrão e vira um erro claro para quem chamou.",
+            },
+          },
         }),
         concept({
           order: 60,
           title: "Result Pattern",
           note: "erro como valor de retorno explícito, não efeito colateral — revisita Programming Foundations / Functional Programming (Side Effects/Pure Functions)",
+          summary:
+            "Em vez de lançar uma exceção, a função devolve um valor que diz se deu certo ou errado — tornando a " +
+            "possibilidade de falha parte explícita da assinatura e obrigando o chamador a tratá-la.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "O Result Pattern representa o desfecho de uma operação como um valor: ou um sucesso carregando o " +
+                "resultado, ou uma falha carregando o erro. Em vez de a função lançar (um efeito que salta " +
+                "fora do fluxo normal), ela devolve o desfecho como qualquer outro retorno — por exemplo " +
+                "{ ok: true, value } ou { ok: false, error }. Em linguagens com tipos, isso aparece na assinatura.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Uma exceção é um caminho de saída invisível: olhando a assinatura de uma função, não se sabe que ela " +
+                "pode falhar, e esquecer de tratar só se descobre em execução. Isso é o oposto de uma função " +
+                "pura (Pure Functions, Side Effects — módulo Functional Programming), cujo resultado depende só dos " +
+                "argumentos e que não tem saídas escondidas. Com um Result, a falha vira dado: dá para " +
+                "compor, testar e passar adiante como qualquer outro valor, e o código não avança sem olhar os " +
+                "dois casos.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Não substitui as exceções em tudo. Result funciona bem para falhas esperadas e frequentes " +
+                "(validação, \"não encontrado\", entrada malformada), onde o chamador quase sempre precisa reagir. " +
+                "Exceções seguem adequadas para falhas inesperadas e bugs, que sobem até um ponto de tratamento " +
+                "geral. O custo do Result é a verbosidade: cada chamada exige checar o desfecho.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "uma função que devolve o desfecho em vez de lançar, e o chamador que precisa olhar os dois casos:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "result-pattern.js",
+              code: [
+                "const ok = (value) => ({ ok: true, value });",
+                "const fail = (error) => ({ ok: false, error });",
+                "",
+                "function parsePort(text) {",
+                "  const port = Number(text);",
+                "  if (!Number.isInteger(port)) return fail(\"a porta deve ser um número inteiro\");",
+                "  if (port < 1 || port > 65535) return fail(\"a porta deve estar entre 1 e 65535\");",
+                "  return ok(port);",
+                "}",
+                "",
+                "const result = parsePort(input);",
+                "if (!result.ok) {",
+                "  showError(result.error);",
+                "} else {",
+                "  connect(result.value);",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "parsePort é uma função total: para qualquer entrada, devolve um resultado, sem saídas escondidas. " +
+                "Quem a chama enxerga, no próprio código, que há dois desfechos possíveis e precisa lidar com ambos.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Trate a falha esperada como dado: devolvê-la como valor torna o erro visível na assinatura e " +
+                "impossível de esquecer — reserve exceções para o inesperado.",
+            },
+          ],
+          examples: [
+            {
+              title: "Encadear passos que podem falhar",
+              context: "Com resultados, é possível compor uma sequência: o primeiro erro interrompe o restante sem lançar nada.",
+              code: {
+                language: "javascript",
+                filename: "chaining-results.js",
+                code: [
+                  "function andThen(result, next) {",
+                  "  return result.ok ? next(result.value) : result;",
+                  "}",
+                  "",
+                  "const registration = andThen(",
+                  "  validateEmail(form.email),",
+                  "  (email) => andThen(validatePassword(form.password), (password) => ok({ email, password }))",
+                  ");",
+                  "",
+                  "if (!registration.ok) showError(registration.error);",
+                ].join("\n"),
+              },
+              explanation:
+                "Se validateEmail falhar, o resultado de erro passa adiante sem executar validatePassword. O fluxo " +
+                "de falha é tratado como dado, em um só lugar, no final.",
+            },
+            {
+              title: "Result para o esperado, exceção para o inesperado",
+              context: "Os dois mecanismos convivem: cada um para o tipo de falha que serve melhor.",
+              code: {
+                language: "javascript",
+                filename: "result-and-exceptions.js",
+                code: [
+                  "// Esperado e frequente → Result: o chamador precisa decidir",
+                  "function findCoupon(code) {",
+                  "  const coupon = coupons.get(code);",
+                  "  return coupon ? ok(coupon) : fail(\"cupom inválido\");",
+                  "}",
+                  "",
+                  "// Inesperado (bug ou infraestrutura) → exceção: sobe até o tratador geral",
+                  "function applyCoupon(order, coupon) {",
+                  "  if (!order) throw new TypeError(\"order é obrigatório\");",
+                  "  return { ...order, total: order.total - coupon.value };",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Um cupom digitado errado é rotina, e a interface deve reagir. Um order ausente é um bug do " +
+                "chamador: a exceção chama atenção e não pede um tratamento local.",
+            },
+            {
+              title: "O custo: verbosidade",
+              context: "Tornar cada falha explícita exige checar cada chamada; em falhas raras ou irrecuperáveis, o custo não compensa.",
+              code: {
+                language: "javascript",
+                filename: "verbosity-cost.js",
+                code: [
+                  "// Verboso demais para uma falha que ninguém trata localmente:",
+                  "const cfg = readConfig();",
+                  "if (!cfg.ok) return fail(cfg.error);",
+                  "const db = connect(cfg.value.databaseUrl);",
+                  "if (!db.ok) return fail(db.error);",
+                  "",
+                  "// Se a única resposta possível é abortar, uma exceção comunica o mesmo com menos ruído.",
+                ].join("\n"),
+              },
+              explanation:
+                "Result compensa quando o chamador tem algo diferente a fazer em cada desfecho. Se a única " +
+                "resposta a qualquer falha é propagar, exceções fazem isso automaticamente e deixam o código do " +
+                "caminho feliz mais limpo.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Esta função lança uma exceção para uma falha completamente esperada (um percentual digitado " +
+              "errado pelo usuário), e quem a chama esquece de tratar em algumas telas.",
+            problemCode: {
+              language: "javascript",
+              filename: "parse-percentage.js",
+              code: [
+                "function parsePercentage(text) {",
+                "  const value = Number(text);",
+                "  if (Number.isNaN(value)) throw new Error(\"não é um número\");",
+                "  if (value < 0 || value > 100) throw new Error(\"fora do intervalo 0–100\");",
+                "  return value;",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Reescreva parsePercentage usando o Result Pattern e mostre como o chamador é obrigado a lidar " +
+              "com os dois desfechos.",
+            hint: "Devolva { ok: true, value } no sucesso e { ok: false, error } nas falhas, e mostre um uso com if (!result.ok).",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "parse-percentage.refactored.js",
+                code: [
+                  "function parsePercentage(text) {",
+                  "  const value = Number(text);",
+                  "  if (Number.isNaN(value)) return { ok: false, error: \"não é um número\" };",
+                  "  if (value < 0 || value > 100) return { ok: false, error: \"fora do intervalo 0–100\" };",
+                  "  return { ok: true, value };",
+                  "}",
+                  "",
+                  "const result = parsePercentage(input.value);",
+                  "if (!result.ok) {",
+                  "  showFieldError(result.error);",
+                  "} else {",
+                  "  applyDiscount(result.value);",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "A falha agora faz parte do retorno, então quem lê o código vê os dois caminhos. Como o valor está " +
+                "dentro de result.value, não dá para usá-lo sem antes passar (ou ao menos ver) a verificação de ok.",
+            },
+          },
         }),
         concept({
           order: 70,
           title: "Error Boundaries",
           note: "conter a falha para não propagar em cascata — definição agnóstica de framework. Ponte futura para Architecture / Resilience Patterns (sem Requires — Epic 06 ainda não aprovado)",
+          summary:
+            "Pontos deliberados do sistema que capturam falhas de uma parte e as contêm — devolvendo uma resposta " +
+            "segura ou um comportamento degradado — para que um erro local não derrube tudo.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Um error boundary (fronteira de erro) é um ponto do código que envolve uma unidade de trabalho " +
+                "— uma requisição, um item de um lote, um componente independente — e captura qualquer falha " +
+                "que ocorra dentro dela, impedindo que se espalhe para o resto do sistema. Em vez de cada " +
+                "função tratar tudo, define-se onde a falha para. O termo é usado aqui em sentido geral, sem " +
+                "depender de nenhum framework.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Sem fronteiras, um erro em uma parte sobe até o topo e derruba tudo: um único registro " +
+                "malformado interrompe o processamento de milhares, uma falha em um widget secundário deixa a " +
+                "página em branco, uma requisição com bug derruba o servidor para todos. Com fronteiras nos " +
+                "limites das unidades de trabalho, a falha é contida, registrada, e o resto continua funcionando.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Uma fronteira bem projetada faz três coisas: captura o erro, registra com contexto suficiente para " +
+                "diagnosticar, e devolve algo seguro (uma resposta de erro, um valor alternativo ou nada, marcado " +
+                "como falha). O que ela não deve fazer é engolir em silêncio — conter não é esconder. É também " +
+                "a base de ideias mais amplas como Resilience Patterns (bulkheads, fallbacks), que aparecem na Área " +
+                "de Arquitetura.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "cada item de um lote em sua própria fronteira: um item ruim não derruba os demais:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "error-boundary.js",
+              code: [
+                "// Antes: o primeiro erro interrompe o processamento de todos os itens restantes",
+                "for (const order of orders) {",
+                "  processOrder(order);",
+                "}",
+                "",
+                "// Depois: cada item tem sua fronteira; as falhas são registradas e o lote continua",
+                "const failures = [];",
+                "for (const order of orders) {",
+                "  try {",
+                "    processOrder(order);",
+                "  } catch (error) {",
+                "    logger.error(\"falha ao processar pedido\", { orderId: order.id, error });",
+                "    failures.push({ orderId: order.id, reason: error.message });",
+                "  }",
+                "}",
+                "report(failures);",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A fronteira é o try/catch por item: a falha de um pedido fica contida nele. Ela não é silenciosa — " +
+                "o erro é registrado e coletado em failures, para que ninguém pense que tudo deu certo.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Defina onde a falha para: uma fronteira por unidade de trabalho contém o erro, registra e segue — " +
+                "sem esconder o que aconteceu.",
+            },
+          ],
+          examples: [
+            {
+              title: "Fronteira por requisição",
+              context: "Um servidor não pode cair porque uma única requisição falhou.",
+              code: {
+                language: "javascript",
+                filename: "request-boundary.js",
+                code: [
+                  "async function handle(request) {",
+                  "  try {",
+                  "    return await router.dispatch(request);",
+                  "  } catch (error) {",
+                  "    logger.error(\"erro não tratado\", { path: request.path, error });",
+                  "    return { status: 500, body: \"erro interno\" };",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Qualquer falha dentro de uma requisição vira uma resposta 500 para aquele usuário, com o erro " +
+                "registrado — e o servidor continua atendendo todas as outras.",
+            },
+            {
+              title: "Degradar uma parte secundária",
+              context: "Quando uma funcionalidade não essencial falha, o restante da página deve continuar funcionando.",
+              code: {
+                language: "javascript",
+                filename: "degraded-boundary.js",
+                code: [
+                  "async function loadProductPage(id) {",
+                  "  const product = await fetchProduct(id); // essencial: se falhar, a página falha",
+                  "",
+                  "  let recommendations = [];",
+                  "  try {",
+                  "    recommendations = await fetchRecommendations(id);",
+                  "  } catch (error) {",
+                  "    logger.warn(\"recomendações indisponíveis\", { id, error }); // secundário: degrada",
+                  "  }",
+                  "",
+                  "  return { product, recommendations };",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "A página do produto continua funcionando sem as recomendações. A fronteira fica só onde é seguro " +
+                "degradar: o essencial (o produto) continua falhando alto se der problema.",
+            },
+            {
+              title: "O que a fronteira não deve fazer",
+              context: "Conter não é engolir: uma fronteira que esconde a falha impede qualquer diagnóstico.",
+              code: {
+                language: "javascript",
+                filename: "bad-boundary.js",
+                code: [
+                  "// Ruim: a falha é contida, mas fica invisível",
+                  "async function syncAll(items) {",
+                  "  for (const item of items) {",
+                  "    try { await sync(item); } catch (error) { /* ignora */ }",
+                  "  }",
+                  "  return \"sincronização concluída\"; // mesmo que tudo tenha falhado",
+                  "}",
+                  "",
+                  "// Melhor: contém, registra e informa quantos falharam",
+                  "async function syncAll(items) {",
+                  "  let failed = 0;",
+                  "  for (const item of items) {",
+                  "    try { await sync(item); } catch (error) { failed++; logger.error(\"falha ao sincronizar\", { item, error }); }",
+                  "  }",
+                  "  return `${items.length - failed} de ${items.length} itens sincronizados`;",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "A primeira versão anuncia sucesso mesmo quando tudo falha. A segunda mantém a contenção (um item " +
+                "ruim não interrompe os demais) sem perder a verdade sobre o que aconteceu.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Este código importa uma lista de contatos. Um único registro inválido interrompe a importação " +
+              "inteira, e os registros seguintes nunca são processados.",
+            problemCode: {
+              language: "javascript",
+              filename: "import-contacts.js",
+              code: [
+                "function importContacts(rows) {",
+                "  for (const row of rows) {",
+                "    const contact = parseContact(row); // pode lançar",
+                "    saveContact(contact);",
+                "  }",
+                "  return \"importação concluída\";",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Coloque uma fronteira de erro por registro: contenha a falha, registre-a, e devolva um resumo com " +
+              "o número de importados e a lista de falhas.",
+            hint: "O try/catch fica dentro do laço. Guarde o índice da linha e a mensagem do erro para poder relatar o que falhou.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "import-contacts.refactored.js",
+                code: [
+                  "function importContacts(rows) {",
+                  "  const failures = [];",
+                  "  let imported = 0;",
+                  "",
+                  "  rows.forEach((row, index) => {",
+                  "    try {",
+                  "      saveContact(parseContact(row));",
+                  "      imported++;",
+                  "    } catch (error) {",
+                  "      logger.error(\"falha ao importar contato\", { line: index + 1, error });",
+                  "      failures.push({ line: index + 1, reason: error.message });",
+                  "    }",
+                  "  });",
+                  "",
+                  "  return { imported, failures };",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Um registro inválido agora afeta apenas a si mesmo: os demais continuam sendo importados. A falha " +
+                "não é escondida — fica no log e no resumo devolvido, com a linha exata de cada problema.",
+            },
+          },
         }),
       ],
     }),
