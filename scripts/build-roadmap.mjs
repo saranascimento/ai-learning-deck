@@ -1302,6 +1302,13 @@ for (const area of model.areas()) {
     "review-dimensions",
     "review-scope",
     "giving-and-receiving-feedback",
+    "technical-debt",
+    "legacy-code",
+    "semantic-versioning",
+    "backward-compatibility",
+    "deprecation",
+    "dependency-management",
+    "incremental-migration",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",

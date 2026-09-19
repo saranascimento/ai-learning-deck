@@ -7523,27 +7523,1274 @@ export default area({
         "Custo de atalhos (Technical Debt) e código de risco (Legacy Code) → comunicar mudança com segurança " +
         "(SemVer, Backward Compatibility, Deprecation) → gerenciar dependências de terceiros → migrar com segurança.",
       concepts: [
-        concept({ order: 10, title: "Technical Debt", note: "custo de atalhos — framing da Story" }),
+        concept({
+          order: 10,
+          title: "Technical Debt",
+          note: "custo de atalhos — framing da Story",
+          summary:
+            "O custo futuro acumulado por atalhos e decisões de projeto que aceleram a entrega hoje mas tornam " +
+            "cada mudança seguinte mais lenta e arriscada — uma dívida que cobra juros até ser paga.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Technical Debt é uma metáfora financeira: escolher uma solução rápida e imperfeita agora é como " +
+                "tomar um empréstimo — você ganha velocidade hoje e passa a pagar juros depois, na forma de " +
+                "mudanças mais lentas, mais bugs e mais medo de mexer no código. O principal é o custo de " +
+                "corrigir o atalho; os juros são o custo extra pago a cada vez que se trabalha perto dele " +
+                "enquanto ele existe.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Toda equipe faz concessões: prazos, requisitos que mudam, informação incompleta. Nomear isso como " +
+                "dívida ajuda a conversar sobre custos que, sem o nome, ficam invisíveis para quem não escreve " +
+                "código. A metáfora também ensina que dívida não é sempre ruim: um atalho consciente para " +
+                "validar uma ideia, com plano de pagamento, pode ser uma decisão boa — assim como um empréstimo " +
+                "planejado. O problema é a dívida que ninguém enxerga nem acompanha.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Uma distinção útil é entre dívida deliberada (\"sabemos que é um atalho e vamos pagar depois\") e " +
+                "inadvertida (\"só descobrimos com o tempo que o desenho era ruim\"), e entre prudente e imprudente. " +
+                "Dívida imprudente — atalhos por descuido ou por não querer aprender — é apenas código ruim. Como " +
+                "gerenciar: registrar a dívida onde o time vê (com contexto, não só um TODO vago), pagar aos " +
+                "poucos junto com o trabalho normal (refatorar o que se toca) e decidir de forma consciente " +
+                "quando aceitar mais.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "um atalho deliberado, registrado com o contexto necessário para ser pago:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "technical-debt.js",
+              code: [
+                "// DÍVIDA TÉCNICA (deliberada) — issue #482",
+                "// Contexto: para lançar antes da feira, as taxas de frete estão fixas no código.",
+                "// Juros: cada mudança de tabela exige um deploy.",
+                "// Plano: mover para o banco/config após o lançamento (estimativa: 2 dias).",
+                "const SHIPPING_RATES = { sul: 25, sudeste: 18, norte: 42 };",
+                "",
+                "function shippingFor(region) {",
+                "  if (!(region in SHIPPING_RATES)) throw new Error(`região desconhecida: ${region}`);",
+                "  return SHIPPING_RATES[region];",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O atalho existe por um motivo conhecido, o custo está descrito e há um plano para pagar. Isso é " +
+                "muito diferente de um valor fixo esquecido no código, do qual ninguém se lembra e que vai " +
+                "aparecer como surpresa quando as taxas mudarem.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Dívida técnica é um empréstimo: às vezes vale a pena tomá-lo, mas só se for consciente, registrado " +
+                "e com plano — a dívida invisível é a que cobra os juros mais altos.",
+            },
+          ],
+          examples: [
+            {
+              title: "Os juros: o custo aparece a cada mudança",
+              context: "A dívida cobra um pouco cada vez que se mexe perto dela — e é isso que a torna cara ao longo do tempo.",
+              code: {
+                language: "javascript",
+                filename: "interest.js",
+                code: [
+                  "// Atalho: a regra de imposto foi copiada em três lugares",
+                  "const invoiceTax = (amount) => amount * 0.12;",
+                  "const quoteTax   = (amount) => amount * 0.12;",
+                  "const reportTax  = (amount) => amount * 0.12;",
+                  "",
+                  "// A alíquota muda para 15%: é preciso achar e alterar os três.",
+                  "// Esquecer um deles gera inconsistência entre fatura, cotação e relatório.",
+                  "// A cada mudança futura na regra, o mesmo custo extra é pago de novo.",
+                ].join("\n"),
+              },
+              explanation:
+                "Pagar o principal (centralizar a regra em uma função) custa meia hora hoje. Não pagar significa " +
+                "gastar esse tempo, com risco de erro, em cada mudança daqui para frente.",
+            },
+            {
+              title: "Deliberada versus inadvertida",
+              context: "Saber como a dívida nasceu ajuda a decidir o que fazer com ela.",
+              code: {
+                language: "text",
+                filename: "debt-quadrants.txt",
+                code: [
+                  "Deliberada + prudente:   \"Vamos lançar sem cache agora e otimizar depois de medir.\"",
+                  "                          → OK, se registrada e com plano.",
+                  "Deliberada + imprudente: \"Não temos tempo para testes.\"",
+                  "                          → dívida cara; decisão que precisa ser revista.",
+                  "Inadvertida + prudente:  \"Agora que entendemos o domínio, o desenho ideal era outro.\"",
+                  "                          → inevitável; reorganizar conforme se aprende.",
+                  "Inadvertida + imprudente: \"O que é um design pattern?\"",
+                  "                          → falta de conhecimento; resolve-se com revisão e mentoria.",
+                ].join("\n"),
+              },
+              explanation:
+                "Nem toda dívida é falha de alguém. A prudente e deliberada é uma ferramenta; a inadvertida é o " +
+                "preço de aprender; a imprudente é a que merece atenção prioritária.",
+            },
+            {
+              title: "Pagar aos poucos, no trabalho do dia a dia",
+              context: "Uma equipe raramente consegue parar tudo para \"pagar a dívida\"; o que funciona é pagar continuamente.",
+              code: {
+                language: "javascript",
+                filename: "boy-scout-rule.js",
+                code: [
+                  "// Tarefa: adicionar um campo ao formulário de cadastro.",
+                  "// Ao abrir a função, o time nota que ela mistura validação e gravação.",
+                  "",
+                  "// Regra do escoteiro: deixe o código um pouco melhor do que encontrou.",
+                  "function registerUser(data) {",
+                  "  validateUser(data);      // extraído nesta tarefa",
+                  "  saveUser(data);          // extraído nesta tarefa",
+                  "}",
+                  "// A dívida diminuiu um pouco, sem um \"projeto de refatoração\" separado.",
+                ].join("\n"),
+              },
+              explanation:
+                "Pequenos pagamentos embutidos no trabalho de rotina impedem que a dívida cresça sem depender de " +
+                "uma pausa rara e difícil de negociar. Cada função melhorada torna a próxima mudança mais barata.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Para cumprir um prazo, alguém escreveu o trecho abaixo. Ele funciona, mas é um atalho: a lista " +
+              "de administradores está fixa no código.",
+            problemCode: {
+              language: "javascript",
+              filename: "admins.js",
+              code: [
+                "function isAdmin(user) {",
+                "  return [\"ana@empresa.com\", \"bruno@empresa.com\"].includes(user.email);",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Registre esse atalho como dívida técnica de forma útil: escreva o comentário com contexto, " +
+              "o custo (os juros) e um plano de pagamento.",
+            hint: "Um bom registro responde: por que foi feito assim? o que custa manter? quando e como será corrigido?",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "admins.debt.js",
+                code: [
+                  "// DÍVIDA TÉCNICA (deliberada) — issue #517",
+                  "// Contexto: lista de administradores fixa no código para entregar o painel antes do prazo.",
+                  "// Juros: cada mudança de admin exige alterar o código, revisar e fazer deploy;",
+                  "//         e a lista fica exposta no repositório.",
+                  "// Plano: ler os papéis do serviço de usuários (campo `role`) — estimativa de 1 dia,",
+                  "//         previsto para a sprint seguinte ao lançamento.",
+                  "function isAdmin(user) {",
+                  "  return [\"ana@empresa.com\", \"bruno@empresa.com\"].includes(user.email);",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "O comentário deixa de ser um TODO vago e passa a conter o motivo, o custo recorrente e o " +
+                "plano. Quem encontrar isso daqui a meses sabe se pode ignorar, quanto custa manter e o que fazer " +
+                "para resolver, e o time consegue priorizar o pagamento com informação.",
+            },
+          },
+        }),
         concept({
           order: 20,
           title: "Legacy Code",
           note: "código difícil/arriscado de mudar com segurança, geralmente sem dono claro ou contexto original preservado. A associação de Feathers (\"código legado = código sem testes\") é citada como lente, não como definição universal",
+          summary:
+            "Código que é difícil e arriscado de mudar com segurança — em geral sem testes, sem dono claro e sem o " +
+            "contexto original preservado — e que, mesmo assim, é o que faz o sistema funcionar hoje.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Legacy Code não significa simplesmente \"código antigo\": é código que temos medo de mudar. Suas " +
+                "marcas são comportamento pouco claro, poucos ou nenhum teste, ausência de quem entenda o " +
+                "porquê de cada decisão e alto risco de quebrar algo ao tocar nele. Uma lente conhecida, de " +
+                "Michael Feathers, é \"código legado é código sem testes\" — útil porque sem testes não há como " +
+                "saber se uma mudança preservou o comportamento, embora não seja uma definição universal.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Todo código bem-sucedido acaba virando legado: as pessoas que o escreveram saem, os requisitos " +
+                "mudam, o contexto se perde, e ele continua sendo usado. Esse código é valioso — ele carrega anos de " +
+                "regras de negócio e correções de casos reais que ninguém documentou. Por isso a resposta " +
+                "habitual, \"vamos reescrever tudo do zero\", quase sempre é um erro: joga fora esse conhecimento " +
+                "embutido e deixa o sistema sem evoluir durante a reescrita.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "A abordagem realista é evoluir o legado com segurança: primeiro criar uma rede de proteção " +
+                "(testes de caracterização que registram o comportamento atual), depois abrir costuras (seams) — " +
+                "pontos onde é possível trocar uma dependência para testar em isolamento — e então mudar em " +
+                "passos pequenos, escrevendo o código novo de forma testável ao lado do antigo. A técnica de fazer " +
+                "isso de forma gradual é o tema de Incremental Migration.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "uma função legada difícil de testar, e uma costura que a torna testável sem mudar o comportamento:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "legacy-code.js",
+              code: [
+                "// Antes: depende do banco e do relógio reais — impossível testar de forma isolada",
+                "function isSubscriptionActive(userId) {",
+                "  const sub = db.query(\"SELECT expires_at FROM subs WHERE user_id = \" + userId);",
+                "  return sub.expires_at > Date.now();",
+                "}",
+                "",
+                "// Depois: as dependências ganharam parâmetros com o mesmo padrão de antes",
+                "function isSubscriptionActive(userId, { database = db, now = Date.now } = {}) {",
+                "  const sub = database.query(\"SELECT expires_at FROM subs WHERE user_id = \" + userId);",
+                "  return sub.expires_at > now();",
+                "}",
+                "",
+                "// Um teste agora controla o banco e a data:",
+                "const fakeDb = { query: () => ({ expires_at: 2000 }) };",
+                "isSubscriptionActive(7, { database: fakeDb, now: () => 1000 }); // true",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Todos os chamadores atuais continuam funcionando (os padrões reproduzem o comportamento antigo), e " +
+                "a função passou a ter uma costura para ser testada. É uma mudança mínima, segura, que abre " +
+                "a porta para refatorar depois.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Legado é código que dá medo de mudar — não o jogue fora: proteja-o com testes, abra costuras e " +
+                "evolua em passos pequenos.",
+            },
+          ],
+          examples: [
+            {
+              title: "Sprout: código novo, testável, ao lado do antigo",
+              context: "Quando não dá para testar a função legada inteira, escreva a lógica nova em uma função separada e testada, e chame-a de lá.",
+              code: {
+                language: "javascript",
+                filename: "sprout.js",
+                code: [
+                  "// Nova regra: aplicar desconto de fidelidade em uma função de 300 linhas, sem testes.",
+                  "// Em vez de editar no meio dela, brota uma função nova e testável:",
+                  "function loyaltyDiscount(customer, total) {",
+                  "  return customer.years >= 3 ? total * 0.05 : 0;",
+                  "}",
+                  "",
+                  "function processOrder(order) {",
+                  "  // ... 300 linhas de código legado ...",
+                  "  const discount = loyaltyDiscount(order.customer, order.total); // única linha nova",
+                  "  // ...",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "A regra nova nasce coberta por testes, e a mudança no código legado se resume a uma linha. O " +
+                "risco de quebrar o restante é mínimo, e o novo código não herda a dificuldade do antigo.",
+            },
+            {
+              title: "Reescrever do zero versus evoluir",
+              context: "A reescrita completa parece limpa, mas costuma perder conhecimento embutido e demorar mais do que o previsto.",
+              code: {
+                language: "text",
+                filename: "rewrite-vs-evolve.txt",
+                code: [
+                  "Reescrita total:",
+                  "  + código \"limpo\" e moderno",
+                  "  - meses (ou anos) sem entregar valor ao usuário",
+                  "  - perde correções de casos reais que estavam no código antigo",
+                  "  - o sistema antigo continua evoluindo e o novo nunca o alcança",
+                  "",
+                  "Evolução incremental:",
+                  "  + entrega valor o tempo todo",
+                  "  + cada passo é pequeno e reversível",
+                  "  + o conhecimento do código antigo é preservado enquanto é substituído",
+                ].join("\n"),
+              },
+              explanation:
+                "Existem casos em que reescrever é a decisão certa (tecnologia sem suporte, sistema pequeno), " +
+                "mas o padrão é o oposto: a evolução gradual é o caminho mais seguro e mais previsível.",
+            },
+            {
+              title: "Documentar o que se descobre",
+              context: "Cada vez que se entende um trecho legado, esse entendimento deve ficar registrado — em testes e em comentários.",
+              code: {
+                language: "javascript",
+                filename: "document-discoveries.js",
+                code: [
+                  "// DESCOBERTA: pedidos com total negativo (estornos) devem ser ignorados aqui —",
+                  "// sem esse filtro, o relatório de receita mensal fica com valores incorretos.",
+                  "function monthlyRevenue(orders) {",
+                  "  return orders",
+                  "    .filter((order) => order.total > 0)",
+                  "    .reduce((sum, order) => sum + order.total, 0);",
+                  "}",
+                  "",
+                  "// E um teste que fixa essa regra, para não se perder de novo:",
+                  "// monthlyRevenue([{ total: 100 }, { total: -30 }]) === 100",
+                ].join("\n"),
+              },
+              explanation:
+                "O conhecimento que estava só na cabeça de alguém (e foi perdido) agora está no código e num teste. " +
+                "Aos poucos, o legado deixa de ser um mistério.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Você precisa alterar a função abaixo, que não tem testes e depende do relógio real e de uma " +
+              "função global de envio de e-mail.",
+            problemCode: {
+              language: "javascript",
+              filename: "send-reminder.js",
+              code: [
+                "function sendReminderIfDue(invoice) {",
+                "  const today = new Date();",
+                "  if (invoice.dueDate < today && !invoice.paid) {",
+                "    sendEmail(invoice.customerEmail, \"Fatura vencida\");",
+                "    return true;",
+                "  }",
+                "  return false;",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Abra uma costura: modifique a função para receber a data e o envio de e-mail como dependências " +
+              "opcionais, mantendo o comportamento atual para quem já a chama, e mostre um teste com valores " +
+              "controlados.",
+            hint: "Use um objeto de opções com padrões que reproduzem o comportamento atual (data de hoje e o sendEmail real).",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "send-reminder.seam.js",
+                code: [
+                  "function sendReminderIfDue(invoice, { now = () => new Date(), send = sendEmail } = {}) {",
+                  "  if (invoice.dueDate < now() && !invoice.paid) {",
+                  "    send(invoice.customerEmail, \"Fatura vencida\");",
+                  "    return true;",
+                  "  }",
+                  "  return false;",
+                  "}",
+                  "",
+                  "// Teste com data e envio controlados:",
+                  "const sent = [];",
+                  "const result = sendReminderIfDue(",
+                  "  { dueDate: new Date(\"2026-01-01\"), paid: false, customerEmail: \"a@b.com\" },",
+                  "  { now: () => new Date(\"2026-02-01\"), send: (to, msg) => sent.push(to) }",
+                  ");",
+                  "// result === true e sent = [\"a@b.com\"]",
+                ].join("\n"),
+              },
+              explanation:
+                "Os chamadores existentes continuam iguais (os padrões são a data real e o sendEmail real), mas " +
+                "agora dá para testar a regra com datas fixas e sem enviar e-mails de verdade. Com essa rede, " +
+                "a função pode ser refatorada com segurança.",
+            },
+          },
         }),
-        concept({ order: 30, title: "Semantic Versioning", note: "MAJOR.MINOR.PATCH e o que cada um comunica" }),
-        concept({ order: 40, title: "Backward Compatibility", requires: ["Semantic Versioning"], note: "a propriedade que SemVer protege/comunica" }),
-        concept({ order: 50, title: "Deprecation", requires: ["Backward Compatibility"], note: "processo de retirar algo preservando compatibilidade" }),
+        concept({
+          order: 30,
+          title: "Semantic Versioning",
+          note: "MAJOR.MINOR.PATCH e o que cada um comunica",
+          summary:
+            "Um esquema de numeração MAJOR.MINOR.PATCH em que cada número comunica o tipo de mudança — quebra de " +
+            "compatibilidade, novidade compatível ou correção — para que quem usa saiba o risco de atualizar.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Semantic Versioning (SemVer) é uma convenção para numerar versões no formato MAJOR.MINOR.PATCH, " +
+                "como 2.4.1. Cada parte tem um significado: PATCH sobe em correções de bugs compatíveis; MINOR sobe " +
+                "quando se adiciona funcionalidade compatível com a versão anterior; MAJOR sobe quando há mudanças " +
+                "incompatíveis — que podem quebrar quem usa. O número é uma promessa do que o software " +
+                "garante em cada atualização.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Quem depende de uma biblioteca precisa decidir se pode atualizar sem medo. Sem uma convenção, a " +
+                "versão 3.7 poderia ser uma correção ou uma reescrita completa — só lendo o código para saber. Com " +
+                "SemVer, o número já responde: do 2.4.1 para o 2.4.2 dá para atualizar sem preocupação; para o 2.5.0 " +
+                "há novidades, mas nada deve quebrar; para o 3.0.0 é preciso ler as notas e provavelmente adaptar " +
+                "o código. É a base sobre a qual funcionam os intervalos de versão do gerenciamento de dependências.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Detalhes importantes: SemVer só faz sentido em relação a uma API pública definida — o que conta como " +
+                "quebra é a mudança no que os usuários podem usar. Versões 0.y.z são consideradas instáveis (qualquer " +
+                "coisa pode mudar). Um sufixo como 1.0.0-beta.1 marca uma pré-versão, anterior à final. E " +
+                "sempre que MAJOR sobe, MINOR e PATCH voltam a zero.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "uma função que calcula a próxima versão conforme o tipo de mudança:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "semantic-versioning.js",
+              code: [
+                "function nextVersion(version, change) {",
+                "  const [major, minor, patch] = version.split(\".\").map(Number);",
+                "  if (change === \"breaking\") return `${major + 1}.0.0`;",
+                "  if (change === \"feature\") return `${major}.${minor + 1}.0`;",
+                "  if (change === \"fix\") return `${major}.${minor}.${patch + 1}`;",
+                "  throw new Error(`tipo de mudança desconhecido: ${change}`);",
+                "}",
+                "",
+                "nextVersion(\"2.4.1\", \"fix\");      // \"2.4.2\"",
+                "nextVersion(\"2.4.1\", \"feature\");  // \"2.5.0\"  (PATCH volta a zero)",
+                "nextVersion(\"2.4.1\", \"breaking\"); // \"3.0.0\"  (MINOR e PATCH voltam a zero)",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A regra é simples de aplicar, mas a parte difícil é classificar a mudança corretamente: " +
+                "reconhecer o que é uma quebra de compatibilidade (assunto do próximo Concept) é o que dá " +
+                "valor ao número.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "MAJOR quebra, MINOR adiciona, PATCH corrige — o número é uma promessa sobre o risco de atualizar, " +
+                "e só vale se for classificado com honestidade.",
+            },
+          ],
+          examples: [
+            {
+              title: "Classificando mudanças em uma biblioteca",
+              context: "A mesma biblioteca, quatro alterações, quatro decisões diferentes de versão a partir de 2.3.1.",
+              code: {
+                language: "text",
+                filename: "classify-changes.txt",
+                code: [
+                  "Versão atual: 2.3.1",
+                  "",
+                  "Corrigido um bug de arredondamento em formatPrice()      → PATCH → 2.3.2",
+                  "Adicionada a função formatDate() (nova, opcional)        → MINOR → 2.4.0",
+                  "Renomeado formatPrice() para formatCurrency()            → MAJOR → 3.0.0",
+                  "  (quem chamava formatPrice() deixa de funcionar)",
+                  "Melhorado o desempenho interno, mesmo resultado          → PATCH → 2.3.2",
+                ].join("\n"),
+              },
+              explanation:
+                "O critério é sempre o efeito sobre quem usa a API pública: remover ou renomear o que já existe " +
+                "quebra (MAJOR); acrescentar algo novo não quebra (MINOR); consertar sem mudar o contrato não quebra " +
+                "(PATCH).",
+            },
+            {
+              title: "Versões 0.x e pré-versões",
+              context: "Nem toda versão promete estabilidade: 0.y.z e sufixos indicam que a API ainda pode mudar.",
+              code: {
+                language: "text",
+                filename: "prerelease.txt",
+                code: [
+                  "0.9.3          API ainda instável: qualquer versão pode quebrar quem usa",
+                  "1.0.0-beta.1   pré-versão da 1.0.0, para testes (menor que 1.0.0)",
+                  "1.0.0-rc.1     release candidate: quase final",
+                  "1.0.0          a partir daqui, a API pública é uma promessa de compatibilidade",
+                ].join("\n"),
+              },
+              explanation:
+                "Chegar à 1.0.0 é uma declaração de que a API está estável. Depender de uma biblioteca 0.x significa " +
+                "aceitar que atualizações podem exigir adaptações a qualquer momento.",
+            },
+            {
+              title: "Comparar versões não é comparar texto",
+              context: "Um erro comum: tratar versões como strings — \"1.10.0\" parece menor que \"1.9.0\" em ordem alfabética.",
+              code: {
+                language: "javascript",
+                filename: "compare-versions.js",
+                code: [
+                  "\"1.10.0\" < \"1.9.0\";  // true  ← errado: comparação de texto",
+                  "",
+                  "function compareVersions(a, b) {",
+                  "  const pa = a.split(\".\").map(Number);",
+                  "  const pb = b.split(\".\").map(Number);",
+                  "  for (let i = 0; i < 3; i++) {",
+                  "    if (pa[i] !== pb[i]) return pa[i] - pb[i];",
+                  "  }",
+                  "  return 0;",
+                  "}",
+                  "",
+                  "compareVersions(\"1.10.0\", \"1.9.0\"); // 1 → 1.10.0 é maior",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada parte é um número, comparado separadamente da esquerda para a direita. Por isso a 1.10.0 vem " +
+                "depois da 1.9.0 — e por isso bibliotecas de versionamento existem, para tratar os detalhes " +
+                "(pré-versões, por exemplo).",
+            },
+          ],
+          exercise: {
+            problem:
+              "Uma biblioteca de datas está na versão 2.3.1 e recebeu estas alterações em sequência antes do " +
+              "próximo lançamento.",
+            problemCode: {
+              language: "text",
+              filename: "changes.txt",
+              code: [
+                "a) Corrige um bug em que parseDate(\"2026-02-30\") retornava uma data inválida sem avisar.",
+                "b) Adiciona a função addBusinessDays() (nova).",
+                "c) Remove a função antiga formatLegacy(), que ninguém deveria usar mais.",
+                "d) Adiciona um parâmetro opcional `locale` a format() (o comportamento padrão é o mesmo).",
+              ].join("\n"),
+            },
+            task:
+              "Diga qual é a próxima versão se todas as alterações forem lançadas juntas, explicando qual delas " +
+              "define o número.",
+            hint: "Quando há mais de um tipo de mudança, vale a de maior impacto — e a remoção de algo público é sempre uma quebra.",
+            solution: {
+              code: {
+                language: "text",
+                filename: "changes.answer.txt",
+                code: [
+                  "a) PATCH (correção compatível)",
+                  "b) MINOR  (funcionalidade nova, compatível)",
+                  "c) MAJOR  (remoção de função pública: quebra quem usava)",
+                  "d) MINOR  (parâmetro opcional, compatível)",
+                  "",
+                  "Como há uma mudança MAJOR (c), a próxima versão é 3.0.0.",
+                  "As correções e novidades entram nela; MINOR e PATCH voltam a zero.",
+                ].join("\n"),
+              },
+              explanation:
+                "A alteração de maior impacto define o número. A remoção de formatLegacy() quebra quem ainda a usa, " +
+                "então exige um MAJOR — e é aí que a prática de Deprecation (avisar antes de remover) evita surpresas.",
+            },
+          },
+        }),
+        concept({
+          order: 40,
+          title: "Backward Compatibility",
+          requires: ["Semantic Versioning"],
+          note: "a propriedade que SemVer protege/comunica",
+          summary:
+            "A propriedade de uma nova versão continuar funcionando com o código, os dados e os clientes feitos " +
+            "para a versão anterior — o que o SemVer promete ao subir apenas MINOR ou PATCH.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Backward Compatibility (retrocompatibilidade) significa que uma versão nova de um software, API ou " +
+                "formato de dados continua funcionando com quem foi construído para a versão anterior, sem " +
+                "exigir alterações. É a propriedade que o SemVer comunica: subir apenas MINOR ou PATCH promete " +
+                "compatibilidade; subir MAJOR avisa que ela pode ter sido quebrada.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Quem consome uma API ou biblioteca não controla quando você a atualiza, e muitas vezes você nem sabe " +
+                "quem a usa. Uma quebra de compatibilidade obriga todos os consumidores a agir ao mesmo tempo — " +
+                "aplicações que funcionavam deixam de funcionar sem terem mudado uma linha. Manter a compatibilidade " +
+                "permite evoluir o sistema sem essa coordenação, e é a base da confiança em uma dependência.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "O que costuma ser compatível: adicionar funções, campos ou parâmetros opcionais com valor padrão. O que " +
+                "costuma quebrar: remover ou renomear algo, tornar obrigatório um parâmetro que era opcional, mudar " +
+                "o tipo de um valor, ou alterar o significado (o comportamento) de algo existente. Para manter " +
+                "compatibilidade: prefira mudanças aditivas, use padrões, ofereça um adaptador para o formato " +
+                "antigo e, quando precisar mesmo quebrar, use Deprecation e um novo MAJOR.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "a mesma evolução feita de forma compatível e de forma que quebra:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "backward-compatibility.js",
+              code: [
+                "// Versão 1: quem usa chama formatPrice(10)",
+                "function formatPrice(value) {",
+                "  return \"R$ \" + value.toFixed(2);",
+                "}",
+                "",
+                "// Compatível (MINOR): novo parâmetro OPCIONAL, com padrão igual ao comportamento antigo",
+                "function formatPrice(value, currency = \"BRL\") {",
+                "  return currency === \"BRL\" ? \"R$ \" + value.toFixed(2) : currency + \" \" + value.toFixed(2);",
+                "}",
+                "formatPrice(10); // continua funcionando, resultado idêntico",
+                "",
+                "// Quebra (MAJOR): parâmetro novo OBRIGATÓRIO",
+                "function formatPrice(value, currency) { /* ... */ }",
+                "formatPrice(10); // currency é undefined → comportamento diferente do anterior",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A diferença entre as duas versões é uma linha, mas o efeito em quem já usa a função é oposto: a " +
+                "primeira mantém todos os chamadores funcionando; a segunda os quebra silenciosamente.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Evolua acrescentando, não alterando ou removendo — se a mudança faz um código antigo deixar de " +
+                "funcionar, é uma quebra e precisa ser tratada como tal.",
+            },
+          ],
+          examples: [
+            {
+              title: "Renomear mantendo o nome antigo",
+              context: "Um nome melhor não justifica quebrar quem usa o antigo: mantenha os dois durante a transição.",
+              code: {
+                language: "javascript",
+                filename: "rename-with-alias.js",
+                code: [
+                  "// Nome novo, mais claro",
+                  "function findUserByEmail(email) { /* ... */ }",
+                  "",
+                  "// Nome antigo continua existindo, delegando para o novo",
+                  "function getUser(email) {",
+                  "  return findUserByEmail(email);",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "O código que chama getUser continua funcionando. Quando chegar a hora de remover o nome antigo, isso " +
+                "é feito com o processo de Deprecation e em um MAJOR.",
+            },
+            {
+              title: "Campos novos são compatíveis; mudar tipo quebra",
+              context: "Em uma resposta de API, adicionar campos raramente quebra clientes; alterar ou remover, quase sempre.",
+              code: {
+                language: "javascript",
+                filename: "response-shapes.js",
+                code: [
+                  "// v1",
+                  "const responseV1 = { id: 7, price: 19.9 };",
+                  "",
+                  "// Compatível: campo novo adicionado; clientes antigos ignoram o que não conhecem",
+                  "const responseV1_1 = { id: 7, price: 19.9, currency: \"BRL\" };",
+                  "",
+                  "// Quebra: o tipo de `price` mudou de número para objeto",
+                  "const responseV2 = { id: 7, price: { amount: 19.9, currency: \"BRL\" } };",
+                  "// Um cliente antigo que faz `response.price.toFixed(2)` agora falha.",
+                ].join("\n"),
+              },
+              explanation:
+                "Para que a adição seja segura, os clientes devem ignorar campos desconhecidos (o princípio da " +
+                "leitura tolerante). Alterar o tipo de um campo existente, porém, sempre quebra quem o usava.",
+            },
+            {
+              title: "Compatibilidade de dados, não só de código",
+              context: "Arquivos, bancos e mensagens gravados por uma versão precisam continuar legíveis pela próxima.",
+              code: {
+                language: "javascript",
+                filename: "data-compatibility.js",
+                code: [
+                  "function loadSettings(saved) {",
+                  "  // Versão antiga gravava `dark: true`; a nova grava `theme: \"dark\"`.",
+                  "  // Lê os dois formatos, para não invalidar o que os usuários já salvaram.",
+                  "  if (\"dark\" in saved) return { theme: saved.dark ? \"dark\" : \"light\" };",
+                  "  return { theme: saved.theme ?? \"light\" };",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "A versão nova entende o formato antigo, então nenhum usuário perde sua configuração ao atualizar. " +
+                "Compatibilidade vale para tudo o que persiste entre versões, não apenas para a API do código.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A função abaixo é usada em dezenas de lugares e agora precisa aceitar um limite de itens por " +
+              "página. Você quer fazer isso sem quebrar nenhum chamador existente.",
+            problemCode: {
+              language: "javascript",
+              filename: "list-products.js",
+              code: [
+                "function listProducts(category) {",
+                "  return db.products.filter((product) => product.category === category);",
+                "}",
+                "",
+                "listProducts(\"livros\"); // chamada existente",
+              ].join("\n"),
+            },
+            task:
+              "Evolua a função para aceitar um limite opcional, sem alterar o resultado das chamadas existentes, " +
+              "e explique por que essa mudança é compatível.",
+            hint: "O novo parâmetro precisa ter um padrão que reproduza o comportamento antigo (sem limite).",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "list-products.compatible.js",
+                code: [
+                  "function listProducts(category, { limit = Infinity } = {}) {",
+                  "  return db.products",
+                  "    .filter((product) => product.category === category)",
+                  "    .slice(0, limit);",
+                  "}",
+                  "",
+                  "listProducts(\"livros\");                // igual a antes",
+                  "listProducts(\"livros\", { limit: 10 }); // nova capacidade",
+                ].join("\n"),
+              },
+              explanation:
+                "O novo parâmetro é opcional e o padrão (Infinity) devolve tudo, como antes, então nenhum chamador " +
+                "existente muda de resultado. É uma mudança aditiva: MINOR, não MAJOR.",
+            },
+          },
+        }),
+        concept({
+          order: 50,
+          title: "Deprecation",
+          requires: ["Backward Compatibility"],
+          note: "processo de retirar algo preservando compatibilidade",
+          summary:
+            "O processo de avisar que algo será removido, oferecer a alternativa e dar tempo para migrar — para " +
+            "poder retirar funcionalidades antigas sem quebrar quem ainda depende delas.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Deprecation (obsolescência) é a etapa intermediária entre \"existe\" e \"foi removido\": a " +
+                "funcionalidade continua funcionando, mas é marcada como obsoleta, com um aviso claro de que será " +
+                "retirada e indicando o que usar no lugar. É o mecanismo que permite remover coisas sem quebrar " +
+                "a compatibilidade de forma abrupta.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Nenhuma API cresce só por acréscimos: com o tempo, algumas partes ficam ruins, perigosas ou " +
+                "redundantes, e mantê-las para sempre é caro. Mas removê-las de uma vez quebra quem depende " +
+                "delas. A deprecation resolve esse conflito dando um prazo: quem usa recebe o aviso, tem " +
+                "tempo de migrar, e a remoção só acontece quando o impacto for pequeno — normalmente em um novo MAJOR.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Um bom processo tem etapas: (1) anunciar (documentação, changelog, marca @deprecated); (2) indicar " +
+                "a alternativa e como migrar; (3) avisar em tempo de execução, sem quebrar (um aviso, de " +
+                "preferência uma vez); (4) definir um prazo realista; (5) acompanhar quem ainda usa; (6) remover no " +
+                "MAJOR seguinte, comunicando a remoção. Remover sem aviso — ou avisar sem dizer o que fazer — é " +
+                "quebrar a confiança de quem depende de você.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "uma função marcada como obsoleta, que continua funcionando e avisa uma única vez:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "deprecation.js",
+              code: [
+                "let warned = false;",
+                "",
+                "/**",
+                " * @deprecated desde a v2.4 — use findUser({ email }). Será removida na v3.0.",
+                " */",
+                "function getUserByEmail(email) {",
+                "  if (!warned) {",
+                "    console.warn(\"getUserByEmail está obsoleta; use findUser({ email }). Remoção prevista na v3.0.\");",
+                "    warned = true;",
+                "  }",
+                "  return findUser({ email });",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A função continua funcionando (delegando para a nova), o aviso diz o que usar no lugar e quando a " +
+                "remoção acontece, e o registro só aparece uma vez para não inundar o log. Editores costumam " +
+                "riscar automaticamente funções marcadas com @deprecated.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Não remova de surpresa: avise, ofereça o caminho novo, dê prazo e só então retire — de preferência " +
+                "em um novo MAJOR.",
+            },
+          ],
+          examples: [
+            {
+              title: "Uma política de prazos clara",
+              context: "Quem depende de você precisa saber, com antecedência, quanto tempo tem para migrar.",
+              code: {
+                language: "text",
+                filename: "deprecation-timeline.txt",
+                code: [
+                  "v2.4 (março)   getUserByEmail marcada como obsoleta; alternativa: findUser({ email })",
+                  "               — aviso no console, nota no changelog, guia de migração publicado",
+                  "v2.5 – v2.9    continua funcionando; acompanhar o uso (métricas / busca em repositórios)",
+                  "v3.0 (setembro) removida; nota de MAJOR explica a mudança e aponta o guia",
+                ].join("\n"),
+              },
+              explanation:
+                "Seis meses, um aviso constante e um guia de migração mostram respeito por quem consome. O prazo só " +
+                "é razoável se a alternativa já existir desde o primeiro aviso.",
+            },
+            {
+              title: "Medir o uso antes de remover",
+              context: "Remover algo que ainda é muito usado transforma uma limpeza em um incidente.",
+              code: {
+                language: "javascript",
+                filename: "usage-tracking.js",
+                code: [
+                  "function getUserByEmail(email) {",
+                  "  metrics.increment(\"deprecated.getUserByEmail.calls\", { caller: callerName() });",
+                  "  console.warn(\"getUserByEmail está obsoleta; use findUser({ email }).\");",
+                  "  return findUser({ email });",
+                  "}",
+                  "",
+                  "// Painel: zero chamadas há 30 dias → seguro remover.",
+                  "// Ainda há chamadas do serviço de faturamento → avisar o time responsável.",
+                ].join("\n"),
+              },
+              explanation:
+                "O contador transforma \"acho que ninguém usa mais\" em um dado. Se ainda houver chamadores, dá para " +
+                "identificá-los e ajudá-los a migrar antes da remoção.",
+            },
+            {
+              title: "Avisar sem dizer o que fazer não ajuda",
+              context: "Um aviso de obsolescência só é útil se leva o usuário à ação seguinte.",
+              code: {
+                language: "javascript",
+                filename: "useful-warning.js",
+                code: [
+                  "// Inútil: gera preocupação, não orienta",
+                  "console.warn(\"esta função está obsoleta\");",
+                  "",
+                  "// Útil: o quê, por quê, o que fazer, e até quando",
+                  "console.warn(",
+                  "  \"formatLegacy está obsoleta desde a v2.4 (não trata fusos horários). \" +",
+                  "  \"Use formatDate(date, { timeZone }). Será removida na v3.0. Guia: docs/migrating-to-v3.md\"",
+                  ");",
+                ].join("\n"),
+              },
+              explanation:
+                "A segunda mensagem permite que a pessoa aja imediatamente: sabe qual função usar, entende o motivo " +
+                "e tem um prazo e um guia. O objetivo da deprecation é levar os usuários à migração, não apenas informá-los.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Sua biblioteca tem a função abaixo, que será substituída por uma versão que aceita opções. Ela " +
+              "precisa ser retirada de forma segura ao longo de algumas versões.",
+            problemCode: {
+              language: "javascript",
+              filename: "old-api.js",
+              code: [
+                "// Antiga",
+                "function sendMail(to, text) { /* ... */ }",
+                "",
+                "// Nova (já existe)",
+                "function sendMessage({ to, body, attachments = [] }) { /* ... */ }",
+              ].join("\n"),
+            },
+            task:
+              "Deprecie sendMail: mantenha-a funcionando delegando para sendMessage, marque-a como obsoleta com um " +
+              "aviso útil (uma vez só) e defina em qual versão seria removida.",
+            hint: "A função antiga vira uma \"casca\" que traduz os argumentos antigos para o formato novo.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "old-api.deprecated.js",
+                code: [
+                  "let warned = false;",
+                  "",
+                  "/** @deprecated desde a v2.6 — use sendMessage({ to, body }). Remoção prevista na v3.0. */",
+                  "function sendMail(to, text) {",
+                  "  if (!warned) {",
+                  "    console.warn(\"sendMail está obsoleta; use sendMessage({ to, body }). Remoção na v3.0.\");",
+                  "    warned = true;",
+                  "  }",
+                  "  return sendMessage({ to, body: text });",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Os chamadores antigos continuam funcionando sem mudanças, recebem um aviso claro com a alternativa e " +
+                "o prazo, e a lógica real vive só em sendMessage. A função antiga pode ser removida na v3.0, " +
+                "quando o uso tiver caído.",
+            },
+          },
+        }),
         concept({
           order: 60,
           title: "Dependency Management",
           isNew: true,
           requires: ["Semantic Versioning"],
           note: "gerenciar versões/dependências de terceiros: lockfiles, ranges de versão, grafo de dependências",
+          summary:
+            "Declarar, travar e atualizar de forma controlada as bibliotecas de terceiros de que o projeto depende — " +
+            "porque cada dependência traz benefícios e também riscos de segurança, compatibilidade e manutenção.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Quase todo projeto usa bibliotecas de terceiros, e cada uma delas depende de outras. Dependency " +
+                "Management é o conjunto de práticas para controlar isso: declarar do que o projeto depende (o " +
+                "manifesto, como package.json), travar as versões exatas que foram resolvidas (o lockfile), " +
+                "entender o grafo de dependências (as diretas e as transitivas) e atualizar de forma planejada.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Dependências economizam trabalho, mas terceirizam o controle. Uma versão nova pode quebrar seu código; " +
+                "uma vulnerabilidade em uma dependência (ou na dependência de uma dependência) vira uma " +
+                "vulnerabilidade sua; uma biblioteca abandonada deixa de receber correções. Sem gestão, dois " +
+                "desenvolvedores instalam versões diferentes e o mesmo código se comporta de forma diferente em " +
+                "cada máquina.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Como funciona: o manifesto declara intervalos de versão (^1.4.2 aceita 1.x.x a partir da 1.4.2, ~1.4.2 " +
+                "aceita 1.4.x) apoiados no Semantic Versioning; o lockfile registra a versão exata de cada pacote " +
+                "resolvida, o que garante builds reprodutíveis e deve ser versionado junto com o código. Boas " +
+                "práticas: atualizar com frequência e em pequenos passos (ferramentas como Dependabot ou Renovate " +
+                "abrem PRs automáticos), auditar vulnerabilidades, separar dependências de desenvolvimento e " +
+                "de produção, avaliar uma biblioteca antes de adotá-la e preferir poucas e bem mantidas.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "o que um intervalo de versão aceita — a regra que o manifesto usa por trás:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "dependency-ranges.js",
+              code: [
+                "// package.json declara:  \"date-utils\": \"^1.4.2\"",
+                "// Significado: qualquer 1.x.y a partir de 1.4.2, mas NUNCA 2.0.0 (poderia quebrar).",
+                "",
+                "function satisfiesCaret(version, base) {",
+                "  const [major, minor, patch] = version.split(\".\").map(Number);",
+                "  const [bMajor, bMinor, bPatch] = base.split(\".\").map(Number);",
+                "  if (major !== bMajor) return false;",
+                "  if (minor !== bMinor) return minor > bMinor;",
+                "  return patch >= bPatch;",
+                "}",
+                "",
+                "satisfiesCaret(\"1.9.0\", \"1.4.2\"); // true  (minor maior, compatível)",
+                "satisfiesCaret(\"1.4.1\", \"1.4.2\"); // false (anterior ao mínimo)",
+                "satisfiesCaret(\"2.0.0\", \"1.4.2\"); // false (MAJOR diferente: pode quebrar)",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O intervalo usa o SemVer como contrato: aceita atualizações que prometem compatibilidade e recusa " +
+                "as que podem quebrar. O lockfile, por sua vez, fixa qual versão exata dentro do intervalo foi " +
+                "instalada, para que todos usem a mesma.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "O manifesto diz o que é aceitável, o lockfile diz o que foi instalado — versionem os dois, " +
+                "atualizem em pequenos passos e tratem cada dependência nova como um compromisso.",
+            },
+          ],
+          examples: [
+            {
+              title: "Manifesto e lockfile: papéis diferentes",
+              context: "O manifesto é a intenção; o lockfile é o registro exato do que foi resolvido.",
+              code: {
+                language: "json",
+                filename: "package.json + package-lock.json",
+                code: [
+                  "// package.json — intenção: qualquer 4.x compatível",
+                  "{ \"dependencies\": { \"express\": \"^4.18.0\" } }",
+                  "",
+                  "// package-lock.json — fato: a versão exata instalada (e as transitivas)",
+                  "{ \"packages\": { \"node_modules/express\": { \"version\": \"4.19.2\" },",
+                  "                 \"node_modules/body-parser\": { \"version\": \"1.20.2\" } } }",
+                ].join("\n"),
+              },
+              explanation:
+                "Sem o lockfile, um novo `npm install` poderia trazer a 4.21.0 e comportar-se diferente da máquina " +
+                "de outra pessoa. Com ele, todos (e o CI, e a produção) instalam exatamente as mesmas versões.",
+            },
+            {
+              title: "O grafo: dependências transitivas",
+              context: "Você declara uma biblioteca, mas instala muitas: as dependências das dependências também são suas.",
+              code: {
+                language: "text",
+                filename: "dependency-tree.txt",
+                code: [
+                  "meu-app",
+                  "└── express@4.19.2                (declarada por você)",
+                  "    ├── body-parser@1.20.2        (transitiva)",
+                  "    │   └── qs@6.11.0             (transitiva)",
+                  "    └── cookie@0.6.0              (transitiva)",
+                  "",
+                  "Uma vulnerabilidade em qs@6.11.0 afeta o meu-app, mesmo que eu nunca a tenha escolhido.",
+                ].join("\n"),
+              },
+              explanation:
+                "A superfície de risco é o grafo inteiro, não só a lista do manifesto. Por isso auditorias " +
+                "automáticas (npm audit e similares) e atualizações regulares fazem parte da gestão.",
+            },
+            {
+              title: "Pensar antes de adicionar uma dependência",
+              context: "Cada dependência nova é código de terceiros que você passa a manter, atualizar e confiar.",
+              code: {
+                language: "javascript",
+                filename: "think-before-adding.js",
+                code: [
+                  "// Antes de instalar um pacote só para isto:",
+                  "//   npm install is-odd",
+                  "",
+                  "// ...considere que são três linhas:",
+                  "const isOdd = (n) => Math.abs(n) % 2 === 1;",
+                  "",
+                  "// Perguntas antes de adicionar: o que ela resolve que eu não escrevo em pouco tempo?",
+                  "// Está bem mantida (releases recentes)? Qual a licença? Quantas dependências traz? Qual o tamanho?",
+                ].join("\n"),
+              },
+              explanation:
+                "Para lógica trivial, uma dependência custa mais do que economiza. Para problemas difíceis (criptografia, " +
+                "parsing de formatos complexos), usar uma biblioteca madura é o correto — o ponto é decidir de forma consciente.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O manifesto do projeto declara os intervalos abaixo, e três versões novas foram publicadas.",
+            problemCode: {
+              language: "text",
+              filename: "ranges.txt",
+              code: [
+                "\"lib-a\": \"^1.4.2\"",
+                "\"lib-b\": \"~1.4.2\"",
+                "\"lib-c\": \"1.4.2\"",
+                "",
+                "Novas versões publicadas: 1.4.9, 1.5.0, 2.0.0",
+              ].join("\n"),
+            },
+            task:
+              "Para cada dependência, diga quais das três versões novas seriam aceitas pelo intervalo, e explique " +
+              "por que o lockfile ainda é necessário.",
+            hint: "^ aceita mudanças de MINOR e PATCH dentro do mesmo MAJOR; ~ aceita só PATCH; um número sem prefixo fixa exatamente aquela versão.",
+            solution: {
+              code: {
+                language: "text",
+                filename: "ranges.answer.txt",
+                code: [
+                  "lib-a  ^1.4.2 → aceita 1.4.9 e 1.5.0    (não aceita 2.0.0: MAJOR diferente)",
+                  "lib-b  ~1.4.2 → aceita 1.4.9            (não aceita 1.5.0 nem 2.0.0: só PATCH varia)",
+                  "lib-c  1.4.2  → não aceita nenhuma       (versão fixada exatamente)",
+                  "",
+                  "O lockfile ainda é necessário: lib-a aceita duas versões diferentes (1.4.9 e 1.5.0), e sem o",
+                  "lockfile cada instalação poderia escolher uma — e o projeto se comportaria diferente.",
+                ].join("\n"),
+              },
+              explanation:
+                "O intervalo define o que é permitido; quem decide o que de fato é instalado é o lockfile. Fixar tudo " +
+                "no manifesto evitaria surpresas, mas também bloquearia correções de segurança — por isso o " +
+                "equilíbrio comum é intervalos + lockfile + atualizações regulares.",
+            },
+          },
         }),
         concept({
           order: 70,
           title: "Incremental Migration",
           requires: ["Legacy Code", "Backward Compatibility"],
           note: "capstone: técnica para evoluir código legado/dependências com segurança",
+          summary:
+            "Trocar uma parte do sistema por outra em passos pequenos e reversíveis, com o antigo e o novo " +
+            "convivendo durante a transição — em vez de uma substituição total e arriscada de uma só vez.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Incremental Migration é a técnica de evoluir código legado, uma dependência ou uma tecnologia por " +
+                "etapas: o sistema antigo e o novo coexistem, o tráfego ou o uso migra aos poucos, e o antigo só " +
+                "é removido quando ninguém mais depende dele. Em cada passo o sistema continua funcionando e cada " +
+                "mudança pode ser desfeita.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "A alternativa, a troca de uma vez (big bang), concentra todo o risco em um único momento: se algo " +
+                "der errado, tudo quebra ao mesmo tempo e voltar atrás é caro. Ela também obriga a congelar o " +
+                "desenvolvimento e adia todo o feedback. A migração incremental distribui o risco em passos pequenos, " +
+                "permite aprender com cada um e mantém o sistema entregando valor — e depende das duas ideias que " +
+                "este módulo acabou de ver: proteger o legado (Legacy Code) e manter a compatibilidade " +
+                "(Backward Compatibility) enquanto os dois lados convivem.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Padrões comuns: Parallel Change (expandir → migrar → contrair): primeiro adicione o novo ao lado do " +
+                "antigo, depois migre os chamadores, por fim remova o antigo. Strangler Fig: um ponto de entrada " +
+                "(roteador, fachada) encaminha cada vez mais casos para o novo sistema, até o antigo ser " +
+                "\"estrangulado\". Feature flags: liga o novo caminho para poucos usuários, mede, e amplia. " +
+                "Em todos, o critério é o mesmo: cada passo é pequeno, seguro e reversível.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "as três fases de Parallel Change ao trocar o formato de um retorno:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "incremental-migration.js",
+              code: [
+                "// Situação: getUser devolve { fullName }, e queremos { firstName, lastName }.",
+                "",
+                "// 1. EXPANDIR: entrega os dois formatos (nada quebra)",
+                "function getUser(id) {",
+                "  const [firstName, ...rest] = loadUserName(id).split(\" \");",
+                "  const fullName = [firstName, ...rest].join(\" \");",
+                "  return { fullName, firstName, lastName: rest.join(\" \") };",
+                "}",
+                "",
+                "// 2. MIGRAR: cada chamador passa de user.fullName para firstName/lastName, um por vez",
+                "//    (o sistema funciona a cada chamador migrado)",
+                "",
+                "// 3. CONTRAIR: quando ninguém mais usa fullName, remove-se",
+                "function getUser(id) {",
+                "  const [firstName, ...rest] = loadUserName(id).split(\" \");",
+                "  return { firstName, lastName: rest.join(\" \") };",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Em nenhum momento o sistema ficou quebrado: na etapa 1, os antigos chamadores continuam " +
+                "funcionando; na 2, cada migração é um pequeno commit; e a 3 só acontece quando é segura.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Não troque tudo de uma vez — deixe o antigo e o novo conviverem, migre aos poucos e remova o antigo " +
+                "só quando ninguém mais o usar.",
+            },
+          ],
+          examples: [
+            {
+              title: "Strangler Fig: um roteador que migra rota a rota",
+              context: "Para substituir um sistema inteiro, um ponto de entrada envia cada vez mais casos para o novo.",
+              code: {
+                language: "javascript",
+                filename: "strangler.js",
+                code: [
+                  "// Rotas já reescritas no sistema novo; o resto continua no legado",
+                  "const MIGRATED_ROUTES = new Set([\"/invoices\", \"/customers\"]);",
+                  "",
+                  "function route(request) {",
+                  "  if (MIGRATED_ROUTES.has(request.path)) return newSystem.handle(request);",
+                  "  return legacySystem.handle(request);",
+                  "}",
+                  "",
+                  "// A cada sprint, mais rotas entram em MIGRATED_ROUTES.",
+                  "// Quando a lista cobre tudo, o sistema legado é desligado.",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada rota migrada é uma pequena vitória, testada em produção, e uma rota problemática pode voltar " +
+                "para o legado removendo-a da lista. O sistema antigo é substituído sem nunca ser desligado de " +
+                "uma vez.",
+            },
+            {
+              title: "Migração gradual com feature flag",
+              context: "O novo caminho é ligado para uma pequena fração dos usuários, medido e ampliado aos poucos.",
+              code: {
+                language: "javascript",
+                filename: "gradual-rollout.js",
+                code: [
+                  "function calculatePrice(cart, user) {",
+                  "  const useNewEngine = rollout.isEnabled(\"new-pricing-engine\", user.id); // 5% → 25% → 100%",
+                  "  const price = useNewEngine ? newEngine.calculate(cart) : legacyEngine.calculate(cart);",
+                  "",
+                  "  if (useNewEngine) compareWithLegacy(price, legacyEngine.calculate(cart)); // valida em paralelo",
+                  "  return price;",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Se o novo motor calcular algo diferente, isso aparece para 5% dos usuários e pode ser desligado " +
+                "imediatamente, não para todos. A comparação em paralelo com o legado transforma cada uso em um teste.",
+            },
+            {
+              title: "Renomear uma coluna do banco em fases",
+              context: "Mudanças em dados exigem o mesmo cuidado, porque várias versões do código convivem durante o deploy.",
+              code: {
+                language: "text",
+                filename: "column-rename.txt",
+                code: [
+                  "Objetivo: renomear users.name → users.full_name",
+                  "",
+                  "1. Adicionar a coluna full_name (a antiga continua existindo)",
+                  "2. O código passa a gravar nas duas colunas",
+                  "3. Copiar os valores antigos para full_name (backfill)",
+                  "4. O código passa a LER de full_name",
+                  "5. Parar de gravar em name",
+                  "6. Remover a coluna name (só depois de confirmar que ninguém mais a usa)",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada etapa é compatível com a versão de código anterior e com a seguinte, então dá para fazer " +
+                "o deploy sem indisponibilidade e reverter em qualquer ponto. Uma renomeação direta quebraria " +
+                "todas as instâncias que ainda rodam o código antigo.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A função abaixo devolve uma data como texto, e todos os chamadores dependem disso. Vocês querem " +
+              "passar a devolver um objeto Date, sem quebrar ninguém durante a transição.",
+            problemCode: {
+              language: "javascript",
+              filename: "get-due-date.js",
+              code: [
+                "function getDueDate(invoice) {",
+                "  return invoice.dueDate.toISOString().slice(0, 10); // \"2026-03-15\"",
+                "}",
+                "",
+                "// Usada em dezenas de lugares:",
+                "showLabel(getDueDate(invoice));",
+              ].join("\n"),
+            },
+            task:
+              "Descreva e escreva os três passos de uma migração incremental (expandir, migrar, contrair), " +
+              "de modo que o sistema funcione em todas as etapas.",
+            hint: "Em vez de mudar o retorno de getDueDate, adicione uma função nova ao lado, migre os chamadores para ela e só então remova a antiga.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "get-due-date.migration.js",
+                code: [
+                  "// 1. EXPANDIR: função nova ao lado da antiga (nada quebra)",
+                  "function getDueDateAsDate(invoice) {",
+                  "  return invoice.dueDate;",
+                  "}",
+                  "function getDueDate(invoice) {",
+                  "  return getDueDateAsDate(invoice).toISOString().slice(0, 10); // igual ao anterior",
+                  "}",
+                  "",
+                  "// 2. MIGRAR: cada chamador troca, aos poucos:",
+                  "//    showLabel(getDueDate(invoice))  →  showLabel(format(getDueDateAsDate(invoice)))",
+                  "//    (em cada commit o sistema funciona; getDueDate pode até ser marcada como obsoleta)",
+                  "",
+                  "// 3. CONTRAIR: sem chamadores de getDueDate, ela é removida",
+                  "//    (e getDueDateAsDate pode ganhar o nome final, se desejado)",
+                ].join("\n"),
+              },
+              explanation:
+                "Em nenhuma etapa o sistema ficou quebrado: a função antiga foi mantida com o comportamento " +
+                "original até o último chamador migrar. Cada commit é pequeno e reversível, e a remoção final é " +
+                "segura porque o uso caiu a zero.",
+            },
+          },
         }),
       ],
     }),
