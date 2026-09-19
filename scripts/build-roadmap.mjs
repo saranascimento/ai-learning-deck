@@ -1264,6 +1264,12 @@ for (const area of model.areas()) {
     "binary-search-debugging",
     "git-bisect",
     "root-cause-analysis",
+    "naming",
+    "functions",
+    "function-arguments",
+    "guard-clauses",
+    "comments",
+    "magic-numbers",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",
