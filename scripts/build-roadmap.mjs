@@ -1280,6 +1280,17 @@ for (const area of model.areas()) {
     "large-class",
     "feature-envy",
     "primitive-obsession",
+    "refactoring",
+    "extract-function",
+    "extract-variable",
+    "rename",
+    "inline-function",
+    "extract-class",
+    "move-function",
+    "replace-nested-conditional-with-guard-clauses",
+    "replace-conditional-with-polymorphism",
+    "introduce-parameter-object",
+    "refactoring-with-tests",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",

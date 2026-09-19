@@ -3145,46 +3145,2234 @@ export default area({
           title: "Refactoring",
           isNew: true,
           note: "guarda-chuva: transformação que preserva comportamento; \"duas camadas\" (adicionar feature × refatorar), por que fazer, quando não fazer",
+          summary:
+            "Mudar a estrutura interna do código sem alterar o que ele faz por fora — em passos pequenos e " +
+            "seguros — para que a próxima mudança fique mais barata e menos arriscada.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Refactoring é a transformação do código que melhora sua estrutura interna preservando o " +
+                "comportamento observável: as mesmas entradas continuam produzindo as mesmas saídas e efeitos. " +
+                "Não é reescrever, e não é corrigir bugs nem adicionar funcionalidade — é reorganizar, em passos " +
+                "pequenos, o que já funciona.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Código que só recebe acréscimos, sem reorganização, fica cada vez mais difícil de entender e de " +
+                "mudar — cada nova funcionalidade custa mais que a anterior. Refatorar mantém o custo da mudança " +
+                "baixo. A frase que resume o uso mais comum: \"faça a mudança fácil (isso pode ser difícil), depois " +
+                "faça a mudança fácil\" — primeiro reorganize o código para que a funcionalidade nova caiba " +
+                "naturalmente, depois adicione-a.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "A regra dos \"dois chapéus\" organiza o trabalho: ou você está adicionando funcionalidade (e os " +
+                "testes novos passam a cobrir comportamento novo), ou está refatorando (e nenhum teste " +
+                "existente deve mudar). Trocar de chapéu é permitido; usar os dois ao mesmo tempo, não — é assim " +
+                "que se perde a noção de qual mudança quebrou o quê. Bons momentos para refatorar: antes de " +
+                "adicionar uma funcionalidade, ao corrigir um bug, ao rever código e ao notar um smell pela " +
+                "terceira vez. Quando não refatorar: código que será descartado, código sem qualquer forma de " +
+                "verificar o comportamento, ou quando uma reescrita completa é de fato a melhor opção.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "refatorar antes de acrescentar: a estrutura muda, o comportamento não:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "refactoring.js",
+              code: [
+                "// Passo 1 (refatoração): mesma saída, estrutura preparada para a mudança",
+                "// Antes",
+                "function price(order) {",
+                "  return order.items.reduce((s, i) => s + i.price, 0) * 0.9;",
+                "}",
+                "",
+                "// Depois: o desconto ganhou um lugar próprio",
+                "const DISCOUNT_RATE = 0.9;",
+                "function subtotal(order) {",
+                "  return order.items.reduce((s, i) => s + i.price, 0);",
+                "}",
+                "function price(order) {",
+                "  return subtotal(order) * DISCOUNT_RATE;",
+                "}",
+                "",
+                "// Passo 2 (funcionalidade): agora o desconto por cliente cabe com facilidade",
+                "function price(order) {",
+                "  const rate = order.customer.isVip ? 0.8 : DISCOUNT_RATE;",
+                "  return subtotal(order) * rate;",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O passo 1 não muda nenhum resultado — qualquer teste existente continua passando igual. Só o " +
+                "passo 2 muda o comportamento, e por estar separado, se algo quebrar, a origem é óbvia.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Refatorar é mudar a estrutura sem mudar o comportamento, em passos pequenos, sempre separado " +
+                "de adicionar funcionalidade — o objetivo é tornar a próxima mudança barata.",
+            },
+          ],
+          examples: [
+            {
+              title: "Refatorar para preparar uma funcionalidade",
+              context: "Antes de acrescentar algo novo, reorganize o que já existe para que o novo caiba sem contorcer o código.",
+              code: {
+                language: "javascript",
+                filename: "prepare-then-add.js",
+                code: [
+                  "// Precisamos aceitar cupons. Hoje o desconto está escrito dentro de checkout:",
+                  "function checkout(cart) {",
+                  "  const total = cart.total - cart.total * 0.05; // desconto fixo",
+                  "  return charge(total);",
+                  "}",
+                  "",
+                  "// Commit 1 (refatoração, sem mudar resultado): isolar o desconto",
+                  "function applyDiscount(total) {",
+                  "  return total - total * 0.05;",
+                  "}",
+                  "function checkout(cart) {",
+                  "  return charge(applyDiscount(cart.total));",
+                  "}",
+                  "",
+                  "// Commit 2 (funcionalidade): agora o cupom é uma mudança local",
+                  "function applyDiscount(total, coupon) {",
+                  "  const rate = coupon ? coupon.rate : 0.05;",
+                  "  return total - total * rate;",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Dois commits, dois chapéus. O primeiro pode ser revisado como \"nada muda por fora\"; o segundo " +
+                "traz apenas a lógica nova. Mesclar os dois esconderia qual das mudanças causou um eventual bug.",
+            },
+            {
+              title: "O comportamento observável não muda",
+              context: "O teste de que foi uma refatoração: os mesmos testes, sem alteração, passam antes e depois.",
+              code: {
+                language: "javascript",
+                filename: "same-tests.js",
+                code: [
+                  "function testTotal() {",
+                  "  const order = { items: [{ price: 10 }, { price: 30 }] };",
+                  "  if (price(order) !== 36) throw new Error(\"total incorreto\");",
+                  "}",
+                  "",
+                  "// Esse teste passa com a versão antes da refatoração...",
+                  "// ...e continua passando, sem nenhuma alteração, depois dela.",
+                  "// Se foi preciso mudar o teste, provavelmente mudou o comportamento.",
+                ].join("\n"),
+              },
+              explanation:
+                "Se você precisar alterar um teste existente para que ele passe, é sinal de que houve mudança de " +
+                "comportamento — logo, não era só uma refatoração. Esse é o critério mais prático para saber em " +
+                "qual chapéu se está.",
+            },
+            {
+              title: "Quando não vale refatorar",
+              context: "Refatorar tem custo; nem todo código merece esse investimento.",
+              code: {
+                language: "javascript",
+                filename: "throwaway-script.js",
+                code: [
+                  "// Script de migração único, roda uma vez e é apagado.",
+                  "// Feio, mas funciona — melhorar sua estrutura não traz nenhum retorno.",
+                  "const rows = await db.query(\"SELECT * FROM legacy_users\");",
+                  "for (const row of rows) {",
+                  "  await db.query(\"INSERT INTO users (id, name) VALUES ($1, $2)\", [row.id, row.name]);",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Refatorar compensa em código que vai continuar sendo lido e alterado. Para algo que será " +
+                "executado uma vez e descartado, o esforço não se paga — o mesmo vale para código sem qualquer " +
+                "forma de verificar o comportamento, onde é preciso primeiro criar essa rede de segurança.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Duas alterações foram propostas em um pull request para a função de frete. Uma delas é uma " +
+              "refatoração, a outra não.",
+            problemCode: {
+              language: "javascript",
+              filename: "shipping-changes.js",
+              code: [
+                "// Original",
+                "function shipping(weight) {",
+                "  if (weight > 10) return weight * 2 + 5;",
+                "  return weight * 2;",
+                "}",
+                "",
+                "// Alteração A",
+                "function shipping(weight) {",
+                "  const base = weight * 2;",
+                "  return weight > 10 ? base + 5 : base;",
+                "}",
+                "",
+                "// Alteração B",
+                "function shipping(weight) {",
+                "  if (weight >= 10) return weight * 2 + 5;",
+                "  return weight * 2;",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Diga qual das duas alterações é uma refatoração e qual muda o comportamento, justificando com um " +
+              "valor de entrada que prove a diferença.",
+            hint: "Teste os dois candidatos com weight = 10 (o valor exatamente na fronteira) e compare com o original.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "shipping-analysis.js",
+                code: [
+                  "// weight = 10",
+                  "// Original: 10 > 10 é falso → 10 * 2 = 20",
+                  "// A:        10 > 10 é falso → base = 20 → 20",
+                  "// B:        10 >= 10 é verdadeiro → 10 * 2 + 5 = 25  (mudou!)",
+                  "",
+                  "// A é refatoração: o resultado é idêntico para toda entrada.",
+                  "// B muda o comportamento: passou a cobrar taxa a partir de 10, não acima de 10.",
+                ].join("\n"),
+              },
+              explanation:
+                "A só reorganiza o cálculo (introduz uma variável), sem alterar nenhum resultado. B troca > por >=, " +
+                "o que muda a fronteira da regra de negócio: é uma alteração de comportamento e deveria ir num " +
+                "commit à parte, com seu próprio teste.",
+            },
+          },
         }),
-        concept({ order: 20, title: "Extract Function", requires: ["Refactoring"] }),
-        concept({ order: 30, title: "Extract Variable", requires: ["Refactoring"] }),
-        concept({ order: 40, title: "Rename", requires: ["Refactoring"] }),
+        concept({
+          order: 20,
+          title: "Extract Function",
+          requires: ["Refactoring"],
+          note: "extrair função — dar nome e função própria a um trecho de código",
+          summary:
+            "Tirar um trecho de código de dentro de uma função e dar a ele uma função própria com um nome que " +
+            "explica o que faz — a técnica que corrige funções longas e trechos duplicados.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Extract Function pega um fragmento de código e o move para uma função nova, substituindo o " +
+                "fragmento original por uma chamada a ela. O nome da função deve dizer o que o trecho faz (a " +
+                "intenção), não como faz. É a técnica de refatoração mais usada e a correção padrão para os smells " +
+                "Long Method e Duplicate Code.",
+            },
+            { type: "heading", text: "Como fazer" },
+            {
+              type: "paragraph",
+              text:
+                "Mecânica em passos pequenos: (1) escolha o trecho e um nome que descreva sua intenção; (2) crie a " +
+                "função nova e copie o trecho para ela; (3) identifique as variáveis do escopo original que o " +
+                "trecho lê — elas viram parâmetros — e as que ele altera — a função deve devolvê-las; (4) " +
+                "substitua o trecho original pela chamada; (5) rode os testes. Se o trecho tem mais de um valor " +
+                "de saída, geralmente é sinal de que precisa ser dividido em duas extrações.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Quando extrair: o trecho tem um propósito que você consegue nomear, há um comentário explicando o " +
+                "que o bloco faz (o comentário vira o nome), ou o mesmo código aparece em mais de um lugar. Não " +
+                "compensa extrair se o nome não dizer nada além do que o código já diz.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "um trecho com um propósito claro extraído com um nome:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "extract-function.js",
+              code: [
+                "// Antes",
+                "function printInvoice(invoice) {",
+                "  console.log(\"Fatura #\" + invoice.id);",
+                "",
+                "  // calcula total",
+                "  let total = 0;",
+                "  for (const line of invoice.lines) total += line.price * line.quantity;",
+                "",
+                "  console.log(\"Total: \" + total.toFixed(2));",
+                "}",
+                "",
+                "// Depois: o comentário virou o nome da função",
+                "function printInvoice(invoice) {",
+                "  console.log(\"Fatura #\" + invoice.id);",
+                "  console.log(\"Total: \" + calculateTotal(invoice.lines).toFixed(2));",
+                "}",
+                "",
+                "function calculateTotal(lines) {",
+                "  let total = 0;",
+                "  for (const line of lines) total += line.price * line.quantity;",
+                "  return total;",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O trecho lia invoice.lines (virou o parâmetro lines) e produzia total (virou o retorno). O " +
+                "comportamento é exatamente o mesmo, mas calculateTotal agora pode ser testada e reutilizada sozinha.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Extraia quando puder dar ao trecho um nome que diga sua intenção — as variáveis lidas viram " +
+                "parâmetros, as alteradas viram o retorno.",
+            },
+          ],
+          examples: [
+            {
+              title: "Trecho que produz um valor",
+              context: "O caso mais direto: o fragmento calcula algo, então a função extraída devolve esse valor.",
+              code: {
+                language: "javascript",
+                filename: "extract-value.js",
+                code: [
+                  "// Antes",
+                  "function describeUser(user) {",
+                  "  const years = Math.floor((Date.now() - user.createdAt) / (365 * 24 * 60 * 60 * 1000));",
+                  "  return user.name + \" (\" + years + \" anos de conta)\";",
+                  "}",
+                  "",
+                  "// Depois",
+                  "function accountAgeInYears(user) {",
+                  "  return Math.floor((Date.now() - user.createdAt) / (365 * 24 * 60 * 60 * 1000));",
+                  "}",
+                  "function describeUser(user) {",
+                  "  return user.name + \" (\" + accountAgeInYears(user) + \" anos de conta)\";",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "O cálculo do tempo de conta tem agora um nome e pode ser reaproveitado (em um relatório, por " +
+                "exemplo) sem copiar a expressão.",
+            },
+            {
+              title: "Condição complexa com nome",
+              context: "Extrair a condição de um if dá nome à regra de negócio que ela representa.",
+              code: {
+                language: "javascript",
+                filename: "extract-condition.js",
+                code: [
+                  "// Antes: é preciso decifrar o que a condição significa",
+                  "if (user.age >= 18 && user.hasConsent && !user.isBlocked && user.country === \"BR\") {",
+                  "  allowSignUp(user);",
+                  "}",
+                  "",
+                  "// Depois: a regra tem nome",
+                  "function canSignUp(user) {",
+                  "  return user.age >= 18 && user.hasConsent && !user.isBlocked && user.country === \"BR\";",
+                  "}",
+                  "",
+                  "if (canSignUp(user)) allowSignUp(user);",
+                ].join("\n"),
+              },
+              explanation:
+                "O if agora diz o que se decide (pode se cadastrar), e os detalhes de como se decide ficam em um " +
+                "lugar só — onde a regra pode ser alterada ou testada.",
+            },
+            {
+              title: "Trecho que modifica uma variável do escopo",
+              context: "Quando o fragmento altera um valor, a função extraída deve devolvê-lo em vez de mutar o escopo original.",
+              code: {
+                language: "javascript",
+                filename: "extract-with-mutation.js",
+                code: [
+                  "// Antes: 'total' é alterado no meio da função",
+                  "function checkout(cart) {",
+                  "  let total = cart.subtotal;",
+                  "  if (cart.coupon) total -= cart.coupon.value;",
+                  "  if (cart.isFirstPurchase) total -= 10;",
+                  "  return total;",
+                  "}",
+                  "",
+                  "// Depois: as reduções foram extraídas e devolvem o novo total",
+                  "function applyDiscounts(subtotal, cart) {",
+                  "  let total = subtotal;",
+                  "  if (cart.coupon) total -= cart.coupon.value;",
+                  "  if (cart.isFirstPurchase) total -= 10;",
+                  "  return total;",
+                  "}",
+                  "function checkout(cart) {",
+                  "  return applyDiscounts(cart.subtotal, cart);",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "O trecho lia subtotal e cart, e modificava total. Por isso, subtotal e cart viraram parâmetros e o " +
+                "total virou o valor de retorno — sem depender de nenhuma variável externa.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A função abaixo mistura validação, cálculo e formatação. Cada bloco já tem um comentário " +
+              "explicando o que faz.",
+            problemCode: {
+              language: "javascript",
+              filename: "order-summary.js",
+              code: [
+                "function orderSummary(order) {",
+                "  // verifica se há itens",
+                "  if (order.items.length === 0) return \"Pedido vazio\";",
+                "",
+                "  // soma quantidade de itens",
+                "  let count = 0;",
+                "  for (const item of order.items) count += item.quantity;",
+                "",
+                "  return \"Pedido com \" + count + \" itens\";",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Aplique Extract Function ao bloco que soma as quantidades, dando a ele um nome que substitua o " +
+              "comentário, e deixe orderSummary usando a nova função.",
+            hint: "O bloco lê order.items e produz count. Então recebe items como parâmetro e devolve count.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "order-summary.refactored.js",
+                code: [
+                  "function countItems(items) {",
+                  "  let count = 0;",
+                  "  for (const item of items) count += item.quantity;",
+                  "  return count;",
+                  "}",
+                  "",
+                  "function orderSummary(order) {",
+                  "  if (order.items.length === 0) return \"Pedido vazio\";",
+                  "  return \"Pedido com \" + countItems(order.items) + \" itens\";",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "O comentário \"soma quantidade de itens\" virou o nome countItems e não é mais necessário. A " +
+                "função nova recebe só o que usa (items) e devolve o que produz (count), então pode ser testada " +
+                "sem montar um pedido inteiro.",
+            },
+          },
+        }),
+        concept({
+          order: 30,
+          title: "Extract Variable",
+          requires: ["Refactoring"],
+          note: "extrair variável — dar nome a uma expressão complexa ou repetida",
+          summary:
+            "Dar um nome, por meio de uma variável local, a uma expressão complexa ou repetida — para que o " +
+            "código explique o que a expressão representa em vez de só como é calculada.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Extract Variable substitui uma expressão (ou parte dela) por uma variável local com um nome " +
+                "que explica o seu significado. Também é chamada de \"variável explicativa\": ela não muda o que o " +
+                "código calcula, apenas torna visível a intenção por trás do cálculo.",
+            },
+            { type: "heading", text: "Como fazer" },
+            {
+              type: "paragraph",
+              text:
+                "Mecânica: (1) verifique que a expressão não tem efeitos colaterais; (2) declare uma constante com " +
+                "um nome que diga o que a expressão representa e atribua a ela o resultado; (3) substitua a " +
+                "expressão original pela variável; (4) rode os testes. Se a mesma expressão aparecer mais de " +
+                "uma vez, substitua todas as ocorrências pela variável.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Serve especialmente para condições longas, fórmulas com vários passos e valores calculados mais de " +
+                "uma vez. Se o nome só faz sentido dentro de uma função, uma variável é suficiente; se a mesma ideia " +
+                "for útil em vários lugares, considere Extract Function em vez disso. E se o nome apenas repetir o " +
+                "que a expressão já diz de forma óbvia, a variável é ruído.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "uma condição opaca ganha nomes que explicam cada parte:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "extract-variable.js",
+              code: [
+                "// Antes: o que essa condição decide?",
+                "if (order.total > 500 && order.customer.orders.length > 5 && !order.customer.hasDebt) {",
+                "  applyVipDiscount(order);",
+                "}",
+                "",
+                "// Depois: cada parte da regra tem um nome",
+                "const isLargeOrder = order.total > 500;",
+                "const isLoyalCustomer = order.customer.orders.length > 5;",
+                "const isInGoodStanding = !order.customer.hasDebt;",
+                "",
+                "if (isLargeOrder && isLoyalCustomer && isInGoodStanding) {",
+                "  applyVipDiscount(order);",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A regra agora se lê como uma frase (pedido grande, cliente fiel e em dia). Cada critério tem um " +
+                "nome, o que também ajuda a depurar: dá para inspecionar o valor de cada variável separadamente.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Se uma expressão precisa de esforço para ser entendida, dê nome ao seu resultado — a variável " +
+                "explica o porquê que a expressão sozinha esconde.",
+            },
+          ],
+          examples: [
+            {
+              title: "Fórmula dividida em passos com nome",
+              context: "Uma conta com vários termos fica mais fácil de entender (e de conferir) quando cada termo se chama pelo que é.",
+              code: {
+                language: "javascript",
+                filename: "named-steps.js",
+                code: [
+                  "// Antes",
+                  "const price = order.quantity * order.itemPrice - Math.max(0, order.quantity - 500) * order.itemPrice * 0.05 + Math.min(order.quantity * order.itemPrice * 0.1, 100);",
+                  "",
+                  "// Depois",
+                  "const basePrice = order.quantity * order.itemPrice;",
+                  "const bulkDiscount = Math.max(0, order.quantity - 500) * order.itemPrice * 0.05;",
+                  "const shipping = Math.min(basePrice * 0.1, 100);",
+                  "const price = basePrice - bulkDiscount + shipping;",
+                ].join("\n"),
+              },
+              explanation:
+                "Agora dá para ler o cálculo como uma história (preço base, menos desconto por volume, mais " +
+                "frete limitado a 100) e conferir cada parte separadamente com os números do negócio.",
+            },
+            {
+              title: "Expressão repetida",
+              context: "Quando o mesmo cálculo aparece mais de uma vez, uma variável evita repetir — e recalcular.",
+              code: {
+                language: "javascript",
+                filename: "repeated-expression.js",
+                code: [
+                  "// Antes: a mesma expressão três vezes",
+                  "if (user.profile.address.country === \"BR\") {",
+                  "  currency = \"BRL\";",
+                  "  tax = user.profile.address.country === \"BR\" ? 0.12 : 0.2;",
+                  "  label = user.profile.address.country + \" (padrão)\";",
+                  "}",
+                  "",
+                  "// Depois",
+                  "const country = user.profile.address.country;",
+                  "if (country === \"BR\") {",
+                  "  currency = \"BRL\";",
+                  "  tax = country === \"BR\" ? 0.12 : 0.2;",
+                  "  label = country + \" (padrão)\";",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "O caminho user.profile.address.country existe uma vez, com um nome curto. Se a estrutura do " +
+                "usuário mudar, há um único lugar para ajustar.",
+            },
+            {
+              title: "Quando a variável não ajuda",
+              context: "Extrair só faz sentido quando o nome acrescenta informação; se apenas repete a expressão, é ruído.",
+              code: {
+                language: "javascript",
+                filename: "useless-variable.js",
+                code: [
+                  "// A variável não diz nada além da própria expressão",
+                  "const isEmpty = items.length === 0;",
+                  "if (isEmpty) return;",
+                  "",
+                  "// Mais direto, e igualmente claro",
+                  "if (items.length === 0) return;",
+                ].join("\n"),
+              },
+              explanation:
+                "items.length === 0 já é autoexplicativo. A variável isEmpty só acrescentaria uma linha e um nome " +
+                "a mais para o leitor acompanhar, sem informação nova.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Esta linha calcula a taxa de entrega, mas é difícil dizer o que cada número e cada condição " +
+              "representam.",
+            problemCode: {
+              language: "javascript",
+              filename: "delivery-fee.js",
+              code: [
+                "function deliveryFee(order) {",
+                "  return order.distanceKm > 20 ? order.distanceKm * 1.5 + (order.isExpress ? 15 : 0) : order.isExpress ? 15 : 5;",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Aplique Extract Variable para dar nome aos conceitos por trás da expressão, sem mudar o resultado " +
+              "para nenhuma entrada.",
+            hint: "Há três ideias: a distância é longa?, o custo adicional do expresso e o custo base de cada faixa.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "delivery-fee.refactored.js",
+                code: [
+                  "function deliveryFee(order) {",
+                  "  const isLongDistance = order.distanceKm > 20;",
+                  "  const expressSurcharge = order.isExpress ? 15 : 0;",
+                  "",
+                  "  if (isLongDistance) return order.distanceKm * 1.5 + expressSurcharge;",
+                  "  return order.isExpress ? 15 : 5;",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "isLongDistance e expressSurcharge dão nome às duas ideias que a expressão misturava. O resultado " +
+                "é idêntico para qualquer pedido, mas agora dá para ler a regra em voz alta.",
+            },
+          },
+        }),
+        concept({
+          order: 40,
+          title: "Rename",
+          requires: ["Refactoring"],
+          note: "renomear — corrigir um nome que não reflete mais o que a coisa é ou faz",
+          summary:
+            "Trocar o nome de uma variável, função, classe ou arquivo por outro que descreva melhor o que ela é — " +
+            "a refatoração mais simples e uma das que mais aumenta a clareza.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Rename é a refatoração que muda o nome de um elemento do código (variável, função, classe, " +
+                "módulo, arquivo) e atualiza todos os lugares que o usam, sem alterar o comportamento. Se Naming " +
+                "(módulo Clean Code) trata de escolher bons nomes na primeira vez, Rename trata de corrigi-los " +
+                "depois — porque o entendimento sobre o problema evolui e os nomes precisam acompanhar.",
+            },
+            { type: "heading", text: "Como fazer" },
+            {
+              type: "paragraph",
+              text:
+                "Mecânica: (1) escolha o novo nome; (2) use a função \"renomear símbolo\" do editor ou da IDE, que " +
+                "atualiza todas as referências entendendo o código; (3) rode os testes e verifique se o " +
+                "compilador ou o linter aponta algo esquecido. Evite busca-e-substitui de texto: ele troca " +
+                "ocorrências que só têm o mesmo texto (um campo id em outra classe, uma palavra dentro de uma " +
+                "string) e deixa passar usos que não têm o mesmo texto.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Cuidados: em interfaces públicas (uma API usada por outros times ou por código que você não " +
+                "controla), renomear quebra quem depende do nome antigo — mantenha o nome antigo como alias " +
+                "marcado como obsoleto por um tempo e migre aos poucos. Nomes usados por reflexão, em strings ou em " +
+                "arquivos de configuração também não são pegos pela ferramenta e precisam ser conferidos à mão.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "um nome que passou a mentir depois que a função mudou, e o novo:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "rename.js",
+              code: [
+                "// Antes: o nome diz \"pegar usuário\", mas a função também cria se não existir",
+                "function getUser(email) {",
+                "  return db.users.findByEmail(email) ?? db.users.create({ email });",
+                "}",
+                "const user = getUser(\"ana@mail.com\");",
+                "",
+                "// Depois: o nome descreve o comportamento inteiro",
+                "function findOrCreateUser(email) {",
+                "  return db.users.findByEmail(email) ?? db.users.create({ email });",
+                "}",
+                "const user = findOrCreateUser(\"ana@mail.com\");",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A lógica não mudou uma linha. Só o nome passou a comunicar o efeito real — que, se ficasse como " +
+                "getUser, levaria alguém a chamá-la achando que ela apenas lê.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Renomear é barato e vale muito: quando o nome deixa de refletir o que a coisa é ou faz, corrija-o " +
+                "com a ferramenta do editor, não com um busca-e-substitui às cegas.",
+            },
+          ],
+          examples: [
+            {
+              title: "Renomear uma variável local",
+              context: "O caso mais simples e mais frequente: o nome nasceu genérico e agora se sabe o que a variável representa.",
+              code: {
+                language: "javascript",
+                filename: "rename-variable.js",
+                code: [
+                  "// Antes",
+                  "const d = daysBetween(order.createdAt, today);",
+                  "if (d > 30) markAsLate(order);",
+                  "",
+                  "// Depois",
+                  "const daysSinceCreated = daysBetween(order.createdAt, today);",
+                  "if (daysSinceCreated > 30) markAsLate(order);",
+                ].join("\n"),
+              },
+              explanation:
+                "É uma mudança local, sem riscos, e a condição passa a se ler como uma frase. Não é preciso esperar " +
+                "uma \"grande limpeza\" para fazer isso — rename é para ser feito no momento em que o nome incomoda.",
+            },
+            {
+              title: "Renomear uma API pública com transição",
+              context: "Quando outros dependem do nome antigo, renomeie de forma gradual em vez de quebrá-los de uma vez.",
+              code: {
+                language: "javascript",
+                filename: "rename-public-api.js",
+                code: [
+                  "// Novo nome passa a ser o principal",
+                  "export function calculateShippingCost(order) {",
+                  "  // ...",
+                  "}",
+                  "",
+                  "/** @deprecated use calculateShippingCost — será removido na v3 */",
+                  "export function calcShip(order) {",
+                  "  return calculateShippingCost(order);",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Quem usa calcShip continua funcionando, e recebe o aviso para migrar. Depois de um período (ou " +
+                "quando todos os usos tiverem sido atualizados), o nome antigo pode ser removido sem surpresas.",
+            },
+            {
+              title: "Busca-e-substitui cego versus renomear símbolo",
+              context: "Trocar texto é diferente de trocar um símbolo: só a ferramenta que entende o código sabe onde está cada uso.",
+              code: {
+                language: "javascript",
+                filename: "blind-replace.js",
+                code: [
+                  "// Queremos renomear a função 'id' para 'userId' — mas o texto \"id\" aparece em outros contextos",
+                  "function id(user) { return user.id; }        // função e campo têm o mesmo nome",
+                  "const label = \"Confira o id do pedido\";     // texto dentro de uma string",
+                  "const orderId = order.id;                     // campo de outro objeto",
+                  "",
+                  "// Um busca-e-substitui de 'id' quebraria o campo order.id e alteraria o texto.",
+                  "// A opção \"renomear símbolo\" do editor troca só a função e seus usos reais.",
+                ].join("\n"),
+              },
+              explanation:
+                "A ferramenta de rename entende o que é a função, o que é um campo e o que é apenas texto. " +
+                "Um substituir-tudo trata os três como iguais, e o resultado costuma ser um bug silencioso.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A função abaixo é chamada em três lugares, mas o nome não diz o que ela calcula, e a variável de " +
+              "dentro também não ajuda.",
+            problemCode: {
+              language: "javascript",
+              filename: "process.js",
+              code: [
+                "function process(o) {",
+                "  const x = o.weight * 2.5;",
+                "  return x < 15 ? 15 : x;",
+                "}",
+                "",
+                "const a = process(orderA);",
+                "const b = process(orderB);",
+                "const c = process(orderC);",
+              ].join("\n"),
+            },
+            task:
+              "Aplique Rename à função, ao parâmetro e à variável, atualizando os três usos, sem alterar o " +
+              "comportamento.",
+            hint: "Descubra primeiro o que a função calcula (peso vezes um valor, com um mínimo) e nomeie de acordo.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "process.refactored.js",
+                code: [
+                  "function calculateShippingCost(order) {",
+                  "  const cost = order.weight * 2.5;",
+                  "  return cost < 15 ? 15 : cost;",
+                  "}",
+                  "",
+                  "const shippingA = calculateShippingCost(orderA);",
+                  "const shippingB = calculateShippingCost(orderB);",
+                  "const shippingC = calculateShippingCost(orderC);",
+                ].join("\n"),
+              },
+              explanation:
+                "A função, o parâmetro (o) e a variável interna (x) agora descrevem o que são, e os três usos " +
+                "foram atualizados. Numa IDE, isso seria um único comando de renomear símbolo por elemento — o " +
+                "comportamento não muda.",
+            },
+          },
+        }),
         concept({
           order: 50,
           title: "Inline Function",
           requires: ["Refactoring"],
           note: "operação inversa de Extract Function — ensinada em par por ordem de estudo, não por Requires",
+          summary:
+            "Substituir a chamada de uma função pelo próprio corpo dela e remover a função — o inverso de Extract " +
+            "Function, útil quando a indireção não acrescenta clareza.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Inline Function é a operação inversa de Extract Function: em vez de mover um trecho para uma " +
+                "função, você traz o corpo da função de volta para onde ela é chamada e apaga a função. Serve " +
+                "quando a função é tão simples que o corpo é tão claro quanto o nome, ou quando um conjunto de " +
+                "funções está mal dividido e vale desfazer a divisão antes de reorganizar.",
+            },
+            { type: "heading", text: "Como fazer" },
+            {
+              type: "paragraph",
+              text:
+                "Mecânica: (1) confirme que a função não é sobrescrita por subclasses ou usada por quem você não " +
+                "controla; (2) substitua uma chamada pelo corpo, ajustando parâmetros; (3) rode os testes; (4) " +
+                "repita para cada chamada; (5) remova a função quando não houver mais usos. Fazer uma chamada " +
+                "por vez torna o caminho reversível se algo der errado.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Quando usar: a função só repassa a chamada para outra (indireção sem valor), o nome não diz mais do " +
+                "que o corpo, ou você quer desfazer uma extração ruim para refazê-la de outro jeito. Quando não " +
+                "usar: a função é usada em muitos lugares e o nome agrega significado — então ela está fazendo o " +
+                "seu trabalho. As duas técnicas se completam: extraia para dar nome, incorpore para remover " +
+                "nomes que não ajudam.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "uma função que só repassa a chamada, incorporada onde é usada:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "inline-function.js",
+              code: [
+                "// Antes: a função só delega e não acrescenta significado",
+                "function getRating(driver) {",
+                "  return moreThanFiveLateDeliveries(driver) ? 2 : 1;",
+                "}",
+                "function moreThanFiveLateDeliveries(driver) {",
+                "  return driver.lateDeliveries > 5;",
+                "}",
+                "",
+                "// Depois: o corpo vive onde é usado",
+                "function getRating(driver) {",
+                "  return driver.lateDeliveries > 5 ? 2 : 1;",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O nome moreThanFiveLateDeliveries apenas repetia a condição em palavras, e obrigava o leitor a " +
+                "pular para outra função. Incorporada, a regra aparece onde é usada e está tão clara quanto antes.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Uma função só ganha seu lugar se o nome acrescenta algo que o corpo não diz — quando não " +
+                "acrescenta, incorpore-a de volta.",
+            },
+          ],
+          examples: [
+            {
+              title: "Função trivial que só delega",
+              context: "Funções de uma linha que repassam a chamada aumentam o caminho de leitura sem informar nada novo.",
+              code: {
+                language: "javascript",
+                filename: "trivial-delegation.js",
+                code: [
+                  "// Antes",
+                  "function fetchUsers() {",
+                  "  return api.get(\"/users\");",
+                  "}",
+                  "function loadUsers() {",
+                  "  return fetchUsers();",
+                  "}",
+                  "",
+                  "// Depois: uma camada a menos",
+                  "function loadUsers() {",
+                  "  return api.get(\"/users\");",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "fetchUsers só existia para ser chamada por loadUsers. Removê-la elimina um passo na leitura sem " +
+                "perder nenhuma informação.",
+            },
+            {
+              title: "Incorporar para reorganizar melhor",
+              context: "Quando um conjunto de funções está mal dividido, às vezes é mais fácil juntar tudo e extrair de novo do jeito certo.",
+              code: {
+                language: "javascript",
+                filename: "inline-to-reshape.js",
+                code: [
+                  "// Antes: a divisão em 'partes' não segue nenhum critério claro",
+                  "function reportPart1(data) { return header(data) + rows(data); }",
+                  "function reportPart2(data) { return summary(data) + footer(data); }",
+                  "function buildReport(data) { return reportPart1(data) + reportPart2(data); }",
+                  "",
+                  "// Passo 1: incorporar tudo em uma função só",
+                  "function buildReport(data) {",
+                  "  return header(data) + rows(data) + summary(data) + footer(data);",
+                  "}",
+                  "",
+                  "// Passo 2: agora extrair de novo, do jeito que faz sentido (corpo e rodapé)",
+                  "function buildReport(data) {",
+                  "  return reportBody(data) + reportFooter(data);",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "reportPart1 e reportPart2 eram nomes sem significado. Juntar tudo dá uma visão completa do que a " +
+                "função faz, e a nova divisão (corpo e rodapé) pode ser feita com nomes que dizem algo.",
+            },
+            {
+              title: "Quando não incorporar",
+              context: "Se a função é usada em vários lugares e o nome esclarece a intenção, ela está cumprindo o papel.",
+              code: {
+                language: "javascript",
+                filename: "keep-the-function.js",
+                code: [
+                  "// O nome explica uma regra de negócio que a expressão não diz sozinha",
+                  "function isEligibleForRefund(order) {",
+                  "  return order.status === \"delivered\" && daysSince(order.deliveredAt) <= 7;",
+                  "}",
+                  "",
+                  "if (isEligibleForRefund(order)) showRefundButton();",
+                  "if (isEligibleForRefund(order)) allowRefundRequest();",
+                ].join("\n"),
+              },
+              explanation:
+                "Incorporar isso duplicaria a regra em dois lugares e trocaria um nome esclarecedor por uma " +
+                "expressão a decifrar. Inline Function serve para funções que não acrescentam valor, não para " +
+                "toda função curta.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Estas duas funções só existem para adicionar um nível de indireção. Ninguém as usa fora de " +
+              "calculateTotal.",
+            problemCode: {
+              language: "javascript",
+              filename: "total.js",
+              code: [
+                "function itemSubtotal(item) {",
+                "  return getPrice(item) * item.quantity;",
+                "}",
+                "",
+                "function getPrice(item) {",
+                "  return item.price;",
+                "}",
+                "",
+                "function calculateTotal(items) {",
+                "  return items.reduce((sum, item) => sum + itemSubtotal(item), 0);",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Aplique Inline Function em getPrice e em itemSubtotal, deixando calculateTotal direto — mas " +
+              "faça um passo de cada vez e explique a ordem.",
+            hint: "Comece pela função mais \"interna\" (getPrice), que é usada só dentro de itemSubtotal.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "total.refactored.js",
+                code: [
+                  "// Passo 1: incorporar getPrice em itemSubtotal",
+                  "function itemSubtotal(item) {",
+                  "  return item.price * item.quantity;",
+                  "}",
+                  "",
+                  "// Passo 2: incorporar itemSubtotal em calculateTotal",
+                  "function calculateTotal(items) {",
+                  "  return items.reduce((sum, item) => sum + item.price * item.quantity, 0);",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Começando pela função mais interna, cada passo mexe em um nível e pode ser conferido pelos " +
+                "testes. Ao final, o resultado é idêntico e calculateTotal mostra a regra completa em uma linha.",
+            },
+          },
         }),
         concept({
           order: 60,
           title: "Extract Class",
           requires: ["Code Smells / Large Class"],
           note: "corrige a baixa coesão diagnosticada por Large Class",
+          summary:
+            "Dividir uma classe que faz demais criando uma nova para as responsabilidades que se agrupam, movendo " +
+            "campos e métodos para ela — a correção do smell Large Class.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Extract Class cria uma classe nova e move para ela um grupo coeso de campos e métodos que estavam " +
+                "em uma classe grande demais. A classe original passa a se relacionar com a nova por composição. " +
+                "É a resposta ao smell Large Class: onde a coesão era baixa (vários assuntos em um lugar), " +
+                "passam a existir duas classes com um assunto cada.",
+            },
+            { type: "heading", text: "Como fazer" },
+            {
+              type: "paragraph",
+              text:
+                "Mecânica, em passos pequenos, rodando os testes a cada um: (1) decida a responsabilidade que sai " +
+                "e dê um nome à classe nova; (2) crie a classe e faça a original guardar uma instância dela; (3) " +
+                "mova os campos, um por vez (Move Field); (4) mova os métodos, um por vez, começando pelos que " +
+                "usam menos coisas da classe original (Move Function); (5) revise as interfaces: a classe " +
+                "original pode apenas delegar ou expor a nova diretamente; (6) confira os nomes das duas.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Como identificar o candidato: campos com o mesmo prefixo, grupos de métodos que usam grupos " +
+                "disjuntos de campos, ou um subconjunto de dados que muda junto. O critério final é sempre o " +
+                "mesmo: cada classe resultante deve ter um único assunto que se descreve em uma frase.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "os campos de telefone saem de Person e viram uma classe própria:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "extract-class.js",
+              code: [
+                "// Antes: Person mistura identidade e detalhes de telefone",
+                "class Person {",
+                "  constructor(name, areaCode, number) {",
+                "    this.name = name;",
+                "    this.areaCode = areaCode;",
+                "    this.number = number;",
+                "  }",
+                "  phone() { return \"(\" + this.areaCode + \") \" + this.number; }",
+                "}",
+                "",
+                "// Depois: o telefone tem sua classe, e Person a compõe",
+                "class PhoneNumber {",
+                "  constructor(areaCode, number) {",
+                "    this.areaCode = areaCode;",
+                "    this.number = number;",
+                "  }",
+                "  toString() { return \"(\" + this.areaCode + \") \" + this.number; }",
+                "}",
+                "",
+                "class Person {",
+                "  constructor(name, phoneNumber) {",
+                "    this.name = name;",
+                "    this.phoneNumber = phoneNumber;",
+                "  }",
+                "  phone() { return this.phoneNumber.toString(); }",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "As regras de formato do telefone agora vivem em PhoneNumber, e Person só sabe que tem um. Se " +
+                "surgir a necessidade de validar o DDD, ela tem um lugar natural para ser escrita.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Se um grupo de campos e métodos forma um assunto próprio dentro de uma classe grande, dê a ele uma " +
+                "classe — e mova em passos pequenos, com os testes verdes a cada um.",
+            },
+          ],
+          examples: [
+            {
+              title: "Extraindo um conceito escondido nos campos",
+              context: "Campos com prefixo comum indicam a classe que ainda não existe.",
+              code: {
+                language: "javascript",
+                filename: "extract-address.js",
+                code: [
+                  "// Antes",
+                  "class Customer {",
+                  "  constructor(name, street, city, zip) {",
+                  "    this.name = name;",
+                  "    this.street = street;",
+                  "    this.city = city;",
+                  "    this.zip = zip;",
+                  "  }",
+                  "  addressLabel() { return this.street + \", \" + this.city + \" \" + this.zip; }",
+                  "}",
+                  "",
+                  "// Depois",
+                  "class Address {",
+                  "  constructor(street, city, zip) {",
+                  "    this.street = street;",
+                  "    this.city = city;",
+                  "    this.zip = zip;",
+                  "  }",
+                  "  label() { return this.street + \", \" + this.city + \" \" + this.zip; }",
+                  "}",
+                  "class Customer {",
+                  "  constructor(name, address) {",
+                  "    this.name = name;",
+                  "    this.address = address;",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Address agora pode ser reutilizada (entrega, cobrança, fornecedor) e validada em um lugar único, " +
+                "e Customer deixa de conhecer detalhes de endereço.",
+            },
+            {
+              title: "Migração em passos, com o antigo delegando",
+              context: "Para não quebrar quem usa a classe, a original pode delegar para a nova durante a transição.",
+              code: {
+                language: "javascript",
+                filename: "delegate-during-transition.js",
+                code: [
+                  "class Person {",
+                  "  constructor(name, phoneNumber) {",
+                  "    this.name = name;",
+                  "    this.phoneNumber = phoneNumber;",
+                  "  }",
+                  "",
+                  "  // Antes ficava aqui; agora delega para a classe extraída",
+                  "  get areaCode() { return this.phoneNumber.areaCode; }",
+                  "  set areaCode(value) { this.phoneNumber.areaCode = value; }",
+                  "}",
+                  "",
+                  "// Os chamadores antigos (person.areaCode) continuam funcionando.",
+                  "// Quando todos migrarem para person.phoneNumber, os delegadores saem.",
+                ].join("\n"),
+              },
+              explanation:
+                "Em vez de alterar todos os usos de uma vez, a classe original repassa a chamada, e os " +
+                "chamadores migram aos poucos, com os testes verdes em cada passo.",
+            },
+            {
+              title: "Quando não extrair",
+              context: "Dividir por dividir cria classes anêmicas e espalha um assunto que era um só.",
+              code: {
+                language: "javascript",
+                filename: "dont-over-extract.js",
+                code: [
+                  "// Coesa: os três campos e os dois métodos giram em torno do mesmo assunto",
+                  "class Temperature {",
+                  "  constructor(celsius) { this.celsius = celsius; }",
+                  "  toFahrenheit() { return this.celsius * 9 / 5 + 32; }",
+                  "  isFreezing() { return this.celsius <= 0; }",
+                  "}",
+                  "",
+                  "// Quebrar em TemperatureConverter e TemperatureChecker só distribuiria",
+                  "// uma responsabilidade única entre duas classes que precisam uma da outra.",
+                ].join("\n"),
+              },
+              explanation:
+                "Tamanho não é o critério: coesão é. Uma classe pequena com um assunto só está certa, e dividi-la " +
+                "só acrescentaria acoplamento entre as partes.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A classe Product carrega dimensões e cálculos de volume misturados com dados comerciais. Os " +
+              "campos e métodos de dimensão só se relacionam entre si.",
+            problemCode: {
+              language: "javascript",
+              filename: "product.js",
+              code: [
+                "class Product {",
+                "  constructor(name, price, width, height, depth) {",
+                "    this.name = name;",
+                "    this.price = price;",
+                "    this.width = width;",
+                "    this.height = height;",
+                "    this.depth = depth;",
+                "  }",
+                "  volume() { return this.width * this.height * this.depth; }",
+                "  isBulky() { return this.volume() > 100000; }",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Aplique Extract Class: crie uma classe Dimensions com os campos e métodos que se relacionam, e " +
+              "faça Product usá-la por composição.",
+            hint: "width, height, depth, volume() e isBulky() só usam dados de dimensão. name e price ficam em Product.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "product.refactored.js",
+                code: [
+                  "class Dimensions {",
+                  "  constructor(width, height, depth) {",
+                  "    this.width = width;",
+                  "    this.height = height;",
+                  "    this.depth = depth;",
+                  "  }",
+                  "  volume() { return this.width * this.height * this.depth; }",
+                  "  isBulky() { return this.volume() > 100000; }",
+                  "}",
+                  "",
+                  "class Product {",
+                  "  constructor(name, price, dimensions) {",
+                  "    this.name = name;",
+                  "    this.price = price;",
+                  "    this.dimensions = dimensions;",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Dimensions cuida só de tamanho, e Product só de dados comerciais. O cálculo de volume pode ser " +
+                "testado sem criar um produto e reaproveitado por embalagens, caixas ou outro tipo que tenha dimensões.",
+            },
+          },
         }),
-        concept({ order: 70, title: "Move Function", requires: ["Refactoring"] }),
+        concept({
+          order: 70,
+          title: "Move Function",
+          requires: ["Refactoring"],
+          note: "mover função — levar o comportamento para perto dos dados que ele usa",
+          summary:
+            "Mover uma função para a classe ou módulo onde estão os dados ou o contexto que ela usa — para que " +
+            "comportamento e dados fiquem juntos e o acoplamento entre as partes diminua.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Move Function leva uma função (ou método) de onde ela está para um lugar onde faz mais sentido: a " +
+                "classe cujos dados ela usa, o módulo do assunto a que pertence, ou o escopo em que é realmente " +
+                "usada. É a correção clássica para o smell Feature Envy, e também serve para reorganizar módulos " +
+                "conforme o entendimento do domínio evolui.",
+            },
+            { type: "heading", text: "Como fazer" },
+            {
+              type: "paragraph",
+              text:
+                "Mecânica: (1) examine tudo que a função usa do contexto atual — o que ela precisa vai junto ou " +
+                "vira parâmetro; (2) copie a função para o novo lugar e adapte o que for preciso; (3) transforme a " +
+                "original em uma função que só delega para a nova, e rode os testes; (4) atualize os chamadores " +
+                "para usarem a nova diretamente; (5) quando ninguém mais usar a original, remova-a. Manter a " +
+                "delegação por um tempo permite fazer a migração em passos seguros.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Como decidir para onde mover: pergunte a que dados a função é mais próxima (quantos campos de A " +
+                "ela usa, comparado aos de B?) e a que assunto ela pertence. Se estiver em dúvida, mova, observe " +
+                "como fica e, se não melhorar, mova de volta — a refatoração é reversível.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "uma função de utilidade usada só por um módulo, movida para junto dele:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "move-function.js",
+              code: [
+                "// Antes: em utils.js, mas só a geração de relatórios usa",
+                "// utils.js",
+                "export function formatCurrency(value) {",
+                "  return \"R$ \" + value.toFixed(2).replace(\".\", \",\");",
+                "}",
+                "// report.js",
+                "import { formatCurrency } from \"./utils.js\";",
+                "",
+                "// Depois: mora onde é usada",
+                "// report.js",
+                "function formatCurrency(value) {",
+                "  return \"R$ \" + value.toFixed(2).replace(\".\", \",\");",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "utils.js (um módulo sem assunto definido) deixa de acumular funções soltas, e quem lê report.js " +
+                "encontra tudo o que precisa sem sair do arquivo. Se outra parte do sistema passar a precisar " +
+                "dela, aí sim ela pode ir para um módulo compartilhado com um nome de assunto.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Coloque cada função perto dos dados e do assunto de que ela depende — e, se não estiver claro, mova " +
+                "e observe: mover é barato e reversível.",
+            },
+          ],
+          examples: [
+            {
+              title: "Mover para a classe cujos dados ela usa",
+              context: "O caso do smell Feature Envy: a função só mexe em dados de outro objeto.",
+              code: {
+                language: "javascript",
+                filename: "move-to-data.js",
+                code: [
+                  "// Antes: a função está em Order, mas usa só dados de Account",
+                  "class Order {",
+                  "  overdraftFee(account) {",
+                  "    return account.isPremium ? account.daysOverdrawn * 0.5 : account.daysOverdrawn * 1.75;",
+                  "  }",
+                  "}",
+                  "",
+                  "// Depois: vive em Account, junto dos dados",
+                  "class Account {",
+                  "  overdraftFee() {",
+                  "    return this.isPremium ? this.daysOverdrawn * 0.5 : this.daysOverdrawn * 1.75;",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Toda a regra depende de campos de Account. Movida, ela pode mudar (uma nova faixa de cliente) " +
+                "sem tocar em Order, e é reutilizada por qualquer código que tenha uma conta.",
+            },
+            {
+              title: "Delegação como passo intermediário",
+              context: "Para migrar sem quebrar chamadores, a função antiga vira uma ponte para a nova.",
+              code: {
+                language: "javascript",
+                filename: "delegate-step.js",
+                code: [
+                  "class Order {",
+                  "  // Passo intermediário: o método antigo só delega para o novo lugar",
+                  "  overdraftFee(account) {",
+                  "    return account.overdraftFee();",
+                  "  }",
+                  "}",
+                  "",
+                  "// Os chamadores antigos continuam funcionando; conforme migram para",
+                  "// account.overdraftFee(), Order.overdraftFee deixa de ter uso e é removido.",
+                ].join("\n"),
+              },
+              explanation:
+                "A mudança fica em passos que podem ser verificados pelos testes a cada um, sem uma grande " +
+                "alteração simultânea em todos os chamadores.",
+            },
+            {
+              title: "Mover entre módulos por assunto",
+              context: "Funções acumuladas em um módulo genérico costumam pertencer a assuntos específicos.",
+              code: {
+                language: "javascript",
+                filename: "move-by-subject.js",
+                code: [
+                  "// Antes: helpers.js mistura assuntos sem relação",
+                  "// helpers.js: formatDate, validateEmail, calculateTax, slugify...",
+                  "",
+                  "// Depois: cada função vai para o módulo do seu assunto",
+                  "// dates.js:      formatDate",
+                  "// validation.js: validateEmail",
+                  "// pricing.js:    calculateTax",
+                  "// text.js:       slugify",
+                ].join("\n"),
+              },
+              explanation:
+                "Módulos com nome de assunto ajudam a achar o que se procura e a saber onde adicionar algo novo. " +
+                "Um arquivo \"helpers\" costuma ser o sintoma de Large Class em forma de módulo.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A classe Report calcula os dias em atraso de um empréstimo usando apenas dados do próprio " +
+              "empréstimo.",
+            problemCode: {
+              language: "javascript",
+              filename: "loan-report.js",
+              code: [
+                "class Report {",
+                "  daysOverdue(loan) {",
+                "    const msPerDay = 24 * 60 * 60 * 1000;",
+                "    return Math.max(0, Math.floor((loan.today - loan.dueDate) / msPerDay));",
+                "  }",
+                "  describe(loan) {",
+                "    return loan.title + \": \" + this.daysOverdue(loan) + \" dias de atraso\";",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Aplique Move Function: leve daysOverdue para a classe Loan e ajuste Report para usá-la, " +
+              "descrevendo os passos intermediários.",
+            hint: "A função só lê today e dueDate, ambos de Loan. Depois de movida, deixa de precisar receber o empréstimo por parâmetro.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "loan-report.refactored.js",
+                code: [
+                  "class Loan {",
+                  "  constructor(title, dueDate, today) {",
+                  "    this.title = title;",
+                  "    this.dueDate = dueDate;",
+                  "    this.today = today;",
+                  "  }",
+                  "  daysOverdue() {",
+                  "    const msPerDay = 24 * 60 * 60 * 1000;",
+                  "    return Math.max(0, Math.floor((this.today - this.dueDate) / msPerDay));",
+                  "  }",
+                  "}",
+                  "",
+                  "class Report {",
+                  "  describe(loan) {",
+                  "    return loan.title + \": \" + loan.daysOverdue() + \" dias de atraso\";",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Passos: (1) copiar para Loan usando this; (2) fazer Report.daysOverdue delegar para loan.daysOverdue(); " +
+                "(3) atualizar describe; (4) remover a versão antiga. O cálculo agora está com os dados que usa e " +
+                "pode ser testado sem Report.",
+            },
+          },
+        }),
         concept({
           order: 80,
           title: "Replace Nested Conditional with Guard Clauses",
           requires: ["Clean Code / Guard Clauses"],
           note: "a técnica mecânica que produz o estilo já ensinado em Clean Code",
+          summary:
+            "A receita passo a passo para transformar uma função cheia de ifs aninhados em uma sequência de " +
+            "guard clauses, mantendo o comportamento — a técnica que produz o estilo de Guard Clauses.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Enquanto Guard Clauses (módulo Clean Code) descreve o estilo — tratar casos excepcionais no topo e " +
+                "sair cedo —, esta refatoração é a mecânica para chegar lá a partir de um código existente com " +
+                "condicionais aninhadas. Ela transforma, um caso de cada vez, os ramos excepcionais em retornos " +
+                "antecipados, deixando o caminho principal no nível base.",
+            },
+            { type: "heading", text: "Como fazer" },
+            {
+              type: "paragraph",
+              text:
+                "Mecânica: (1) identifique a condição mais externa cujo ramo alternativo é um caso excepcional " +
+                "(erro, valor padrão, \"nada a fazer\"); (2) inverta a condição e coloque um return (ou throw) " +
+                "no topo com o resultado desse caso; (3) rode os testes; (4) repita com a próxima condição, " +
+                "agora um nível menos aninhada. Ao terminar, se várias guardas retornam o mesmo valor, " +
+                "consolide-as em uma só condição.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Cada passo preserva o comportamento, então não é preciso reescrever tudo de uma vez — dá para " +
+                "parar em qualquer ponto com o código ainda funcionando. O único cuidado é com a ordem: as guardas " +
+                "devem ser verificadas na mesma ordem lógica que as condições aninhadas originais, para que " +
+                "casos que dependiam da ordem continuem dando o mesmo resultado.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "a transformação em passos: cada condição aninhada vira uma guarda:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "nested-to-guards.js",
+              code: [
+                "// Original: três níveis de aninhamento",
+                "function payAmount(employee) {",
+                "  let result;",
+                "  if (employee.isSeparated) {",
+                "    result = { amount: 0 };",
+                "  } else {",
+                "    if (employee.isRetired) {",
+                "      result = { amount: retirementPay(employee) };",
+                "    } else {",
+                "      result = { amount: normalPay(employee) };",
+                "    }",
+                "  }",
+                "  return result;",
+                "}",
+                "",
+                "// Depois: uma guarda por caso excepcional",
+                "function payAmount(employee) {",
+                "  if (employee.isSeparated) return { amount: 0 };",
+                "  if (employee.isRetired) return { amount: retirementPay(employee) };",
+                "  return { amount: normalPay(employee) };",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A variável result e os else desapareceram. O comportamento é idêntico, e agora cada caso " +
+                "aparece em uma linha, na ordem em que é verificado.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Inverta a condição mais externa, retorne cedo, rode os testes e repita — cada passo é seguro, e o " +
+                "aninhamento desaparece aos poucos.",
+            },
+          ],
+          examples: [
+            {
+              title: "O mesmo trecho, um passo de cada vez",
+              context: "A técnica funciona melhor quando o resultado de cada passo pode ser verificado por testes.",
+              code: {
+                language: "javascript",
+                filename: "step-by-step.js",
+                code: [
+                  "// Original",
+                  "function discount(order) {",
+                  "  if (order) {",
+                  "    if (order.total > 100) {",
+                  "      return order.total * 0.1;",
+                  "    }",
+                  "  }",
+                  "  return 0;",
+                  "}",
+                  "",
+                  "// Passo 1: inverter a condição externa",
+                  "function discount(order) {",
+                  "  if (!order) return 0;",
+                  "  if (order.total > 100) {",
+                  "    return order.total * 0.1;",
+                  "  }",
+                  "  return 0;",
+                  "}",
+                  "",
+                  "// Passo 2: inverter a seguinte",
+                  "function discount(order) {",
+                  "  if (!order) return 0;",
+                  "  if (order.total <= 100) return 0;",
+                  "  return order.total * 0.1;",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Em cada passo o comportamento é o mesmo e os testes continuam passando. Se algum passo quebrar, " +
+                "basta desfazê-lo — sem precisar entender toda a função de novo.",
+            },
+            {
+              title: "Consolidar guardas com o mesmo resultado",
+              context: "Depois da transformação, várias guardas que devolvem o mesmo valor podem virar uma condição só.",
+              code: {
+                language: "javascript",
+                filename: "consolidate-guards.js",
+                code: [
+                  "// Antes: três guardas retornam o mesmo valor",
+                  "function canBorrow(user, book) {",
+                  "  if (user.isBanned) return false;",
+                  "  if (user.loans.length >= 5) return false;",
+                  "  if (!book.isAvailable) return false;",
+                  "  return true;",
+                  "}",
+                  "",
+                  "// Depois: uma condição que se lê como a regra",
+                  "function canBorrow(user, book) {",
+                  "  const hasReachedLimit = user.loans.length >= 5;",
+                  "  return !user.isBanned && !hasReachedLimit && book.isAvailable;",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Quando todos os casos excepcionais têm o mesmo resultado, uma condição combinada é mais direta. " +
+                "Se cada guarda tivesse um resultado diferente (uma mensagem de erro específica, por exemplo), " +
+                "elas deveriam continuar separadas.",
+            },
+            {
+              title: "Quando o else é o caso excepcional",
+              context: "Nem sempre o caso excepcional está no if; às vezes está no else, e o caminho principal está dentro do if.",
+              code: {
+                language: "javascript",
+                filename: "else-is-the-guard.js",
+                code: [
+                  "// Antes: o caso raro (usuário sem plano) está no else",
+                  "function planLabel(user) {",
+                  "  if (user.plan) {",
+                  "    return \"Plano \" + user.plan.name + \" (\" + user.plan.price + \")\";",
+                  "  } else {",
+                  "    return \"Sem plano\";",
+                  "  }",
+                  "}",
+                  "",
+                  "// Depois: o caso raro sai primeiro",
+                  "function planLabel(user) {",
+                  "  if (!user.plan) return \"Sem plano\";",
+                  "  return \"Plano \" + user.plan.name + \" (\" + user.plan.price + \")\";",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Inverter a condição faz o caminho principal ficar no nível base. Se os dois ramos fossem " +
+                "igualmente comuns, manter o if/else seria mais claro — a técnica se aplica quando há um caso " +
+                "excepcional e um caminho principal.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A função abaixo tem três níveis de aninhamento para decidir o valor da comissão de uma venda.",
+            problemCode: {
+              language: "javascript",
+              filename: "commission.js",
+              code: [
+                "function commission(sale) {",
+                "  let result = 0;",
+                "  if (sale) {",
+                "    if (sale.isConfirmed) {",
+                "      if (sale.amount > 1000) {",
+                "        result = sale.amount * 0.05;",
+                "      } else {",
+                "        result = sale.amount * 0.02;",
+                "      }",
+                "    }",
+                "  }",
+                "  return result;",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Aplique a técnica passo a passo: transforme os ifs aninhados em guard clauses, removendo a " +
+              "variável result, sem mudar nenhum resultado.",
+            hint: "Os dois casos que retornam 0 são os excepcionais (sem venda, venda não confirmada). O que sobra é a escolha da alíquota.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "commission.refactored.js",
+                code: [
+                  "function commission(sale) {",
+                  "  if (!sale) return 0;",
+                  "  if (!sale.isConfirmed) return 0;",
+                  "",
+                  "  const rate = sale.amount > 1000 ? 0.05 : 0.02;",
+                  "  return sale.amount * rate;",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "As duas guardas tratam os casos sem comissão, e o cálculo ficou no nível base. O resultado é o " +
+                "mesmo para qualquer entrada, e a decisão entre as duas alíquotas ganhou uma variável com nome.",
+            },
+          },
         }),
         concept({
           order: 90,
           title: "Replace Conditional with Polymorphism",
           requires: ["Programming Foundations / Programming Fundamentals / Polymorphism"],
           note: "aplica o mecanismo já ensinado em Programming Foundations",
+          summary:
+            "Trocar um if/switch que decide o comportamento conforme o tipo de algo por classes diferentes que " +
+            "implementam o mesmo método — o comportamento passa a ser escolhido pelo objeto, não por condições.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Replace Conditional with Polymorphism substitui uma estrutura condicional (um switch ou uma " +
+                "cadeia de if/else) que escolhe o comportamento com base no tipo ou categoria de um valor por um " +
+                "conjunto de classes, cada uma com o mesmo método e a sua própria versão do comportamento. É a " +
+                "aplicação prática do Polymorphism (módulo Programming Fundamentals) como refatoração.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Quando o mesmo switch sobre o tipo aparece em vários lugares, acrescentar um novo tipo exige achar " +
+                "e alterar todos — e esquecer um deles gera bugs. Com polimorfismo, um tipo novo é uma classe " +
+                "nova, sem mexer no código existente. A decisão sobre o tipo passa a acontecer em um único ponto: " +
+                "onde o objeto é criado.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Mecânica: (1) crie uma classe para cada caso, com o mesmo método; (2) mova para cada uma o ramo " +
+                "correspondente da condicional; (3) troque a condicional por uma chamada ao método; (4) " +
+                "concentre a escolha da classe em um só lugar (uma função de criação); (5) rode os testes a cada " +
+                "passo. Quando não usar: condicional que aparece em um só lugar, com poucos casos estáveis — nesse " +
+                "caso o switch é mais simples do que uma hierarquia de classes.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "um switch por tipo trocado por classes que sabem o seu comportamento:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "replace-conditional.js",
+              code: [
+                "// Antes: um switch sobre o tipo",
+                "function area(shape) {",
+                "  switch (shape.type) {",
+                "    case \"circle\": return Math.PI * shape.radius ** 2;",
+                "    case \"rectangle\": return shape.width * shape.height;",
+                "    default: throw new Error(\"tipo desconhecido\");",
+                "  }",
+                "}",
+                "",
+                "// Depois: cada classe sabe calcular a própria área",
+                "class Circle {",
+                "  constructor(radius) { this.radius = radius; }",
+                "  area() { return Math.PI * this.radius ** 2; }",
+                "}",
+                "class Rectangle {",
+                "  constructor(width, height) { this.width = width; this.height = height; }",
+                "  area() { return this.width * this.height; }",
+                "}",
+                "",
+                "shape.area(); // sem switch",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Um novo formato (Triangle) é uma classe nova com o seu area(), sem alterar nenhuma função " +
+                "existente — em vez de encontrar e editar cada switch que fala de formas.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Se o mesmo switch por tipo se repete em vários lugares, faça cada tipo carregar o seu " +
+                "comportamento — um caso novo passa a ser uma classe nova, não uma edição espalhada.",
+            },
+          ],
+          examples: [
+            {
+              title: "Um switch repetido em vários lugares",
+              context: "O sinal mais forte: o mesmo switch aparece em várias funções, e todas precisam mudar quando surge um caso novo.",
+              code: {
+                language: "javascript",
+                filename: "repeated-switch.js",
+                code: [
+                  "// Antes: dois switches sobre 'type' em funções diferentes",
+                  "function speed(bird) {",
+                  "  switch (bird.type) {",
+                  "    case \"european\": return 35;",
+                  "    case \"african\": return 40 - bird.load;",
+                  "  }",
+                  "}",
+                  "function plumage(bird) {",
+                  "  switch (bird.type) {",
+                  "    case \"european\": return \"average\";",
+                  "    case \"african\": return bird.load > 2 ? \"tired\" : \"average\";",
+                  "  }",
+                  "}",
+                  "",
+                  "// Depois: cada tipo tem os dois comportamentos",
+                  "class EuropeanBird {",
+                  "  speed() { return 35; }",
+                  "  plumage() { return \"average\"; }",
+                  "}",
+                  "class AfricanBird {",
+                  "  constructor(load) { this.load = load; }",
+                  "  speed() { return 40 - this.load; }",
+                  "  plumage() { return this.load > 2 ? \"tired\" : \"average\"; }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Adicionar um terceiro pássaro agora é uma classe nova, com os dois comportamentos juntos — não " +
+                "duas edições em funções separadas com risco de esquecer uma.",
+            },
+            {
+              title: "A escolha da classe fica em um só lugar",
+              context: "A condicional não desaparece: ela se concentra no ponto onde o objeto é criado.",
+              code: {
+                language: "javascript",
+                filename: "factory.js",
+                code: [
+                  "function createBird(data) {",
+                  "  switch (data.type) {",
+                  "    case \"european\": return new EuropeanBird();",
+                  "    case \"african\": return new AfricanBird(data.load);",
+                  "    default: throw new Error(\"tipo desconhecido: \" + data.type);",
+                  "  }",
+                  "}",
+                  "",
+                  "// Único switch restante. O resto do código só chama bird.speed(), bird.plumage().",
+                ].join("\n"),
+              },
+              explanation:
+                "Em vez de N switches espalhados, resta um só, na criação. Todo o restante do código deixa de se " +
+                "importar com o tipo e apenas usa o comportamento.",
+            },
+            {
+              title: "Quando não usar: switch simples e único",
+              context: "Uma hierarquia de classes é mais cara que um switch; só compensa quando a condicional se repete ou cresce.",
+              code: {
+                language: "javascript",
+                filename: "keep-the-switch.js",
+                code: [
+                  "// Aparece em um único lugar, com três casos que não mudam:",
+                  "function weekdayName(n) {",
+                  "  switch (n) {",
+                  "    case 0: return \"domingo\";",
+                  "    case 1: return \"segunda\";",
+                  "    default: return \"outro dia\";",
+                  "  }",
+                  "}",
+                  "// Criar uma classe por dia da semana seria complexidade sem benefício.",
+                ].join("\n"),
+              },
+              explanation:
+                "Polimorfismo troca simplicidade local por extensibilidade. Se a condicional não se repete nem " +
+                "cresce, esse investimento não se paga — e KISS manda ficar com o switch.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A função de preço usa um switch sobre o tipo de ingresso, e o mesmo switch se repete em outra " +
+              "função (descrição do ingresso).",
+            problemCode: {
+              language: "javascript",
+              filename: "ticket.js",
+              code: [
+                "function ticketPrice(ticket) {",
+                "  switch (ticket.type) {",
+                "    case \"regular\": return 50;",
+                "    case \"student\": return 25;",
+                "    case \"senior\": return 20;",
+                "  }",
+                "}",
+                "",
+                "function ticketLabel(ticket) {",
+                "  switch (ticket.type) {",
+                "    case \"regular\": return \"Inteira\";",
+                "    case \"student\": return \"Meia (estudante)\";",
+                "    case \"senior\": return \"Meia (idoso)\";",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Aplique Replace Conditional with Polymorphism: crie uma classe por tipo de ingresso com os dois " +
+              "métodos e deixe uma única função decidir qual classe criar.",
+            hint: "Cada classe implementa price() e label(). O único switch que sobra fica na função que cria o objeto.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "ticket.refactored.js",
+                code: [
+                  "class RegularTicket {",
+                  "  price() { return 50; }",
+                  "  label() { return \"Inteira\"; }",
+                  "}",
+                  "class StudentTicket {",
+                  "  price() { return 25; }",
+                  "  label() { return \"Meia (estudante)\"; }",
+                  "}",
+                  "class SeniorTicket {",
+                  "  price() { return 20; }",
+                  "  label() { return \"Meia (idoso)\"; }",
+                  "}",
+                  "",
+                  "function createTicket(type) {",
+                  "  switch (type) {",
+                  "    case \"regular\": return new RegularTicket();",
+                  "    case \"student\": return new StudentTicket();",
+                  "    case \"senior\": return new SeniorTicket();",
+                  "    default: throw new Error(\"tipo desconhecido: \" + type);",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Preço e descrição de cada tipo estão juntos na sua classe. Um novo tipo (ex.: infantil) é uma " +
+                "classe nova e uma linha em createTicket, sem alterar ticketPrice nem ticketLabel — que agora " +
+                "nem precisam mais existir.",
+            },
+          },
         }),
         concept({
           order: 100,
           title: "Introduce Parameter Object",
           requires: ["Code Smells / Long Parameter List"],
           note: "corrige o smell diagnosticado antes",
+          summary:
+            "Agrupar parâmetros que sempre viajam juntos em um único objeto com nome — a correção do smell Long " +
+            "Parameter List, que também cria um lugar para o comportamento que pertence àqueles dados.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Introduce Parameter Object substitui um grupo de parâmetros que aparecem juntos por um objeto " +
+                "que os representa. É a correção padrão para Long Parameter List: fecha o ciclo iniciado em " +
+                "Function Arguments (escrever bem) e no smell (reconhecer a violação). O ganho é maior do que " +
+                "encurtar a assinatura: o grupo ganha um nome de conceito, e esse conceito pode receber " +
+                "comportamento.",
+            },
+            { type: "heading", text: "Como fazer" },
+            {
+              type: "paragraph",
+              text:
+                "Mecânica: (1) identifique o grupo de parâmetros que sempre andam juntos (em uma ou várias " +
+                "funções); (2) crie a estrutura (classe ou objeto) com um nome que descreva o conceito; (3) " +
+                "adicione o novo parâmetro à função e, gradualmente, passe o objeto nas chamadas; (4) mova " +
+                "cada parâmetro antigo para dentro do objeto, um por vez, rodando os testes; (5) quando o " +
+                "objeto substituir todos, remova os parâmetros antigos; (6) procure lógica que use esses dados e " +
+                "poderia ir para dentro do objeto.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "O passo (6) é o que separa uma reorganização cosmética de um ganho de projeto: validações e " +
+                "cálculos que eram repetidos em cada função tendem a se mudar para dentro do novo objeto, onde " +
+                "ficam em um lugar só.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "dois parâmetros que sempre andam juntos viram um objeto, que ganha comportamento:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "parameter-object.js",
+              code: [
+                "// Antes: início e fim aparecem juntos em todas as funções",
+                "function sales(start, end) { /* ... */ }",
+                "function refunds(start, end) { /* ... */ }",
+                "",
+                "// Depois: DateRange é o conceito, com sua própria regra",
+                "class DateRange {",
+                "  constructor(start, end) {",
+                "    if (end < start) throw new Error(\"fim antes do início\");",
+                "    this.start = start;",
+                "    this.end = end;",
+                "  }",
+                "  contains(date) { return date >= this.start && date <= this.end; }",
+                "}",
+                "",
+                "function sales(range) { /* ... range.contains(sale.date) ... */ }",
+                "function refunds(range) { /* ... */ }",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A validação \"fim não pode ser antes do início\" antes teria de estar em cada função; agora está no " +
+                "construtor, uma vez. E contains é um comportamento que só faz sentido junto desses dados.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Dados que viajam juntos merecem um nome — e, com o nome, um lugar para o comportamento que os " +
+                "envolve: validações e cálculos que estavam espalhados passam a viver ali.",
+            },
+          ],
+          examples: [
+            {
+              title: "Um objeto com validação embutida",
+              context: "O objeto criado garante a própria validade — quem o recebe não precisa conferir de novo.",
+              code: {
+                language: "javascript",
+                filename: "range-with-validation.js",
+                code: [
+                  "// Antes: cada função valida os limites por conta própria",
+                  "function alertIfOutOfRange(reading, min, max) {",
+                  "  if (min > max) throw new Error(\"limites inválidos\");",
+                  "  if (reading < min || reading > max) alert(reading);",
+                  "}",
+                  "",
+                  "// Depois",
+                  "class NumberRange {",
+                  "  constructor(min, max) {",
+                  "    if (min > max) throw new Error(\"limites inválidos\");",
+                  "    this.min = min;",
+                  "    this.max = max;",
+                  "  }",
+                  "  contains(value) { return value >= this.min && value <= this.max; }",
+                  "}",
+                  "",
+                  "function alertIfOutOfRange(reading, range) {",
+                  "  if (!range.contains(reading)) alert(reading);",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "O construtor valida uma vez, e a função ficou com uma responsabilidade só: alertar se a leitura " +
+                "estiver fora. Qualquer outra função que receba um NumberRange já recebe limites válidos.",
+            },
+            {
+              title: "Migração gradual sem quebrar chamadores",
+              context: "Trocar todas as chamadas de uma vez é arriscado; dá para aceitar os dois formatos durante a transição.",
+              code: {
+                language: "javascript",
+                filename: "gradual-migration.js",
+                code: [
+                  "// Passo intermediário: aceita o objeto novo, mas ainda os parâmetros antigos",
+                  "function sales(rangeOrStart, maybeEnd) {",
+                  "  const range = rangeOrStart instanceof DateRange",
+                  "    ? rangeOrStart",
+                  "    : new DateRange(rangeOrStart, maybeEnd);",
+                  "  // ... usa range ...",
+                  "}",
+                  "",
+                  "// Os chamadores migram um a um; depois, o ramo antigo é removido",
+                  "// e a assinatura fica: function sales(range) { ... }",
+                ].join("\n"),
+              },
+              explanation:
+                "A transição em passos permite rodar os testes e integrar em pedaços pequenos. O código " +
+                "provisório é descartado assim que o último chamador for atualizado.",
+            },
+            {
+              title: "O objeto atrai o comportamento",
+              context: "Depois de criado, ele costuma absorver lógica que estava espalhada pelas funções que o usavam.",
+              code: {
+                language: "javascript",
+                filename: "attracting-behavior.js",
+                code: [
+                  "// A lógica de \"quantos dias tem o intervalo\" estava em três funções diferentes:",
+                  "const days = (range.end - range.start) / (24 * 60 * 60 * 1000);",
+                  "",
+                  "// Agora é um método do próprio objeto, escrito uma vez:",
+                  "class DateRange {",
+                  "  // ...",
+                  "  days() {",
+                  "    return (this.end - this.start) / (24 * 60 * 60 * 1000);",
+                  "  }",
+                  "}",
+                  "const days = range.days();",
+                ].join("\n"),
+              },
+              explanation:
+                "É aqui que a refatoração se paga: o que era cálculo duplicado nos chamadores passa a ser " +
+                "comportamento do conceito, reduzindo duplicação e deixando as funções que o usam mais curtas.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Estas funções recebem os mesmos três parâmetros do endereço de entrega, e cada uma repete a " +
+              "mesma checagem de CEP.",
+            problemCode: {
+              language: "javascript",
+              filename: "shipping-address.js",
+              code: [
+                "function calculateShipping(street, city, zip) {",
+                "  if (!/^\\d{8}$/.test(zip)) throw new Error(\"CEP inválido\");",
+                "  // ...",
+                "}",
+                "",
+                "function printLabel(street, city, zip) {",
+                "  if (!/^\\d{8}$/.test(zip)) throw new Error(\"CEP inválido\");",
+                "  return street + \", \" + city + \" - \" + zip;",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Aplique Introduce Parameter Object: crie um objeto Address, mova a validação do CEP para dentro " +
+              "dele e ajuste as duas funções.",
+            hint: "O construtor de Address é o lugar natural da validação. printLabel também pode virar um método do próprio endereço.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "shipping-address.refactored.js",
+                code: [
+                  "class Address {",
+                  "  constructor(street, city, zip) {",
+                  "    if (!/^\\d{8}$/.test(zip)) throw new Error(\"CEP inválido\");",
+                  "    this.street = street;",
+                  "    this.city = city;",
+                  "    this.zip = zip;",
+                  "  }",
+                  "  label() { return this.street + \", \" + this.city + \" - \" + this.zip; }",
+                  "}",
+                  "",
+                  "function calculateShipping(address) {",
+                  "  // ...usa address.zip, address.city...",
+                  "}",
+                  "",
+                  "function printLabel(address) {",
+                  "  return address.label();",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "A validação do CEP existe uma única vez, no construtor, e as duas funções receberam um parâmetro " +
+                "em vez de três. Quem tem um Address sabe que o CEP é válido, sem precisar checar de novo.",
+            },
+          },
         }),
         concept({
           order: 110,
           title: "Refactoring with Tests",
           requires: ["Testing & Quality Engineering / Testing Fundamentals"],
           note: "fecha a Story: só se refatora com segurança havendo rede de testes",
+          summary:
+            "Refatorar em ciclos curtos com uma rede de testes automatizados como garantia: sem testes verdes " +
+            "antes e depois de cada passo, não há como saber se o comportamento foi preservado.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "A definição de refatoração exige que o comportamento não mude — e a única forma confiável de " +
+                "saber disso é com testes automatizados. Refactoring with Tests é a prática de refatorar dentro " +
+                "de um ciclo curto: rodar os testes (verdes), fazer um passo pequeno, rodar de novo. Se ficarem " +
+                "vermelhos, o último passo — e só ele — é o culpado, e pode ser desfeito.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Sem testes, refatorar é uma aposta: você acredita que não quebrou nada, mas só descobre em " +
+                "produção. Com testes, o custo de errar cai a segundos, e o hábito de refatorar em passos " +
+                "pequenos se sustenta. A rede é o que permite melhorar o código continuamente em vez de deixá-lo " +
+                "apodrecer por medo de mexer. É a mesma lógica do ciclo Red-Green-Refactor do TDD (módulo " +
+                "Test-Driven Development): a etapa de refatorar só acontece com os testes verdes.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Dois pontos práticos. Primeiro: se o código não tem testes, o primeiro passo não é refatorar, é " +
+                "escrever testes de caracterização — testes que registram o comportamento atual, mesmo os " +
+                "estranhos, antes de qualquer mudança. Segundo: bons testes verificam o comportamento pela " +
+                "interface pública, não a implementação interna; testes acoplados aos detalhes quebram a cada " +
+                "refatoração e viram um obstáculo em vez de uma rede.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "o ciclo: teste verde, um passo pequeno, teste verde:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "refactoring-with-tests.js",
+              code: [
+                "function assertEquals(actual, expected) {",
+                "  if (actual !== expected) throw new Error(`esperado ${expected}, recebeu ${actual}`);",
+                "}",
+                "",
+                "// A rede de segurança: descreve o comportamento que NÃO pode mudar",
+                "function testPrice() {",
+                "  assertEquals(price({ items: [{ price: 10 }, { price: 30 }] }), 36);",
+                "  assertEquals(price({ items: [] }), 0);",
+                "}",
+                "",
+                "testPrice(); // verde",
+                "// --- passo pequeno: extrair subtotal() ---",
+                "testPrice(); // verde  → segue",
+                "// --- passo pequeno: renomear variável ---",
+                "testPrice(); // vermelho → o último passo quebrou algo: desfazer e investigar",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Como cada passo é pequeno, uma falha aponta diretamente para a causa. Sem o ciclo, depois de vinte " +
+                "alterações seguidas, um teste vermelho deixaria a dúvida de qual delas foi a responsável.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Teste verde, passo pequeno, teste verde — sem testes, refatorar é palpite; com eles, é um " +
+                "procedimento seguro que se pode desfazer a qualquer momento.",
+            },
+          ],
+          examples: [
+            {
+              title: "Testes de caracterização para código sem testes",
+              context: "Antes de mexer em código legado, fixe o comportamento atual — inclusive os casos estranhos — em testes.",
+              code: {
+                language: "javascript",
+                filename: "characterization-tests.js",
+                code: [
+                  "// Código legado, sem testes, que queremos refatorar",
+                  "function shippingLabel(weight, isExpress) {",
+                  "  if (weight === 0) return \"N/A\";",
+                  "  return (isExpress ? \"EXP-\" : \"STD-\") + Math.ceil(weight);",
+                  "}",
+                  "",
+                  "// Registrar o que ele FAZ hoje, sem julgar se está certo:",
+                  "assertEquals(shippingLabel(2.3, false), \"STD-3\");",
+                  "assertEquals(shippingLabel(2.3, true), \"EXP-3\");",
+                  "assertEquals(shippingLabel(0, true), \"N/A\"); // esquisito, mas é o comportamento atual",
+                ].join("\n"),
+              },
+              explanation:
+                "O objetivo não é decidir se \"N/A\" é o ideal — é congelar o comportamento para que qualquer " +
+                "mudança acidental apareça. Se o caso esquisito for um bug, ele é corrigido depois, à parte.",
+            },
+            {
+              title: "O ciclo em passos pequenos",
+              context: "A frequência dos testes é o que torna a refatoração segura: rodar a cada passo, não só no final.",
+              code: {
+                language: "javascript",
+                filename: "small-steps.js",
+                code: [
+                  "// 1. rodar os testes → verde",
+                  "// 2. extrair uma função → rodar → verde",
+                  "// 3. renomear um parâmetro → rodar → verde",
+                  "// 4. mover a função de módulo → rodar → VERMELHO",
+                  "//    O problema só pode estar no passo 4; desfazer e refazer com mais cuidado.",
+                  "",
+                  "// Alternativa arriscada: fazer os 4 passos juntos e só então rodar.",
+                  "// Se falhar, qualquer um dos quatro pode ser a causa.",
+                ].join("\n"),
+              },
+              explanation:
+                "Passos pequenos deixam a depuração trivial: o culpado é sempre a última alteração. Em muitos " +
+                "editores, dá para configurar os testes para rodarem a cada gravação, o que torna o ciclo quase " +
+                "instantâneo.",
+            },
+            {
+              title: "Teste acoplado à implementação atrapalha",
+              context: "Um teste que verifica como o código faz (e não o que faz) quebra a cada refatoração, mesmo sem mudança de comportamento.",
+              code: {
+                language: "javascript",
+                filename: "brittle-vs-robust.js",
+                code: [
+                  "// Frágil: verifica um detalhe interno; quebra se extrairmos ou renomearmos",
+                  "function testBrittle() {",
+                  "  const spy = trackCalls(calculator, \"applyDiscount\");",
+                  "  price(order);",
+                  "  assertEquals(spy.callCount, 1);",
+                  "}",
+                  "",
+                  "// Robusto: verifica só o resultado observável",
+                  "function testRobust() {",
+                  "  assertEquals(price({ items: [{ price: 100 }], coupon: \"SAVE10\" }), 90);",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "O teste frágil falha se applyDiscount for renomeada ou incorporada, mesmo com o resultado igual. " +
+                "O robusto só se importa com o valor final, então sobrevive a qualquer reorganização interna — que é " +
+                "exatamente o que uma rede de segurança de refatoração precisa fazer.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Você precisa refatorar a função abaixo, que não tem nenhum teste. Antes de tocar nela, é " +
+              "necessário fixar o comportamento atual.",
+            problemCode: {
+              language: "javascript",
+              filename: "legacy-fee.js",
+              code: [
+                "function lateFee(daysLate, isMember) {",
+                "  if (daysLate <= 0) return 0;",
+                "  const fee = daysLate * 2;",
+                "  if (isMember) return fee / 2;",
+                "  return fee > 30 ? 30 : fee;",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Escreva testes de caracterização que cubram cada caminho da função (sem atraso, membro, " +
+              "não membro abaixo e acima do teto de 30), para poder refatorá-la com segurança.",
+            hint: "Um teste por caminho de execução. Repare que membros não têm o teto de 30 — registre isso como o comportamento atual.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "legacy-fee.test.js",
+                code: [
+                  "function assertEquals(actual, expected) {",
+                  "  if (actual !== expected) throw new Error(`esperado ${expected}, recebeu ${actual}`);",
+                  "}",
+                  "",
+                  "function testLateFee() {",
+                  "  assertEquals(lateFee(0, false), 0);    // sem atraso",
+                  "  assertEquals(lateFee(-3, true), 0);    // valor negativo também não cobra",
+                  "  assertEquals(lateFee(5, true), 5);     // membro: metade de 10",
+                  "  assertEquals(lateFee(5, false), 10);   // não membro abaixo do teto",
+                  "  assertEquals(lateFee(20, false), 30);  // não membro: limitado ao teto de 30",
+                  "  assertEquals(lateFee(20, true), 20);   // membro: sem teto (metade de 40)",
+                  "}",
+                  "",
+                  "testLateFee();",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada caminho da função tem um teste, inclusive o comportamento curioso (membros sem teto). Com " +
+                "esses testes verdes, dá para refatorar lateFee em passos pequenos: qualquer mudança acidental " +
+                "de comportamento vai aparecer como um teste vermelho.",
+            },
+          },
         }),
       ],
     }),
