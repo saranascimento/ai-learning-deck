@@ -1967,7 +1967,7 @@ export default area({
             "algum endereço, e entender isso explica identidade vs. igualdade, custo de alocação e bugs de " +
             "estado compartilhado.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -1976,7 +1976,15 @@ export default area({
                 "onde as coisas estão por mágica: cada acesso a um dado é, por baixo, um acesso a um endereço " +
                 "de memória.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Memory é o espaço endereçável onde os dados de um programa vivem durante a execução — todo " +
+                "acesso a uma variável é, por baixo, um acesso a um endereço. Isso explica identidade vs. " +
+                "igualdade, custo de alocação, e por que compartilhar memória é uma fonte comum de bugs.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -1986,7 +1994,7 @@ export default area({
                 "por que alocar memória tem custo, por que estruturas contíguas são mais rápidas de percorrer, " +
                 "e por que compartilhar memória entre partes do programa pode causar bugs.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -2000,12 +2008,15 @@ export default area({
                 "identidade (o endereço), não conteúdo. Isso só faz sentido porque memória é endereçável: cada " +
                 "{} novo reserva um espaço próprio.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Memory é o espaço endereçável onde os dados de um programa vivem durante a execução — todo " +
-                "acesso a uma variável é, por baixo, um acesso a um endereço. Isso explica identidade vs. " +
-                "igualdade, custo de alocação, e por que compartilhar memória é uma fonte comum de bugs.",
+              type: "list",
+              items: [
+                "Achar que memória é de graça: cada alocação tem custo, e alocar muito dentro de laços quentes pesa.",
+                "Confundir identidade com igualdade: dois objetos com os mesmos dados ficam em endereços diferentes.",
+                "Em linguagens com gerenciamento automático, o endereço fica escondido, mas o efeito de compartilhar memória " +
+                "continua existindo.",
+              ],
             },
           ],
           examples: [
@@ -2076,7 +2087,7 @@ export default area({
             "Duas formas diferentes de uma variável se relacionar com um dado: copiar o valor por completo, ou " +
             "compartilhar o endereço onde ele vive — a origem do bug \"mudei uma coisa e outra mudou junto\".",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -2086,7 +2097,15 @@ export default area({
                 "primitivos (number, string, boolean...) têm semântica de valor; objetos e arrays têm " +
                 "semântica de referência.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Semântica de valor copia o dado inteiro; semântica de referência copia só o endereço, e os " +
+                "dois nomes passam a compartilhar o mesmo dado. Saber qual das duas está em jogo é a diferença " +
+                "entre um bug de estado compartilhado sem querer e código previsível.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -2095,7 +2114,7 @@ export default area({
                 "mudanças feitas através de uma referência são visíveis através de qualquer outra referência " +
                 "ao mesmo dado — exatamente o comportamento surpreendente visto no exercício de Memory.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -2118,12 +2137,14 @@ export default area({
                 "number é copiado por valor — b = a cria uma cópia independente. Objetos são copiados por " +
                 "referência — obj2 = obj1 copia só o endereço; os dois nomes apontam pro mesmo espaço.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Semântica de valor copia o dado inteiro; semântica de referência copia só o endereço, e os " +
-                "dois nomes passam a compartilhar o mesmo dado. Saber qual das duas está em jogo é a diferença " +
-                "entre um bug de estado compartilhado sem querer e código previsível.",
+              type: "list",
+              items: [
+                "Passar um objeto ou array a uma função entrega a referência: alterá-lo lá dentro altera o original.",
+                "O spread e `Object.assign` fazem cópia rasa: os objetos aninhados continuam compartilhados.",
+                "Copiar tudo por segurança tem custo; copie quando a mutação pode afetar quem não deveria.",
+              ],
             },
           ],
           examples: [
@@ -2227,7 +2248,7 @@ export default area({
             "Duas regiões de memória com regras de vida muito diferentes: stack guarda dados de vida curta e " +
             "previsível (frames de função), heap guarda dados que precisam sobreviver além de uma única chamada.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -2237,7 +2258,15 @@ export default area({
                 "função retorna. O Heap guarda dados que precisam viver além de uma única chamada — alocados " +
                 "dinamicamente, removidos só quando nada mais precisa deles.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Stack guarda dados de vida curta e previsível, na disciplina LIFO de frames de função. Heap " +
+                "guarda dados que precisam sobreviver além de uma única chamada. Um valor primitivo geralmente " +
+                "cabe na stack; um objeto retornado ou compartilhado precisa do heap.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -2255,7 +2284,7 @@ export default area({
                 "manipula com push/pop). Os nomes coincidem — e não por acaso, a região de memória também " +
                 "segue disciplina LIFO — mas são conceitos em camadas diferentes.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -2271,12 +2300,15 @@ export default area({
                 "que a função retorna. Mas o objeto { x, y } em si vive no heap — por isso p continua válido " +
                 "mesmo depois que o frame que o criou já foi desempilhado.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Stack guarda dados de vida curta e previsível, na disciplina LIFO de frames de função. Heap " +
-                "guarda dados que precisam sobreviver além de uma única chamada. Um valor primitivo geralmente " +
-                "cabe na stack; um objeto retornado ou compartilhado precisa do heap.",
+              type: "list",
+              items: [
+                "A divisão exata varia entre linguagens e engines; \"primitivo na stack, objeto no heap\" é um modelo, não " +
+                "uma garantia.",
+                "Recursão sem caso-base ou muito profunda esgota a stack antes de esgotar o heap.",
+                "Quem tem referência ao heap mantém o dado vivo; a stack só guarda o que existe enquanto a função roda.",
+              ],
             },
           ],
           examples: [
@@ -2357,7 +2389,7 @@ export default area({
             "A estrutura que rastreia em que ponto do programa a execução está — cada chamada de função " +
             "empilha um frame, cada retorno desempilha, e é exatamente essa pilha que aparece num stack trace.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -2366,7 +2398,15 @@ export default area({
                 "frame é empilhado com suas variáveis locais e o ponto de retorno; quando a função termina, o " +
                 "frame é removido e a execução volta pro frame anterior.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Call Stack é a pilha de frames que registra onde a execução está e pra onde ela volta. Cada " +
+                "chamada empilha, cada retorno desempilha — e um stack trace é literalmente uma foto dessa " +
+                "pilha no momento do erro.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -2375,7 +2415,7 @@ export default area({
                 "pro lugar certo depois que cada chamada termina, e é também o que faz recursão funcionar " +
                 "(cada chamada recursiva tem seu próprio frame, suas próprias variáveis locais).",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -2389,12 +2429,15 @@ export default area({
                 "console.trace() imprime exatamente essa pilha — é o que aparece (invertido) num stack trace " +
                 "de erro.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Call Stack é a pilha de frames que registra onde a execução está e pra onde ela volta. Cada " +
-                "chamada empilha, cada retorno desempilha — e um stack trace é literalmente uma foto dessa " +
-                "pilha no momento do erro.",
+              type: "list",
+              items: [
+                "Recursão consome um frame por chamada: sem caso-base, ou com profundidade demais, ocorre stack overflow.",
+                "Em código assíncrono, o stack trace pode não mostrar quem iniciou a operação, porque a pilha original já " +
+                "foi desempilhada.",
+                "Um trace mostra o caminho até o erro, não a causa: o valor errado pode ter entrado antes.",
+              ],
             },
           ],
           examples: [
@@ -2469,7 +2512,7 @@ export default area({
             "parte do programa — a alternativa a gerenciar memória manualmente, ao custo de menos controle " +
             "direto sobre quando isso acontece.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -2478,7 +2521,15 @@ export default area({
                 "\"Alcançável\" (reachability) significa: existe algum caminho de referências, a partir de algo " +
                 "que o programa ainda usa, até aquele dado?",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Garbage Collection libera automaticamente a memória do heap que não é mais alcançável por " +
+                "nada que o programa ainda usa. Evita gestão manual, mas troca controle direto por menos " +
+                "previsibilidade sobre quando exatamente a liberação acontece.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -2495,7 +2546,7 @@ export default area({
                 "C++ exigem gestão manual (malloc/free), e Rust usa um modelo diferente ainda (ownership, sem " +
                 "GC nem gestão manual explícita).",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -2509,12 +2560,14 @@ export default area({
                 "aquele objeto — ele se torna inalcançável, e o coletor pode (em algum momento, não " +
                 "imediatamente) liberar essa memória.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Garbage Collection libera automaticamente a memória do heap que não é mais alcançável por " +
-                "nada que o programa ainda usa. Evita gestão manual, mas troca controle direto por menos " +
-                "previsibilidade sobre quando exatamente a liberação acontece.",
+              type: "list",
+              items: [
+                "Não se sabe quando a coleta acontece: não dependa dela para liberar recursos como arquivos e conexões.",
+                "Alcançável não é o mesmo que necessário: um objeto ainda referenciado por algum lugar não é coletado.",
+                "Coletas podem pausar o programa; em código sensível à latência, alocar menos ajuda.",
+              ],
             },
           ],
           examples: [
@@ -2581,7 +2634,7 @@ export default area({
             "Memória que deveria ter sido liberada, mas continua retida porque alguma referência esquecida " +
             "ainda a mantém alcançável — mesmo em runtimes com Garbage Collection, é possível vazar memória.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -2590,7 +2643,15 @@ export default area({
                 "nunca a recupera. Não é um bug de \"esquecer de liberar\" (como em linguagens sem GC); é um " +
                 "bug de \"esquecer de deixar de referenciar\".",
             },
-            { type: "heading", text: "Por que existe (como categoria de bug)?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Memory Leak é memória que deveria estar livre, mas continua alcançável por uma referência " +
+                "esquecida — mesmo com Garbage Collection automático, um programa ainda pode vazar memória se " +
+                "ele mesmo mantém, sem querer, um caminho até dados que já não precisa.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -2600,7 +2661,7 @@ export default area({
                 "sofisticado o GC seja. É o modo de falha oposto de um bug comum: em vez de acessar algo que " +
                 "já foi liberado, o programa impede algo de ser liberado.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -2614,12 +2675,16 @@ export default area({
                 "antigas — cache fica alcançável (é uma variável de módulo), então cada valor guardado nele " +
                 "também fica, para sempre, mesmo que nunca mais seja usado.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Memory Leak é memória que deveria estar livre, mas continua alcançável por uma referência " +
-                "esquecida — mesmo com Garbage Collection automático, um programa ainda pode vazar memória se " +
-                "ele mesmo mantém, sem querer, um caminho até dados que já não precisa.",
+              type: "list",
+              items: [
+                "Garbage Collection não impede vazamento: ele só libera o que ficou inalcançável.",
+                "Causas comuns são listeners nunca removidos, caches sem limite e closures que seguram dados grandes.",
+                "Referência circular sozinha não é o problema, porque os coletores modernos a tratam; o vazamento é o " +
+                "caminho a partir de uma raiz.",
+                "O sintoma aparece devagar, com o uso de memória crescendo com o tempo; meça antes de tentar consertar.",
+              ],
             },
           ],
           examples: [
