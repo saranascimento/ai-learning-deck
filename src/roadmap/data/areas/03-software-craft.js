@@ -5770,7 +5770,7 @@ export default area({
             "mecanismos (ao lado de códigos de retorno e valores de resultado) que algumas linguagens oferecem " +
             "para sinalizá-lo.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -5780,7 +5780,14 @@ export default area({
                 "interrompendo o fluxo normal. Confundir os dois leva a achar que \"tratar erros\" é sinônimo de " +
                 "\"usar try/catch\".",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Erro é o conceito, exceção é um dos mecanismos — primeiro decida que tipo de falha é (esperada, " +
+                "bug ou apenas ausência), depois escolha como sinalizá-la.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -5799,7 +5806,7 @@ export default area({
                 "uma pré-condição) e o certo é corrigi-los, não \"tratá-los\" e seguir em frente. E nem toda " +
                 "ausência de resultado é um erro: uma busca que não encontra nada é um resultado normal.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "o mesmo erro (\"idade inválida\") sinalizado por três mecanismos diferentes:" },
             {
               type: "code",
@@ -5833,11 +5840,15 @@ export default area({
                 "O erro é o mesmo nos três casos — o que muda é como ele chega a quem chamou. Cada mecanismo tem " +
                 "vantagens e custos, e o restante do módulo explora quando usar cada um.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Erro é o conceito, exceção é um dos mecanismos — primeiro decida que tipo de falha é (esperada, " +
-                "bug ou apenas ausência), depois escolha como sinalizá-la.",
+              type: "list",
+              items: [
+                "Tratar a ausência de resultado (uma busca sem itens) como falha polui o código com exceções.",
+                "Esconder um bug de programação com um valor padrão apenas adia a descoberta do erro.",
+                "Nenhum mecanismo é a resposta universal: exceção, retorno nulo e resultado explícito mudam o custo de " +
+                "esquecer de tratar.",
+              ],
             },
           ],
           examples: [
@@ -5959,7 +5970,7 @@ export default area({
             "O mecanismo de sinalizar um erro interrompendo o fluxo normal (throw) e tratá-lo em outro ponto do " +
             "código (catch) — com cuidado para capturar só o que se sabe tratar.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -5969,7 +5980,14 @@ export default area({
                 "sempre, com ou sem erro, e serve para liberar recursos. Na maioria das linguagens, as exceções " +
                 "formam uma hierarquia de tipos (Error → TypeError, RangeError…).",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Capture só o que sabe tratar, nunca engula um erro em silêncio, e use finally para liberar " +
+                "recursos — o resto deve subir.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -5986,7 +6004,7 @@ export default area({
                 "a operação que pode falhar; use finally para limpeza; e reserve exceções para situações " +
                 "excepcionais, não para controle de fluxo comum.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "throw, catch de um tipo específico e finally para liberar o recurso:" },
             {
               type: "code",
@@ -6014,11 +6032,23 @@ export default area({
                 "O catch trata só o que entende (JSON malformado, com uma mensagem mais útil) e repassa o resto. O " +
                 "finally garante que o arquivo é fechado em qualquer caminho, inclusive quando algo falha.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Capture só o que sabe tratar, nunca engula um erro em silêncio, e use finally para liberar " +
-                "recursos — o resto deve subir.",
+              type: "list",
+              items: [
+                "Para falhas que precisam subir até o ponto do código que sabe tratá-las.",
+                "Com `finally`, para liberar recursos (arquivos, conexões, locks) em qualquer saída da função.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Um `catch` genérico trata como iguais erros que pedem respostas diferentes, inclusive bugs; capture só o " +
+                "que sabe tratar.",
+                "O `catch` vazio engole a falha sem deixar rastro: registre e repasse.",
+                "Falhas esperadas no fluxo normal costumam ficar mais claras como valores de resultado.",
+              ],
             },
           ],
           examples: [
@@ -6158,7 +6188,7 @@ export default area({
             "Um erro sobe pela pilha de chamadas até ser tratado — e cada camada por onde passa decide se trata, " +
             "acrescenta contexto ou simplesmente deixa subir.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -6168,7 +6198,14 @@ export default area({
                 "explícitos, o erro é devolvido de função em função. Em ambos os casos, o ponto essencial é " +
                 "decidir em qual camada agir.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Deixe o erro subir até a camada que tem contexto para agir — no caminho, acrescente informação se " +
+                "ajudar, mas trate uma única vez.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -6185,7 +6222,7 @@ export default area({
                 "subir intacto). Dois cuidados: não registrar e relançar a cada camada (o mesmo erro aparece " +
                 "várias vezes no log) e não perder a causa original ao envolver o erro em outro.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "um erro atravessando três camadas até chegar a quem sabe tratá-lo:" },
             {
               type: "code",
@@ -6219,11 +6256,14 @@ export default area({
                 "getUserProfile não tem nada de útil a fazer com a falha, então não a captura. Só handleRequest " +
                 "sabe traduzir o problema para uma resposta ao usuário, e é onde o erro é tratado.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Deixe o erro subir até a camada que tem contexto para agir — no caminho, acrescente informação se " +
-                "ajudar, mas trate uma única vez.",
+              type: "list",
+              items: [
+                "Registrar e relançar em toda camada repete o mesmo erro várias vezes no log; trate uma vez só.",
+                "Acrescentar contexto sem preservar o erro original (`cause`) perde a pilha da falha real.",
+                "Uma camada só deve tratar o erro se tiver contexto para agir; caso contrário, deixe subir.",
+              ],
             },
           ],
           examples: [
@@ -6365,7 +6405,7 @@ export default area({
             "Criar seus próprios tipos de erro para falhas do domínio (saldo insuficiente, pedido não " +
             "encontrado), para que o código possa distinguir e tratar cada situação sem interpretar mensagens de texto.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -6374,7 +6414,14 @@ export default area({
                 "Além da mensagem, ela pode carregar dados úteis (o saldo atual, o id procurado) e um código " +
                 "estável para uso em respostas de API ou em logs.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Crie tipos de erro quando o código precisar reagir de forma diferente a cada falha — decidir " +
+                "pelo tipo, nunca pelo texto da mensagem.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -6391,7 +6438,7 @@ export default area({
                 "corretamente nos logs; carregue dados estruturados em campos (não só no texto); e preserve " +
                 "a causa original quando o erro envolver outro (cause).",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "um erro de domínio com dados úteis e o código que reage ao tipo:" },
             {
               type: "code",
@@ -6426,11 +6473,21 @@ export default area({
                 "O código que trata o erro não depende do texto da mensagem: decide pelo tipo e usa os campos " +
                 "balance e requested para uma resposta útil ao usuário. A mensagem pode ser reescrita sem quebrar nada.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Crie tipos de erro quando o código precisar reagir de forma diferente a cada falha — decidir " +
-                "pelo tipo, nunca pelo texto da mensagem.",
+              type: "list",
+              items: [
+                "Quando o código precisa reagir de forma diferente a cada falha do domínio, decidindo pelo tipo.",
+                "Com uma base comum e um `code` estável, para mapear falhas para respostas HTTP, mensagens ou métricas.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Um tipo novo só se justifica quando alguém vai tratá-lo de um jeito diferente dos demais.",
+                "Muitos tipos sem decisões novas só aumentam a superfície a manter.",
+              ],
             },
           ],
           examples: [
@@ -6596,7 +6653,7 @@ export default area({
             "Detectar e sinalizar um problema o mais cedo possível, no ponto onde ele surge, em vez de deixar " +
             "dados inválidos seguirem adiante e causarem um erro obscuro em outro lugar.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -6605,7 +6662,14 @@ export default area({
                 "clara, quando alguma delas for violada. Ela aplica a ideia de Contract (módulo Programming " +
                 "Fundamentals): se uma pré-condição do contrato foi quebrada, o chamador é avisado na hora.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Se algo está errado, avise imediatamente e antes de causar efeitos — o erro fica perto da causa " +
+                "e nenhum dado ruim se espalha.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -6623,7 +6687,7 @@ export default area({
                 "Fail Fast se aplica a violações de contrato e bugs — para erros esperados em uso normal (a " +
                 "digitação do usuário), a resposta é tratar e informar, não abortar.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "a validação no topo, antes de qualquer efeito, com uma mensagem que aponta a causa:" },
             {
               type: "code",
@@ -6653,11 +6717,15 @@ export default area({
                 "Na primeira versão, uma conta de destino ausente faz o dinheiro sair da origem e sumir. Na segunda, " +
                 "nada é alterado se qualquer condição falhar, e a mensagem diz exatamente qual foi violada.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Se algo está errado, avise imediatamente e antes de causar efeitos — o erro fica perto da causa " +
-                "e nenhum dado ruim se espalha.",
+              type: "list",
+              items: [
+                "Corrigir automaticamente uma entrada inválida evita o erro agora, mas mantém o bug vivo e cobra depois.",
+                "Não se aplica a erros esperados de uso normal: um formulário com erro de digitação deve ser tratado e " +
+                "informado, não abortado.",
+                "Validar só na primeira requisição faz a falha aparecer em produção, para um usuário; valide na inicialização.",
+              ],
             },
           ],
           examples: [
@@ -6978,7 +7046,7 @@ export default area({
             "Pontos deliberados do sistema que capturam falhas de uma parte e as contêm — devolvendo uma resposta " +
             "segura ou um comportamento degradado — para que um erro local não derrube tudo.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -6988,7 +7056,14 @@ export default area({
                 "função tratar tudo, define-se onde a falha para. O termo é usado aqui em sentido geral, sem " +
                 "depender de nenhum framework.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Defina onde a falha para: uma fronteira por unidade de trabalho contém o erro, registra e segue — " +
+                "sem esconder o que aconteceu.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -7006,7 +7081,7 @@ export default area({
                 "a base de ideias mais amplas como Resilience Patterns (bulkheads, fallbacks), que aparecem na Área " +
                 "de Arquitetura.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "cada item de um lote em sua própria fronteira: um item ruim não derruba os demais:" },
             {
               type: "code",
@@ -7037,11 +7112,21 @@ export default area({
                 "A fronteira é o try/catch por item: a falha de um pedido fica contida nele. Ela não é silenciosa — " +
                 "o erro é registrado e coletado em failures, para que ninguém pense que tudo deu certo.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Defina onde a falha para: uma fronteira por unidade de trabalho contém o erro, registra e segue — " +
-                "sem esconder o que aconteceu.",
+              type: "list",
+              items: [
+                "Em fronteiras de unidade de trabalho, como uma requisição, para que uma falha não derrube o servidor.",
+                "Para degradar partes secundárias (como recomendações) enquanto o essencial continua funcionando.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Conter não é engolir: uma fronteira que esconde a falha impede qualquer diagnóstico, então registre.",
+                "Só coloque a fronteira onde é seguro degradar; o essencial deve continuar falhando alto.",
+              ],
             },
           ],
           examples: [
