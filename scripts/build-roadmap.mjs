@@ -1357,6 +1357,11 @@ for (const area of model.areas()) {
     "facade",
     "proxy",
     "composite",
+    "strategy",
+    "observer",
+    "command",
+    "state",
+    "template-method",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",

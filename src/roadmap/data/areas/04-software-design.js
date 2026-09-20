@@ -7115,16 +7115,1115 @@ export default area({
         "Interpreter — muito nichado (parsers / DSLs)",
       ],
       concepts: [
-        concept({ order: 10, title: "Strategy" }),
-        concept({ order: 20, title: "Observer" }),
-        concept({ order: 30, title: "Command", collision: "≠ Command-Query Separation (Design Principles) — padrão de objeto que encapsula uma ação × princípio de separar leitura de escrita" }),
+        concept({
+          order: 10,
+          title: "Strategy",
+          note: "algoritmos intercambiáveis atrás de um mesmo contrato",
+          summary:
+            "Define uma família de algoritmos intercambiáveis atrás de um mesmo contrato, para que quem os usa " +
+            "escolha, ou troque, qual aplicar sem alterar o seu próprio código.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Strategy é um padrão comportamental em que cada variação de um algoritmo, um cálculo de desconto, uma " +
+                "regra de ordenação, uma forma de validar, vive em um objeto ou função própria, todos com o mesmo " +
+                "contrato. O código que precisa do algoritmo recebe uma estratégia e a executa, sem saber qual é. É a " +
+                "aplicação direta de Encapsulate What Varies e de Program to an Interface: o que varia é a estratégia, " +
+                "e o restante depende só do contrato.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Coloque cada variação do algoritmo em uma peça com o mesmo contrato e entregue a peça a quem a usa: " +
+                "trocar o comportamento é trocar a estratégia, sem `if` nem herança.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "O contexto guarda uma estratégia, recebida no construtor ou por parâmetro, e delega a ela a parte " +
+                "que varia. Cada estratégia implementa o contrato. Em JavaScript, uma estratégia pode ser apenas uma " +
+                "função, e não é preciso criar uma classe para cada uma.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "strategy.js",
+              code: [
+                "// Estratégias: todas cumprem o contrato apply(subtotal) → total",
+                "const noDiscount = { apply: (subtotal) => subtotal };",
+                "const memberDiscount = { apply: (subtotal) => subtotal * 0.9 };",
+                "const seasonalDiscount = { apply: (subtotal) => Math.max(subtotal - 20, 0) };",
+                "",
+                "// Contexto: usa a estratégia sem saber qual é",
+                "class Checkout {",
+                "  constructor(discount) { this.discount = discount; }",
+                "  total(subtotal) { return this.discount.apply(subtotal); }",
+                "}",
+                "",
+                "new Checkout(noDiscount).total(100);         // 100",
+                "new Checkout(memberDiscount).total(100);     // 90",
+                "new Checkout(seasonalDiscount).total(100);   // 80",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "`Checkout` não tem nenhum `if` sobre o tipo de desconto. Uma nova regra é uma nova estratégia, e o " +
+                "contexto não muda.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Quando há várias formas de fazer a mesma coisa, e a escolha depende do contexto, da configuração ou do usuário.",
+                "Quando o mesmo `if` ou `switch` sobre o tipo de algoritmo se repete em vários pontos, ou cresce a cada regra nova.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Com só dois ou três casos estáveis, um condicional simples é mais claro que várias estratégias.",
+                "O cliente precisa conhecer as estratégias para escolher uma, o que traz parte da complexidade para fora.",
+                "Estratégias com contratos diferentes não são intercambiáveis: se cada uma precisa de dados distintos, o contrato comum fica forçado.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "A estratégia como função: o comparador do `sort`",
+              context: "Em JavaScript, o padrão já aparece na própria linguagem: passar uma função que define o algoritmo.",
+              code: {
+                language: "javascript",
+                filename: "sort-strategy.js",
+                code: [
+                  "const byPrice = (a, b) => a.price - b.price;",
+                  "const byName = (a, b) => a.name.localeCompare(b.name);",
+                  "",
+                  "const products = [{ name: \"Lápis\", price: 3 }, { name: \"Caderno\", price: 20 }, { name: \"Borracha\", price: 2 }];",
+                  "",
+                  "[...products].sort(byPrice);   // Borracha, Lápis, Caderno",
+                  "[...products].sort(byName);    // Borracha, Caderno, Lápis",
+                ].join("\n"),
+              },
+              explanation:
+                "O `sort` é o contexto: ele controla a ordenação, e a estratégia, o comparador, define a regra de " +
+                "comparação. Trocar de critério é passar outra função.",
+            },
+            {
+              title: "Trocar a estratégia em tempo de execução",
+              context: "Como a estratégia é uma peça recebida, ela pode mudar enquanto o programa roda.",
+              code: {
+                language: "javascript",
+                filename: "runtime-switch.js",
+                code: [
+                  "class Checkout {",
+                  "  constructor(discount) { this.discount = discount; }",
+                  "  setDiscount(discount) { this.discount = discount; }",
+                  "  total(subtotal) { return this.discount.apply(subtotal); }",
+                  "}",
+                  "",
+                  "const checkout = new Checkout(noDiscount);",
+                  "checkout.total(100);                  // 100",
+                  "",
+                  "// O cliente entra como membro: só se troca a estratégia",
+                  "checkout.setDiscount(memberDiscount);",
+                  "checkout.total(100);                  // 90",
+                ].join("\n"),
+              },
+              explanation:
+                "Não foi preciso criar outro objeto nem editar `Checkout`. Mudar de regra é trocar a peça que ele " +
+                "recebeu.",
+            },
+            {
+              title: "Quando um `if` basta",
+              context: "Nem toda variação justifica um padrão.",
+              code: {
+                language: "javascript",
+                filename: "when-if-is-enough.js",
+                code: [
+                  "// Exagero: uma estratégia para escolher entre duas mensagens que nunca vão mudar",
+                  "const greetings = { formal: { text: () => \"Prezado\" }, casual: { text: () => \"Oi\" } };",
+                  "const greet = (style) => greetings[style].text();",
+                  "",
+                  "// Suficiente: um condicional simples",
+                  "const greeting = isFormal ? \"Prezado\" : \"Oi\";",
+                ].join("\n"),
+              },
+              explanation:
+                "Duas alternativas estáveis, em um único lugar, não justificam uma estrutura. O padrão passa a valer " +
+                "quando as variações se multiplicam ou aparecem em vários pontos.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A estimativa de tempo de viagem usa um `if` por meio de transporte. Cada meio novo exige editar a " +
+              "função, e a mesma escolha se repete em outros pontos do sistema.",
+            problemCode: {
+              language: "javascript",
+              filename: "trip.js",
+              code: [
+                "function estimateMinutes(distanceKm, mode) {",
+                "  if (mode === \"walk\") return distanceKm * 12;",
+                "  if (mode === \"bike\") return distanceKm * 4;",
+                "  if (mode === \"car\") return distanceKm * 1.5 + 5;   // 5 min para estacionar",
+                "  throw new Error(`meio desconhecido: ${mode}`);",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Aplique Strategy: uma estratégia por meio de transporte com o mesmo contrato, e uma classe `Trip` que " +
+              "recebe a estratégia e calcula o tempo.",
+            hint: "Cada estratégia tem `minutes(distanceKm)`. `Trip` guarda a distância e a estratégia, e delega o cálculo.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "trip.fixed.js",
+                code: [
+                  "const walk = { minutes: (km) => km * 12 };",
+                  "const bike = { minutes: (km) => km * 4 };",
+                  "const car = { minutes: (km) => km * 1.5 + 5 };",
+                  "",
+                  "class Trip {",
+                  "  constructor(distanceKm, transport) {",
+                  "    this.distanceKm = distanceKm;",
+                  "    this.transport = transport;",
+                  "  }",
+                  "  estimateMinutes() { return this.transport.minutes(this.distanceKm); }",
+                  "}",
+                  "",
+                  "new Trip(10, bike).estimateMinutes();   // 40",
+                  "new Trip(10, car).estimateMinutes();    // 20",
+                ].join("\n"),
+              },
+              explanation:
+                "`Trip` não tem nenhum `if` de transporte, e um meio novo é uma nova estratégia. A escolha de qual " +
+                "usar passou para quem monta a viagem.",
+            },
+          },
+        }),
+        concept({
+          order: 20,
+          title: "Observer",
+          note: "notifica quem se interessou, sem conhecê-lo",
+          summary:
+            "Permite que um objeto notifique automaticamente outros quando algo muda ou acontece, sem conhecê-los " +
+            "nem depender deles — quem tem interesse se inscreve.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Observer é um padrão comportamental em que um objeto, o sujeito, mantém uma lista de interessados, os " +
+                "observadores, e os avisa quando algo acontece. O sujeito só conhece o contrato de quem se inscreve (uma " +
+                "função ou um método de notificação), e não quem são nem quantos são. É uma forma de Inversion of " +
+                "Control: em vez de o sujeito chamar cada parte interessada, elas se registram e são chamadas.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Quem gera o evento não conhece quem reage a ele: os interessados se inscrevem, e são avisados quando " +
+                "algo acontece.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "O sujeito expõe `subscribe`, que registra um observador e devolve uma forma de cancelar a inscrição, " +
+                "e `emit`, que chama todos os inscritos com os dados do evento.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "observer.js",
+              code: [
+                "class EventEmitter {",
+                "  #listeners = new Set();",
+                "",
+                "  subscribe(listener) {",
+                "    this.#listeners.add(listener);",
+                "    return () => this.#listeners.delete(listener);   // cancela a inscrição",
+                "  }",
+                "",
+                "  emit(event) {",
+                "    for (const listener of this.#listeners) listener(event);",
+                "  }",
+                "}",
+                "",
+                "const orders = new EventEmitter();",
+                "",
+                "// Interessados independentes se inscrevem",
+                "orders.subscribe((order) => console.log(`enviar e-mail do pedido ${order.id}`));",
+                "orders.subscribe((order) => console.log(`baixar estoque do pedido ${order.id}`));",
+                "",
+                "orders.emit({ id: 1 });   // os dois reagem; quem emite não sabe quem são",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Quem emite o pedido não menciona e-mail nem estoque. Adicionar uma nova reação é adicionar uma " +
+                "inscrição, sem editar o código que gera o evento.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Quando várias partes independentes precisam reagir ao mesmo acontecimento, como e-mail, estoque e análise a cada pedido, sem que quem o gera as conheça.",
+                "Em interfaces e em eventos de domínio, em que o conjunto de interessados muda com o tempo.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações", },
+            {
+              type: "list",
+              items: [
+                "O fluxo fica implícito: quem lê `emit` não vê o que acontece em seguida, o que dificulta seguir o programa e depurá-lo.",
+                "Assinaturas não canceladas mantêm objetos vivos, e isso é uma fonte clássica de vazamento de memória (Memory Leak).",
+                "A ordem de notificação e o tratamento de erros precisam ser definidos: uma falha em um observador não deve impedir que os outros sejam avisados.",
+                "Com um único interessado conhecido, uma chamada direta é mais simples e mais fácil de seguir.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Cancelar a inscrição",
+              context: "Quem se inscreve precisa poder sair, ou o objeto continua sendo notificado e mantido na memória.",
+              code: {
+                language: "javascript",
+                filename: "unsubscribe.js",
+                code: [
+                  "const prices = new EventEmitter();",
+                  "",
+                  "const stop = prices.subscribe((price) => console.log(`novo preço: ${price}`));",
+                  "prices.emit(10);   // \"novo preço: 10\"",
+                  "",
+                  "stop();            // cancela a inscrição",
+                  "prices.emit(12);   // ninguém é avisado",
+                ].join("\n"),
+              },
+              explanation:
+                "Devolver a função de cancelamento em `subscribe` facilita limpar a inscrição, por exemplo quando um " +
+                "componente de interface é removido. Esquecer disso é a causa mais comum de vazamento com Observer.",
+            },
+            {
+              title: "Um observador que falha não pode derrubar os outros",
+              context: "Sem cuidado, uma exceção em um observador interrompe a notificação dos demais.",
+              code: {
+                language: "javascript",
+                filename: "isolated-errors.js",
+                code: [
+                  "class SafeEmitter {",
+                  "  #listeners = new Set();",
+                  "  subscribe(listener) { this.#listeners.add(listener); return () => this.#listeners.delete(listener); }",
+                  "  emit(event) {",
+                  "    for (const listener of this.#listeners) {",
+                  "      try { listener(event); }",
+                  "      catch (error) { console.error(\"observador falhou:\", error.message); }",
+                  "    }",
+                  "  }",
+                  "}",
+                  "",
+                  "const bus = new SafeEmitter();",
+                  "bus.subscribe(() => { throw new Error(\"quebrou\"); });",
+                  "bus.subscribe(() => console.log(\"este ainda roda\"));",
+                  "bus.emit({});",
+                ].join("\n"),
+              },
+              explanation:
+                "Com o `try/catch` por observador, a falha é registrada e a notificação continua. Sem ele, o segundo " +
+                "observador nunca seria chamado.",
+            },
+            {
+              title: "Observer já pronto na plataforma",
+              context: "Navegadores e Node.js trazem o padrão embutido, e raramente é preciso escrevê-lo.",
+              code: {
+                language: "javascript",
+                filename: "built-in.js",
+                code: [
+                  "// Navegador: eventos do DOM",
+                  "button.addEventListener(\"click\", (event) => console.log(\"clicou\"));",
+                  "",
+                  "// Node.js: EventEmitter",
+                  "import { EventEmitter } from \"node:events\";",
+                  "const emitter = new EventEmitter();",
+                  "emitter.on(\"pedido\", (order) => console.log(`pedido ${order.id}`));",
+                  "emitter.emit(\"pedido\", { id: 1 });",
+                ].join("\n"),
+              },
+              explanation:
+                "Em ambos os casos, quem gera o evento não conhece quem escuta. Na prática, você usa esses " +
+                "mecanismos, e escrever o seu só se justifica em um caso simples e controlado.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Cada vez que o carrinho muda, `addItem` chama à mão a atualização do contador, a gravação no " +
+              "armazenamento e o registro de análise. Uma nova reação exige editar `addItem`.",
+            problemCode: {
+              language: "javascript",
+              filename: "cart.js",
+              code: [
+                "class Cart {",
+                "  items = [];",
+                "  addItem(item) {",
+                "    this.items.push(item);",
+                "    updateBadge(this.items.length);          // interface",
+                "    saveToStorage(this.items);               // persistência",
+                "    trackAnalytics(\"item_added\", item);      // análise",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Aplique Observer: `Cart` emite um evento a cada mudança, e a interface, a persistência e a análise " +
+              "se inscrevem, sem que o carrinho as conheça.",
+            hint: "Use um emissor com `subscribe` e `emit`. O carrinho só chama `emit`, e as três reações viram inscrições.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "cart.fixed.js",
+                code: [
+                  "class Cart {",
+                  "  items = [];",
+                  "  changes = new EventEmitter();   // o emissor definido antes",
+                  "",
+                  "  addItem(item) {",
+                  "    this.items.push(item);",
+                  "    this.changes.emit({ type: \"item_added\", item, items: this.items });",
+                  "  }",
+                  "}",
+                  "",
+                  "const cart = new Cart();",
+                  "",
+                  "// Cada interessado se inscreve por conta própria",
+                  "cart.changes.subscribe((event) => updateBadge(event.items.length));",
+                  "cart.changes.subscribe((event) => saveToStorage(event.items));",
+                  "cart.changes.subscribe((event) => trackAnalytics(event.type, event.item));",
+                ].join("\n"),
+              },
+              explanation:
+                "O carrinho só anuncia o que aconteceu. Uma nova reação, como um aviso ao usuário, é mais uma " +
+                "inscrição, e `addItem` não muda.",
+            },
+          },
+        }),
+        concept({
+          order: 30,
+          title: "Command",
+          note: "uma ação transformada em objeto: pode ser guardada, enfileirada e desfeita",
+          collision: "≠ Command-Query Separation (Design Principles) — padrão de objeto que encapsula uma ação × princípio de separar leitura de escrita",
+          summary:
+            "Transforma uma ação em um objeto, com tudo o que é preciso para executá-la — o que permite guardá-la, " +
+            "enfileirá-la, registrá-la e até desfazê-la.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Command é um padrão comportamental que encapsula uma requisição, uma ação com os seus dados, em um " +
+                "objeto com uma operação `execute()`. Quem pede a ação não a executa diretamente: cria ou recebe o " +
+                "comando, e outro componente decide quando executá-lo. Como a ação virou um valor, ela pode ser " +
+                "guardada, colocada em uma fila, registrada e desfeita. Não é o mesmo que Command-Query Separation: " +
+                "aquele é um princípio sobre separar leitura de escrita nos métodos, e este é um padrão para " +
+                "representar ações como objetos.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Trate a ação como um objeto: quem a pede fica separado de quem a executa, e ela pode ser guardada, " +
+                "enfileirada, registrada ou desfeita.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "Cada comando guarda os dados da ação e implementa `execute()`, e, quando a ação pode ser revertida, " +
+                "`undo()`. Um histórico executa os comandos e mantém pilhas para desfazer e refazer.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "command.js",
+              code: [
+                "class InsertText {",
+                "  constructor(document, text) { this.document = document; this.text = text; }",
+                "  execute() { this.document.text += this.text; }",
+                "  undo() { this.document.text = this.document.text.slice(0, -this.text.length); }",
+                "}",
+                "",
+                "class History {",
+                "  #done = [];",
+                "  #undone = [];",
+                "",
+                "  run(command) {",
+                "    command.execute();",
+                "    this.#done.push(command);",
+                "    this.#undone.length = 0;   // uma ação nova invalida o \"refazer\"",
+                "  }",
+                "  undo() {",
+                "    const command = this.#done.pop();",
+                "    if (command) { command.undo(); this.#undone.push(command); }",
+                "  }",
+                "  redo() {",
+                "    const command = this.#undone.pop();",
+                "    if (command) { command.execute(); this.#done.push(command); }",
+                "  }",
+                "}",
+                "",
+                "const doc = { text: \"\" };",
+                "const history = new History();",
+                "history.run(new InsertText(doc, \"Olá\"));",
+                "history.run(new InsertText(doc, \", mundo\"));",
+                "doc.text;         // \"Olá, mundo\"",
+                "history.undo();",
+                "doc.text;         // \"Olá\"",
+                "history.redo();",
+                "doc.text;         // \"Olá, mundo\"",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "`History` não sabe o que cada comando faz: só o executa e o desfaz. Uma nova ação, como apagar " +
+                "texto, é um novo comando, e o histórico não muda.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Para desfazer e refazer, ou para manter um histórico de ações.",
+                "Para enfileirar, agendar ou repetir ações, executando-as depois ou em outro lugar, como em filas de tarefas.",
+                "Para desacoplar quem pede a ação de quem a executa, ou para registrar ações em um log de auditoria.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Para uma ação simples chamada diretamente, o comando é indireção: uma função já resolve.",
+                "Desfazer exige guardar o estado anterior ou como revertê-lo, o que consome memória e complica cada comando.",
+                "Nem toda ação é reversível: um e-mail enviado ou um pagamento cobrado não podem ser desfeitos por um `undo()` local.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Uma fila de comandos executados depois",
+              context: "Como a ação é um objeto, ela pode ser guardada agora e executada em outro momento.",
+              code: {
+                language: "javascript",
+                filename: "queue.js",
+                code: [
+                  "class SendEmail {",
+                  "  constructor(mailer, to, text) { Object.assign(this, { mailer, to, text }); }",
+                  "  execute() { this.mailer.send(this.to, this.text); }",
+                  "}",
+                  "",
+                  "const queue = [];",
+                  "queue.push(new SendEmail(mailer, \"a@x.com\", \"Bem-vinda\"));",
+                  "queue.push(new SendEmail(mailer, \"b@x.com\", \"Bem-vindo\"));",
+                  "",
+                  "// Mais tarde, em um worker ou em um horário de menos carga",
+                  "for (const command of queue) command.execute();",
+                ].join("\n"),
+              },
+              explanation:
+                "Quem enfileirou não executou nada. Os comandos carregam tudo de que precisam, e a execução " +
+                "acontece quando outro componente decidir.",
+            },
+            {
+              title: "O comando como função",
+              context: "Em JavaScript, um comando simples pode ser só um objeto com duas funções.",
+              code: {
+                language: "javascript",
+                filename: "function-command.js",
+                code: [
+                  "function makeSetColor(element, color) {",
+                  "  const previous = element.color;",
+                  "  return {",
+                  "    execute: () => { element.color = color; },",
+                  "    undo: () => { element.color = previous; },   // a closure guardou o estado anterior",
+                  "  };",
+                  "}",
+                  "",
+                  "const box = { color: \"red\" };",
+                  "const command = makeSetColor(box, \"blue\");",
+                  "command.execute();   // box.color === \"blue\"",
+                  "command.undo();      // box.color === \"red\"",
+                ].join("\n"),
+              },
+              explanation:
+                "A closure guarda o estado anterior e evita uma classe por comando. O contrato, `execute` e `undo`, é o " +
+                "mesmo, e o histórico funciona igual com ambas as formas.",
+            },
+            {
+              title: "Quando desfazer não é possível",
+              context: "O contrato de `undo` precisa ser honesto sobre o que a ação permite.",
+              code: {
+                language: "javascript",
+                filename: "irreversible.js",
+                code: [
+                  "class ChargeCard {",
+                  "  constructor(gateway, amount) { this.gateway = gateway; this.amount = amount; }",
+                  "  execute() { this.receipt = this.gateway.charge(this.amount); }",
+                  "  undo() {",
+                  "    // Estornar é uma nova operação, com regras, prazo e custo; não é reverter o estado local",
+                  "    throw new Error(\"cobrança não pode ser desfeita; use um estorno\");",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Fingir que a ação pode ser desfeita causaria inconsistência. Ações com efeito externo pedem uma " +
+                "operação compensatória própria, e não um `undo()` que só restaura variáveis locais.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O carrinho adiciona e remove itens diretamente, sem nenhum histórico. Não há como desfazer o último " +
+              "passo do usuário.",
+            problemCode: {
+              language: "javascript",
+              filename: "cart-actions.js",
+              code: [
+                "const cart = { items: [] };",
+                "",
+                "function addItem(item) { cart.items.push(item); }",
+                "function removeItem(item) { cart.items = cart.items.filter((i) => i !== item); }",
+                "",
+                "addItem(\"caneta\");",
+                "addItem(\"caderno\");",
+                "// e agora, como desfazer o último?",
+              ].join("\n"),
+            },
+            task:
+              "Aplique Command: `AddItem` com `execute` e `undo`, e um `History` que execute e desfaça o último " +
+              "comando.",
+            hint: "`AddItem.undo` remove o item que ele adicionou. `History` guarda os comandos executados em uma pilha.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "cart-actions.fixed.js",
+                code: [
+                  "class AddItem {",
+                  "  constructor(cart, item) { this.cart = cart; this.item = item; }",
+                  "  execute() { this.cart.items.push(this.item); }",
+                  "  undo() { this.cart.items.pop(); }",
+                  "}",
+                  "",
+                  "class History {",
+                  "  #done = [];",
+                  "  run(command) { command.execute(); this.#done.push(command); }",
+                  "  undo() { this.#done.pop()?.undo(); }",
+                  "}",
+                  "",
+                  "const cart = { items: [] };",
+                  "const history = new History();",
+                  "",
+                  "history.run(new AddItem(cart, \"caneta\"));",
+                  "history.run(new AddItem(cart, \"caderno\"));",
+                  "history.undo();",
+                  "cart.items;   // [\"caneta\"]",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada ação virou um objeto que sabe se executar e se desfazer, e `History` só empilha e desempilha. " +
+                "Remover itens seria um `RemoveItem`, sem alterar o histórico.",
+            },
+          },
+        }),
         concept({
           order: 40,
           title: "State",
           requires: ["Strategy"],
           note: "estruturalmente idêntico a Strategy (troca de comportamento em runtime) — ensinado em par por contraste de intenção",
+          summary:
+            "Permite que um objeto mude o seu comportamento quando o seu estado interno muda, delegando cada estado " +
+            "a um objeto próprio que também decide as transições.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "State é um padrão comportamental para objetos cujo comportamento depende do estado em que estão: um " +
+                "pedido pendente, pago ou enviado responde de modo diferente ao mesmo `cancel()`. Em vez de espalhar " +
+                "`if (status === ...)` por todos os métodos, cada estado vira um objeto que implementa o comportamento " +
+                "daquele estado. O objeto principal delega a chamada ao estado atual, e cada estado decide para qual " +
+                "vai a seguir.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Cada estado é um objeto com o seu próprio comportamento, e a transição acontece por dentro: o " +
+                "objeto muda de estado, e com isso muda de comportamento.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "A estrutura é a mesma do Strategy: um contexto delega a um objeto trocável. A diferença está na " +
+                "intenção. No Strategy, o cliente escolhe a estratégia, e ela em geral não muda sozinha. No State, o " +
+                "próprio estado troca o do contexto, seguindo as regras de transição.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "state.js",
+              code: [
+                "class Draft {",
+                "  constructor(doc) { this.doc = doc; }",
+                "  edit(text) { this.doc.text = text; }",
+                "  submit() { this.doc.setState(new InReview(this.doc)); }",
+                "  publish() { throw new Error(\"envie para revisão antes de publicar\"); }",
+                "}",
+                "",
+                "class InReview {",
+                "  constructor(doc) { this.doc = doc; }",
+                "  edit() { throw new Error(\"em revisão: não é possível editar\"); }",
+                "  submit() { throw new Error(\"já está em revisão\"); }",
+                "  publish() { this.doc.setState(new Published(this.doc)); }",
+                "}",
+                "",
+                "class Published {",
+                "  constructor(doc) { this.doc = doc; }",
+                "  edit() { throw new Error(\"publicado: não é possível editar\"); }",
+                "  submit() { throw new Error(\"já foi publicado\"); }",
+                "  publish() { throw new Error(\"já foi publicado\"); }",
+                "}",
+                "",
+                "class Doc {",
+                "  text = \"\";",
+                "  state = new Draft(this);",
+                "  setState(state) { this.state = state; }",
+                "  edit(text) { this.state.edit(text); }",
+                "  submit() { this.state.submit(); }",
+                "  publish() { this.state.publish(); }",
+                "}",
+                "",
+                "const doc = new Doc();",
+                "doc.edit(\"rascunho\");   // ok, no estado Draft",
+                "doc.submit();            // vai para InReview",
+                "doc.edit(\"x\");           // Error: em revisão: não é possível editar",
+                "doc.publish();           // vai para Published",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "`Doc` não tem nenhum `if` sobre o estado. As regras de cada estado, o que é permitido e para onde " +
+                "se vai, ficam juntas no objeto do estado.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Quando o comportamento de um objeto depende do estado e há vários `if` ou `switch` sobre o status repetidos em muitos métodos.",
+                "Quando os estados têm regras de transição próprias, e as operações inválidas em cada estado precisam ser recusadas de forma clara.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Com poucos estados e transições simples, um campo `status` com uma tabela de transições permitidas é mais direto.",
+                "O número de classes cresce com os estados, e os estados que compartilham muito comportamento acabam repetindo código.",
+                "As transições ficam distribuídas entre os estados, e ver o diagrama completo exige percorrer várias classes.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "A alternativa simples: tabela de transições",
+              context: "Para poucos estados, os dados podem substituir as classes.",
+              code: {
+                language: "javascript",
+                filename: "transition-table.js",
+                code: [
+                  "const transitions = {",
+                  "  pending: [\"paid\", \"cancelled\"],",
+                  "  paid: [\"shipped\", \"refunded\"],",
+                  "  shipped: [\"delivered\"],",
+                  "  delivered: [],",
+                  "  cancelled: [],",
+                  "  refunded: [],",
+                  "};",
+                  "",
+                  "function moveTo(order, next) {",
+                  "  if (!transitions[order.status].includes(next)) {",
+                  "    throw new Error(`transição inválida: ${order.status} → ${next}`);",
+                  "  }",
+                  "  order.status = next;",
+                  "}",
+                  "",
+                  "const order = { status: \"pending\" };",
+                  "moveTo(order, \"paid\");        // ok",
+                  "moveTo(order, \"delivered\");   // Error: transição inválida: paid → delivered",
+                ].join("\n"),
+              },
+              explanation:
+                "Se os estados só diferem em quais transições permitem, e não no comportamento, uma tabela é mais " +
+                "simples que uma classe por estado. O padrão State compensa quando cada estado tem comportamento próprio.",
+            },
+            {
+              title: "State e Strategy: mesma estrutura, intenções diferentes",
+              context: "O que muda entre os dois é quem troca o objeto e por quê.",
+              code: {
+                language: "javascript",
+                filename: "state-vs-strategy.js",
+                code: [
+                  "// Strategy: o cliente escolhe e, em geral, a estratégia não muda por conta própria",
+                  "const checkout = new Checkout(memberDiscount);",
+                  "",
+                  "// State: o próprio objeto muda de estado como resultado de uma ação",
+                  "const doc = new Doc();     // começa em Draft",
+                  "doc.submit();              // agora está em InReview, e a mudança veio de dentro",
+                ].join("\n"),
+              },
+              explanation:
+                "Nos dois casos há um contexto delegando a um objeto trocável. Se a troca é uma decisão de quem usa, " +
+                "é Strategy; se é uma consequência do ciclo de vida do objeto, é State.",
+            },
+            {
+              title: "Recusar operações inválidas no estado atual",
+              context: "Um benefício do padrão é que cada estado diz claramente o que não permite.",
+              code: {
+                language: "javascript",
+                filename: "invalid-operations.js",
+                code: [
+                  "const doc = new Doc();",
+                  "doc.publish();",
+                  "// Error: envie para revisão antes de publicar — a regra vive no estado Draft",
+                  "",
+                  "// Sem o padrão, a mesma regra seria um `if` dentro de publish():",
+                  "// if (this.status === \"draft\") throw new Error(\"envie para revisão antes de publicar\");",
+                  "// e o mesmo tipo de `if` se repetiria em edit(), submit() e em todos os outros métodos",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada regra aparece uma vez, no estado a que pertence, e não como um `if` repetido em todos os " +
+                "métodos do objeto principal.",
+            },
+          ],
+          exercise: {
+            problem:
+              "`Order` decide o que fazer com `if (this.status === …)` em cada método. Cada novo status obriga a " +
+              "revisar todos os métodos.",
+            problemCode: {
+              language: "javascript",
+              filename: "order.js",
+              code: [
+                "class Order {",
+                "  status = \"pending\";",
+                "",
+                "  pay() {",
+                "    if (this.status !== \"pending\") throw new Error(\"só pedidos pendentes podem ser pagos\");",
+                "    this.status = \"paid\";",
+                "  }",
+                "  ship() {",
+                "    if (this.status !== \"paid\") throw new Error(\"só pedidos pagos podem ser enviados\");",
+                "    this.status = \"shipped\";",
+                "  }",
+                "  cancel() {",
+                "    if (this.status === \"shipped\") throw new Error(\"pedido já enviado\");",
+                "    this.status = \"cancelled\";",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Aplique State: uma classe para cada estado (`Pending`, `Paid`, `Shipped`) com as operações `pay`, `ship` e " +
+              "`cancel`, e faça `Order` delegar ao estado atual.",
+            hint: "Cada estado implementa as três operações: as válidas fazem a transição, e as outras lançam erro.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "order.fixed.js",
+                code: [
+                  "class Pending {",
+                  "  constructor(order) { this.order = order; }",
+                  "  pay() { this.order.setState(new Paid(this.order)); }",
+                  "  ship() { throw new Error(\"só pedidos pagos podem ser enviados\"); }",
+                  "  cancel() { this.order.setState(new Cancelled(this.order)); }",
+                  "}",
+                  "",
+                  "class Paid {",
+                  "  constructor(order) { this.order = order; }",
+                  "  pay() { throw new Error(\"pedido já pago\"); }",
+                  "  ship() { this.order.setState(new Shipped(this.order)); }",
+                  "  cancel() { this.order.setState(new Cancelled(this.order)); }",
+                  "}",
+                  "",
+                  "class Shipped {",
+                  "  constructor(order) { this.order = order; }",
+                  "  pay() { throw new Error(\"pedido já pago\"); }",
+                  "  ship() { throw new Error(\"pedido já enviado\"); }",
+                  "  cancel() { throw new Error(\"pedido já enviado\"); }",
+                  "}",
+                  "",
+                  "class Cancelled {",
+                  "  constructor(order) { this.order = order; }",
+                  "  pay() { throw new Error(\"pedido cancelado\"); }",
+                  "  ship() { throw new Error(\"pedido cancelado\"); }",
+                  "  cancel() { throw new Error(\"pedido já cancelado\"); }",
+                  "}",
+                  "",
+                  "class Order {",
+                  "  state = new Pending(this);",
+                  "  setState(state) { this.state = state; }",
+                  "  pay() { this.state.pay(); }",
+                  "  ship() { this.state.ship(); }",
+                  "  cancel() { this.state.cancel(); }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "`Order` não tem `if` de status: delega ao estado atual. As regras de cada estado ficam juntas, e um " +
+                "novo estado é uma nova classe com as suas transições. A classe `Cancelled` também foi necessária, " +
+                "porque o original tratava o cancelamento como um estado a mais.",
+            },
+          },
         }),
-        concept({ order: 50, title: "Template Method" }),
+        concept({
+          order: 50,
+          title: "Template Method",
+          note: "o esqueleto do algoritmo na base, os passos nas subclasses",
+          summary:
+            "Define o esqueleto de um algoritmo em uma classe base e deixa que as subclasses preencham passos " +
+            "específicos, sem alterar a ordem geral das etapas.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Template Method é um padrão comportamental em que uma classe base define, em um método, a sequência " +
+                "de um algoritmo, e delega alguns passos a métodos que as subclasses implementam ou sobrescrevem. A " +
+                "ordem e a estrutura ficam na base, e cada subclasse só fornece o que varia. É o \"princípio de " +
+                "Hollywood\" (Inversion of Control) em forma de herança: a classe base chama as subclasses, e não o contrário.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "A classe base controla o fluxo e chama os passos; as subclasses só dizem como cada passo é feito, " +
+                "sem poder mudar a ordem.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "O método-modelo chama, em ordem, passos obrigatórios, que as subclasses precisam implementar, e " +
+                "ganchos (hooks), que têm um comportamento padrão e podem ser sobrescritos se necessário.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "template-method.js",
+              code: [
+                "class DataImporter {",
+                "  // Método-modelo: a sequência é fixa e vive na base",
+                "  import(source) {",
+                "    const raw = this.read(source);",
+                "    const rows = this.parse(raw);        // passo obrigatório, definido pelas subclasses",
+                "    this.validate(rows);",
+                "    this.beforeSave(rows);               // gancho opcional",
+                "    return this.save(rows);",
+                "  }",
+                "",
+                "  read(source) { return source; }",
+                "  parse() { throw new Error(\"a subclasse implementa parse\"); }",
+                "  validate(rows) { if (rows.length === 0) throw new Error(\"nada para importar\"); }",
+                "  beforeSave() {}                        // gancho: não faz nada por padrão",
+                "  save(rows) { return `${rows.length} registros salvos`; }",
+                "}",
+                "",
+                "class CsvImporter extends DataImporter {",
+                "  parse(raw) { return raw.split(\"\\n\").map((line) => line.split(\",\")); }",
+                "}",
+                "",
+                "class JsonImporter extends DataImporter {",
+                "  parse(raw) { return JSON.parse(raw); }",
+                "  beforeSave(rows) { console.log(`importando ${rows.length} do JSON`); }   // usa o gancho",
+                "}",
+                "",
+                "new CsvImporter().import(\"a,b\\nc,d\");        // \"2 registros salvos\"",
+                "new JsonImporter().import('[{\"id\":1}]');     // \"1 registros salvos\"",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "As duas subclasses seguem a mesma sequência de `import`, e cada uma só define o que é diferente. A " +
+                "validação e o salvamento não foram repetidos.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Quando várias classes seguem a mesma sequência de passos, e só alguns passos diferem, evitando duplicar o fluxo em cada uma.",
+                "Quando você quer controlar o esqueleto do algoritmo e permitir pontos de extensão bem definidos, como acontece em frameworks.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Usa herança, com o acoplamento forte entre base e subclasses (Composition over Inheritance): mudar a base pode quebrar todas as subclasses.",
+                "Se os passos precisam variar de forma independente, ou em tempo de execução, o Strategy, com peças recebidas, é mais flexível.",
+                "Muitos passos obrigatórios tornam as subclasses trabalhosas de escrever, e uma subclasse que ignora a sequência esperada quebra o contrato da base.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Ganchos opcionais",
+              context: "Um gancho é um passo com comportamento padrão vazio, que a subclasse sobrescreve só se precisar.",
+              code: {
+                language: "javascript",
+                filename: "hook.js",
+                code: [
+                  "class Job {",
+                  "  run() {",
+                  "    this.onStart();       // gancho",
+                  "    const result = this.execute();",
+                  "    this.onFinish(result); // gancho",
+                  "    return result;",
+                  "  }",
+                  "  execute() { throw new Error(\"obrigatório\"); }",
+                  "  onStart() {}",
+                  "  onFinish() {}",
+                  "}",
+                  "",
+                  "class SilentJob extends Job { execute() { return 42; } }   // só o obrigatório",
+                  "class LoggedJob extends Job {",
+                  "  execute() { return 42; }",
+                  "  onFinish(result) { console.log(`terminou com ${result}`); }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "`SilentJob` implementa só o passo obrigatório, e `LoggedJob` acrescenta um gancho. A base não precisa " +
+                "saber quais subclasses usam quais ganchos.",
+            },
+            {
+              title: "A alternativa por composição",
+              context: "Os mesmos passos podem ser recebidos como funções, sem herança.",
+              code: {
+                language: "javascript",
+                filename: "composition-alternative.js",
+                code: [
+                  "function runImport(source, { parse, validate = defaultValidate, save = defaultSave }) {",
+                  "  const rows = parse(source);",
+                  "  validate(rows);",
+                  "  return save(rows);",
+                  "}",
+                  "",
+                  "const defaultValidate = (rows) => { if (rows.length === 0) throw new Error(\"nada para importar\"); };",
+                  "const defaultSave = (rows) => `${rows.length} registros salvos`;",
+                  "",
+                  "runImport(\"a,b\\nc,d\", { parse: (raw) => raw.split(\"\\n\").map((line) => line.split(\",\")) });",
+                ].join("\n"),
+              },
+              explanation:
+                "O esqueleto continua fixo em `runImport`, e os passos entram como funções. É Strategy aplicado a " +
+                "cada etapa: mais flexível que herança, e em geral a forma preferida em JavaScript.",
+            },
+            {
+              title: "A subclasse que quebra o esqueleto",
+              context: "O padrão só protege o fluxo por convenção; nada impede uma subclasse de sobrescrever o método-modelo.",
+              code: {
+                language: "javascript",
+                filename: "broken-skeleton.js",
+                code: [
+                  "class BadImporter extends DataImporter {",
+                  "  // Sobrescreve o método-modelo e pula a validação",
+                  "  import(source) {",
+                  "    const rows = this.parse(this.read(source));",
+                  "    return this.save(rows);",
+                  "  }",
+                  "  parse(raw) { return JSON.parse(raw); }",
+                  "}",
+                  "",
+                  "new BadImporter().import(\"[]\");   // \"0 registros salvos\" — a validação foi ignorada",
+                ].join("\n"),
+              },
+              explanation:
+                "JavaScript não tem como declarar o método-modelo como final. A proteção depende de disciplina e de " +
+                "revisão, e é outro motivo pelo qual a composição costuma ser mais segura.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Os dois relatórios repetem o mesmo fluxo de carregar, filtrar, formatar e imprimir, diferindo só no " +
+              "carregamento e no formato. Uma correção no filtro precisa ser feita nos dois.",
+            problemCode: {
+              language: "javascript",
+              filename: "reports.js",
+              code: [
+                "class SalesReport {",
+                "  generate() {",
+                "    const rows = [{ total: 100 }, { total: 0 }, { total: 50 }];   // carrega vendas",
+                "    const filtered = rows.filter((row) => row.total > 0);",
+                "    const text = filtered.map((row) => `venda: ${row.total}`).join(\"\\n\");",
+                "    console.log(text);",
+                "  }",
+                "}",
+                "",
+                "class StockReport {",
+                "  generate() {",
+                "    const rows = [{ total: 7 }, { total: 0 }];                     // carrega estoque",
+                "    const filtered = rows.filter((row) => row.total > 0);",
+                "    const text = filtered.map((row) => `em estoque: ${row.total}`).join(\"\\n\");",
+                "    console.log(text);",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Aplique Template Method: uma classe base `Report` com o fluxo em `generate()`, e as subclasses " +
+              "implementando só `load()` e `format(row)`.",
+            hint: "O filtro e a impressão ficam na base. `load` e `format` são os passos que cada subclasse define.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "reports.fixed.js",
+                code: [
+                  "class Report {",
+                  "  generate() {                                       // método-modelo",
+                  "    const rows = this.load();",
+                  "    const filtered = rows.filter((row) => row.total > 0);",
+                  "    const text = filtered.map((row) => this.format(row)).join(\"\\n\");",
+                  "    console.log(text);",
+                  "  }",
+                  "  load() { throw new Error(\"a subclasse implementa load\"); }",
+                  "  format() { throw new Error(\"a subclasse implementa format\"); }",
+                  "}",
+                  "",
+                  "class SalesReport extends Report {",
+                  "  load() { return [{ total: 100 }, { total: 0 }, { total: 50 }]; }",
+                  "  format(row) { return `venda: ${row.total}`; }",
+                  "}",
+                  "",
+                  "class StockReport extends Report {",
+                  "  load() { return [{ total: 7 }, { total: 0 }]; }",
+                  "  format(row) { return `em estoque: ${row.total}`; }",
+                  "}",
+                  "",
+                  "new SalesReport().generate();",
+                ].join("\n"),
+              },
+              explanation:
+                "O filtro e a impressão existem uma vez, na base, e uma correção vale para os dois relatórios. Cada " +
+                "subclasse só define o que é diferente, o carregamento e o formato.",
+            },
+          },
+        }),
       ],
     }),
     module({
