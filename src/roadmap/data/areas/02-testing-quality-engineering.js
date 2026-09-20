@@ -28,7 +28,7 @@ export default area({
             "Verificar automaticamente que a menor unidade de comportamento — uma função, um método — faz o que " +
             "deveria, isolada de rede, banco de dados ou UI, e em milissegundos.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -38,7 +38,15 @@ export default area({
                 "sentido testar sozinho, sem depender de colaboradores externos como banco de dados, rede ou " +
                 "sistema de arquivos.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Unit Testing isola a menor unidade de comportamento e verifica automaticamente se ela continua " +
+                "correta — rápido o bastante para rodar a cada mudança, e preciso o bastante para apontar " +
+                "exatamente o que quebrou.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -54,7 +62,7 @@ export default area({
                 "humano (ou um usuário em produção) tropeça no bug. Com eles, o próprio código diz se ainda " +
                 "funciona depois de uma mudança — a rede de segurança que permite refatorar sem medo.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "abaixo, uma função pura e um teste de unidade escrito à mão, sem framework:" },
             {
               type: "code",
@@ -82,12 +90,22 @@ export default area({
                 "nada de rede, banco ou tempo de espera. Se a lógica do desconto mudar amanhã e quebrar esse caso, " +
                 "essa função lança um erro na hora, sem precisar de um humano clicando na tela.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Unit Testing isola a menor unidade de comportamento e verifica automaticamente se ela continua " +
-                "correta — rápido o bastante para rodar a cada mudança, e preciso o bastante para apontar " +
-                "exatamente o que quebrou.",
+              type: "list",
+              items: [
+                "Para regras de negócio e lógica com entradas e saídas claras, onde o feedback em milissegundos compensa.",
+                "Para receber, a cada mudança, um aviso preciso de qual unidade quebrou.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Não prova que as unidades funcionam juntas: incompatibilidades de schema ou de contrato só aparecem em " +
+                "testes de integração.",
+                "Testar detalhes internos, em vez do comportamento observável, faz o teste quebrar a cada refatoração.",
+              ],
             },
           ],
           examples: [
@@ -165,7 +183,7 @@ export default area({
             "A verificação atômica que compara um valor real com um valor esperado e decide, sozinha, se aquele " +
             "pedaço do teste passa ou falha — o bloco de construção sobre o qual todo teste automatizado é montado.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -174,7 +192,14 @@ export default area({
                 "afirmação é verdadeira, nada acontece; se é falsa, a assertion lança um erro que interrompe o " +
                 "teste e o marca como falho.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Uma assertion compara um valor real com o esperado e falha ruidosamente quando eles divergem — é " +
+                "o mecanismo atômico de pass/fail sobre o qual todo teste automatizado é construído.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -190,7 +215,7 @@ export default area({
                 "executaria código e um humano teria que olhar a saída para decidir se está certa. A assertion " +
                 "decide isso sozinha, todas as vezes, sem fadiga nem distração.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "uma assertion simples, escrita à mão:" },
             {
               type: "code",
@@ -213,11 +238,14 @@ export default area({
                 "test runner captura para marcar o teste como falho. Frameworks como Jest ou Vitest oferecem uma " +
                 "API mais rica (expect(actual).toBe(expected)), mas a ideia por baixo é exatamente essa.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Uma assertion compara um valor real com o esperado e falha ruidosamente quando eles divergem — é " +
-                "o mecanismo atômico de pass/fail sobre o qual todo teste automatizado é construído.",
+              type: "list",
+              items: [
+                "Um teste sem assertion passa sempre e não verifica nada; confira que ele falharia se o código estivesse errado.",
+                "Assertions vagas, como `toBeTruthy()`, aprovam resultados errados; compare com o valor esperado exato.",
+                "Muitas assertions em um só teste escondem qual delas falhou e o que realmente está sendo verificado.",
+              ],
             },
           ],
           examples: [
@@ -313,7 +341,7 @@ export default area({
             "As três fases universais de um teste de unidade: preparar o cenário (Arrange), executar a ação sob " +
             "teste (Act) e verificar o resultado (Assert) — sempre nessa ordem, sempre separadas.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -321,7 +349,14 @@ export default area({
                 "claramente separados: Arrange prepara tudo que o teste precisa (dados, objetos, dublês); Act " +
                 "executa a única ação que está sendo testada; Assert verifica se o resultado da ação é o esperado.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "AAA separa um teste em preparar, executar e verificar — a mesma sequência em todo teste, o que " +
+                "torna qualquer teste legível de relance, mesmo por quem nunca o viu antes.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -337,7 +372,7 @@ export default area({
                 "uma linha fazendo coisas diferentes, é sinal de que o teste está testando mais de um " +
                 "comportamento ao mesmo tempo.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "as três fases marcadas explicitamente com comentários:" },
             {
               type: "code",
@@ -366,11 +401,21 @@ export default area({
                 "applyDiscount; Assert compara o total resultante com o esperado. Não há preparação misturada " +
                 "com verificação — cada bloco tem uma responsabilidade.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "AAA separa um teste em preparar, executar e verificar — a mesma sequência em todo teste, o que " +
-                "torna qualquer teste legível de relance, mesmo por quem nunca o viu antes.",
+              type: "list",
+              items: [
+                "Em todo teste de unidade, para que qualquer pessoa reconheça as três fases de relance.",
+                "Ao revisar um teste confuso: separar as três fases costuma mostrar o que está sobrando.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Um Arrange muito longo indica código difícil de testar ou fixture que deveria ser extraída.",
+                "Várias fases Act e Assert no mesmo teste indicam que ele verifica mais de um comportamento; divida-o.",
+              ],
             },
           ],
           examples: [
@@ -496,7 +541,7 @@ export default area({
             "A mesma estrutura de três fases do Arrange-Act-Assert, na fraseologia do Behavior-Driven Development: " +
             "dado um contexto (Given), quando uma ação acontece (When), então um resultado é esperado (Then).",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -506,7 +551,14 @@ export default area({
                 "Estruturalmente é a mesma ideia de Arrange-Act-Assert — a diferença é o vocabulário, voltado " +
                 "para descrever comportamento em linguagem próxima da de negócio.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Given-When-Then é Arrange-Act-Assert com outro nome, pensado para ler como uma especificação de " +
+                "comportamento em linguagem de negócio — útil quando o teste também documenta um requisito.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -522,7 +574,7 @@ export default area({
                 "escolhem uma ou outra fraseologia por convenção, ou por já usarem ferramentas de BDD (como " +
                 "Cucumber) que esperam esse vocabulário nos arquivos de especificação.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "o mesmo teste de desconto do exemplo anterior, com a fraseologia Given-When-Then:" },
             {
               type: "code",
@@ -551,11 +603,21 @@ export default area({
                 "de BDD como Cucumber, Given/When/Then viram literalmente linhas de um arquivo .feature, " +
                 "separadas do código que as implementa (\"step definitions\").",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Given-When-Then é Arrange-Act-Assert com outro nome, pensado para ler como uma especificação de " +
-                "comportamento em linguagem de negócio — útil quando o teste também documenta um requisito.",
+              type: "list",
+              items: [
+                "Quando o teste também documenta um requisito e será lido por quem não programa.",
+                "Em BDD, com cenários escritos em linguagem de negócio, como em arquivos `.feature`.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Em testes técnicos de unidade, a cerimônia de linguagem de negócio acrescenta pouco sobre o AAA.",
+                "Só compensa se alguém de negócio de fato lê os cenários; do contrário, vira burocracia.",
+              ],
             },
           ],
           examples: [
@@ -683,7 +745,7 @@ export default area({
             "O estado ou conjunto de dados conhecido e fixo que um teste precisa existir antes de rodar — o " +
             "cenário reutilizável que o bloco Arrange constrói (ou reconstrói) a cada execução.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -692,7 +754,15 @@ export default area({
                 "encontrar pronta antes de começar. \"Fixture\" tanto se refere ao dado em si quanto ao código " +
                 "que o prepara (e, às vezes, o desfaz depois).",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Uma fixture é o estado conhecido e reutilizável que um teste assume como ponto de partida — " +
+                "construída (e, quando necessário, desfeita) de forma consistente para que cada teste comece do " +
+                "mesmo lugar, isolado dos demais.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -708,7 +778,7 @@ export default area({
                 "limpa, sem restos do teste anterior. Um framework de testes chama a função de setup antes de " +
                 "cada caso justamente para isso — sem fixtures frescas, testes passam a depender da ordem em que rodam.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "uma fixture construída por uma função auxiliar, chamada no início de cada teste:" },
             {
               type: "code",
@@ -738,12 +808,21 @@ export default area({
                 "um carrinho com itens, ele chama a mesma função e recebe uma instância nova, sem interferir " +
                 "neste teste.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Uma fixture é o estado conhecido e reutilizável que um teste assume como ponto de partida — " +
-                "construída (e, quando necessário, desfeita) de forma consistente para que cada teste comece do " +
-                "mesmo lugar, isolado dos demais.",
+              type: "list",
+              items: [
+                "Quando vários testes partem do mesmo cenário, para não repetir o Arrange em cada um.",
+                "Quando é preciso desfazer o estado depois, como limpar banco ou arquivos, com setup e teardown explícitos.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Fixture compartilhada e mutável cria dependência entre testes: um altera o estado e o outro falha.",
+                "Fixtures grandes demais escondem do teste o que importa; crie só os dados que o teste usa.",
+              ],
             },
           ],
           examples: [
@@ -850,7 +929,7 @@ export default area({
             "cada assertion e reporta o que passou, o que falhou e por quê — a maquinaria que transforma testes " +
             "soltos em uma suíte executável.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -859,7 +938,14 @@ export default area({
                 "dentro dele, e produz um relatório: quantos passaram, quantos falharam, e a mensagem de erro de " +
                 "cada falha. Jest, Vitest, JUnit e pytest são exemplos de test runners.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Um test runner descobre, executa isoladamente e reporta o resultado de cada teste — é a camada " +
+                "de infraestrutura que transforma um punhado de funções de teste soltas numa suíte confiável e automatizável.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -875,7 +961,7 @@ export default area({
                 "cada salvamento, ou como gate obrigatório num pipeline de CI, é o runner — não os testes " +
                 "individualmente — que decide se a suíte como um todo passou.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "um runner mínimo, escrito à mão, que executa uma lista de funções de teste:" },
             {
               type: "code",
@@ -908,11 +994,21 @@ export default area({
                 "coisa, só que descobrem os testes automaticamente (varrendo arquivos) e produzem relatórios " +
                 "muito mais ricos.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Um test runner descobre, executa isoladamente e reporta o resultado de cada teste — é a camada " +
-                "de infraestrutura que transforma um punhado de funções de teste soltas numa suíte confiável e automatizável.",
+              type: "list",
+              items: [
+                "Em qualquer suíte automatizada: ele descobre, executa e reporta, localmente e no CI.",
+                "Com relatório legível por máquina, para o CI falhar o build quando um teste falha.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "O runner não garante testes bons: ele apenas executa o que foi escrito.",
+                "Isolamento entre testes depende de como você os escreve; estado global compartilhado ainda os acopla.",
+              ],
             },
           ],
           examples: [
@@ -1006,7 +1102,7 @@ export default area({
             "Testar como duas ou mais unidades — já testadas isoladamente — funcionam quando combinadas de " +
             "verdade: um serviço e seu banco de dados, um componente e a API que ele chama.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -1016,7 +1112,15 @@ export default area({
                 "conversa com um banco de dados de verdade (ou um banco de teste), um client HTTP conversa com " +
                 "uma API real.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Integration Testing verifica a fronteira entre unidades reais — sem substituir dependências por " +
+                "dublês — para pegar falhas que só aparecem quando as peças se encaixam de verdade, como " +
+                "incompatibilidades de schema ou de contrato.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -1033,7 +1137,7 @@ export default area({
                 "separadamente e já foram verificadas em isolamento. É por isso que Integration Testing " +
                 "normalmente vem depois de Unit Testing na progressão de um projeto, não no lugar dele.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "um teste que exercita um repositório contra um banco de dados de teste de verdade (não um dublê):" },
             {
               type: "code",
@@ -1060,12 +1164,21 @@ export default area({
                 "mais lento que um unit test (envolve I/O), mas prova algo que nenhum dublê provaria: que save e " +
                 "findById realmente funcionam juntos contra o banco de verdade.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Integration Testing verifica a fronteira entre unidades reais — sem substituir dependências por " +
-                "dublês — para pegar falhas que só aparecem quando as peças se encaixam de verdade, como " +
-                "incompatibilidades de schema ou de contrato.",
+              type: "list",
+              items: [
+                "Nas fronteiras entre unidades reais: serviço e banco de dados, componente e API.",
+                "Para verificar consultas, schemas e contratos que um dublê de teste nunca revelaria.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "São mais lentos e frágeis que os de unidade; não os use para cobrir cada regra de negócio.",
+                "Exigem ambiente e dados controlados, como um banco de teste, o que aumenta o custo de manutenção.",
+              ],
             },
           ],
           examples: [
@@ -1187,7 +1300,7 @@ export default area({
             "Exercitar o sistema inteiro, de ponta a ponta, do jeito que um usuário real o usaria — a interface, " +
             "o backend, o banco de dados e tudo entre eles, numa única jornada.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -1197,7 +1310,14 @@ export default area({
                 "há nenhuma parte do sistema substituída por dublê; é o caso limite de Integration Testing, " +
                 "levado ao sistema inteiro.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "E2E Testing exercita o sistema inteiro pela ótica do usuário, sem nenhuma parte substituída — o " +
+                "teste mais próximo da realidade, mas também o mais lento e caro, reservado para os fluxos mais críticos.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -1215,7 +1335,7 @@ export default area({
                 "sistema). Por isso, times tendem a ter poucos E2E tests, cobrindo só os fluxos mais críticos — " +
                 "não é uma substituição para unit e integration tests, é um complemento no topo.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "paragraph",
               text: "um teste E2E usando uma ferramenta de automação de navegador (a API abaixo é ilustrativa, no estilo Playwright/Cypress):",
@@ -1247,11 +1367,21 @@ export default area({
                 "qualquer camada quebrar (frontend, API, banco, gateway de pagamento), esse teste falha, porque " +
                 "ele depende de todas elas funcionando juntas.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "E2E Testing exercita o sistema inteiro pela ótica do usuário, sem nenhuma parte substituída — o " +
-                "teste mais próximo da realidade, mas também o mais lento e caro, reservado para os fluxos mais críticos.",
+              type: "list",
+              items: [
+                "Para os fluxos mais críticos do negócio, como cadastro, login e pagamento.",
+                "Para confirmar que o sistema inteiro funciona no ambiente mais próximo de produção.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "São os mais lentos, caros e instáveis; cobrir tudo com E2E torna a suíte lenta e pouco confiável.",
+                "Quando falham, indicam que algo quebrou, mas raramente onde; regras de negócio ficam melhor em testes menores.",
+              ],
             },
           ],
           examples: [
