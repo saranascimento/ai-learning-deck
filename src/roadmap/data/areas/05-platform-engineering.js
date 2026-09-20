@@ -3321,16 +3321,784 @@ export default area({
         "paginação/filtro/ordenação → idempotência e rate limiting → versionamento/deprecação → OpenAPI → " +
         "middleware. Idempotency Key e Rate Limiting canônicos aqui (mudança não silenciosa vs Fase 1).",
       concepts: [
-        concept({ order: 10, title: "API" }),
+        concept({
+          order: 10,
+          title: "API",
+          note: "a interface pela qual um programa usa outro",
+          summary:
+            "Uma interface que um sistema oferece para que outros programas o usem, sem conhecer o seu " +
+            "interior — na web, geralmente um conjunto de endereços HTTP que recebem e devolvem dados.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "API (Application Programming Interface) é a fronteira que um software expõe para ser usado por " +
+                "outro software. Quem usa, o consumidor, sabe o que pode pedir e o que receberá, mas não como o " +
+                "resultado é produzido. É a aplicação de Interface e Abstraction (Programming Fundamentals) no nível " +
+                "de sistemas: em vez de chamar uma função na mesma memória, um programa envia uma requisição pela " +
+                "rede a outro. Uma API web costuma trafegar JSON sobre HTTP, mas há outros estilos, como GraphQL, gRPC " +
+                "e webhooks.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "A API é a porta de entrada de um sistema: quem consome depende só do que ela promete, e o " +
+                "sistema pode mudar por dentro sem que o consumidor perceba.",
+            },
+            { type: "heading", text: "Por que importa" },
+            {
+              type: "paragraph",
+              text:
+                "Uma API permite que equipes diferentes, ou empresas diferentes, integrem os seus sistemas sem " +
+                "combinar detalhes internos. Também é o ponto em que o sistema passa a ter clientes que você não " +
+                "controla: o que se publica precisa continuar funcionando, e cada decisão de design, de nomes, de " +
+                "formatos e de erros, vira algo que outros programas passam a depender.",
+            },
+            { type: "heading", text: "Na prática" },
+            { type: "paragraph", text: "uma API mínima que expõe produtos, e um consumidor que a usa sem conhecer a implementação:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "api.js",
+              code: [
+                "import http from \"node:http\";",
+                "",
+                "// Provedor: o que está dentro (um array, um banco, outro serviço) é invisível para quem consome",
+                "const products = [{ id: 1, name: \"caneta\", price: 5 }];",
+                "",
+                "http.createServer((request, response) => {",
+                "  if (request.method === \"GET\" && request.url === \"/products\") {",
+                "    response.writeHead(200, { \"content-type\": \"application/json\" });",
+                "    return response.end(JSON.stringify(products));",
+                "  }",
+                "  response.writeHead(404).end();",
+                "}).listen(3000);",
+                "",
+                "// Consumidor: só conhece o endereço e o formato da resposta",
+                "const list = await fetch(\"http://localhost:3000/products\").then((r) => r.json());",
+                "list[0].name;   // \"caneta\"",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Se amanhã os produtos passarem a vir de um banco de dados, o consumidor continua igual, desde que o " +
+                "endereço e o formato da resposta sejam os mesmos.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "Expor o modelo interno como está, com tabelas e campos do banco, prende a API à implementação; qualquer refatoração vira uma quebra para os consumidores.",
+                "Uma API publicada é difícil de retirar: consumidores que você não conhece passam a depender até dos comportamentos que você não pretendia prometer.",
+                "Uma API não é só os endereços: erros, limites, autenticação, ordem dos campos e tempos de resposta também fazem parte do que os consumidores sentem.",
+                "Ser \"uma API\" não garante ser boa: sem consistência de nomes, de formatos e de erros, cada endpoint precisa ser aprendido do zero.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "A mesma capacidade, estilos diferentes",
+              context: "\"API\" é o conceito, e REST, GraphQL e gRPC são formas de organizá-la.",
+              code: {
+                language: "javascript",
+                filename: "styles.js",
+                code: [
+                  "// REST: recursos e métodos HTTP",
+                  "await fetch(\"/orders/42\");",
+                  "",
+                  "// GraphQL: uma consulta que pede exatamente os campos desejados",
+                  "await fetch(\"/graphql\", {",
+                  "  method: \"POST\",",
+                  "  body: JSON.stringify({ query: \"{ order(id: 42) { id total } }\" }),",
+                  "});",
+                  "",
+                  "// Webhook: o provedor chama você quando algo acontece (o fluxo é invertido)",
+                  "// POST https://seu-sistema.com/webhooks/pagamento   ← enviado pelo provedor",
+                ].join("\n"),
+              },
+              explanation:
+                "Em todos os casos há um contrato entre quem oferece e quem consome. Muda a forma de expressá-lo e quem " +
+                "inicia a conversa.",
+            },
+            {
+              title: "Esconder a implementação atrás da API",
+              context: "O consumidor não deve perceber uma troca no que fica por trás.",
+              code: {
+                language: "javascript",
+                filename: "hide-implementation.js",
+                code: [
+                  "// Versão 1: os dados vêm da memória",
+                  "const findProduct = (id) => products.find((p) => p.id === id);",
+                  "",
+                  "// Versão 2: vêm de um banco, e a API continua igual",
+                  "const findProduct2 = async (id) => db.query(\"SELECT id, name, price FROM products WHERE id = $1\", [id]);",
+                  "",
+                  "// Nos dois casos, a resposta pública é a mesma:",
+                  "// GET /products/1  →  { \"id\": 1, \"name\": \"caneta\", \"price\": 5 }",
+                ].join("\n"),
+              },
+              explanation:
+                "A troca de memória para banco de dados não aparece para quem consome. É o benefício de depender de um " +
+                "contrato, e não de uma implementação.",
+            },
+            {
+              title: "O que vaza quando o modelo interno vira a API",
+              context: "Expor as tabelas como estão cria dependências que você não queria assumir.",
+              code: {
+                language: "javascript",
+                filename: "leaky-api.js",
+                code: [
+                  "// Resposta que vaza o esquema do banco",
+                  "// { \"prod_id\": 1, \"prod_nm\": \"caneta\", \"flg_ativo\": 1, \"dt_cad\": \"2026-01-05 10:00:00\" }",
+                  "",
+                  "// Resposta desenhada para o consumidor",
+                  "// { \"id\": 1, \"name\": \"caneta\", \"active\": true, \"createdAt\": \"2026-01-05T10:00:00Z\" }",
+                  "",
+                  "const toProductResponse = (row) => ({",
+                  "  id: row.prod_id,",
+                  "  name: row.prod_nm,",
+                  "  active: row.flg_ativo === 1,",
+                  "  createdAt: new Date(row.dt_cad.replace(\" \", \"T\") + \"Z\").toISOString(),",
+                  "});",
+                ].join("\n"),
+              },
+              explanation:
+                "Com uma camada de tradução, o esquema pode mudar sem quebrar os consumidores. É o mesmo raciocínio do " +
+                "DTO, aplicado à fronteira do sistema.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O endpoint devolve a linha do banco como está, com nomes de colunas e códigos internos. O time quer " +
+              "renomear as colunas, mas o aplicativo móvel depende delas.",
+            problemCode: {
+              language: "javascript",
+              filename: "customer-endpoint.js",
+              code: [
+                "// Linha do banco: { cli_id: 7, cli_nm: \"Ana\", cli_st: \"A\", cli_lim: \"1500.00\" }",
+                "function getCustomer(row) {",
+                "  return row;   // devolve tudo como está",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Crie uma resposta de API estável: `id`, `name`, `active` (booleano) e `creditLimit` (número), " +
+              "independente dos nomes das colunas.",
+            hint: "Mapeie cada coluna para o campo público. `cli_st === \"A\"` significa ativo, e o limite chega como texto.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "customer-endpoint.fixed.js",
+                code: [
+                  "function toCustomerResponse(row) {",
+                  "  return {",
+                  "    id: row.cli_id,",
+                  "    name: row.cli_nm,",
+                  "    active: row.cli_st === \"A\",",
+                  "    creditLimit: Number(row.cli_lim),",
+                  "  };",
+                  "}",
+                  "",
+                  "toCustomerResponse({ cli_id: 7, cli_nm: \"Ana\", cli_st: \"A\", cli_lim: \"1500.00\" });",
+                  "// { id: 7, name: \"Ana\", active: true, creditLimit: 1500 }",
+                ].join("\n"),
+              },
+              explanation:
+                "Os nomes das colunas ficaram restritos à função de tradução. O banco pode ser renomeado, e o " +
+                "contrato público continua o mesmo.",
+            },
+          },
+        }),
         concept({
           order: 20,
           title: "API Contract",
           requires: ["Programming Foundations / Programming Fundamentals / Contract"],
           note: "aplica Contract (pré/pós-condições) a fronteira de serviço; Testing & Quality Engineering / Contract Testing verifica isto",
           revisit: ["Programming Foundations / Programming Fundamentals / Contract", "Testing & Quality Engineering / Testing Strategy / Contract Testing"],
+          summary:
+            "Tudo o que a API promete aos seus consumidores — endereços, formatos de entrada e de saída, erros, " +
+            "limites e comportamentos —, e as regras sobre o que pode mudar sem quebrar quem depende dela.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "O contrato de uma API é a promessa entre provedor e consumidor: quais operações existem, o que " +
+                "cada uma exige (pré-condições, como campos obrigatórios e permissões), o que devolve " +
+                "(pós-condições, como o formato e os status) e o que sempre vale (invariantes, como \"o total nunca " +
+                "é negativo\"). É a aplicação de Contract (Programming Fundamentals) a uma fronteira entre serviços, e " +
+                "é o que os testes de contrato (Contract Testing) verificam.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "O contrato é o que você não pode mudar sem avisar: consumidores dependem dele, e tudo o que a " +
+                "API expõe passa a fazer parte dele, querendo ou não.",
+            },
+            { type: "heading", text: "Por que importa" },
+            {
+              type: "paragraph",
+              text:
+                "Com o contrato explícito, provedor e consumidor evoluem em paralelo: o provedor sabe o que pode " +
+                "alterar sem risco, e o consumidor sabe no que confiar. As mudanças se dividem em compatíveis, que " +
+                "não exigem nenhuma ação dos consumidores (adicionar um campo opcional, um novo endpoint), e " +
+                "incompatíveis, ou breaking changes, que quebram quem já usa (remover ou renomear um campo, mudar um " +
+                "tipo, tornar obrigatório o que era opcional).",
+            },
+            { type: "heading", text: "Na prática" },
+            { type: "paragraph", text: "um contrato escrito como dados, e uma verificação de que uma resposta o cumpre:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "api-contract.js",
+              code: [
+                "// Contrato de GET /orders/:id (resumido)",
+                "const orderContract = {",
+                "  required: { id: \"string\", status: \"string\", total: \"number\" },",
+                "  optional: { note: \"string\" },",
+                "  statuses: [\"pending\", \"paid\", \"shipped\"],",
+                "};",
+                "",
+                "function checkResponse(contract, body) {",
+                "  const problems = [];",
+                "  for (const [field, type] of Object.entries(contract.required)) {",
+                "    if (typeof body[field] !== type) problems.push(`campo ${field}: esperado ${type}`);",
+                "  }",
+                "  if (!contract.statuses.includes(body.status)) problems.push(`status inválido: ${body.status}`);",
+                "  return problems;",
+                "}",
+                "",
+                "checkResponse(orderContract, { id: \"42\", status: \"paid\", total: 100 });   // []",
+                "checkResponse(orderContract, { id: 42, status: \"lost\", total: 100 });",
+                "// [\"campo id: esperado string\", \"status inválido: lost\"]",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Uma verificação assim, executada nos testes, avisa quando uma mudança no provedor quebra o que foi " +
+                "prometido, antes que o consumidor descubra em produção.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "O contrato inclui o que não foi escrito: se o campo sempre veio ordenado ou nunca veio nulo, alguém já depende disso; qualquer comportamento observável pode virar uma dependência.",
+                "Trocar o tipo de um campo (de número para texto), mudar o significado de um valor ou o formato de uma data é breaking change, mesmo que o nome do campo seja o mesmo.",
+                "Adicionar um valor a um enum pode quebrar consumidores que só conhecem os anteriores; avise-os para tratarem valores desconhecidos.",
+                "O consumidor deve ser tolerante: ignorar campos que não conhece, para que o provedor possa acrescentá-los sem quebrar ninguém (tolerant reader).",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Mudanças compatíveis e incompatíveis",
+              context: "Saber classificar uma mudança evita quebrar consumidores sem perceber.",
+              code: {
+                language: "text",
+                filename: "changes.txt",
+                code: [
+                  "Compatíveis (seguras)                    Incompatíveis (breaking)",
+                  "----------------------------------------------------------------------------",
+                  "Adicionar um campo opcional na resposta   Remover ou renomear um campo",
+                  "Adicionar um endpoint novo                Mudar o tipo de um campo (número → texto)",
+                  "Aceitar um parâmetro opcional novo        Tornar obrigatório um parâmetro opcional",
+                  "Tornar opcional um campo obrigatório      Restringir os valores aceitos",
+                  "                                          Mudar o significado de um status ou de um código",
+                ].join("\n"),
+              },
+              explanation:
+                "A regra geral: o provedor pode dar mais do que prometeu, e nunca menos; e pode aceitar mais do que " +
+                "exigia, nunca menos.",
+            },
+            {
+              title: "Tolerant reader: ignorar o que não se conhece",
+              context: "Um consumidor que quebra diante de um campo novo torna qualquer evolução da API um risco.",
+              code: {
+                language: "javascript",
+                filename: "tolerant-reader.js",
+                code: [
+                  "// Frágil: falha se a API acrescentar qualquer campo",
+                  "function parseStrict(body) {",
+                  "  const allowed = [\"id\", \"status\", \"total\"];",
+                  "  for (const key of Object.keys(body)) {",
+                  "    if (!allowed.includes(key)) throw new Error(`campo inesperado: ${key}`);",
+                  "  }",
+                  "  return body;",
+                  "}",
+                  "",
+                  "// Tolerante: pega só o que usa, e ignora o resto",
+                  "function parseTolerant({ id, status, total }) {",
+                  "  return { id, status, total };",
+                  "}",
+                  "",
+                  "parseTolerant({ id: \"42\", status: \"paid\", total: 100, novoCampo: true });   // { id: \"42\", ... }",
+                ].join("\n"),
+              },
+              explanation:
+                "O leitor tolerante permite que o provedor acrescente campos sem coordenar com todos os consumidores. " +
+                "É a metade do consumidor no acordo de compatibilidade.",
+            },
+            {
+              title: "Pré e pós-condições em uma operação",
+              context: "O contrato de uma operação diz o que ela exige e o que garante.",
+              code: {
+                language: "text",
+                filename: "operation-contract.txt",
+                code: [
+                  "POST /orders",
+                  "",
+                  "Pré-condições (o que o consumidor precisa garantir):",
+                  "  - autenticado, com permissão orders:create",
+                  "  - corpo com items (1 a 50 itens), cada um com productId e quantity inteira > 0",
+                  "",
+                  "Pós-condições (o que o provedor garante em caso de sucesso):",
+                  "  - 201 Created, com Location apontando para /orders/{id}",
+                  "  - corpo com id, status = \"pending\" e total calculado pelo servidor",
+                  "",
+                  "Invariantes:",
+                  "  - total = soma de (preço atual do produto × quantity)",
+                  "  - um pedido nunca tem 0 itens",
+                ].join("\n"),
+              },
+              explanation:
+                "É Contract (Programming Fundamentals) em nível de serviço. Escrito assim, serve de base tanto para a " +
+                "documentação quanto para os testes de contrato.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A equipe quer renomear o campo `preco` para `price` e passar o valor de reais (número) para centavos " +
+              "(inteiro). Dois consumidores usam a API hoje.",
+            problemCode: {
+              language: "javascript",
+              filename: "rename-field.js",
+              code: [
+                "// Resposta atual",
+                "const current = { id: 1, nome: \"caneta\", preco: 5.5 };",
+                "",
+                "// Mudança planejada, aplicada de uma vez",
+                "const planned = { id: 1, nome: \"caneta\", price: 550 };",
+              ].join("\n"),
+            },
+            task:
+              "Classifique a mudança e proponha uma transição compatível: o que a resposta deve conter durante o período " +
+              "de migração para que ninguém quebre?",
+            hint: "Renomear e mudar a unidade são breaking changes. Acrescente o campo novo sem remover o antigo, e só retire o antigo depois.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "rename-field.fixed.js",
+                code: [
+                  "// Fase 1: os dois campos convivem (mudança compatível: só acrescenta)",
+                  "function toProductResponse(product) {",
+                  "  return {",
+                  "    id: product.id,",
+                  "    nome: product.name,",
+                  "    preco: product.priceInCents / 100,   // antigo: mantido, ainda em reais (deprecado)",
+                  "    price: product.priceInCents,         // novo: em centavos",
+                  "  };",
+                  "}",
+                  "",
+                  "toProductResponse({ id: 1, name: \"caneta\", priceInCents: 550 });",
+                  "// { id: 1, nome: \"caneta\", preco: 5.5, price: 550 }",
+                  "",
+                  "// Fase 2: avisar os consumidores (documentação e cabeçalhos de depreciação) e medir quem ainda usa `preco`",
+                  "// Fase 3: só depois que ninguém mais usar, remover `preco`",
+                ].join("\n"),
+              },
+              explanation:
+                "Acrescentar é compatível, e remover não é. Com os dois campos convivendo, cada consumidor migra no seu " +
+                "ritmo, e a remoção só acontece quando é segura.",
+            },
+          },
         }),
-        concept({ order: 30, title: "REST", requires: ["API"], note: "restrições REST, HATEOAS (menção), maturidade de Richardson" }),
-        concept({ order: 40, title: "Resource Modeling & RESTful URLs", requires: ["REST"], subtopics: ["recursos como substantivos", "coleção × item", "aninhamento/hierarquia", "path × query param"], note: "consolidada (A15)" }),
+        concept({
+          order: 30,
+          title: "REST",
+          requires: ["API"],
+          note: "restrições REST, HATEOAS (menção), maturidade de Richardson",
+          summary:
+            "Um estilo de arquitetura para APIs baseado em recursos identificados por URLs, manipulados por " +
+            "meio de representações e de uma interface uniforme sobre HTTP, sem estado entre requisições.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "REST (Representational State Transfer) foi descrito por Roy Fielding como um conjunto de restrições " +
+                "que, juntas, fazem sistemas na web escalarem e evoluírem. O eixo é o recurso: uma coisa do domínio, " +
+                "como um pedido, com um endereço próprio, que os clientes manipulam trocando representações dela " +
+                "(em geral JSON) com os métodos HTTP. Muitas APIs chamadas de \"REST\" seguem só parte das " +
+                "restrições, e o termo é usado de forma mais frouxa no dia a dia.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Pense em recursos com endereços e nas ações padrão do HTTP sobre eles: o significado vem dos " +
+                "métodos e dos status, e não de nomes de operações inventados a cada endpoint.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "list",
+              items: [
+                "Cliente-servidor: as responsabilidades ficam separadas.",
+                "Sem estado (stateless): cada requisição leva tudo de que o servidor precisa; a sessão não vive no servidor.",
+                "Cacheável: as respostas dizem se podem ser guardadas em cache, o que reduz a carga.",
+                "Interface uniforme: recursos identificados por URLs, manipulados por representações, com mensagens autodescritivas (métodos, status e `Content-Type`) e, no ideal, hipermídia (HATEOAS: a resposta traz os links das próximas ações possíveis).",
+                "Sistema em camadas: proxies, caches e gateways ficam entre cliente e servidor sem que ele perceba.",
+              ],
+            },
+            {
+              type: "paragraph",
+              text:
+                "O modelo de maturidade de Richardson descreve o quanto uma API se aproxima disso: nível 0, um único " +
+                "endpoint para tudo; nível 1, recursos com URLs próprias; nível 2, uso correto dos métodos HTTP e dos " +
+                "status; nível 3, hipermídia. A maior parte das APIs de mercado está no nível 2.",
+            },
+            { type: "heading", text: "Na prática" },
+            { type: "paragraph", text: "a mesma funcionalidade em um estilo de chamada de procedimento e em um estilo REST:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "rest.js",
+              code: [
+                "// Estilo RPC (nível 0): um endpoint, e a ação vai no nome ou no corpo",
+                "await fetch(\"/api\", { method: \"POST\", body: JSON.stringify({ action: \"getOrder\", id: 42 }) });",
+                "await fetch(\"/api\", { method: \"POST\", body: JSON.stringify({ action: \"cancelOrder\", id: 42 }) });",
+                "",
+                "// REST (nível 2): recursos e métodos",
+                "await fetch(\"/orders/42\");                                        // ler",
+                "await fetch(\"/orders\", { method: \"POST\", body: \"{...}\" });      // criar → 201 + Location",
+                "await fetch(\"/orders/42\", { method: \"DELETE\" });                // apagar → 204",
+                "",
+                "// Nível 3 (HATEOAS): a resposta indica o que se pode fazer a seguir",
+                "// { \"id\": 42, \"status\": \"pending\",",
+                "//   \"links\": { \"self\": \"/orders/42\", \"cancel\": \"/orders/42/cancellation\", \"pay\": \"/orders/42/payment\" } }",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "No estilo REST, ferramentas genéricas, como caches, proxies e clientes HTTP, entendem o que cada " +
+                "chamada faz, porque o significado está no método e no status.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "Chamar de REST qualquer API que usa JSON sobre HTTP: sem recursos, métodos com significado e sem estado, é só uma API HTTP.",
+                "Tratar REST como uma regra rígida: nem toda operação é um CRUD, e há ações (cancelar, aprovar) que exigem modelagem cuidadosa.",
+                "Guardar a sessão no servidor viola a ausência de estado e dificulta escalar horizontalmente; a identificação deve viajar na requisição.",
+                "Perseguir o nível 3 sem consumidores que aproveitem os links: HATEOAS custa esforço, e a maioria das APIs se contenta com o nível 2.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Sem estado: a identificação viaja em cada requisição",
+              context: "O servidor não lembra do cliente entre chamadas; por isso qualquer instância pode atender qualquer pedido.",
+              code: {
+                language: "javascript",
+                filename: "stateless-rest.js",
+                code: [
+                  "// Cada requisição é autossuficiente",
+                  "await fetch(\"/orders\", { headers: { authorization: \"Bearer token-da-ana\" } });",
+                  "await fetch(\"/orders/42\", { headers: { authorization: \"Bearer token-da-ana\" } });",
+                  "",
+                  "// Duas instâncias do servidor, atrás de um balanceador, respondem igualmente bem:",
+                  "// nada da chamada anterior precisa estar na memória de quem atende.",
+                ].join("\n"),
+              },
+              explanation:
+                "Sem estado no servidor, escalar é acrescentar máquinas. É uma das restrições que mais pesam na escala " +
+                "das APIs na web.",
+            },
+            {
+              title: "Métodos e status com significado",
+              context: "O contrato é lido no que o HTTP já define, e não em documentação inventada por endpoint.",
+              code: {
+                language: "javascript",
+                filename: "methods-and-status.js",
+                code: [
+                  "// Criar: POST na coleção → 201 Created + Location",
+                  "// Ler: GET no item → 200 (ou 404)",
+                  "// Substituir: PUT no item → 200 ou 204",
+                  "// Alterar parte: PATCH no item → 200",
+                  "// Apagar: DELETE no item → 204",
+                  "",
+                  "const routes = [",
+                  "  { method: \"GET\",    path: \"/orders\",     success: 200 },",
+                  "  { method: \"POST\",   path: \"/orders\",     success: 201 },",
+                  "  { method: \"GET\",    path: \"/orders/:id\", success: 200 },",
+                  "  { method: \"PATCH\",  path: \"/orders/:id\", success: 200 },",
+                  "  { method: \"DELETE\", path: \"/orders/:id\", success: 204 },",
+                  "];",
+                ].join("\n"),
+              },
+              explanation:
+                "Quem conhece HTTP adivinha a maior parte da API sem ler nada. É a vantagem da interface uniforme.",
+            },
+            {
+              title: "Ações que não são CRUD",
+              context: "Nem tudo se resume a criar, ler, atualizar e apagar; a ação pode virar um recurso.",
+              code: {
+                language: "javascript",
+                filename: "non-crud.js",
+                code: [
+                  "// Em vez de um verbo no endereço:",
+                  "//   POST /orders/42/cancel",
+                  "",
+                  "// Modelar o resultado da ação como um recurso:",
+                  "await fetch(\"/orders/42/cancellation\", { method: \"POST\" });   // cria o cancelamento → 201",
+                  "await fetch(\"/orders/42/cancellation\");                        // consulta o motivo e a data",
+                  "",
+                  "// Ou tratar o estado como parte do recurso:",
+                  "await fetch(\"/orders/42\", { method: \"PATCH\", body: JSON.stringify({ status: \"cancelled\" }) });",
+                ].join("\n"),
+              },
+              explanation:
+                "As duas formas são aceitas na prática. O importante é que a escolha seja consistente e que as regras " +
+                "de negócio, como \"pedido enviado não cancela\", sejam aplicadas do lado do servidor.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A API atual usa um único endpoint `POST /api` e recebe a operação no corpo. Os caches e as " +
+              "ferramentas de monitoramento não entendem nada das chamadas, e todas aparecem como \"POST /api\".",
+            problemCode: {
+              language: "javascript",
+              filename: "rpc-api.js",
+              code: [
+                "// Todas as chamadas são POST /api, distinguidas só pelo corpo",
+                "{ action: \"listBooks\" }",
+                "{ action: \"getBook\", id: 7 }",
+                "{ action: \"createBook\", title: \"Dom Casmurro\" }",
+                "{ action: \"deleteBook\", id: 7 }",
+              ].join("\n"),
+            },
+            task:
+              "Redesenhe como uma API REST de nível 2: liste os métodos, os endereços e os status de sucesso para " +
+              "cada uma das quatro operações.",
+            hint: "O recurso é `books`. Listar e criar atuam na coleção, e ler e apagar atuam em um item.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "rest-api.fixed.js",
+                code: [
+                  "const routes = [",
+                  "  { operation: \"listBooks\",  method: \"GET\",    path: \"/books\",     success: 200 },",
+                  "  { operation: \"getBook\",    method: \"GET\",    path: \"/books/7\",   success: 200 },",
+                  "  { operation: \"createBook\", method: \"POST\",   path: \"/books\",     success: 201 },   // + Location: /books/8",
+                  "  { operation: \"deleteBook\", method: \"DELETE\", path: \"/books/7\",   success: 204 },",
+                  "];",
+                  "",
+                  "// Agora GET /books e GET /books/7 são cacheáveis, e o monitoramento vê cada operação separadamente.",
+                ].join("\n"),
+              },
+              explanation:
+                "O método e o endereço passaram a dizer a operação, e os caches, proxies e ferramentas de monitoramento " +
+                "entendem cada chamada. O `POST` de criação responde 201 com o `Location` do novo livro.",
+            },
+          },
+        }),
+        concept({
+          order: 40,
+          title: "Resource Modeling & RESTful URLs",
+          requires: ["REST"],
+          subtopics: ["recursos como substantivos", "coleção × item", "aninhamento/hierarquia", "path × query param"],
+          note: "consolidada (A15)",
+          summary:
+            "Como transformar os conceitos do domínio em recursos com endereços claros: substantivos no plural, " +
+            "coleção e item, hierarquia com moderação, e a diferença entre o que identifica (caminho) e o que " +
+            "refina (consulta).",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Modelar recursos é decidir quais são as \"coisas\" que a API expõe e como cada uma é endereçada. " +
+                "O endereço é um substantivo, e o verbo é o método HTTP: `GET /orders/42`, e não `GET /getOrder?id=42`. " +
+                "Uma coleção (`/orders`) agrupa os itens, e um item (`/orders/42`) é identificado pelo seu id. " +
+                "Relações fortes viram hierarquia (`/orders/42/items`), e filtros, ordenação e paginação vão na consulta " +
+                "(`?status=paid`).",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "O caminho identifica um recurso, a consulta o refina: substantivos no plural, coleções e itens, e " +
+                "os verbos ficam por conta do método HTTP.",
+            },
+            { type: "heading", text: "Por que importa" },
+            {
+              type: "paragraph",
+              text:
+                "Endereços previsíveis fazem a API ser aprendida por analogia: quem viu `/orders` e `/orders/42` " +
+                "adivinha `/customers` e `/customers/7`. Nomes ruins, com verbos, inconsistências de plural e " +
+                "hierarquias fundas, obrigam a consultar a documentação a cada chamada e são difíceis de corrigir depois " +
+                "de publicados, porque os consumidores dependem deles.",
+            },
+            { type: "heading", text: "Na prática" },
+            { type: "paragraph", text: "os endereços de uma loja, com as regras de modelagem aplicadas:" },
+            {
+              type: "code",
+              language: "text",
+              filename: "urls.txt",
+              code: [
+                "GET    /customers                      lista de clientes (coleção)",
+                "POST   /customers                      cria um cliente",
+                "GET    /customers/7                    um cliente (item)",
+                "PATCH  /customers/7                    altera parte do cliente",
+                "GET    /customers/7/orders             pedidos DO cliente 7 (relação forte, 1 nível)",
+                "GET    /orders?customerId=7&status=paid   os mesmos pedidos, filtrados na consulta",
+                "GET    /orders/42                      um pedido (acessível direto, sem depender do cliente)",
+                "POST   /orders/42/cancellation         uma ação, modelada como recurso",
+              ].join("\n"),
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "routing.js",
+              code: [
+                "// Casando um endereço com o padrão de rota, extraindo os parâmetros de caminho",
+                "function match(pattern, path) {",
+                "  const names = [];",
+                "  const regex = new RegExp(\"^\" + pattern.replace(/:(\\w+)/g, (_, name) => { names.push(name); return \"([^/]+)\"; }) + \"$\");",
+                "  const result = regex.exec(path);",
+                "  return result ? Object.fromEntries(names.map((name, i) => [name, result[i + 1]])) : null;",
+                "}",
+                "",
+                "match(\"/customers/:customerId/orders/:orderId\", \"/customers/7/orders/42\");",
+                "// { customerId: \"7\", orderId: \"42\" }",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Os parâmetros de caminho identificam quem, e os de consulta dizem como listar. O `/orders/42` " +
+                "continua acessível diretamente, sem obrigar a conhecer o cliente.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "Verbos no endereço, como `/getOrders` ou `/createUser`, duplicam o que o método HTTP já diz e criam inconsistências.",
+                "Misturar singular e plural (`/order` e `/customers`) obriga a lembrar de cada caso; escolha um padrão, em geral o plural.",
+                "Aninhar muito, como `/customers/7/orders/42/items/3/product`, cria endereços frágeis; um ou dois níveis bastam, e recursos independentes podem ter endereço próprio.",
+                "Colocar filtros no caminho (`/orders/paid/2026`) em vez de na consulta faz a combinação de filtros virar uma explosão de rotas.",
+                "Expor ids sequenciais previsíveis pode facilitar a enumeração; a autorização por recurso é indispensável, e ids opacos ajudam.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Do verbo para o substantivo",
+              context: "Trocar nomes de operação por recursos e métodos deixa a API previsível.",
+              code: {
+                language: "text",
+                filename: "verbs-to-nouns.txt",
+                code: [
+                  "Evitar                        Preferir",
+                  "----------------------------------------------------------",
+                  "GET  /getAllUsers             GET    /users",
+                  "POST /createUser              POST   /users",
+                  "POST /deleteUser?id=7         DELETE /users/7",
+                  "GET  /findUserByEmail?e=a@x   GET    /users?email=a@x.com",
+                  "POST /activateUser/7          POST   /users/7/activation",
+                ].join("\n"),
+              },
+              explanation:
+                "O método HTTP substitui o verbo, e os filtros vão na consulta. Só as ações sem equivalente natural, " +
+                "como a ativação, viram um recurso próprio.",
+            },
+            {
+              title: "Caminho identifica, consulta refina",
+              context: "Decidir onde cada informação vai evita rotas demais e mantém a API coerente.",
+              code: {
+                language: "javascript",
+                filename: "path-vs-query.js",
+                code: [
+                  "// Identifica QUAL recurso: caminho",
+                  "await fetch(\"/orders/42\");",
+                  "",
+                  "// Refina COMO listar: consulta",
+                  "await fetch(\"/orders?status=paid&sort=-createdAt&limit=20\");",
+                  "",
+                  "// Errado: filtro no caminho gera uma rota para cada combinação",
+                  "// /orders/paid   /orders/paid/latest   /orders/paid/customer/7 ...",
+                ].join("\n"),
+              },
+              explanation:
+                "Com filtros na consulta, uma única rota de coleção atende todas as combinações. O caminho fica " +
+                "reservado para identificar recursos.",
+            },
+            {
+              title: "Quando aninhar e quando não",
+              context: "A hierarquia expressa pertencimento, mas não deve ser levada longe demais.",
+              code: {
+                language: "text",
+                filename: "nesting.txt",
+                code: [
+                  "Bom (pertencimento claro, um nível):",
+                  "  GET /orders/42/items            itens que só existem dentro do pedido",
+                  "",
+                  "Frágil (profundo demais):",
+                  "  GET /customers/7/orders/42/items/3/product/reviews",
+                  "",
+                  "Melhor: recursos que têm identidade própria ganham o seu endereço",
+                  "  GET /products/9/reviews         em vez de descer pela cadeia de pedidos",
+                ].join("\n"),
+              },
+              explanation:
+                "Quando um recurso tem vida independente, ele merece uma rota de primeiro nível. A hierarquia serve " +
+                "para o que só existe dentro de outro.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A API de uma biblioteca tem endereços inconsistentes: verbos, singular e plural misturados e filtros " +
+              "no caminho.",
+            problemCode: {
+              language: "text",
+              filename: "library-api.txt",
+              code: [
+                "GET  /getBooks",
+                "GET  /book/7",
+                "POST /addBook",
+                "GET  /books/available",
+                "POST /borrowBook?bookId=7&memberId=3",
+                "GET  /getLoansForMember/3",
+              ].join("\n"),
+            },
+            task:
+              "Reescreva cada linha com substantivos no plural, o método HTTP correto e os filtros na consulta. " +
+              "Modele o empréstimo como um recurso.",
+            hint: "`books`, `members` e `loans` são recursos. \"Disponíveis\" é um filtro, e emprestar cria um `loan`.",
+            solution: {
+              code: {
+                language: "text",
+                filename: "library-api.fixed.txt",
+                code: [
+                  "GET  /books                      (era GET /getBooks)",
+                  "GET  /books/7                    (era GET /book/7)",
+                  "POST /books                      (era POST /addBook)",
+                  "GET  /books?available=true       (era GET /books/available)",
+                  "POST /loans                      (era POST /borrowBook?...)   corpo: { bookId: 7, memberId: 3 }",
+                  "GET  /members/3/loans            (era GET /getLoansForMember/3)   ou GET /loans?memberId=3",
+                ].join("\n"),
+              },
+              explanation:
+                "Todos os recursos são substantivos no plural, os verbos saíram, e o filtro de disponibilidade foi para a " +
+                "consulta. O empréstimo virou um recurso `loans`, criado com POST.",
+            },
+          },
+        }),
         concept({
           order: 50,
           title: "Request Validation",
@@ -3338,23 +4106,1276 @@ export default area({
           note: "validação do contrato/boundary da API: shape, tipos, campos obrigatórios, formato. Pointer para Application Security / Input Validation (não revisitOf)",
           collision: "≠ Application Security / Input Validation — validar o contrato de API × defender contra entrada maliciosa (conceitos distintos)",
           revisit: ["Platform / Application Security / Input Validation"],
+          summary:
+            "Conferir, na entrada da API, se a requisição cumpre o contrato — campos obrigatórios, tipos, " +
+            "formatos e limites — e recusá-la com uma mensagem clara antes que chegue à lógica de negócio.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "A validação de requisição é a guarda da fronteira: antes de executar qualquer regra, a API checa se o " +
+                "que chegou tem a forma prometida no contrato: os campos obrigatórios estão presentes, os tipos e " +
+                "formatos estão certos, os valores estão dentro dos limites. Se não estiverem, responde 400 (ou 422) " +
+                "com a lista do que está errado. Não é o mesmo que a defesa contra entrada maliciosa (Input Validation, " +
+                "em Application Security): aquela trata de segurança, e esta, de contrato.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Valide na borda, antes da lógica de negócio, e diga com precisão o que está errado: o restante do " +
+                "código pode assumir que os dados já têm a forma certa.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "Um esquema descreve a forma esperada. A validação percorre o corpo, acumula todos os problemas, e não " +
+                "só o primeiro, e devolve a lista. Só quando não há problemas o dado segue para a lógica de negócio, " +
+                "já em uma forma limpa, com os campos desconhecidos descartados.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "validation.js",
+              code: [
+                "const createUserSchema = {",
+                "  name: { type: \"string\", required: true, min: 2, max: 80 },",
+                "  email: { type: \"string\", required: true, pattern: /^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/ },",
+                "  age: { type: \"number\", integer: true, min: 0, max: 130 },",
+                "};",
+                "",
+                "function validate(schema, body) {",
+                "  const errors = [];",
+                "  const clean = {};",
+                "",
+                "  for (const [field, rule] of Object.entries(schema)) {",
+                "    const value = body?.[field];",
+                "    if (value === undefined) {",
+                "      if (rule.required) errors.push({ field, message: \"obrigatório\" });",
+                "      continue;",
+                "    }",
+                "    if (typeof value !== rule.type) { errors.push({ field, message: `deve ser ${rule.type}` }); continue; }",
+                "    if (rule.integer && !Number.isInteger(value)) errors.push({ field, message: \"deve ser inteiro\" });",
+                "    if (rule.min !== undefined && (rule.type === \"string\" ? value.length : value) < rule.min) errors.push({ field, message: `mínimo ${rule.min}` });",
+                "    if (rule.max !== undefined && (rule.type === \"string\" ? value.length : value) > rule.max) errors.push({ field, message: `máximo ${rule.max}` });",
+                "    if (rule.pattern && !rule.pattern.test(value)) errors.push({ field, message: \"formato inválido\" });",
+                "    clean[field] = value;   // só os campos conhecidos entram; os outros são descartados",
+                "  }",
+                "  return { errors, value: clean };",
+                "}",
+                "",
+                "validate(createUserSchema, { name: \"A\", email: \"nao-e-email\", role: \"admin\" });",
+                "// errors: [{ field: \"name\", message: \"mínimo 2\" }, { field: \"email\", message: \"formato inválido\" }]",
+                "// e o campo `role`, desconhecido, nem chega em `value`",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Na prática, muitos projetos usam bibliotecas como Zod, Joi ou Ajv, que fazem o mesmo com mais recursos. " +
+                "O princípio é o mesmo: descrever o contrato uma vez e aplicá-lo na entrada.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Em todo endpoint que recebe dados de fora: corpo, parâmetros de caminho, consulta e cabeçalhos.",
+                "Para dar ao consumidor mensagens acionáveis, apontando o campo e o problema, em vez de um erro genérico ou de um 500 mais adiante.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Validar o formato não valida a regra de negócio: \"o e-mail é bem formado\" é uma coisa, e \"o e-mail já está cadastrado\" é outra, que depende de estado e fica na camada de negócio.",
+                "Não substitui a segurança: escapar e parametrizar consultas, e limitar tamanhos, continuam necessários (Input Validation).",
+                "Esquemas duplicados, um por camada, divergem com o tempo; mantenha o esquema como fonte única, e gere a documentação a partir dele quando possível.",
+                "Validar demais na borda, com regras de negócio complexas, mistura responsabilidades e dificulta reaproveitar a regra fora da API.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Devolver todos os erros de uma vez",
+              context: "Apontar só o primeiro problema obriga o consumidor a corrigir e tentar de novo, várias vezes.",
+              code: {
+                language: "javascript",
+                filename: "all-errors.js",
+                code: [
+                  "function respond(schema, body) {",
+                  "  const { errors, value } = validate(schema, body);",
+                  "  if (errors.length > 0) {",
+                  "    return { status: 422, body: { title: \"Dados inválidos\", errors } };",
+                  "  }",
+                  "  return { status: 201, body: value };",
+                  "}",
+                  "",
+                  "respond(createUserSchema, { name: \"\", email: \"x\" });",
+                  "// 422, com um erro para `name` E um para `email`, de uma só vez",
+                ].join("\n"),
+              },
+              explanation:
+                "Quem consome corrige tudo em uma rodada. A resposta lista campo e problema, em um formato que uma " +
+                "interface consegue mostrar ao lado de cada campo.",
+            },
+            {
+              title: "Validação como middleware",
+              context: "Aplicar o esquema em um só lugar mantém os controladores livres de checagens.",
+              code: {
+                language: "javascript",
+                filename: "validation-middleware.js",
+                code: [
+                  "function validateBody(schema) {",
+                  "  return (request, response, next) => {",
+                  "    const { errors, value } = validate(schema, request.body);",
+                  "    if (errors.length > 0) return response.status(422).json({ errors });",
+                  "    request.body = value;   // a partir daqui, só dados válidos e limpos",
+                  "    next();",
+                  "  };",
+                  "}",
+                  "",
+                  "app.post(\"/users\", validateBody(createUserSchema), (request, response) => {",
+                  "  // aqui o controlador não precisa checar nada do formato",
+                  "  response.status(201).json(createUser(request.body));",
+                  "});",
+                ].join("\n"),
+              },
+              explanation:
+                "O controlador assume dados válidos, e o esquema fica declarado ao lado da rota. Ligar-se a um esquema " +
+                "também abre caminho para gerar a documentação.",
+            },
+            {
+              title: "Formato não é regra de negócio",
+              context: "A validação de contrato e a de negócio acontecem em momentos e camadas diferentes.",
+              code: {
+                language: "javascript",
+                filename: "format-vs-business.js",
+                code: [
+                  "// Borda da API (contrato): o e-mail parece um e-mail? → 422 se não",
+                  "const { errors, value } = validate(createUserSchema, request.body);",
+                  "",
+                  "// Camada de negócio (regra): o e-mail já está cadastrado? → 409 se sim",
+                  "if (await users.existsByEmail(value.email)) {",
+                  "  throw new ConflictError(\"e-mail já cadastrado\");",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "A primeira checagem só olha a forma do dado. A segunda consulta o estado do sistema, e por isso " +
+                "pertence ao domínio, com um status diferente (409).",
+            },
+          ],
+          exercise: {
+            problem:
+              "O endpoint de criação de produto usa `body.price` diretamente. Se o cliente enviar `\"abc\"`, `-5` ou nada, " +
+              "o erro aparece só no banco, como um 500 sem explicação.",
+            problemCode: {
+              language: "javascript",
+              filename: "create-product.js",
+              code: [
+                "function createProduct(body) {",
+                "  return db.insert(\"products\", { name: body.name, price: body.price });",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Valide o corpo: `name` obrigatório (texto, 1 a 100 caracteres) e `price` obrigatório (número maior ou " +
+              "igual a zero). Devolva 422 com a lista de erros, ou 201 com os dados limpos.",
+            hint: "Acumule os erros em um array e só chame o banco se estiver vazio. Ignore campos que não estão no esquema.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "create-product.fixed.js",
+                code: [
+                  "function validateProduct(body = {}) {",
+                  "  const errors = [];",
+                  "",
+                  "  if (typeof body.name !== \"string\" || body.name.length < 1 || body.name.length > 100) {",
+                  "    errors.push({ field: \"name\", message: \"obrigatório, texto de 1 a 100 caracteres\" });",
+                  "  }",
+                  "  if (typeof body.price !== \"number\" || Number.isNaN(body.price) || body.price < 0) {",
+                  "    errors.push({ field: \"price\", message: \"obrigatório, número maior ou igual a zero\" });",
+                  "  }",
+                  "",
+                  "  return errors.length > 0",
+                  "    ? { status: 422, body: { errors } }",
+                  "    : { status: 201, body: { name: body.name, price: body.price } };   // só os campos conhecidos",
+                  "}",
+                  "",
+                  "validateProduct({ name: \"\", price: \"abc\", admin: true });   // 422, com erros para name e price",
+                  "validateProduct({ name: \"caneta\", price: 5, admin: true });   // 201, e `admin` foi descartado",
+                ].join("\n"),
+              },
+              explanation:
+                "O cliente recebe uma resposta clara em vez de um 500. O banco só vê dados no formato esperado, e campos " +
+                "extras, como `admin`, não passam da borda.",
+            },
+          },
         }),
-        concept({ order: 60, title: "Response Design", requires: ["REST"], note: "envelope, status coerente, Location em criação" }),
+        concept({
+          order: 60,
+          title: "Response Design",
+          requires: ["REST"],
+          note: "envelope, status coerente, Location em criação",
+          summary:
+            "Como estruturar as respostas de uma API de forma consistente: formato do corpo, envelope, status " +
+            "coerente com o resultado, datas e identificadores padronizados, e o que se devolve em cada operação.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "A resposta é a metade da API que o consumidor mais lê. Projetá-la bem significa ser previsível: o " +
+                "mesmo tipo de operação devolve sempre a mesma forma, os status dizem o que aconteceu, e os campos " +
+                "seguem convenções únicas. Decisões típicas: devolver o objeto diretamente ou dentro de um " +
+                "envelope (`{ data, meta }`), o que responder após criar (201, o recurso e `Location`), e como " +
+                "representar datas, valores monetários e ausências.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Consistência é o que faz uma API ser aprendida uma vez: mesma forma, mesmas convenções e status " +
+                "coerentes em todos os endpoints.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "list",
+              items: [
+                "Criação: `201 Created`, com o recurso criado no corpo e o cabeçalho `Location` com o seu endereço.",
+                "Consulta: `200 OK` com o recurso; coleções devolvem uma lista (dentro de um envelope quando há metadados, como paginação).",
+                "Alteração e exclusão: `200` com o recurso atualizado, ou `204 No Content` sem corpo.",
+                "Datas em ISO 8601 e em UTC (`2026-03-01T10:00:00Z`); valores monetários em unidades inteiras (centavos) ou como texto, e não em ponto flutuante.",
+                "Uma convenção única de nomes de campos (`camelCase` ou `snake_case`) e de tratamento de campos ausentes (omitir ou `null`).",
+              ],
+            },
+            { type: "heading", text: "Na prática" },
+            { type: "paragraph", text: "um servidor que aplica as convenções de resposta para uma criação e para uma listagem:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "response-design.js",
+              code: [
+                "function created(response, resource, path) {",
+                "  response.writeHead(201, { \"content-type\": \"application/json\", location: path });",
+                "  response.end(JSON.stringify(resource));",
+                "}",
+                "",
+                "function list(response, items, { total, limit, offset }) {",
+                "  response.writeHead(200, { \"content-type\": \"application/json\" });",
+                "  response.end(JSON.stringify({",
+                "    data: items,                       // a lista, sempre em `data`",
+                "    meta: { total, limit, offset },    // metadados, separados dos dados",
+                "  }));",
+                "}",
+                "",
+                "// POST /orders  →  201 Created",
+                "//   Location: /orders/42",
+                "//   { \"id\": \"42\", \"status\": \"pending\", \"total\": 1990, \"createdAt\": \"2026-03-01T10:00:00Z\" }",
+                "//",
+                "// GET /orders  →  200 OK",
+                "//   { \"data\": [ { \"id\": \"42\", ... } ], \"meta\": { \"total\": 1, \"limit\": 20, \"offset\": 0 } }",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "As listagens têm um envelope, porque precisam de metadados. Os itens individuais vêm sem envelope, " +
+                "e todos os endereços e datas seguem o mesmo padrão.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "Devolver um array puro em uma listagem impede acrescentar depois metadados, como paginação, sem quebrar o contrato; um envelope desde o início evita essa migração.",
+                "Formatos de data ambíguos, como `03/04/2026`, ou sem fuso, levam a erros silenciosos; use ISO 8601 em UTC.",
+                "Valores monetários em ponto flutuante (`19.9`) acumulam erros de arredondamento; use centavos como inteiro, ou texto decimal.",
+                "Ids numéricos grandes podem perder precisão em JavaScript (acima de 2^53); envie ids como texto quando houver risco.",
+                "Alternar entre omitir um campo e enviá-lo como `null` sem regra obriga os consumidores a tratarem os dois casos.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Coerência entre status e corpo",
+              context: "O status e o corpo devem contar a mesma história.",
+              code: {
+                language: "text",
+                filename: "coherence.txt",
+                code: [
+                  "Coerente:",
+                  "  POST /orders  → 201, corpo com o pedido, Location: /orders/42",
+                  "  DELETE /orders/42 → 204, sem corpo",
+                  "  GET /orders/999 → 404, corpo com o erro",
+                  "",
+                  "Incoerente:",
+                  "  POST /orders  → 200, corpo { \"success\": true }      (sem o recurso nem o Location)",
+                  "  DELETE /orders/42 → 200, corpo { \"deleted\": true }  (204 diz o mesmo, sem corpo)",
+                  "  GET /orders/999 → 200, corpo { \"order\": null }      (o status mente)",
+                ].join("\n"),
+              },
+              explanation:
+                "Quando o status é honesto, clientes e ferramentas decidem sem ler o corpo. A criação devolve o recurso " +
+                "para que o cliente não precise pedi-lo de novo.",
+            },
+            {
+              title: "Dinheiro e datas",
+              context: "Tipos que parecem simples são fonte de bugs de arredondamento e de fuso horário.",
+              code: {
+                language: "javascript",
+                filename: "money-and-dates.js",
+                code: [
+                  "// Ponto flutuante acumula erros",
+                  "0.1 + 0.2;   // 0.30000000000000004",
+                  "",
+                  "// Centavos como inteiros: exato",
+                  "const price = 1990;                      // R$ 19,90",
+                  "const total = price * 3;                 // 5970, exato",
+                  "",
+                  "// Datas: ISO 8601 em UTC, sempre",
+                  "new Date(\"2026-03-01T10:00:00Z\").toISOString();   // \"2026-03-01T10:00:00.000Z\"",
+                  "",
+                  "// Resposta: { \"total\": 5970, \"currency\": \"BRL\", \"createdAt\": \"2026-03-01T10:00:00Z\" }",
+                ].join("\n"),
+              },
+              explanation:
+                "O inteiro em centavos não tem erro de arredondamento, e a data em UTC não depende do fuso de quem lê. " +
+                "A moeda vai em um campo à parte.",
+            },
+            {
+              title: "O envelope que permite evoluir",
+              context: "Um array puro não tem onde guardar metadados; um envelope, sim.",
+              code: {
+                language: "javascript",
+                filename: "envelope.js",
+                code: [
+                  "// v1: array puro. Para acrescentar paginação, o formato mudaria (breaking change)",
+                  "// [ { \"id\": 1 }, { \"id\": 2 } ]",
+                  "",
+                  "// Com envelope, dá para acrescentar depois sem quebrar quem lê `data`",
+                  "// { \"data\": [ { \"id\": 1 }, { \"id\": 2 } ] }",
+                  "// { \"data\": [ ... ], \"meta\": { \"nextCursor\": \"abc\" } }   ← evolução compatível",
+                  "",
+                  "const items = response.data;   // continua funcionando nas duas versões",
+                ].join("\n"),
+              },
+              explanation:
+                "O envelope custa um nível de aninhamento e compra a possibilidade de evoluir a listagem sem versionar " +
+                "a API.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O endpoint de criar pedido responde `200 { \"success\": true }`. O cliente precisa fazer um segundo GET " +
+              "para descobrir o id, e a listagem devolve um array puro.",
+            problemCode: {
+              language: "javascript",
+              filename: "orders-responses.js",
+              code: [
+                "function createOrder(data) {",
+                "  const order = save(data);",
+                "  return { status: 200, body: { success: true } };",
+                "}",
+                "",
+                "function listOrders() {",
+                "  return { status: 200, body: allOrders() };   // array puro",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Corrija a criação (201, o pedido no corpo, `Location`) e a listagem (envelope com `data` e `meta.total`).",
+            hint: "A criação precisa de um cabeçalho `location` com `/orders/{id}`. A listagem devolve `{ data, meta }`.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "orders-responses.fixed.js",
+                code: [
+                  "function createOrder(data) {",
+                  "  const order = save(data);",
+                  "  return {",
+                  "    status: 201,",
+                  "    headers: { location: `/orders/${order.id}` },",
+                  "    body: order,",
+                  "  };",
+                  "}",
+                  "",
+                  "function listOrders() {",
+                  "  const orders = allOrders();",
+                  "  return { status: 200, body: { data: orders, meta: { total: orders.length } } };",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "O cliente recebe o pedido e o seu endereço na própria criação, sem uma segunda chamada. A listagem já " +
+                "tem um lugar para os metadados, o que permite evoluir sem quebrar o contrato.",
+            },
+          },
+        }),
         concept({
           order: 70,
           title: "Error Response Design",
           requires: ["Response Design"],
           note: "revisita Software Craft / Error Handling / Result Pattern; RFC 7807 (problem+json)",
           revisit: ["Software Craft / Error Handling / Result Pattern"],
+          summary:
+            "Como uma API comunica falhas: um formato único e legível por máquina, com o status correto, um " +
+            "código estável, uma mensagem útil e os detalhes por campo — sem vazar o que é interno.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Toda API falha, e o consumidor precisa entender a falha para reagir: corrigir o pedido, tentar de " +
+                "novo, ou mostrar algo ao usuário. Um bom design de erro usa o status HTTP certo, um corpo com formato " +
+                "único em todos os endpoints e um identificador estável do tipo de erro. A RFC 7807 (atualizada pela " +
+                "RFC 9457) padroniza isso como `application/problem+json`, com os campos `type`, `title`, `status`, " +
+                "`detail` e `instance`, além de extensões. É a versão de rede do Result Pattern (Error Handling): " +
+                "erros como valores previstos, e não como surpresas.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Um erro é parte do contrato: o mesmo formato em toda a API, um código estável para as máquinas e uma " +
+                "mensagem clara para as pessoas, sem detalhes internos.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "list",
+              items: [
+                "`type`: um identificador estável (geralmente uma URL) do tipo de problema, em que os clientes se baseiam no código.",
+                "`title`: um resumo curto e fixo do tipo; `detail`: a explicação desta ocorrência.",
+                "`status`: o mesmo código HTTP da resposta.",
+                "Extensões: por exemplo, `errors` (a lista de problemas por campo) ou `requestId` (para localizar o caso nos logs).",
+                "Erros de cliente (4xx) explicam o que corrigir; erros de servidor (5xx) devolvem uma mensagem genérica e registram o detalhe nos logs.",
+              ],
+            },
+            { type: "heading", text: "Na prática" },
+            { type: "paragraph", text: "uma função que transforma erros de domínio em respostas `problem+json` consistentes:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "problem-json.js",
+              code: [
+                "import { randomUUID } from \"node:crypto\";",
+                "",
+                "class ApiError extends Error {",
+                "  constructor(status, type, title, detail, extra = {}) {",
+                "    super(detail);",
+                "    Object.assign(this, { status, type, title, detail, extra });",
+                "  }",
+                "}",
+                "",
+                "function toProblem(error, requestId = randomUUID()) {",
+                "  if (error instanceof ApiError) {",
+                "    return {",
+                "      status: error.status,",
+                "      headers: { \"content-type\": \"application/problem+json\" },",
+                "      body: {",
+                "        type: `https://api.exemplo.com/problemas/${error.type}`,",
+                "        title: error.title,",
+                "        status: error.status,",
+                "        detail: error.detail,",
+                "        requestId,",
+                "        ...error.extra,",
+                "      },",
+                "    };",
+                "  }",
+                "  // Inesperado: mensagem genérica na resposta, e o detalhe vai para o log",
+                "  console.error(requestId, error);",
+                "  return {",
+                "    status: 500,",
+                "    headers: { \"content-type\": \"application/problem+json\" },",
+                "    body: { type: \"about:blank\", title: \"Erro interno\", status: 500, requestId },",
+                "  };",
+                "}",
+                "",
+                "toProblem(new ApiError(422, \"validacao\", \"Dados inválidos\", \"O corpo tem 1 erro\", {",
+                "  errors: [{ field: \"email\", message: \"formato inválido\" }],",
+                "})).body;",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O consumidor decide pelo `type` e pelo `status`, e mostra o `detail`. Nas falhas inesperadas, o " +
+                "`requestId` é a ponte entre a resposta e o log com o detalhe real.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "Devolver o stack trace, o SQL ou o nome de uma tabela vaza a implementação e ajuda um atacante; erros 5xx devem ter uma mensagem genérica.",
+                "Erros que só têm uma mensagem em texto obrigam o cliente a comparar strings; um código estável (`type`) é o que se pode usar em `if`.",
+                "Formatos de erro diferentes em endpoints diferentes obrigam a um tratamento por endpoint; centralize a conversão em um só ponto.",
+                "Mensagens traduzidas ou reescritas não devem ser o contrato: o código é estável, e o texto pode mudar.",
+                "Sem um identificador de requisição, é difícil ligar a queixa de um usuário ao erro nos logs.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Erros de validação por campo",
+              context: "Uma lista estruturada permite que a interface mostre cada mensagem junto do campo certo.",
+              code: {
+                language: "text",
+                filename: "validation-problem.txt",
+                code: [
+                  "HTTP/1.1 422 Unprocessable Content",
+                  "Content-Type: application/problem+json",
+                  "",
+                  "{",
+                  "  \"type\": \"https://api.exemplo.com/problemas/validacao\",",
+                  "  \"title\": \"Dados inválidos\",",
+                  "  \"status\": 422,",
+                  "  \"detail\": \"2 campos inválidos\",",
+                  "  \"requestId\": \"9f1c...\",",
+                  "  \"errors\": [",
+                  "    { \"field\": \"email\", \"message\": \"formato inválido\" },",
+                  "    { \"field\": \"age\",   \"message\": \"deve ser maior ou igual a 0\" }",
+                  "  ]",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "A resposta tem tudo o que um cliente precisa: o tipo para decidir, os erros por campo para exibir e o " +
+                "`requestId` para suporte.",
+            },
+            {
+              title: "O cliente decide pelo tipo, e não pelo texto",
+              context: "Reagir ao `type` e ao `status` mantém o cliente funcionando quando as mensagens mudam.",
+              code: {
+                language: "javascript",
+                filename: "client-handling.js",
+                code: [
+                  "const response = await fetch(\"/orders\", { method: \"POST\", body: JSON.stringify(order) });",
+                  "",
+                  "if (!response.ok) {",
+                  "  const problem = await response.json();",
+                  "",
+                  "  if (problem.type.endsWith(\"/estoque-insuficiente\")) return showStockWarning(problem.detail);",
+                  "  if (response.status === 422) return showFieldErrors(problem.errors);",
+                  "  if (response.status >= 500) return showRetryMessage(problem.requestId);",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Comparar `problem.detail` com um texto quebraria na primeira reescrita da mensagem. O `type` é o " +
+                "contrato, e o `detail` é para leitura humana.",
+            },
+            {
+              title: "Não vazar detalhes internos",
+              context: "A mensagem de um erro inesperado pode revelar a estrutura do sistema.",
+              code: {
+                language: "javascript",
+                filename: "no-leak.js",
+                code: [
+                  "// Vaza: mensagem do banco e stack trace na resposta",
+                  "response.status(500).json({ error: error.message, stack: error.stack });",
+                  "// { \"error\": \"duplicate key value violates unique constraint \\\"users_email_key\\\"\", ... }",
+                  "",
+                  "// Seguro: o detalhe vai para o log, e a resposta é genérica com um id para rastrear",
+                  "logger.error({ requestId, error });",
+                  "response.status(500).json({ type: \"about:blank\", title: \"Erro interno\", status: 500, requestId });",
+                ].join("\n"),
+              },
+              explanation:
+                "O nome da constraint e da tabela é informação valiosa para quem sonda o sistema. O `requestId` permite " +
+                "que a equipe encontre o detalhe nos logs sem expô-lo a ninguém.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Cada endpoint devolve erros em um formato próprio, e alguns respondem 200 com `{ \"ok\": false }`. O " +
+              "aplicativo precisa de um `if` diferente para cada rota.",
+            problemCode: {
+              language: "javascript",
+              filename: "inconsistent-errors.js",
+              code: [
+                "// Endpoint A",
+                "return { status: 200, body: { ok: false, msg: \"produto não encontrado\" } };",
+                "// Endpoint B",
+                "return { status: 400, body: { erro: \"quantidade inválida\" } };",
+                "// Endpoint C",
+                "return { status: 500, body: { error: error.stack } };",
+              ].join("\n"),
+            },
+            task:
+              "Crie `toProblem(error)`, que converta `NotFoundError` em 404, `ValidationError` em 422 e qualquer outro em " +
+              "500 genérico, todos no formato `{ type, title, status, detail }`.",
+            hint: "Use `instanceof` para escolher o status e o tipo. No 500, use uma mensagem fixa em vez de `error.message`.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "inconsistent-errors.fixed.js",
+                code: [
+                  "class NotFoundError extends Error {}",
+                  "class ValidationError extends Error {}",
+                  "",
+                  "function toProblem(error) {",
+                  "  if (error instanceof NotFoundError) {",
+                  "    return { status: 404, body: { type: \"nao-encontrado\", title: \"Não encontrado\", status: 404, detail: error.message } };",
+                  "  }",
+                  "  if (error instanceof ValidationError) {",
+                  "    return { status: 422, body: { type: \"validacao\", title: \"Dados inválidos\", status: 422, detail: error.message } };",
+                  "  }",
+                  "  return { status: 500, body: { type: \"erro-interno\", title: \"Erro interno\", status: 500, detail: \"Ocorreu um erro inesperado.\" } };",
+                  "}",
+                  "",
+                  "toProblem(new NotFoundError(\"produto 7 não encontrado\")).status;   // 404",
+                  "toProblem(new Error(\"connection refused: db:5432\")).body.detail;   // \"Ocorreu um erro inesperado.\"",
+                ].join("\n"),
+              },
+              explanation:
+                "Todos os erros têm o mesmo formato e o status certo, e o erro inesperado não vaza a mensagem do banco. " +
+                "Um único tratamento no cliente passa a servir a todos os endpoints.",
+            },
+          },
         }),
-        concept({ order: 80, title: "Pagination (Offset / Cursor)", requires: ["Response Design"], subtopics: ["offset/limit: simples, page drift, custo de página profunda", "cursor/keyset: estável, sem página N, requer ordenação total"], note: "consolidada (A3)" }),
-        concept({ order: 90, title: "Filtering & Sorting", requires: ["Response Design"], subtopics: ["operadores de filtro", "ordenação multi-campo", "whitelist de campos ordenáveis"], note: "consolidada (A16)" }),
+        concept({
+          order: 80,
+          title: "Pagination (Offset / Cursor)",
+          requires: ["Response Design"],
+          subtopics: ["offset/limit: simples, page drift, custo de página profunda", "cursor/keyset: estável, sem página N, requer ordenação total"],
+          note: "consolidada (A3)",
+          summary:
+            "Como devolver uma coleção grande em pedaços: por deslocamento (`offset` e `limit`), simples mas instável " +
+            "e caro em páginas profundas, ou por cursor, estável e eficiente, mas sem saltar para uma página qualquer.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Devolver milhares de itens em uma resposta é lento e caro, então as coleções são divididas em páginas. " +
+                "Há duas estratégias. A paginação por offset pede \"os `limit` itens a partir da posição `offset`\", e " +
+                "é fácil de implementar e permite ir a qualquer página. A paginação por cursor pede \"os `limit` itens " +
+                "depois deste marcador\", em que o cursor guarda o valor do último item visto; é estável e eficiente, mas " +
+                "só avança e retrocede, sem saltar a uma página N.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Offset conta posições e cursor guarda um ponto de referência: contar posições quebra quando os dados " +
+                "mudam e fica lento nas páginas fundas, e o cursor resiste aos dois problemas.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "pagination.js",
+              code: [
+                "// Offset/limit: simples",
+                "function pageByOffset(items, { offset = 0, limit = 20 }) {",
+                "  return { data: items.slice(offset, offset + limit), meta: { total: items.length, offset, limit } };",
+                "}",
+                "",
+                "// Cursor (keyset): a ordenação precisa ser total, então o id desempata",
+                "const encode = (value) => Buffer.from(JSON.stringify(value)).toString(\"base64url\");",
+                "const decode = (cursor) => JSON.parse(Buffer.from(cursor, \"base64url\").toString());",
+                "",
+                "function pageByCursor(items, { cursor, limit = 20 }) {",
+                "  const sorted = [...items].sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id - b.id);",
+                "",
+                "  const start = cursor",
+                "    ? sorted.findIndex((item) => {",
+                "        const after = decode(cursor);",
+                "        return item.createdAt > after.createdAt || (item.createdAt === after.createdAt && item.id > after.id);",
+                "      })",
+                "    : 0;",
+                "",
+                "  const data = start === -1 ? [] : sorted.slice(start, start + limit);",
+                "  const last = data.at(-1);",
+                "  const hasMore = start !== -1 && start + limit < sorted.length;",
+                "  return { data, meta: { nextCursor: hasMore ? encode({ createdAt: last.createdAt, id: last.id }) : null } };",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Em SQL, o offset vira `LIMIT 20 OFFSET 40`, que faz o banco ler e descartar as 40 linhas anteriores. O " +
+                "cursor vira `WHERE (created_at, id) > (:ultimoCreatedAt, :ultimoId) ORDER BY created_at, id LIMIT 20`, que " +
+                "usa um índice e vai direto ao ponto.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Offset: coleções pequenas ou médias, telas com números de página e a possibilidade de saltar para uma página qualquer, e dados que mudam pouco.",
+                "Cursor: coleções grandes ou que crescem depressa, feeds e rolagem infinita, exportações e qualquer caso em que a estabilidade e o desempenho em profundidade importem.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Offset: com inserções ou remoções entre uma página e outra, itens aparecem duas vezes ou são pulados (page drift); e páginas profundas ficam lentas, porque o banco lê todos os itens anteriores.",
+                "Offset: o total de itens (`COUNT(*)`) pode ser caro em tabelas grandes, e muitas APIs dispensam esse valor.",
+                "Cursor: não permite ir à página 50, e não dá o total; o cliente só navega em sequência.",
+                "Cursor: exige uma ordenação total e estável, com um desempate único (como o id); sem isso, itens se repetem ou somem entre páginas. O cursor deve ser opaco, para poder mudar sem quebrar clientes.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Page drift: o problema do offset",
+              context: "Uma inserção entre duas requisições faz um item aparecer de novo, ou faz outro desaparecer.",
+              code: {
+                language: "javascript",
+                filename: "page-drift.js",
+                code: [
+                  "let items = [\"E\", \"D\", \"C\", \"B\", \"A\"];   // mais novo primeiro",
+                  "",
+                  "const page1 = items.slice(0, 2);   // [\"E\", \"D\"]",
+                  "",
+                  "// Enquanto o cliente lê a página 1, chega um item novo no topo",
+                  "items = [\"F\", ...items];          // [\"F\", \"E\", \"D\", \"C\", \"B\", \"A\"]",
+                  "",
+                  "const page2 = items.slice(2, 4);   // [\"D\", \"C\"]  ← \"D\" apareceu de novo",
+                  "",
+                  "// Com cursor (\"depois de D\"), a página 2 seria [\"C\", \"B\"]: sem repetição e sem perda",
+                ].join("\n"),
+              },
+              explanation:
+                "O offset conta posições, e as posições mudaram. O cursor se ancora no último item visto, e por isso " +
+                "resiste à inserção.",
+            },
+            {
+              title: "O custo das páginas profundas",
+              context: "No banco, `OFFSET` grande obriga a ler e descartar tudo o que vem antes.",
+              code: {
+                language: "text",
+                filename: "deep-pages.txt",
+                code: [
+                  "-- Offset: para entregar a página 5.000, o banco lê 100.000 linhas e descarta as primeiras",
+                  "SELECT * FROM orders ORDER BY created_at DESC, id DESC LIMIT 20 OFFSET 99980;",
+                  "",
+                  "-- Cursor (keyset): usa o índice e começa direto no ponto certo",
+                  "SELECT * FROM orders",
+                  "WHERE (created_at, id) < ('2026-03-01T10:00:00Z', 8412)",
+                  "ORDER BY created_at DESC, id DESC",
+                  "LIMIT 20;",
+                  "",
+                  "-- O tempo do offset cresce com a profundidade; o do cursor é praticamente constante.",
+                ].join("\n"),
+              },
+              explanation:
+                "Para uma lista que o usuário lê nas primeiras páginas, o offset serve. Em uma exportação, ou em um feed " +
+                "infinito, o cursor é a escolha que continua rápida.",
+            },
+            {
+              title: "A resposta paginada por cursor",
+              context: "O cliente só precisa devolver o cursor que recebeu, sem entender o seu conteúdo.",
+              code: {
+                language: "javascript",
+                filename: "cursor-client.js",
+                code: [
+                  "async function fetchAll(url) {",
+                  "  const all = [];",
+                  "  let cursor = null;",
+                  "",
+                  "  do {",
+                  "    const query = new URLSearchParams({ limit: \"50\", ...(cursor && { cursor }) });",
+                  "    const page = await fetch(`${url}?${query}`).then((r) => r.json());",
+                  "",
+                  "    all.push(...page.data);",
+                  "    cursor = page.meta.nextCursor;   // null quando acabou",
+                  "  } while (cursor);",
+                  "",
+                  "  return all;",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "O cursor é opaco: o servidor pode mudar o seu conteúdo interno sem quebrar clientes. O laço termina " +
+                "quando a resposta não traz um próximo cursor.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O feed de notificações usa offset. Os usuários reclamam de itens repetidos ao rolar, e a página " +
+              "profunda demora vários segundos.",
+            problemCode: {
+              language: "javascript",
+              filename: "feed.js",
+              code: [
+                "function feed(notifications, { offset = 0, limit = 20 }) {",
+                "  const sorted = [...notifications].sort((a, b) => b.id - a.id);   // mais novo primeiro",
+                "  return sorted.slice(offset, offset + limit);",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Converta para cursor: `feed(notifications, { after, limit })`, em que `after` é o id do último item visto, " +
+              "devolvendo `{ data, nextCursor }` (com `nextCursor` nulo no fim).",
+            hint: "Com ordem decrescente por id, a próxima página é a dos itens com `id < after`. `nextCursor` é o id do último item, se ainda houver mais.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "feed.fixed.js",
+                code: [
+                  "function feed(notifications, { after = Infinity, limit = 20 }) {",
+                  "  const sorted = [...notifications].sort((a, b) => b.id - a.id);",
+                  "  const rest = sorted.filter((n) => n.id < after);   // tudo o que vem depois do cursor",
+                  "",
+                  "  const data = rest.slice(0, limit);",
+                  "  const nextCursor = rest.length > limit ? data.at(-1).id : null;",
+                  "  return { data, nextCursor };",
+                  "}",
+                  "",
+                  "const all = [1, 2, 3, 4, 5].map((id) => ({ id }));",
+                  "feed(all, { limit: 2 });                       // { data: [{id:5},{id:4}], nextCursor: 4 }",
+                  "feed(all, { after: 4, limit: 2 });             // { data: [{id:3},{id:2}], nextCursor: 2 }",
+                  "feed(all, { after: 2, limit: 2 });             // { data: [{id:1}], nextCursor: null }",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada página parte do último item visto, e não de uma posição, então novos itens no topo não deslocam " +
+                "a leitura. Em um banco, `id < after` usa o índice, e o custo não cresce com a profundidade.",
+            },
+          },
+        }),
+        concept({
+          order: 90,
+          title: "Filtering & Sorting",
+          requires: ["Response Design"],
+          subtopics: ["operadores de filtro", "ordenação multi-campo", "whitelist de campos ordenáveis"],
+          note: "consolidada (A16)",
+          summary:
+            "Parâmetros de consulta que deixam o consumidor restringir e ordenar uma coleção — com operadores de " +
+            "filtro, ordenação por vários campos e uma lista fechada de campos permitidos.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Uma coleção grande só é útil se o consumidor puder pedir apenas o que interessa e na ordem que " +
+                "quer. Os filtros e a ordenação vão na consulta: `?status=paid&price[gte]=10&sort=-createdAt,name`. " +
+                "Convenções comuns: um parâmetro por campo para igualdade, um operador para comparações " +
+                "(`price[gte]`, `price_gte`), e `sort` com campos separados por vírgula, em que o prefixo `-` inverte a " +
+                "ordem. O ponto crucial é a lista fechada (whitelist): só se filtra e ordena pelo que a API " +
+                "declarou.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Filtre e ordene só pelos campos que a API autorizou: cada um é um compromisso de desempenho e de " +
+                "segurança, e nomes vindos do cliente nunca vão direto para a consulta.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "O servidor lê os parâmetros, confere cada campo e operador em uma tabela de permitidos, e só então os " +
+                "traduz para a consulta. A ordenação sempre termina com um desempate estável (o id), para que a " +
+                "paginação seja previsível.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "filter-sort.js",
+              code: [
+                "// Campos que a API aceita, e como cada um é traduzido para a coluna real",
+                "const SORTABLE = { createdAt: \"created_at\", total: \"total\", status: \"status\" };",
+                "",
+                "class BadRequest extends Error {}",
+                "",
+                "function orderBy(sort = \"-createdAt\") {",
+                "  const parts = sort.split(\",\").map((field) => {",
+                "    const descending = field.startsWith(\"-\");",
+                "    const name = descending ? field.slice(1) : field;",
+                "    if (!(name in SORTABLE)) throw new BadRequest(`ordenação não permitida: ${name}`);",
+                "    return `${SORTABLE[name]} ${descending ? \"DESC\" : \"ASC\"}`;",
+                "  });",
+                "  return [...parts, \"id ASC\"].join(\", \");   // desempate estável",
+                "}",
+                "",
+                "orderBy(\"-createdAt,total\");   // \"created_at DESC, total ASC, id ASC\"",
+                "orderBy(\"senha\");              // BadRequest: ordenação não permitida: senha",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Os nomes que chegam do cliente nunca são concatenados na consulta: são traduzidos pela tabela. Um " +
+                "campo fora dela é recusado com 400.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Em qualquer coleção com mais do que alguns itens, para que o consumidor não precise baixar tudo e filtrar no cliente.",
+                "Combinados com paginação: os filtros reduzem o conjunto, a ordenação o organiza, e a paginação o divide.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Cada filtro e cada ordenação permitidos precisam de um índice à altura; liberar campos sem índice deixa a API à mercê de consultas lentas.",
+                "Aceitar nomes de campos do cliente e concatená-los na consulta abre a porta para injeção de SQL e para vazar campos internos; use sempre uma lista fechada.",
+                "Não vale inventar uma linguagem de consulta completa, com `AND`, `OR` e parênteses, em parâmetros de URL; para consultas ricas, considere um endpoint de busca ou GraphQL.",
+                "Ordenar sem desempate único torna a paginação instável, com itens repetidos ou perdidos entre páginas.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Filtros com operadores",
+              context: "Igualdade e comparações precisam de uma convenção que o consumidor consiga adivinhar.",
+              code: {
+                language: "javascript",
+                filename: "operators.js",
+                code: [
+                  "// GET /orders?status=paid&total[gte]=100&total[lte]=500",
+                  "const query = new URLSearchParams(\"status=paid&total[gte]=100&total[lte]=500\");",
+                  "",
+                  "const OPERATORS = { gte: (a, b) => a >= b, lte: (a, b) => a <= b, eq: (a, b) => a === b };",
+                  "",
+                  "function matches(order, query) {",
+                  "  for (const [key, raw] of query) {",
+                  "    const [, field, operator = \"eq\"] = key.match(/^(\\w+)(?:\\[(\\w+)\\])?$/);",
+                  "    const value = Number.isNaN(Number(raw)) ? raw : Number(raw);",
+                  "    if (!OPERATORS[operator]?.(order[field], value)) return false;",
+                  "  }",
+                  "  return true;",
+                  "}",
+                  "",
+                  "matches({ status: \"paid\", total: 250 }, query);   // true",
+                  "matches({ status: \"paid\", total: 900 }, query);   // false (total > 500)",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada parâmetro vira um campo e um operador. Em um servidor real, a mesma tradução geraria a cláusula " +
+                "`WHERE`, com os operadores também em uma lista fechada.",
+            },
+            {
+              title: "A lista fechada de campos",
+              context: "Ordenar por um campo que não deveria ser exposto é um vazamento de informação.",
+              code: {
+                language: "javascript",
+                filename: "whitelist.js",
+                code: [
+                  "// Ordenar por um campo permite deduzir o seu conteúdo, mesmo que ele não apareça na resposta",
+                  "// GET /users?sort=passwordHash   ← revela a ordem dos hashes",
+                  "// GET /users?sort=id;DROP TABLE users   ← tentativa de injeção",
+                  "",
+                  "// Com a lista fechada, ambos são recusados",
+                  "try { orderBy(\"passwordHash\"); }",
+                  "catch (error) { error.message; }   // \"ordenação não permitida: passwordHash\"",
+                ].join("\n"),
+              },
+              explanation:
+                "A lista fechada resolve dois problemas: segurança, ao impedir o acesso indireto a campos internos, e " +
+                "desempenho, ao limitar as ordenações às que têm índice.",
+            },
+            {
+              title: "Ordenação estável para paginar",
+              context: "Sem um desempate, itens com o mesmo valor podem trocar de lugar entre uma página e outra.",
+              code: {
+                language: "javascript",
+                filename: "stable-sort.js",
+                code: [
+                  "// Vários pedidos com o mesmo status: a ordem entre eles não é definida pelo banco",
+                  "// ORDER BY status              ← instável: a página 2 pode repetir itens da página 1",
+                  "// ORDER BY status, id          ← estável: o id desempata sempre da mesma forma",
+                  "",
+                  "const sortWithTiebreaker = (items) =>",
+                  "  [...items].sort((a, b) => a.status.localeCompare(b.status) || a.id - b.id);",
+                ].join("\n"),
+              },
+              explanation:
+                "O desempate único torna a ordem total. É o requisito básico para que paginação, seja por offset ou por " +
+                "cursor, funcione sem repetições.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A listagem monta o `ORDER BY` concatenando o parâmetro `sort` recebido. Um consumidor consegue " +
+              "ordenar por qualquer coluna, inclusive as internas, e enviar texto que altera a consulta.",
+            problemCode: {
+              language: "javascript",
+              filename: "unsafe-order.js",
+              code: [
+                "function buildQuery(sort) {",
+                "  return `SELECT * FROM orders ORDER BY ${sort}`;   // sort vem da consulta da URL",
+                "}",
+                "",
+                "buildQuery(\"total; DROP TABLE orders\");",
+              ].join("\n"),
+            },
+            task:
+              "Implemente `orderBy(sort)`, que aceite só `createdAt`, `total` e `status` (com `-` para decrescente, separados " +
+              "por vírgula), traduza-os para as colunas `created_at`, `total` e `status`, acrescente `id` como desempate e " +
+              "lance um erro para qualquer outro campo.",
+            hint: "Use um objeto que mapeia o nome público para a coluna. Se o nome não estiver nele, lance um erro; nunca use o texto recebido na consulta.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "unsafe-order.fixed.js",
+                code: [
+                  "const SORTABLE = { createdAt: \"created_at\", total: \"total\", status: \"status\" };",
+                  "",
+                  "function orderBy(sort = \"-createdAt\") {",
+                  "  const parts = sort.split(\",\").map((field) => {",
+                  "    const descending = field.startsWith(\"-\");",
+                  "    const name = descending ? field.slice(1) : field;",
+                  "    if (!Object.hasOwn(SORTABLE, name)) throw new Error(`ordenação não permitida: ${name}`);",
+                  "    return `${SORTABLE[name]} ${descending ? \"DESC\" : \"ASC\"}`;",
+                  "  });",
+                  "  return [...parts, \"id ASC\"].join(\", \");",
+                  "}",
+                  "",
+                  "orderBy(\"-createdAt,total\");            // \"created_at DESC, total ASC, id ASC\"",
+                  "orderBy(\"total; DROP TABLE orders\");    // Error: ordenação não permitida: total; DROP TABLE orders",
+                ].join("\n"),
+              },
+              explanation:
+                "O texto do cliente só escolhe entre opções conhecidas, e o que vai para a consulta vem da tabela, e não do " +
+                "parâmetro. `Object.hasOwn` evita aceitar nomes como `constructor`, herdados do protótipo.",
+            },
+          },
+        }),
         concept({
           order: 100,
           title: "Idempotency Key",
           requires: ["Web Fundamentals / HTTP Methods"],
           note: "canônico — mecânica HTTP (header + store de dedup + replay de resposta; retry seguro de POST). Mudança não silenciosa vs Fase 1 (que dizia 'Platform/API referencia')",
           collision: "≠ Idempotency conceito de resiliência (Architecture / Resilience Patterns)",
+          summary:
+            "Uma chave enviada pelo cliente em uma operação não idempotente, como um POST, que permite ao servidor " +
+            "reconhecer uma repetição e devolver o resultado da primeira execução, em vez de fazê-la de novo.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Quando uma requisição falha por tempo limite, o cliente não sabe se o servidor chegou a processá-la: " +
+                "repetir pode duplicar uma cobrança ou um pedido. A chave de idempotência resolve isso: o cliente gera " +
+                "um identificador único por operação, e o envia em um cabeçalho (`Idempotency-Key`). O servidor guarda o " +
+                "resultado associado à chave, e, se a mesma chave chegar de novo, devolve o resultado guardado sem " +
+                "executar a operação outra vez. É o que torna seguro repetir um POST (HTTP Methods).",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "A mesma chave significa a mesma operação: a primeira vez executa, e as seguintes só repetem a " +
+                "resposta guardada — o cliente pode tentar de novo sem medo de duplicar.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "list",
+              items: [
+                "O cliente gera a chave (um UUID) uma vez por operação e a reenvia, idêntica, em cada tentativa.",
+                "O servidor consulta a chave: se é nova, registra que está em andamento, executa e guarda a resposta.",
+                "Se a chave já tem uma resposta guardada, o servidor a devolve (replay), sem executar nada.",
+                "Se a mesma chave chega com um corpo diferente, é um erro de uso do cliente: responde com erro (409 ou 422).",
+                "Se a chave está em andamento, uma segunda requisição simultânea é recusada (409) ou espera, para não executar em duplicata.",
+                "As chaves expiram depois de um prazo (por exemplo, 24 horas), e são separadas por cliente.",
+              ],
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "idempotency.js",
+              code: [
+                "import { createHash } from \"node:crypto\";",
+                "",
+                "class IdempotencyStore {",
+                "  #records = new Map();",
+                "  constructor(ttlMs = 24 * 3600 * 1000) { this.ttlMs = ttlMs; }",
+                "",
+                "  async run(key, body, handler, now = Date.now()) {",
+                "    const fingerprint = createHash(\"sha256\").update(JSON.stringify(body)).digest(\"hex\");",
+                "    const record = this.#records.get(key);",
+                "",
+                "    if (record && record.expiresAt > now) {",
+                "      if (record.fingerprint !== fingerprint) {",
+                "        return { status: 422, body: { error: \"a chave já foi usada com outro corpo\" } };",
+                "      }",
+                "      if (record.state === \"in-progress\") {",
+                "        return { status: 409, body: { error: \"requisição idêntica em andamento\" } };",
+                "      }",
+                "      return { ...record.response, replayed: true };   // devolve a resposta guardada",
+                "    }",
+                "",
+                "    this.#records.set(key, { state: \"in-progress\", fingerprint, expiresAt: now + this.ttlMs });",
+                "    try {",
+                "      const response = await handler();",
+                "      this.#records.set(key, { state: \"done\", fingerprint, response, expiresAt: now + this.ttlMs });",
+                "      return response;",
+                "    } catch (error) {",
+                "      this.#records.delete(key);   // falha inesperada: permite uma nova tentativa",
+                "      throw error;",
+                "    }",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O registro \"em andamento\" é criado antes de executar, e é ele que barra a duplicata simultânea. Em " +
+                "produção, essa reserva precisa ser atômica e compartilhada entre instâncias, como um " +
+                "`INSERT ... ON CONFLICT` ou um `SET NX` no Redis.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Em operações que não são naturalmente idempotentes e em que a duplicação custa caro: pagamentos, criação de pedidos, envio de e-mails e transferências.",
+                "Sempre que os clientes têm razão para repetir, como redes móveis instáveis, tempos limite e filas que reentregam mensagens.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Métodos que já são idempotentes (GET, PUT, DELETE) não precisam dela: repetir o pedido já é seguro.",
+                "Exige armazenamento durável e atômico, e uma política de expiração; um armazenamento local em memória só protege uma instância.",
+                "O cliente precisa gerar a chave uma vez por operação e reutilizá-la nas repetições; uma chave nova a cada tentativa anula a proteção.",
+                "Não resolve duplicatas entre operações diferentes, como o usuário clicando duas vezes em \"comprar\" e gerando duas chaves; isso pede outra proteção, no cliente ou no domínio.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "A repetição devolve a mesma resposta",
+              context: "O efeito colateral acontece uma vez, mesmo com duas chamadas.",
+              code: {
+                language: "javascript",
+                filename: "replay.js",
+                code: [
+                  "const store = new IdempotencyStore();",
+                  "let charges = 0;",
+                  "",
+                  "const charge = () => ({ status: 201, body: { id: ++charges, amount: 100 } });",
+                  "",
+                  "const first = await store.run(\"chave-1\", { amount: 100 }, charge);",
+                  "const second = await store.run(\"chave-1\", { amount: 100 }, charge);",
+                  "",
+                  "charges;            // 1 — a cobrança aconteceu uma vez",
+                  "second.body.id;     // 1 — a mesma resposta da primeira",
+                  "second.replayed;    // true",
+                ].join("\n"),
+              },
+              explanation:
+                "A segunda chamada não executou a cobrança. Devolveu o que a primeira produziu, e o cliente não distingue " +
+                "uma da outra.",
+            },
+            {
+              title: "Duas requisições ao mesmo tempo",
+              context: "A repetição pode chegar enquanto a primeira ainda está sendo processada.",
+              code: {
+                language: "javascript",
+                filename: "concurrent.js",
+                code: [
+                  "const slowCharge = async () => {",
+                  "  await new Promise((resolve) => setTimeout(resolve, 100));",
+                  "  return { status: 201, body: { id: 1 } };",
+                  "};",
+                  "",
+                  "const [a, b] = await Promise.all([",
+                  "  store.run(\"chave-2\", { amount: 50 }, slowCharge),",
+                  "  store.run(\"chave-2\", { amount: 50 }, slowCharge),",
+                  "]);",
+                  "",
+                  "[a.status, b.status];   // [201, 409] — a segunda foi barrada, e a cobrança rodou uma vez",
+                ].join("\n"),
+              },
+              explanation:
+                "Sem o estado \"em andamento\", as duas passariam pela checagem ao mesmo tempo e duplicariam a cobrança. " +
+                "Reservar a chave antes de executar fecha essa janela.",
+            },
+            {
+              title: "O cliente reutiliza a chave nas tentativas",
+              context: "A chave é gerada uma vez, e a repetição a reenvia.",
+              code: {
+                language: "javascript",
+                filename: "client-retry.js",
+                code: [
+                  "async function postWithRetry(url, body, attempts = 3) {",
+                  "  const key = crypto.randomUUID();   // gerada UMA vez, fora do laço",
+                  "",
+                  "  for (let attempt = 1; ; attempt++) {",
+                  "    try {",
+                  "      return await fetch(url, {",
+                  "        method: \"POST\",",
+                  "        headers: { \"content-type\": \"application/json\", \"idempotency-key\": key },",
+                  "        body: JSON.stringify(body),",
+                  "      });",
+                  "    } catch (error) {",
+                  "      if (attempt >= attempts) throw error;",
+                  "    }",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Se a chave fosse gerada dentro do laço, cada tentativa seria uma operação nova, e o retry duplicaria a " +
+                "cobrança. Fora do laço, todas as tentativas são a mesma operação.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O endpoint de pagamento cria uma cobrança a cada POST. Um cliente móvel repetiu a chamada depois de um " +
+              "tempo limite e o usuário foi cobrado duas vezes.",
+            problemCode: {
+              language: "javascript",
+              filename: "payment.js",
+              code: [
+                "const payments = [];",
+                "",
+                "function createPayment(body) {",
+                "  const payment = { id: payments.length + 1, ...body };",
+                "  payments.push(payment);",
+                "  return { status: 201, body: payment };",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Aceite uma chave de idempotência: a mesma chave e o mesmo corpo devolvem o mesmo pagamento, sem criar outro; " +
+              "a mesma chave com outro corpo responde 422.",
+            hint: "Guarde, por chave, o corpo e a resposta. Compare o corpo com JSON.stringify e devolva a resposta guardada se forem iguais.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "payment.fixed.js",
+                code: [
+                  "const payments = [];",
+                  "const seen = new Map();   // chave → { body, response }",
+                  "",
+                  "function createPayment(key, body) {",
+                  "  const previous = seen.get(key);",
+                  "  if (previous) {",
+                  "    if (JSON.stringify(previous.body) !== JSON.stringify(body)) {",
+                  "      return { status: 422, body: { error: \"a chave já foi usada com outro corpo\" } };",
+                  "    }",
+                  "    return previous.response;   // repetição: mesma resposta, sem cobrar de novo",
+                  "  }",
+                  "",
+                  "  const payment = { id: payments.length + 1, ...body };",
+                  "  payments.push(payment);",
+                  "  const response = { status: 201, body: payment };",
+                  "  seen.set(key, { body, response });",
+                  "  return response;",
+                  "}",
+                  "",
+                  "createPayment(\"k1\", { amount: 100 });   // 201, id 1",
+                  "createPayment(\"k1\", { amount: 100 });   // a mesma resposta; payments.length continua 1",
+                  "createPayment(\"k1\", { amount: 999 });   // 422",
+                ].join("\n"),
+              },
+              explanation:
+                "A repetição legítima recebe a resposta original, e o uso incorreto da chave é sinalizado. Em produção, o " +
+                "`Map` seria um armazenamento compartilhado com expiração.",
+            },
+          },
         }),
         concept({
           order: 110,
@@ -3362,6 +5383,240 @@ export default area({
           subtopics: ["token bucket", "leaky bucket", "janela fixa/deslizante"],
           note: "canônico — 429 + Retry-After + headers de quota. Mudança não silenciosa vs Fase 1 (que colocava em Architecture / Resilience Patterns). Architecture e AI Engineering revisitam",
           collision: "≠ Query Complexity (GraphQL) ≠ Throttle client-side (Performance Engineering)",
+          summary:
+            "Limitar quantas requisições um cliente pode fazer em um período, para proteger a API contra abuso e " +
+            "sobrecarga e dividir a capacidade de forma justa — respondendo 429 quando o limite estoura.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Uma API tem capacidade finita, e um único cliente com um laço descontrolado, ou um abuso " +
+                "deliberado, pode esgotá-la para todos. O rate limiting define uma cota, por exemplo 100 " +
+                "requisições por minuto por chave de API, e recusa o excedente com o status `429 Too Many Requests`, " +
+                "acompanhado de `Retry-After`. Os algoritmos mais comuns são a janela fixa, a janela deslizante, o token " +
+                "bucket (baldes de fichas, que permitem rajadas curtas) e o leaky bucket (escoamento em ritmo constante).",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Defina uma cota por cliente e avise claramente quando ela acabar: quem excede recebe 429 e o tempo de " +
+                "espera, e o restante dos clientes continua sendo atendido.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "list",
+              items: [
+                "Janela fixa: um contador por intervalo (por minuto); simples, mas permite o dobro do limite na virada da janela.",
+                "Janela deslizante: considera os últimos N segundos a partir de agora, sem a virada brusca, ao custo de guardar mais dados ou de aproximar.",
+                "Token bucket: um balde que enche a uma taxa constante até uma capacidade; cada requisição gasta uma ficha, e o balde cheio permite uma rajada.",
+                "Leaky bucket: as requisições entram em uma fila que escoa a uma taxa constante, suavizando o tráfego.",
+                "A resposta 429 informa o `Retry-After` (segundos ou data) e, opcionalmente, cabeçalhos de cota (`RateLimit-*`, ou o `X-RateLimit-*` adotado de fato).",
+              ],
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "rate-limit.js",
+              code: [
+                "class TokenBucket {",
+                "  constructor({ capacity, refillPerSecond }) {",
+                "    this.capacity = capacity;",
+                "    this.refillPerSecond = refillPerSecond;",
+                "    this.tokens = capacity;",
+                "    this.updatedAt = 0;",
+                "  }",
+                "",
+                "  allow(now, cost = 1) {   // `now` em ms, recebido para poder testar",
+                "    const elapsed = (now - this.updatedAt) / 1000;",
+                "    this.tokens = Math.min(this.capacity, this.tokens + elapsed * this.refillPerSecond);",
+                "    this.updatedAt = now;",
+                "",
+                "    if (this.tokens >= cost) {",
+                "      this.tokens -= cost;",
+                "      return { allowed: true, remaining: Math.floor(this.tokens) };",
+                "    }",
+                "    const retryAfter = Math.ceil((cost - this.tokens) / this.refillPerSecond);",
+                "    return { allowed: false, remaining: 0, retryAfter };",
+                "  }",
+                "}",
+                "",
+                "// 5 requisições de rajada, depois 1 por segundo",
+                "const bucket = new TokenBucket({ capacity: 5, refillPerSecond: 1 });",
+                "",
+                "for (let i = 0; i < 5; i++) bucket.allow(0);   // gasta a rajada inteira",
+                "bucket.allow(0);        // { allowed: false, remaining: 0, retryAfter: 1 }",
+                "bucket.allow(1000);     // { allowed: true, remaining: 0 } — uma ficha voltou",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O balde permite uma rajada de cinco e depois sustenta um ritmo de uma por segundo. O `retryAfter` diz ao " +
+                "cliente exatamente quanto esperar.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Em qualquer API pública, ou com clientes que você não controla, para proteger a disponibilidade e garantir justiça entre eles.",
+                "Para controlar custo, como em APIs que consomem recursos caros (modelos de IA, geração de relatórios) e para diferenciar planos (cotas maiores para clientes pagantes).",
+                "Em endpoints sensíveis, como o login, com limites mais baixos, para dificultar tentativas em massa.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Contadores em memória valem por instância: com várias instâncias, o limite real é multiplicado, e é preciso um armazenamento compartilhado (como o Redis) com operações atômicas.",
+                "Limitar por endereço IP penaliza quem compartilha um IP (redes corporativas, NAT), e é fácil de contornar; prefira uma chave de API ou o usuário autenticado.",
+                "Não é uma defesa completa contra ataques de negação de serviço: tráfego em massa precisa ser contido antes, na borda (CDN, firewall).",
+                "Limites apertados demais quebram clientes legítimos em picos normais; escolha valores a partir do uso real e permita rajadas.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "A virada da janela fixa",
+              context: "Uma janela fixa deixa passar o dobro do limite em torno da virada do intervalo.",
+              code: {
+                language: "javascript",
+                filename: "fixed-window.js",
+                code: [
+                  "class FixedWindow {",
+                  "  constructor(limit, windowMs) { this.limit = limit; this.windowMs = windowMs; this.counts = new Map(); }",
+                  "",
+                  "  allow(now) {",
+                  "    const window = Math.floor(now / this.windowMs);   // 0 até 59.999 ms, depois 1...",
+                  "    const count = (this.counts.get(window) ?? 0) + 1;",
+                  "    this.counts.set(window, count);",
+                  "    return count <= this.limit;",
+                  "  }",
+                  "}",
+                  "",
+                  "const limiter = new FixedWindow(100, 60_000);   // 100 por minuto",
+                  "",
+                  "// 100 requisições no fim do primeiro minuto e 100 no começo do segundo",
+                  "let allowed = 0;",
+                  "for (let i = 0; i < 100; i++) if (limiter.allow(59_000)) allowed++;",
+                  "for (let i = 0; i < 100; i++) if (limiter.allow(61_000)) allowed++;",
+                  "allowed;   // 200 — 200 requisições em 2 segundos, com um limite de 100 por minuto",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada janela respeitou o limite, mas em dois segundos passaram 200 requisições. A janela deslizante e o " +
+                "token bucket eliminam essa virada brusca.",
+            },
+            {
+              title: "A resposta 429 completa",
+              context: "Dizer quando tentar de novo permite que o cliente se comporte bem sozinho.",
+              code: {
+                language: "javascript",
+                filename: "response-429.js",
+                code: [
+                  "function limitResponse(result, limit) {",
+                  "  const headers = {",
+                  "    \"ratelimit-limit\": String(limit),",
+                  "    \"ratelimit-remaining\": String(result.remaining),",
+                  "  };",
+                  "  if (result.allowed) return { status: 200, headers };",
+                  "",
+                  "  return {",
+                  "    status: 429,",
+                  "    headers: { ...headers, \"retry-after\": String(result.retryAfter) },",
+                  "    body: { title: \"Muitas requisições\", detail: `Tente novamente em ${result.retryAfter}s.` },",
+                  "  };",
+                  "}",
+                  "",
+                  "limitResponse({ allowed: false, remaining: 0, retryAfter: 12 }, 100).headers[\"retry-after\"];   // \"12\"",
+                ].join("\n"),
+              },
+              explanation:
+                "O cliente sabe o limite, quanto resta e quando voltar. Sem o `Retry-After`, ele tentaria repetidamente e " +
+                "pioraria a sobrecarga.",
+            },
+            {
+              title: "O cliente respeita o limite",
+              context: "Do lado do consumidor, o tratamento do 429 faz parte do bom uso da API.",
+              code: {
+                language: "javascript",
+                filename: "client-429.js",
+                code: [
+                  "async function fetchPolitely(url, options, attempts = 5) {",
+                  "  for (let attempt = 1; attempt <= attempts; attempt++) {",
+                  "    const response = await fetch(url, options);",
+                  "    if (response.status !== 429) return response;",
+                  "",
+                  "    const wait = Number(response.headers.get(\"retry-after\") ?? 2 ** attempt);   // espera indicada, ou recuo exponencial",
+                  "    await new Promise((resolve) => setTimeout(resolve, wait * 1000));",
+                  "  }",
+                  "  throw new Error(\"limite de requisições excedido\");",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Respeitar o `Retry-After` evita agravar a sobrecarga e permite continuar o trabalho depois. Na falta " +
+                "dele, o recuo exponencial é o comportamento padrão.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A API não tem nenhum limite. Um cliente com um laço errado envia milhares de requisições por segundo, " +
+              "e os demais clientes começam a receber erros.",
+            problemCode: {
+              language: "javascript",
+              filename: "no-limit.js",
+              code: [
+                "function handle(request) {",
+                "  return { status: 200, body: processRequest(request) };   // sem nenhum controle",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Implemente `TokenBucket` com `capacity` e `refillPerSecond`, e um método `allow(now)` que devolva " +
+              "`{ allowed, retryAfter }`. Depois, use um balde por chave de API na função `handle`.",
+            hint: "A cada chamada, some as fichas repostas desde a última vez (limitando à capacidade). Se houver ao menos uma, gaste-a; senão, calcule quanto falta.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "no-limit.fixed.js",
+                code: [
+                  "class TokenBucket {",
+                  "  constructor({ capacity, refillPerSecond }) {",
+                  "    Object.assign(this, { capacity, refillPerSecond, tokens: capacity, updatedAt: 0 });",
+                  "  }",
+                  "",
+                  "  allow(now) {",
+                  "    const elapsed = (now - this.updatedAt) / 1000;",
+                  "    this.tokens = Math.min(this.capacity, this.tokens + elapsed * this.refillPerSecond);",
+                  "    this.updatedAt = now;",
+                  "",
+                  "    if (this.tokens >= 1) { this.tokens -= 1; return { allowed: true }; }",
+                  "    return { allowed: false, retryAfter: Math.ceil((1 - this.tokens) / this.refillPerSecond) };",
+                  "  }",
+                  "}",
+                  "",
+                  "const buckets = new Map();   // chave de API → balde",
+                  "",
+                  "function handle(request, now = Date.now()) {",
+                  "  if (!buckets.has(request.apiKey)) {",
+                  "    buckets.set(request.apiKey, new TokenBucket({ capacity: 10, refillPerSecond: 5 }));",
+                  "  }",
+                  "  const result = buckets.get(request.apiKey).allow(now);",
+                  "",
+                  "  if (!result.allowed) {",
+                  "    return { status: 429, headers: { \"retry-after\": String(result.retryAfter) } };",
+                  "  }",
+                  "  return { status: 200, body: processRequest(request) };",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada cliente tem o seu balde, então um abusador esgota só a própria cota, e os demais seguem sendo " +
+                "atendidos. Em produção, o `Map` seria um armazenamento compartilhado entre as instâncias.",
+            },
+          },
         }),
         concept({
           order: 120,
@@ -3369,6 +5624,210 @@ export default area({
           requires: ["API Contract"],
           note: "revisita Software Craft / Semantic Versioning, Backward Compatibility (URL vs header vs media type)",
           revisit: ["Software Craft / Dependency & Version Management / Semantic Versioning", "Software Craft / Dependency & Version Management / Backward Compatibility"],
+          summary:
+            "A forma de publicar mudanças incompatíveis de uma API sem quebrar quem já a usa: manter versões " +
+            "convivendo, identificadas na URL, em um cabeçalho ou no tipo de mídia.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Mudanças compatíveis, como acrescentar campos ou endpoints, não exigem uma nova versão. Quando uma " +
+                "mudança é incompatível (breaking change), a saída é publicar uma nova versão da API e manter a " +
+                "anterior em funcionamento por um tempo, para que cada consumidor migre no seu ritmo. É o mesmo " +
+                "raciocínio de Semantic Versioning e de Backward Compatibility (Dependency & Version Management), " +
+                "aplicado a um serviço em execução, em que só a versão maior importa.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Versione só quando não houver como evoluir de forma compatível, e mantenha as versões antigas " +
+                "funcionando até que os consumidores migrem.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "list",
+              items: [
+                "Na URL (`/v1/orders`, `/v2/orders`): a mais visível e a mais usada; fácil de testar no navegador e de rotear.",
+                "Em um cabeçalho (`Api-Version: 2`): mantém o endereço estável, mas fica menos visível.",
+                "No tipo de mídia (`Accept: application/vnd.loja.v2+json`): o mais fiel a REST, e o mais trabalhoso de usar.",
+                "Por data (`Api-Version: 2026-03-01`), como algumas APIs públicas: cada cliente fica preso ao comportamento da data em que começou.",
+              ],
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "versioning.js",
+              code: [
+                "// Um único modelo interno (a versão mais nova) e um tradutor para cada versão publicada",
+                "const order = { id: \"42\", customer: { firstName: \"Ana\", lastName: \"Souza\" }, totalInCents: 1990 };",
+                "",
+                "const serializers = {",
+                "  v2: (o) => ({ id: o.id, customer: o.customer, totalInCents: o.totalInCents }),",
+                "  v1: (o) => ({                                                   // formato antigo, ainda suportado",
+                "    id: o.id,",
+                "    customerName: `${o.customer.firstName} ${o.customer.lastName}`,",
+                "    total: o.totalInCents / 100,",
+                "  }),",
+                "};",
+                "",
+                "function versionFrom(url) {",
+                "  return /^\\/(v\\d+)\\//.exec(url)?.[1];   // \"/v1/orders/42\" → \"v1\"",
+                "}",
+                "",
+                "function getOrder(url) {",
+                "  const version = versionFrom(url);",
+                "  if (!serializers[version]) return { status: 400, body: { error: \"versão não suportada\" } };",
+                "  return { status: 200, body: serializers[version](order) };",
+                "}",
+                "",
+                "getOrder(\"/v1/orders/42\").body;   // { id: \"42\", customerName: \"Ana Souza\", total: 19.9 }",
+                "getOrder(\"/v2/orders/42\").body;   // { id: \"42\", customer: { ... }, totalInCents: 1990 }",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "As duas versões compartilham a mesma regra de negócio: só a tradução da resposta muda. Manter cada " +
+                "versão como uma implementação separada multiplicaria os bugs e o trabalho.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Em APIs públicas, ou com muitos consumidores fora do seu controle, em que uma mudança incompatível é inevitável.",
+                "Quando é preciso garantir um prazo de migração longo, e não uma troca simultânea de todos os clientes.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Cada versão mantida é custo: testes, documentação, correções de segurança e suporte multiplicados; evite criar uma versão para cada mudança.",
+                "Em APIs internas, com clientes que você coordena, costuma ser mais barato evoluir de forma compatível e migrar todos juntos.",
+                "Antes de versionar, tente evoluir de forma aditiva: novos campos opcionais, novos endpoints, valores antigos ainda aceitos.",
+                "Versionar por recurso, e não pela API toda, fragmenta a experiência; decida a granularidade e mantenha-a.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "As formas de indicar a versão",
+              context: "Cada estratégia tem um equilíbrio diferente entre visibilidade e pureza.",
+              code: {
+                language: "text",
+                filename: "strategies.txt",
+                code: [
+                  "URL           GET /v2/orders/42",
+                  "              + visível, fácil de rotear e de testar   − o endereço muda a cada versão",
+                  "",
+                  "Cabeçalho     GET /orders/42          Api-Version: 2",
+                  "              + o endereço é estável                   − menos visível, mais fácil de esquecer",
+                  "",
+                  "Tipo de mídia GET /orders/42          Accept: application/vnd.loja.v2+json",
+                  "              + o mais fiel a REST                     − o mais trabalhoso de usar e de depurar",
+                ].join("\n"),
+              },
+              explanation:
+                "Não há uma resposta única. A URL é a escolha mais comum por ser a mais simples para quem consome, e o " +
+                "importante é a consistência.",
+            },
+            {
+              title: "Uma mudança que não precisa de versão",
+              context: "Acrescentar é compatível: nada muda para quem já usa a API.",
+              code: {
+                language: "javascript",
+                filename: "additive-change.js",
+                code: [
+                  "// Antes",
+                  "// { \"id\": \"42\", \"status\": \"paid\", \"total\": 1990 }",
+                  "",
+                  "// Depois: um campo novo, opcional para quem lê. Nenhuma versão nova é necessária.",
+                  "// { \"id\": \"42\", \"status\": \"paid\", \"total\": 1990, \"paidAt\": \"2026-03-01T10:00:00Z\" }",
+                  "",
+                  "// Consumidores tolerantes ignoram `paidAt`; os que precisam dele passam a usá-lo.",
+                ].join("\n"),
+              },
+              explanation:
+                "Se todos os consumidores seguem o leitor tolerante, acrescentar campos é seguro. Reservar as versões para " +
+                "as quebras reais mantém o número delas baixo.",
+            },
+            {
+              title: "Um modelo interno, vários formatos externos",
+              context: "A tradução na borda evita duplicar a lógica de negócio entre versões.",
+              code: {
+                language: "javascript",
+                filename: "translate-at-the-edge.js",
+                code: [
+                  "// A regra de negócio usa só o modelo mais novo",
+                  "async function placeOrder(input) { return orders.create(input); }",
+                  "",
+                  "// Cada versão traduz a entrada para o modelo novo e a saída para o seu formato",
+                  "const handlers = {",
+                  "  v1: async (body) => serializers.v1(await placeOrder(fromV1(body))),",
+                  "  v2: async (body) => serializers.v2(await placeOrder(body)),",
+                  "};",
+                  "",
+                  "const fromV1 = (body) => {",
+                  "  const [firstName, ...rest] = body.customerName.split(\" \");",
+                  "  return { customer: { firstName, lastName: rest.join(\" \") }, totalInCents: Math.round(body.total * 100) };",
+                  "};",
+                ].join("\n"),
+              },
+              explanation:
+                "A versão antiga fica reduzida a um par de funções de tradução. Quando ela for desligada, basta apagá-las, " +
+                "e a regra de negócio não muda.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A v1 devolve `name` com o nome completo. A v2 precisa de `firstName` e `lastName` separados, mas os " +
+              "clientes atuais dependem do campo `name`.",
+            problemCode: {
+              language: "javascript",
+              filename: "user-versions.js",
+              code: [
+                "const user = { id: 7, firstName: \"Ana\", lastName: \"Souza\" };",
+                "",
+                "function getUser(url) {",
+                "  // GET /v1/users/7 → { id, name }",
+                "  // GET /v2/users/7 → { id, firstName, lastName }",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Implemente `getUser(url)` para responder os dois formatos a partir do mesmo modelo, e 400 para uma " +
+              "versão desconhecida.",
+            hint: "Extraia a versão do início do caminho com uma expressão regular e use uma tabela de serializadores.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "user-versions.fixed.js",
+                code: [
+                  "const user = { id: 7, firstName: \"Ana\", lastName: \"Souza\" };",
+                  "",
+                  "const serializers = {",
+                  "  v1: (u) => ({ id: u.id, name: `${u.firstName} ${u.lastName}` }),",
+                  "  v2: (u) => ({ id: u.id, firstName: u.firstName, lastName: u.lastName }),",
+                  "};",
+                  "",
+                  "function getUser(url) {",
+                  "  const version = /^\\/(v\\d+)\\//.exec(url)?.[1];",
+                  "  if (!(version in serializers)) return { status: 400, body: { error: \"versão não suportada\" } };",
+                  "  return { status: 200, body: serializers[version](user) };",
+                  "}",
+                  "",
+                  "getUser(\"/v1/users/7\").body;   // { id: 7, name: \"Ana Souza\" }",
+                  "getUser(\"/v2/users/7\").body;   // { id: 7, firstName: \"Ana\", lastName: \"Souza\" }",
+                  "getUser(\"/v9/users/7\").status; // 400",
+                ].join("\n"),
+              },
+              explanation:
+                "Os clientes da v1 seguem funcionando, e os novos usam a v2, ambos servidos pelo mesmo modelo. A " +
+                "diferença está só na tradução da resposta.",
+            },
+          },
         }),
         concept({
           order: 130,
@@ -3376,12 +5835,440 @@ export default area({
           requires: ["API Versioning"],
           note: "revisita Software Craft / Deprecation (sunset headers, janelas de migração)",
           revisit: ["Software Craft / Dependency & Version Management / Deprecation"],
+          summary:
+            "O processo de aposentar uma versão ou um recurso de uma API com aviso e prazo: anunciar, sinalizar nas " +
+            "respostas, acompanhar quem ainda usa, e só então desligar.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Versões antigas não podem existir para sempre, mas desligá-las de surpresa quebra os consumidores. A " +
+                "depreciação é o caminho combinado: anuncia-se que algo será retirado, indica-se a alternativa, dá-se " +
+                "uma janela de migração e, só depois de uma data definida, remove-se. É o mesmo processo de Deprecation " +
+                "em bibliotecas (Dependency & Version Management), com a diferença de que os consumidores são " +
+                "sistemas em produção que você nem sempre conhece.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Avise cedo, sinalize nas próprias respostas, meça quem ainda usa e desligue só na data anunciada: a " +
+                "aposentadoria de uma API é um processo, e não um evento.",
+            },
+            { type: "heading", text: "Como fazer" },
+            {
+              type: "list",
+              items: [
+                "Anuncie: changelog, documentação, e-mail para os clientes que usam o recurso, com a data de desligamento e o caminho de migração.",
+                "Sinalize nas respostas: `Deprecation` (o recurso está depreciado), `Sunset` (data do desligamento, no formato HTTP-date, RFC 8594) e `Link` para o sucessor e para a documentação de migração.",
+                "Meça o uso por cliente e por versão, para saber quem ainda depende e a quem procurar.",
+                "Dê uma janela realista, de meses e não de dias, e considere apagões programados (brownouts): desligar por curtos períodos para fazer os retardatários notarem.",
+                "Na data, responda `410 Gone`, com uma mensagem que aponte para a migração, em vez de um 404 anônimo.",
+              ],
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "deprecation.js",
+              code: [
+                "const V1_SUNSET = new Date(\"2026-12-31T23:59:59Z\");",
+                "const usage = new Map();   // cliente → número de chamadas à v1",
+                "",
+                "function deprecationPolicy({ apiKey, now = new Date() }) {",
+                "  usage.set(apiKey, (usage.get(apiKey) ?? 0) + 1);   // medir quem ainda usa",
+                "",
+                "  const headers = {",
+                "    deprecation: \"true\",",
+                "    sunset: V1_SUNSET.toUTCString(),   // \"Thu, 31 Dec 2026 23:59:59 GMT\"",
+                "    link: \"</v2/orders>; rel=\\\"successor-version\\\", <https://docs.exemplo.com/migracao-v2>; rel=\\\"deprecation\\\"\",",
+                "  };",
+                "",
+                "  if (now >= V1_SUNSET) {",
+                "    return { status: 410, headers, body: { title: \"Versão desligada\", detail: \"Use /v2. Guia: https://docs.exemplo.com/migracao-v2\" } };",
+                "  }",
+                "  return { status: 200, headers };",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Antes da data, a v1 responde normalmente, com os cabeçalhos de aviso. Depois dela, passa a devolver 410, " +
+                "e o contador de uso mostra quais clientes precisam de atenção antes disso.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Sempre que uma versão, um endpoint ou um campo for aposentado, principalmente em APIs públicas ou com muitos consumidores.",
+                "Junto do versionamento: cada versão nova traz a decisão de quando a antiga será retirada.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Depreciar sem oferecer uma alternativa, ou sem um guia de migração, só transfere o problema aos consumidores.",
+                "Prazos curtos demais, ou sem acompanhamento do uso, terminam em quebras e em clientes irritados; os grandes clientes podem precisar de contato direto.",
+                "Cabeçalhos só ajudam quem os lê: muitos clientes automatizados os ignoram, e por isso o anúncio por outros canais continua necessário.",
+                "Adiar indefinidamente o desligamento acumula custo e risco de segurança; a data anunciada precisa ser levada a sério, com o cuidado de comunicar qualquer mudança nela.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Os cabeçalhos de aviso",
+              context: "A depreciação anunciada dentro da própria resposta chega a quem está usando o recurso.",
+              code: {
+                language: "text",
+                filename: "deprecation-headers.txt",
+                code: [
+                  "HTTP/1.1 200 OK",
+                  "Deprecation: true",
+                  "Sunset: Thu, 31 Dec 2026 23:59:59 GMT",
+                  "Link: </v2/orders>; rel=\"successor-version\"",
+                  "Link: <https://docs.exemplo.com/migracao-v2>; rel=\"deprecation\"",
+                  "",
+                  "# Deprecation: o recurso está depreciado (versões recentes do padrão usam uma data no lugar de `true`)",
+                  "# Sunset: quando será desligado (formato de data HTTP)",
+                  "# Link: onde estão o sucessor e o guia de migração",
+                ].join("\n"),
+              },
+              explanation:
+                "Ferramentas e bibliotecas cliente podem ler esses cabeçalhos e registrar um aviso nos logs de quem " +
+                "usa. É a forma de alcançar quem não lê o changelog.",
+            },
+            {
+              title: "Saber quem ainda usa",
+              context: "Sem medição, a data de desligamento é um salto no escuro.",
+              code: {
+                language: "javascript",
+                filename: "usage-report.js",
+                code: [
+                  "function usageReport(usage, days) {",
+                  "  return [...usage.entries()]",
+                  "    .map(([apiKey, calls]) => ({ apiKey, callsPerDay: Math.round(calls / days) }))",
+                  "    .sort((a, b) => b.callsPerDay - a.callsPerDay);",
+                  "}",
+                  "",
+                  "usageReport(new Map([[\"chave-a\", 9000], [\"chave-b\", 30]]), 30);",
+                  "// [{ apiKey: \"chave-a\", callsPerDay: 300 }, { apiKey: \"chave-b\", callsPerDay: 1 }]",
+                  "",
+                  "// A chave-a ainda depende muito da v1: vale um contato direto antes da data.",
+                ].join("\n"),
+              },
+              explanation:
+                "O relatório mostra a quem procurar. Um cliente com muito tráfego na versão antiga precisa de um contato " +
+                "e de apoio, e não só de um aviso automático.",
+            },
+            {
+              title: "Apagão programado (brownout)",
+              context: "Desligar por curtos períodos antes da data final faz os retardatários notarem, sem quebrá-los de vez.",
+              code: {
+                language: "javascript",
+                filename: "brownout.js",
+                code: [
+                  "// Calendário: a v1 fica indisponível por 1 hora em datas anunciadas",
+                  "const BROWNOUTS = [",
+                  "  { from: new Date(\"2026-10-01T14:00:00Z\"), to: new Date(\"2026-10-01T15:00:00Z\") },",
+                  "  { from: new Date(\"2026-11-01T14:00:00Z\"), to: new Date(\"2026-11-01T18:00:00Z\") },",
+                  "];",
+                  "",
+                  "const inBrownout = (now) => BROWNOUTS.some(({ from, to }) => now >= from && now < to);",
+                  "",
+                  "inBrownout(new Date(\"2026-10-01T14:30:00Z\"));   // true  → responder 410 nesta janela",
+                  "inBrownout(new Date(\"2026-10-01T16:00:00Z\"));   // false → volta a funcionar",
+                ].join("\n"),
+              },
+              explanation:
+                "Quem ainda usa a versão antiga percebe o problema com antecedência, quando o custo de corrigir é " +
+                "menor. As janelas crescem até o desligamento definitivo.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A v1 será desligada em 31/12/2026. Hoje ela responde normalmente e sem nenhum aviso, e ninguém sabe quantos " +
+              "clientes ainda dependem dela.",
+            problemCode: {
+              language: "javascript",
+              filename: "v1-endpoint.js",
+              code: [
+                "function handleV1(request) {",
+                "  return { status: 200, body: listOrders(request) };",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Faça `handleV1` acrescentar os cabeçalhos `Deprecation`, `Sunset` e `Link` para a v2, contar o uso por " +
+              "`apiKey`, e responder `410` depois da data.",
+            hint: "`Date.prototype.toUTCString()` gera o formato de data HTTP. Compare `now` com a data de desligamento antes de decidir o status.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "v1-endpoint.fixed.js",
+                code: [
+                  "const SUNSET = new Date(\"2026-12-31T23:59:59Z\");",
+                  "const usage = new Map();",
+                  "",
+                  "function handleV1(request, now = new Date()) {",
+                  "  usage.set(request.apiKey, (usage.get(request.apiKey) ?? 0) + 1);",
+                  "",
+                  "  const headers = {",
+                  "    deprecation: \"true\",",
+                  "    sunset: SUNSET.toUTCString(),",
+                  "    link: \"</v2/orders>; rel=\\\"successor-version\\\"\",",
+                  "  };",
+                  "",
+                  "  if (now >= SUNSET) {",
+                  "    return { status: 410, headers, body: { title: \"Versão desligada\", detail: \"Migre para /v2/orders\" } };",
+                  "  }",
+                  "  return { status: 200, headers, body: listOrders(request) };",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Os clientes passam a ser avisados em cada resposta, o contador mostra quem ainda depende da v1, e a data " +
+                "de desligamento é aplicada com um 410 informativo.",
+            },
+          },
         }),
         concept({
           order: 140,
           title: "OpenAPI",
           requires: ["API Contract"],
           note: "spec-as-doc, Swagger UI, contract-first — absorve o SUGESTÃO 'API Documentation' deixado pelo Epic 03",
+          summary:
+            "Um formato padrão, em YAML ou JSON, para descrever uma API HTTP — endpoints, parâmetros, corpos, " +
+            "respostas e autenticação — que serve ao mesmo tempo de documentação, de contrato e de base para " +
+            "gerar código e testes.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "OpenAPI (antes chamado de Swagger) é uma especificação para escrever o contrato de uma API em uma " +
+                "forma que humanos e máquinas leem. Um documento OpenAPI lista os caminhos, os métodos de cada um, os " +
+                "parâmetros, o formato do corpo e das respostas (descritos com JSON Schema) e a segurança. Com ele, " +
+                "geram-se páginas de documentação interativas (Swagger UI, Redoc), clientes e servidores em várias " +
+                "linguagens, dublês para testes e validação automática de requisições e respostas.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Descreva a API uma vez, em um formato padrão, e deixe as ferramentas gerarem a documentação, os " +
+                "clientes e as verificações a partir dessa fonte.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "Há duas formas de trabalhar. Contract-first: escreve-se a especificação antes do código, e ela guia a " +
+                "implementação e os consumidores. Code-first: gera-se a especificação a partir do código (anotações, " +
+                "esquemas de validação). Nos dois casos, o essencial é que a especificação e a implementação não se " +
+                "afastem.",
+            },
+            {
+              type: "code",
+              language: "text",
+              filename: "openapi.yaml",
+              code: [
+                "openapi: 3.1.0",
+                "info: { title: API da Loja, version: 1.0.0 }",
+                "paths:",
+                "  /orders/{id}:",
+                "    get:",
+                "      summary: Busca um pedido",
+                "      parameters:",
+                "        - { name: id, in: path, required: true, schema: { type: string } }",
+                "      responses:",
+                "        '200':",
+                "          description: O pedido",
+                "          content:",
+                "            application/json:",
+                "              schema: { $ref: '#/components/schemas/Order' }",
+                "        '404':",
+                "          description: Pedido não encontrado",
+                "components:",
+                "  schemas:",
+                "    Order:",
+                "      type: object",
+                "      required: [id, status, total]",
+                "      properties:",
+                "        id: { type: string }",
+                "        status: { type: string, enum: [pending, paid, shipped] }",
+                "        total: { type: integer, description: Valor em centavos }",
+              ].join("\n"),
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "openapi.js",
+              code: [
+                "// A especificação, lida como dados, pode dirigir o código: aqui, a checagem de uma resposta",
+                "const spec = {",
+                "  components: { schemas: { Order: {",
+                "    type: \"object\",",
+                "    required: [\"id\", \"status\", \"total\"],",
+                "    properties: { id: { type: \"string\" }, status: { enum: [\"pending\", \"paid\", \"shipped\"] }, total: { type: \"integer\" } },",
+                "  } } },",
+                "};",
+                "",
+                "function conforms(schema, value) {",
+                "  const problems = [];",
+                "  for (const field of schema.required ?? []) if (!(field in value)) problems.push(`falta ${field}`);",
+                "  for (const [field, rule] of Object.entries(schema.properties)) {",
+                "    if (!(field in value)) continue;",
+                "    if (rule.enum && !rule.enum.includes(value[field])) problems.push(`${field} fora do enum`);",
+                "    if (rule.type === \"integer\" && !Number.isInteger(value[field])) problems.push(`${field} deve ser inteiro`);",
+                "    if (rule.type === \"string\" && typeof value[field] !== \"string\") problems.push(`${field} deve ser texto`);",
+                "  }",
+                "  return problems;",
+                "}",
+                "",
+                "conforms(spec.components.schemas.Order, { id: \"42\", status: \"paid\", total: 1990 });   // []",
+                "conforms(spec.components.schemas.Order, { id: \"42\", status: \"lost\" });                // [\"falta total\", \"status fora do enum\"]",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Na prática, bibliotecas como Ajv fazem essa validação completa, seguindo o JSON Schema. A ideia é a " +
+                "mesma: a especificação deixa de ser só um texto e passa a ser executável.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Em qualquer API com consumidores externos ou de outras equipes, para ter uma documentação sempre em dia e um contrato explícito.",
+                "Para gerar SDKs de clientes, dublês (mocks) para desenvolvimento e testes de contrato, e para validar as requisições e as respostas automaticamente.",
+                "No contract-first, para que o front-end e o back-end trabalhem em paralelo a partir do mesmo acordo.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Uma especificação escrita à mão e nunca verificada contra o código diverge da API real, e uma documentação errada é pior que nenhuma; automatize a verificação.",
+                "Não expressa tudo: regras de negócio, ordem de chamadas e garantias de tempo ficam fora do esquema e precisam ser descritas em texto.",
+                "Especificações grandes ficam difíceis de ler; divida em arquivos e reaproveite componentes com `$ref`.",
+                "A qualidade do código gerado varia entre ferramentas e linguagens; muitas equipes usam a geração como ponto de partida, e não como código final.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "A documentação interativa",
+              context: "A mesma especificação alimenta uma página em que se lê e se testa a API.",
+              code: {
+                language: "javascript",
+                filename: "swagger-ui.js",
+                code: [
+                  "// Com o Swagger UI, servir a especificação vira uma página de documentação interativa",
+                  "import swaggerUi from \"swagger-ui-express\";",
+                  "import spec from \"./openapi.json\" with { type: \"json\" };",
+                  "",
+                  "app.use(\"/docs\", swaggerUi.serve, swaggerUi.setup(spec));",
+                  "// GET /docs → lista os endpoints, os esquemas e permite executar chamadas de exemplo",
+                ].join("\n"),
+              },
+              explanation:
+                "Quem consome a API explora e experimenta sem instalar nada. Como a página vem da especificação, ela " +
+                "acompanha as mudanças no contrato.",
+            },
+            {
+              title: "Detectar a divergência entre a especificação e o código",
+              context: "Uma verificação automática impede que a documentação envelheça sozinha.",
+              code: {
+                language: "javascript",
+                filename: "spec-drift.js",
+                code: [
+                  "function drift(spec, implementedRoutes) {",
+                  "  const documented = new Set(",
+                  "    Object.entries(spec.paths).flatMap(([path, methods]) =>",
+                  "      Object.keys(methods).map((method) => `${method.toUpperCase()} ${path}`)),",
+                  "  );",
+                  "  const implemented = new Set(implementedRoutes);",
+                  "",
+                  "  return {",
+                  "    undocumented: [...implemented].filter((route) => !documented.has(route)),   // no código, fora da especificação",
+                  "    unimplemented: [...documented].filter((route) => !implemented.has(route)),  // na especificação, fora do código",
+                  "  };",
+                  "}",
+                  "",
+                  "drift({ paths: { \"/orders/{id}\": { get: {} } } }, [\"GET /orders/{id}\", \"DELETE /orders/{id}\"]);",
+                  "// { undocumented: [\"DELETE /orders/{id}\"], unimplemented: [] }",
+                ].join("\n"),
+              },
+              explanation:
+                "Rodar essa comparação no CI faz a integração falhar quando alguém acrescenta uma rota sem documentá-la, " +
+                "ou documenta uma que não existe.",
+            },
+            {
+              title: "Contract-first: o acordo antes do código",
+              context: "Escrever a especificação primeiro permite que as equipes avancem em paralelo.",
+              code: {
+                language: "text",
+                filename: "contract-first.txt",
+                code: [
+                  "1. As equipes acordam o contrato e o escrevem em openapi.yaml.",
+                  "2. Front-end: gera o cliente e sobe um mock a partir do arquivo, e começa a trabalhar.",
+                  "3. Back-end: implementa o servidor, validando as requisições contra o mesmo arquivo.",
+                  "4. No CI: testes de contrato verificam se o servidor real cumpre o que o arquivo promete.",
+                  "5. Mudanças no contrato passam por revisão, como qualquer alteração de código.",
+                ].join("\n"),
+              },
+              explanation:
+                "O contrato vira o ponto de sincronização entre as equipes. Nenhuma espera pela outra para começar, e o " +
+                "teste no CI evita que as duas metades divirjam.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A documentação da API é um documento de texto mantido à mão. Já houve três rotas novas sem documentação e " +
+              "uma rota documentada que foi removida do código.",
+            problemCode: {
+              language: "javascript",
+              filename: "drift-check.js",
+              code: [
+                "const spec = { paths: { \"/orders\": { get: {}, post: {} }, \"/orders/{id}\": { get: {} } } };",
+                "const implemented = [\"GET /orders\", \"POST /orders\", \"GET /orders/{id}\", \"DELETE /orders/{id}\", \"GET /health\"];",
+                "",
+                "function drift(spec, implemented) {",
+                "  // devolver { undocumented, unimplemented }",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Implemente `drift`: liste as rotas do código que não estão na especificação, e as da especificação que " +
+              "não existem no código.",
+            hint: "Transforme a especificação em um conjunto de textos `MÉTODO caminho` e compare os dois conjuntos nos dois sentidos.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "drift-check.fixed.js",
+                code: [
+                  "function drift(spec, implemented) {",
+                  "  const documented = Object.entries(spec.paths).flatMap(([path, methods]) =>",
+                  "    Object.keys(methods).map((method) => `${method.toUpperCase()} ${path}`),",
+                  "  );",
+                  "",
+                  "  return {",
+                  "    undocumented: implemented.filter((route) => !documented.includes(route)),",
+                  "    unimplemented: documented.filter((route) => !implemented.includes(route)),",
+                  "  };",
+                  "}",
+                  "",
+                  "drift(spec, implemented);",
+                  "// { undocumented: [\"DELETE /orders/{id}\", \"GET /health\"], unimplemented: [] }",
+                ].join("\n"),
+              },
+              explanation:
+                "A comparação nos dois sentidos revela as duas formas de divergência. Executada no CI, mantém a " +
+                "especificação e o código alinhados sem depender da memória de ninguém.",
+            },
+          },
         }),
         concept({
           order: 150,
@@ -3389,6 +6276,244 @@ export default area({
           requires: ["API"],
           isNew: true,
           note: "cadeia de handlers (auth, logging, rate limiting, validação) antes do controller. Ancora o Chain of Responsibility que o Epic 04 deixou como Advanced/Optional — o pattern continua SUGESTÃO no Epic 04, não é movido",
+          summary:
+            "Uma cadeia de funções por onde a requisição passa antes de chegar ao controlador — cada uma faz uma " +
+            "tarefa transversal, como registrar, autenticar ou validar, e decide se passa adiante ou responde.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Middleware é uma função que fica entre o recebimento da requisição e o código que a trata. Ela recebe " +
+                "a requisição, faz algo (registrar, autenticar, limitar, validar, comprimir) e chama `next()` para " +
+                "passar ao próximo elo, ou responde por conta própria e encerra a cadeia. O conjunto forma um " +
+                "pipeline: as preocupações que valem para muitas rotas ficam em peças reutilizáveis, e os controladores " +
+                "só cuidam da regra da rota. É a aplicação do padrão Chain of Responsibility.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Cada middleware faz uma coisa, na ordem em que foi registrado, e decide se passa adiante: a ordem " +
+                "da cadeia é parte do comportamento da API.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "Cada função recebe o contexto da requisição e uma função `next`. Chamar `next()` executa o restante " +
+                "da cadeia, e o código depois do `await next()` roda na volta, como em camadas de cebola (modelo do " +
+                "Koa). Quem não chama `next()` interrompe a cadeia, o que permite recusar uma requisição cedo, sem " +
+                "custo para as etapas seguintes.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "middleware.js",
+              code: [
+                "// compose: junta as funções em uma só, garantindo a ordem e o `next`",
+                "function compose(middlewares) {",
+                "  return (context) => {",
+                "    let index = -1;",
+                "    const dispatch = async (i) => {",
+                "      if (i <= index) throw new Error(\"next() chamado mais de uma vez\");",
+                "      index = i;",
+                "      const middleware = middlewares[i];",
+                "      if (!middleware) return;",
+                "      await middleware(context, () => dispatch(i + 1));",
+                "    };",
+                "    return dispatch(0);",
+                "  };",
+                "}",
+                "",
+                "const logger = async (context, next) => {",
+                "  const start = Date.now();",
+                "  await next();                                            // executa o resto da cadeia",
+                "  console.log(`${context.method} ${context.path} → ${context.status} (${Date.now() - start} ms)`);",
+                "};",
+                "",
+                "const authenticate = async (context, next) => {",
+                "  if (context.headers.authorization !== \"Bearer segredo\") {",
+                "    context.status = 401;                                  // responde e NÃO chama next()",
+                "    return;",
+                "  }",
+                "  context.user = { id: 1 };",
+                "  await next();",
+                "};",
+                "",
+                "const controller = async (context) => { context.status = 200; context.body = { ola: context.user.id }; };",
+                "",
+                "const handle = compose([logger, authenticate, controller]);",
+                "",
+                "await handle({ method: \"GET\", path: \"/perfil\", headers: {} });   // 401, e o `controller` nem chega a rodar",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O `logger` envolve todo o resto e mede o tempo, mesmo quando a autenticação recusa a requisição. A " +
+                "ordem importa: se o `authenticate` viesse antes do `logger`, as requisições recusadas não seriam " +
+                "registradas.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Para preocupações transversais, que valem para muitas rotas: registro, autenticação, limitação de taxa, CORS, compressão, validação, identificação da requisição.",
+                "Quando se quer reaproveitar e combinar comportamentos sem repeti-los em cada controlador.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Regras de negócio dentro de middleware ficam escondidas do fluxo de cada rota, e são difíceis de encontrar e de testar; o middleware é para o que é transversal.",
+                "A ordem é uma fonte de bugs: um middleware de autorização antes do de autenticação, ou um tratador de erros registrado no lugar errado, comporta-se de forma silenciosamente incorreta.",
+                "Cadeias longas dificultam a depuração e acrescentam latência a toda requisição; cada elo precisa se justificar.",
+                "Esquecer de chamar `next()`, ou chamá-lo duas vezes, trava ou duplica o processamento; a função `compose` deve proteger contra isso.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "A ordem muda o resultado",
+              context: "A mesma lista de middlewares, em ordens diferentes, se comporta de modo diferente.",
+              code: {
+                language: "javascript",
+                filename: "order.js",
+                code: [
+                  "// Limitar a taxa ANTES de autenticar: protege o sistema de autenticação, que é caro",
+                  "compose([rateLimit, authenticate, controller]);",
+                  "",
+                  "// Autenticar ANTES de limitar: dá para limitar por usuário, mas só depois de pagar o custo do login",
+                  "compose([authenticate, rateLimit, controller]);",
+                  "",
+                  "// Tratador de erros: precisa ENVOLVER os demais, e por isso fica primeiro na cadeia",
+                  "compose([errorHandler, logger, authenticate, controller]);",
+                ].join("\n"),
+              },
+              explanation:
+                "Não há uma ordem certa universal: cada uma reflete uma decisão. O importante é que ela seja deliberada e " +
+                "documentada.",
+            },
+            {
+              title: "Um tratador de erros que envolve a cadeia",
+              context: "Como o middleware pode envolver os seguintes, um `try/catch` central converte falhas em respostas.",
+              code: {
+                language: "javascript",
+                filename: "error-handler.js",
+                code: [
+                  "const errorHandler = async (context, next) => {",
+                  "  try {",
+                  "    await next();",
+                  "  } catch (error) {",
+                  "    context.status = error.status ?? 500;",
+                  "    context.body = { title: error.status ? error.message : \"Erro interno\" };",
+                  "  }",
+                  "};",
+                  "",
+                  "const failing = async () => { throw Object.assign(new Error(\"pedido não encontrado\"), { status: 404 }); };",
+                  "",
+                  "const context = { headers: {} };",
+                  "await compose([errorHandler, failing])(context);",
+                  "context.status;   // 404 — o erro virou uma resposta, sem código de tratamento em cada rota",
+                ].join("\n"),
+              },
+              explanation:
+                "Toda exceção lançada mais adiante na cadeia é capturada em um só lugar. Os controladores só lançam, e a " +
+                "conversão em resposta é feita uma vez.",
+            },
+            {
+              title: "Middleware com configuração",
+              context: "Uma função que devolve um middleware permite reaproveitá-lo com parâmetros diferentes.",
+              code: {
+                language: "javascript",
+                filename: "configurable.js",
+                code: [
+                  "function requireRole(role) {",
+                  "  return async (context, next) => {",
+                  "    if (!context.user?.roles.includes(role)) {",
+                  "      context.status = 403;",
+                  "      return;",
+                  "    }",
+                  "    await next();",
+                  "  };",
+                  "}",
+                  "",
+                  "const adminRoute = compose([authenticate, requireRole(\"admin\"), controller]);",
+                  "const staffRoute = compose([authenticate, requireRole(\"staff\"), controller]);",
+                ].join("\n"),
+              },
+              explanation:
+                "O mesmo comportamento serve a rotas diferentes, com a configuração no ponto de uso. É a forma usual de " +
+                "expressar autorização por rota.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Cada rota repete o mesmo código: registrar a chamada, checar o token e medir o tempo. Uma delas esqueceu a " +
+              "checagem do token e ficou aberta.",
+            problemCode: {
+              language: "javascript",
+              filename: "repeated-code.js",
+              code: [
+                "async function getOrders(context) {",
+                "  console.log(\"GET /orders\");",
+                "  if (context.headers.authorization !== \"Bearer segredo\") { context.status = 401; return; }",
+                "  context.status = 200;",
+                "  context.body = [];",
+                "}",
+                "",
+                "async function getInvoices(context) {",
+                "  console.log(\"GET /invoices\");",
+                "  // esqueceu a checagem do token",
+                "  context.status = 200;",
+                "  context.body = [];",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Implemente `compose(middlewares)` e refatore: um middleware `authenticate` (401 sem o token) e os dois " +
+              "controladores só com a regra da rota.",
+            hint: "O `compose` chama o elo `i` com uma função `next` que executa o elo `i + 1`. O `authenticate` só chama `next()` se o token for válido.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "repeated-code.fixed.js",
+                code: [
+                  "function compose(middlewares) {",
+                  "  return (context) => {",
+                  "    const dispatch = async (i) => {",
+                  "      const middleware = middlewares[i];",
+                  "      if (middleware) await middleware(context, () => dispatch(i + 1));",
+                  "    };",
+                  "    return dispatch(0);",
+                  "  };",
+                  "}",
+                  "",
+                  "const authenticate = async (context, next) => {",
+                  "  if (context.headers.authorization !== \"Bearer segredo\") { context.status = 401; return; }",
+                  "  await next();",
+                  "};",
+                  "",
+                  "const getOrders = async (context) => { context.status = 200; context.body = []; };",
+                  "const getInvoices = async (context) => { context.status = 200; context.body = []; };",
+                  "",
+                  "const routes = {",
+                  "  \"GET /orders\": compose([authenticate, getOrders]),",
+                  "  \"GET /invoices\": compose([authenticate, getInvoices]),   // agora protegida também",
+                  "};",
+                  "",
+                  "const context = { headers: {} };",
+                  "await routes[\"GET /invoices\"](context);",
+                  "context.status;   // 401",
+                ].join("\n"),
+              },
+              explanation:
+                "A autenticação passou a ser um elo comum, e nenhuma rota consegue esquecê-la se estiver na cadeia. Os " +
+                "controladores ficaram só com a regra de cada rota.",
+            },
+          },
         }),
       ],
     }),
