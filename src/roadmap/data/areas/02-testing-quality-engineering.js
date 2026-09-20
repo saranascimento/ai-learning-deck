@@ -4528,7 +4528,7 @@ export default area({
             "Tornar um bug confiável e repetível antes de investigar sua causa — sem uma reprodução confiável, " +
             "qualquer tentativa de correção é só um palpite.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -4537,7 +4537,14 @@ export default area({
                 "bug \"reproduzido\" tem passos conhecidos (ou uma entrada conhecida) que, seguidos, disparam o " +
                 "comportamento incorreto de forma consistente.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Reproduction transforma um bug incerto em um experimento repetível — sem essa base, qualquer " +
+                "tentativa de correção é um palpite sem forma de confirmar se de fato resolveu o problema.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -4553,7 +4560,7 @@ export default area({
                 "isso cria uma ponte direta com Regression Testing (módulo Testing Strategy): o mesmo teste que " +
                 "serve para reproduzir o bug agora vira, depois da correção, a prova permanente de que ele não volta.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "um bug relatado de forma vaga, transformado num teste que o reproduz de forma confiável:" },
             {
               type: "code",
@@ -4579,11 +4586,22 @@ export default area({
                 "existe um experimento repetível para investigar — e, quando corrigido, o mesmo código vira um " +
                 "teste de regressão permanente.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Reproduction transforma um bug incerto em um experimento repetível — sem essa base, qualquer " +
-                "tentativa de correção é um palpite sem forma de confirmar se de fato resolveu o problema.",
+              type: "list",
+              items: [
+                "Antes de investigar qualquer bug: sem reprodução confiável, não há como confirmar que a correção funcionou.",
+                "Quando possível, como teste automatizado, que depois fica como proteção contra regressão.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Alguns bugs dependem de ambiente, tempo ou carga e resistem a uma reprodução simples; registre as condições " +
+                "em vez de desistir.",
+                "Se não dá para reproduzir, colete logs e dados do ambiente em vez de corrigir no palpite.",
+              ],
             },
           ],
           examples: [
@@ -4665,7 +4683,7 @@ export default area({
             "Aplicar o método científico à depuração: formular uma hipótese sobre a causa do bug, prever o que " +
             "ela implicaria, testar essa previsão — e repetir, descartando ou confirmando hipóteses uma de cada vez.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -4674,7 +4692,15 @@ export default area({
                 "deveria confirmar isso\". Em vez de mudar código aleatoriamente na esperança de que algo " +
                 "resolva, cada passo é uma pergunta específica com uma resposta que confirma ou descarta uma hipótese.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Hypothesis-Driven Debugging aplica hipótese → previsão → teste de forma iterativa, garantindo " +
+                "que cada mudança seja guiada por evidência, não por tentativa e erro — ao final, você sabe por " +
+                "que o bug acontecia, não só que parou.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -4691,7 +4717,7 @@ export default area({
                 "possibilidades — mesmo uma hipótese errada produz informação (\"não é isso, então deve ser " +
                 "outra coisa\"), o que evita repetir a mesma investigação.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "uma hipótese formulada, testada e refinada até a causa real:" },
             {
               type: "code",
@@ -4720,12 +4746,21 @@ export default area({
                 "undefined), que por sua vez gerou uma hipótese mais precisa. Cada passo teve uma previsão " +
                 "clara antes de rodar código, e o resultado observado (não uma suposição) guiou o próximo passo.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Hypothesis-Driven Debugging aplica hipótese → previsão → teste de forma iterativa, garantindo " +
-                "que cada mudança seja guiada por evidência, não por tentativa e erro — ao final, você sabe por " +
-                "que o bug acontecia, não só que parou.",
+              type: "list",
+              items: [
+                "Quando a causa não é óbvia e a tentativa e erro começa a virar mudanças aleatórias.",
+                "Para registrar o que já foi descartado e não repetir o mesmo caminho.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Uma hipótese vaga, sem previsão que possa falhar, não pode ser testada; formule algo específico.",
+                "Mude uma coisa por vez: várias mudanças juntas impedem saber o que resolveu.",
+              ],
             },
           ],
           examples: [
@@ -4816,7 +4851,7 @@ export default area({
             "A pilha de chamadas capturada no momento exato de uma falha — uma renderização legível do Call " +
             "Stack que mostra, função por função, o caminho que levou até o erro.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -4825,7 +4860,15 @@ export default area({
                 "cadeia). É, na prática, uma fotografia do call stack naquele instante — cada linha mostra uma " +
                 "função, e geralmente o arquivo e o número da linha onde ela chamou a próxima.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Um stack trace mostra a cadeia exata de chamadas até o ponto da falha — uma renderização " +
+                "gratuita do call stack no momento do erro, que transforma \"algo deu errado\" em \"isto deu " +
+                "errado, chamado por isto, chamado por isto\".",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -4842,7 +4885,7 @@ export default area({
                 "a cadeia causal: a função no topo é onde o erro estourou, mas a causa raiz pode estar várias " +
                 "chamadas abaixo — quem passou um dado inválido para quem, e de onde esse dado veio.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "um erro lançado em uma função chamada por outras duas, e o stack trace resultante:" },
             {
               type: "code",
@@ -4878,12 +4921,21 @@ export default area({
                 "buildUserProfile (linha 9), chamada por handleUserRequest (linha 13). Sem essa informação, " +
                 "seria preciso adivinhar em qual das três funções (ou em outra parte do sistema) o problema começou.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Um stack trace mostra a cadeia exata de chamadas até o ponto da falha — uma renderização " +
-                "gratuita do call stack no momento do erro, que transforma \"algo deu errado\" em \"isto deu " +
-                "errado, chamado por isto, chamado por isto\".",
+              type: "list",
+              items: [
+                "Ao investigar uma exceção, para ver a cadeia de chamadas até o ponto da falha.",
+                "Para decidir onde colocar o primeiro breakpoint.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Mostra onde o erro foi lançado, não necessariamente onde a causa está; o valor errado pode ter vindo de antes.",
+                "Em código assíncrono, a pilha pode não mostrar quem iniciou a operação.",
+              ],
             },
           ],
           examples: [
@@ -4979,7 +5031,7 @@ export default area({
             "cada variável e o estado exato do programa naquele instante — sem precisar prever de antemão o que " +
             "um print mostraria.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -4989,7 +5041,15 @@ export default area({
                 "cada função que chamou a atual), e avançar a execução linha por linha (step) para observar " +
                 "exatamente como o estado muda.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Um breakpoint pausa a execução num ponto exato, dando acesso completo ao estado do programa " +
+                "naquele instante — a ferramenta certa para observar como e por que um valor chega errado, não " +
+                "só onde um erro foi lançado.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -5006,7 +5066,7 @@ export default area({
                 "suspeita, colocar um breakpoint ali (em vez de em todo o arquivo) foca a investigação " +
                 "exatamente onde é mais provável que a causa esteja, sem gastar tempo pausando em código irrelevante.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "um breakpoint colocado dentro de uma função para inspecionar por que um cálculo dá resultado errado:" },
             {
               type: "code",
@@ -5030,12 +5090,21 @@ export default area({
                 "possível inspecionar price, percent e discountAmount ao mesmo tempo, ver se algum tem um valor " +
                 "inesperado, e decidir se o problema está antes ou depois daquela linha.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Um breakpoint pausa a execução num ponto exato, dando acesso completo ao estado do programa " +
-                "naquele instante — a ferramenta certa para observar como e por que um valor chega errado, não " +
-                "só onde um erro foi lançado.",
+              type: "list",
+              items: [
+                "Para observar o estado exato do programa e entender como um valor chegou errado.",
+                "Com condição, quando o problema só acontece em uma iteração ou entrada específica.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Pausar a execução altera o tempo: bugs de concorrência e de timing podem desaparecer sob o depurador.",
+                "Em ambientes sem depurador, como produção, logs e traces são o recurso disponível.",
+              ],
             },
           ],
           examples: [
@@ -5121,7 +5190,7 @@ export default area({
             "Localizar a causa de um bug bisseccionando repetidamente o espaço de possibilidades — código, " +
             "histórico ou dados — em vez de inspecionar tudo sequencialmente do início ao fim.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -5131,7 +5200,15 @@ export default area({
                 "médio, decide de que lado está o problema, e repete só naquela metade — reduzindo o espaço de " +
                 "busca pela metade a cada passo.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Binary Search Debugging bisseciona o espaço de possibilidades — código, histórico de commits, " +
+                "ou dados — testando o meio a cada passo, reduzindo uma investigação sequencial de N passos " +
+                "para log₂(N) testes.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -5148,7 +5225,7 @@ export default area({
                 "sobre o formato da falha (Hypothesis-Driven Debugging): \"se o bug estiver antes deste ponto, " +
                 "X deveria falhar; se estiver depois, X deveria passar\".",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "isolando qual das várias etapas de um pipeline de processamento introduz um dado corrompido:" },
             {
               type: "code",
@@ -5178,12 +5255,22 @@ export default area({
                 "testMidpoint verifica o estado depois da segunda etapa — o \"meio\" do pipeline. Um único " +
                 "teste já elimina metade das possibilidades, restando investigar só duas etapas em vez de quatro.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Binary Search Debugging bisseciona o espaço de possibilidades — código, histórico de commits, " +
-                "ou dados — testando o meio a cada passo, reduzindo uma investigação sequencial de N passos " +
-                "para log₂(N) testes.",
+              type: "list",
+              items: [
+                "Quando o espaço de busca é grande e ordenado, como um arquivo, um dataset ou um histórico, e é possível " +
+                "testar o meio.",
+                "Para reduzir N passos de inspeção a cerca de log₂(N) testes.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Precisa de um teste que separe \"bom\" de \"ruim\" de forma confiável; um bug intermitente engana a busca.",
+                "Não funciona se as partes dependem umas das outras e não podem ser isoladas.",
+              ],
             },
           ],
           examples: [
@@ -5291,7 +5378,7 @@ export default area({
             "A busca binária automatizada sobre o histórico de commits: em vez de bisseccionar código ou dados " +
             "manualmente, o Git testa commits sucessivos até isolar exatamente qual commit introduziu um bug.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -5301,7 +5388,14 @@ export default area({
                 "intervalo, você testa se o bug está presente ali, informa o resultado (good ou bad), e o Git " +
                 "bissecciona de novo — repetindo até isolar o commit exato que introduziu o problema.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "git bisect automatiza Binary Search Debugging sobre o histórico de commits: informa um bom e " +
+                "um mau, testa o meio repetidamente, e isola o commit exato que introduziu o bug em log₂(N) passos.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -5319,7 +5413,7 @@ export default area({
                 "(conectando de volta com Reproduction). Com git bisect run, esse teste pode até ser executado " +
                 "automaticamente a cada passo, sem intervenção manual nenhuma.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "uma sessão de git bisect isolando o commit que introduziu uma regressão:" },
             {
               type: "code",
@@ -5349,11 +5443,21 @@ export default area({
                 "bad. Depois de log₂(N) testes, o Git aponta exatamente qual commit introduziu o problema — sem " +
                 "ninguém precisar ler o diff de cada commit intermediário.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "git bisect automatiza Binary Search Debugging sobre o histórico de commits: informa um bom e " +
-                "um mau, testa o meio repetidamente, e isola o commit exato que introduziu o bug em log₂(N) passos.",
+              type: "list",
+              items: [
+                "Quando um bug é uma regressão e há um commit bom conhecido no passado.",
+                "Com `git bisect run` e um teste automatizado, para achar o commit sem intervenção.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Depende de commits pequenos e que compilam; commits quebrados por outros motivos exigem `git bisect skip`.",
+                "Sem um teste confiável que reproduza o bug, o resultado não é confiável.",
+              ],
             },
           ],
           examples: [
@@ -5434,7 +5538,7 @@ export default area({
             "Continuar investigando além do primeiro sintoma óbvio até chegar à causa real e mais profunda de " +
             "um problema — perguntando \"por quê\" repetidamente em vez de corrigir só o que aparece na superfície.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -5445,7 +5549,15 @@ export default area({
                 "versão mais conhecida: perguntar \"por quê\" cinco vezes seguidas, cada resposta alimentando a " +
                 "próxima pergunta.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Root Cause Analysis vai além do sintoma perguntando \"por quê\" repetidamente até chegar a uma " +
+                "causa acionável e profunda o bastante para que corrigi-la evite a recorrência — não só faça o " +
+                "sintoma atual desaparecer.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -5462,7 +5574,7 @@ export default area({
                 "recorrência — não necessariamente em exatamente cinco perguntas; o número é uma heurística, " +
                 "não uma regra rígida.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "uma cadeia de \"por quês\" partindo de um sintoma até uma causa raiz acionável:" },
             {
               type: "code",
@@ -5491,12 +5603,22 @@ export default area({
                 "de um item no checklist de revisão — é o que, corrigido, evita a recorrência em qualquer cache " +
                 "futuro, não só neste.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Root Cause Analysis vai além do sintoma perguntando \"por quê\" repetidamente até chegar a uma " +
-                "causa acionável e profunda o bastante para que corrigi-la evite a recorrência — não só faça o " +
-                "sintoma atual desaparecer.",
+              type: "list",
+              items: [
+                "Depois de incidentes e bugs recorrentes, para corrigir a causa e não só o sintoma.",
+                "Registrada num post-mortem, para que a equipe aprenda com o problema.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Parar cedo demais, no primeiro sintoma, deixa o problema voltar; parar tarde demais leva a causas fora do " +
+                "seu alcance.",
+                "Nem todo bug pequeno justifica uma análise formal; ajuste o esforço ao impacto.",
+              ],
             },
           ],
           examples: [
