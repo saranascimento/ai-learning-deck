@@ -1338,6 +1338,10 @@ for (const area of model.areas()) {
     "liskov-substitution-principle-lsp",
     "interface-segregation-principle-isp",
     "dependency-inversion-principle-dip",
+    "command-query-separation-cqs",
+    "encapsulate-what-varies",
+    "program-to-an-interface",
+    "composition-over-inheritance",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",

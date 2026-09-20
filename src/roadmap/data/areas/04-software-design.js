@@ -3045,18 +3045,633 @@ export default area({
         "CQS → os dois princípios de \"depender do que varia / do contrato\" → Composition over Inheritance " +
         "(heurística realocada do Epic 01), que conecta com os catálogos GoF.",
       concepts: [
-        concept({ order: 10, title: "Command-Query Separation (CQS)", note: "um método pergunta OU muda estado, não os dois" }),
+        concept({
+          order: 10,
+          title: "Command-Query Separation (CQS)",
+          note: "um método pergunta OU muda estado, não os dois",
+          summary:
+            "Cada método ou faz uma pergunta (query), devolvendo um valor sem alterar nada, ou dá uma ordem " +
+            "(command), alterando o estado sem devolver dados — nunca as duas coisas ao mesmo tempo.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Command-Query Separation, formulado por Bertrand Meyer, divide os métodos de um objeto em dois tipos. " +
+                "Uma query devolve um valor e não altera o estado observável do objeto: perguntar não muda a resposta. " +
+                "Um command altera o estado e não devolve dados sobre ele: dá uma ordem, e o que muda está no objeto.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Um método pergunta OU muda estado, não os dois: quem consulta pode chamar quantas vezes quiser sem " +
+                "efeito, e quem altera deixa claro que existe um efeito.",
+            },
+            { type: "heading", text: "Por que importa" },
+            {
+              type: "paragraph",
+              text:
+                "Uma query sem efeito colateral é segura de repetir, de chamar em logs e em depuração, de guardar em " +
+                "cache e de reordenar — tem a mesma previsibilidade de uma Pure Function (Functional Programming). " +
+                "Quando um método pergunta e muda ao mesmo tempo, quem chama perde a opção de \"só olhar\": para ler o " +
+                "valor, precisa aceitar o efeito. E quem lê o código não vê, na chamada, que algo foi alterado.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Separar os dois papéis também deixa os testes mais simples: uma query se testa comparando o " +
+                "resultado; um command se testa consultando o estado depois dele.",
+            },
+            { type: "heading", text: "Na prática" },
+            { type: "paragraph", text: "um método que pergunta e muda ao mesmo tempo, e a versão separada:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "cqs.js",
+              code: [
+                "// Antes: a mesma pergunta dá respostas diferentes",
+                "class Sequence {",
+                "  #current = 0;",
+                "  next() { return ++this.#current; }   // altera E devolve",
+                "}",
+                "const seq = new Sequence();",
+                "seq.next();   // 1",
+                "seq.next();   // 2 — perguntar de novo mudou a resposta",
+                "",
+                "// Depois: uma query e um command",
+                "class SafeSequence {",
+                "  #current = 0;",
+                "  current() { return this.#current; }        // query: só lê",
+                "  advance() { this.#current += 1; }          // command: só altera",
+                "}",
+                "const safe = new SafeSequence();",
+                "safe.advance();",
+                "safe.current();   // 1",
+                "safe.current();   // 1 — consultar não muda nada",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Com `current()` dá para ler o valor quantas vezes for preciso, inclusive em um log, sem alterar o " +
+                "programa. `advance()` deixa explícito, no nome e na ausência de retorno, que há um efeito.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "Algumas operações precisam ler e alterar juntas: em concorrência, separá-las abre uma race condition, e a operação atômica é a saída.",
+                "O que conta é o estado observável: um cache interno ou um log dentro de uma query não a transformam em command.",
+                "Sinalizar falha, com exceção ou com `Result`, não faz de um command uma query; o que se evita é devolver dados do estado alterado.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Uma pergunta com efeito escondido",
+              context: "Um método com nome de consulta que altera o estado é a violação mais comum e a mais surpreendente.",
+              code: {
+                language: "javascript",
+                filename: "hidden-effect.js",
+                code: [
+                  "// Antes: hasStock reserva o item sem avisar",
+                  "class Inventory {",
+                  "  constructor(items) { this.items = new Map(items); }",
+                  "  hasStock(sku) {",
+                  "    const qty = this.items.get(sku) ?? 0;",
+                  "    if (qty > 0) this.items.set(sku, qty - 1);   // efeito escondido numa \"pergunta\"",
+                  "    return qty > 0;",
+                  "  }",
+                  "}",
+                  "const inv = new Inventory([[\"A1\", 1]]);",
+                  "inv.hasStock(\"A1\");   // true",
+                  "inv.hasStock(\"A1\");   // false — a mesma pergunta mudou de resposta",
+                  "",
+                  "// Depois: consultar e reservar são operações separadas",
+                  "class SafeInventory {",
+                  "  constructor(items) { this.items = new Map(items); }",
+                  "  hasStock(sku) { return (this.items.get(sku) ?? 0) > 0; }   // query",
+                  "  reserve(sku) {                                              // command",
+                  "    if (!this.hasStock(sku)) throw new Error(`sem estoque: ${sku}`);",
+                  "    this.items.set(sku, this.items.get(sku) - 1);",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Depois da separação, `hasStock` pode ser chamado em uma tela, em um log ou em um teste sem consumir " +
+                "estoque, e `reserve` diz, pelo nome, que altera algo.",
+            },
+            {
+              title: "Quando ler e alterar precisam ser um passo só",
+              context: "Em concorrência, perguntar e depois ordenar deixa uma janela entre as duas chamadas.",
+              code: {
+                language: "javascript",
+                filename: "atomic-exception.js",
+                code: [
+                  "// Separado: outra execução pode incrementar entre as duas linhas",
+                  "if (counter.value() < LIMIT) {",
+                  "  counter.increment();",
+                  "}",
+                  "",
+                  "// Junto: lê e altera de forma indivisível, e devolve se conseguiu",
+                  "const accepted = counter.incrementIfBelow(LIMIT);",
+                ].join("\n"),
+              },
+              explanation:
+                "Aqui a violação é deliberada: sem atomicidade, dois chamadores poderiam passar do limite juntos (Race " +
+                "Condition). CQS é uma regra de projeto, e a exceção vale quando o custo de separar é um bug real.",
+            },
+            {
+              title: "CQS em uma API HTTP",
+              context: "A separação aparece na própria semântica dos métodos HTTP.",
+              code: {
+                language: "javascript",
+                filename: "http-cqs.js",
+                code: [
+                  "// Query: GET é seguro — pode ser repetido, guardado em cache, pré-carregado",
+                  "const order = await fetch(\"/orders/42\").then((r) => r.json());",
+                  "",
+                  "// Command: POST altera o estado no servidor",
+                  "await fetch(\"/orders/42/cancel\", { method: \"POST\" });",
+                ].join("\n"),
+              },
+              explanation:
+                "Um navegador pode repetir ou pré-carregar um GET sem medo, porque ele não altera nada. Um endpoint GET " +
+                "que apaga dados quebraria exatamente essa garantia.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O método `total()` do carrinho abaixo consome o cupom ao ser chamado: perguntar o total muda o próprio total.",
+            problemCode: {
+              language: "javascript",
+              filename: "cart.js",
+              code: [
+                "class Cart {",
+                "  constructor() { this.items = []; this.couponUsed = false; }",
+                "  add(item) { this.items.push(item); return this.items.length; }",
+                "  total() {",
+                "    let sum = this.items.reduce((s, i) => s + i.price, 0);",
+                "    if (!this.couponUsed) { sum *= 0.9; this.couponUsed = true; }   // consome o cupom ao perguntar",
+                "    return sum;",
+                "  }",
+                "}",
+                "",
+                "const cart = new Cart();",
+                "cart.add({ price: 100 });",
+                "cart.total();   // 90",
+                "cart.total();   // 100 — o mesmo carrinho, outro total",
+              ].join("\n"),
+            },
+            task:
+              "Aplique CQS: separe a consulta do total da ordem de aplicar o cupom, e faça `add` deixar de devolver dados.",
+            hint: "Falta um command explícito para aplicar o desconto; `total()` deve só calcular a partir do estado.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "cart.fixed.js",
+                code: [
+                  "class Cart {",
+                  "  constructor() { this.items = []; this.discount = 0; }",
+                  "  add(item) { this.items.push(item); }                  // command",
+                  "  applyCoupon() { this.discount = 0.1; }                // command",
+                  "  total() {                                             // query: sem efeito",
+                  "    const sum = this.items.reduce((s, i) => s + i.price, 0);",
+                  "    return sum * (1 - this.discount);",
+                  "  }",
+                  "}",
+                  "",
+                  "const cart = new Cart();",
+                  "cart.add({ price: 100 });",
+                  "cart.applyCoupon();",
+                  "cart.total();   // 90",
+                  "cart.total();   // 90 — perguntar de novo não muda",
+                ].join("\n"),
+              },
+              explanation:
+                "`applyCoupon` é o único ponto que altera o desconto, e `total` passou a ser repetível. O cupom deixou " +
+                "de ser consumido por acidente, e `add` não devolve mais o tamanho: quem quiser saber o tamanho pergunta.",
+            },
+          },
+        }),
         concept({
           order: 20,
           title: "Encapsulate What Varies",
           requires: ["Programming Foundations / Programming Fundamentals / Encapsulation"],
           note: "isolar o ponto de variação — aplica Encapsulation",
+          summary:
+            "Identifique a parte do código que muda com frequência e isole-a atrás de uma fronteira estável, para " +
+            "que o restante do sistema não precise mudar junto.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Encapsulate What Varies pede duas coisas: descobrir o que muda (regras de imposto, formatos de saída, " +
+                "provedores, canais de envio) e separar isso do que permanece. A parte que varia fica atrás de uma " +
+                "fronteira estável, uma função ou um contrato, e o resto do código conversa só com essa fronteira. É a " +
+                "aplicação de Encapsulation e de Information Hiding (módulo Programming Fundamentals) a um ponto " +
+                "específico: o que tem chance de mudar.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Descubra o que muda e coloque uma fronteira em volta: o que é estável não precisa ser reescrito " +
+                "toda vez que o que varia mudar.",
+            },
+            { type: "heading", text: "Por que importa" },
+            {
+              type: "paragraph",
+              text:
+                "Quando uma regra que varia está espalhada por condicionais (`if (canal === \"sms\")` em cinco " +
+                "arquivos), cada novo caso obriga a editar todos eles, e é fácil esquecer um. Isolada, a mudança fica " +
+                "em um lugar só, e o código que usa a fronteira nem percebe. Esse é o ponto de partida do Open-Closed " +
+                "Principle e de vários padrões de projeto que aparecem mais adiante, como o Strategy.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Para saber o que varia, olhe o histórico: o que mudou nos últimos commits e o que o negócio já avisou " +
+                "que vai mudar. Adivinhar variações que ninguém pediu costuma gerar abstrações que não servem.",
+            },
+            { type: "heading", text: "Na prática" },
+            { type: "paragraph", text: "uma regra de frete espalhada em condicionais, e ela isolada em um único lugar:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "encapsulate-varies.js",
+              code: [
+                "// Antes: a regra que varia (o transportador) está em cada função",
+                "function checkoutTotal(order) {",
+                "  let shipping;",
+                "  if (order.carrier === \"express\") shipping = 30;",
+                "  else if (order.carrier === \"standard\") shipping = order.weight * 2;",
+                "  else shipping = 0;",
+                "  return order.subtotal + shipping;",
+                "}",
+                "function shippingLabel(order) {",
+                "  if (order.carrier === \"express\") return \"Entrega em 1 dia\";",
+                "  if (order.carrier === \"standard\") return \"Entrega em 5 dias\";",
+                "  return \"Retirada na loja\";",
+                "}",
+                "",
+                "// Depois: o que varia vive em um lugar; o resto só consulta",
+                "const carriers = {",
+                "  express:  { cost: () => 30,            label: \"Entrega em 1 dia\" },",
+                "  standard: { cost: (o) => o.weight * 2, label: \"Entrega em 5 dias\" },",
+                "  pickup:   { cost: () => 0,             label: \"Retirada na loja\" },",
+                "};",
+                "const checkoutTotalV2 = (order) => order.subtotal + carriers[order.carrier].cost(order);",
+                "const shippingLabelV2 = (order) => carriers[order.carrier].label;",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Um novo transportador é uma entrada em `carriers`. `checkoutTotalV2` e `shippingLabelV2`, que são a " +
+                "parte estável, não mudam.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "Sem evidência de variação, isolar é especulação: comece pelo que já mudou ou pelo que o negócio disse que vai mudar.",
+                "Se o contrato da fronteira espelha só o primeiro caso, o segundo não cabe; revise-o quando a variação real aparecer.",
+                "Isolar não é envolver tudo em camadas: uma fronteira pequena e clara vale mais que várias indiretas.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Isolar o formato de saída",
+              context: "O formato em que um relatório é exportado é um ponto de variação clássico.",
+              code: {
+                language: "javascript",
+                filename: "formatters.js",
+                code: [
+                  "const formatters = {",
+                  "  csv:  (rows) => rows.map((r) => r.join(\",\")).join(\"\\n\"),",
+                  "  json: (rows) => JSON.stringify(rows),",
+                  "};",
+                  "",
+                  "function exportReport(rows, format) {",
+                  "  return formatters[format](rows);   // quem exporta não sabe como cada formato funciona",
+                  "}",
+                  "",
+                  "exportReport([[1, 2], [3, 4]], \"csv\");   // \"1,2\\n3,4\"",
+                ].join("\n"),
+              },
+              explanation:
+                "Adicionar um formato (XML, por exemplo) é uma nova entrada em `formatters`; `exportReport` e seus " +
+                "chamadores permanecem intactos.",
+            },
+            {
+              title: "A fronteira pode ser só uma função recebida",
+              context: "Nem toda fronteira precisa ser uma classe: uma função passada como argumento já isola a variação.",
+              code: {
+                language: "javascript",
+                filename: "tax-rule.js",
+                code: [
+                  "// O cálculo da fatura é estável; a regra de imposto varia por país",
+                  "function invoiceTotal(items, taxRule) {",
+                  "  const subtotal = items.reduce((sum, i) => sum + i.price, 0);",
+                  "  return subtotal + taxRule(subtotal);",
+                  "}",
+                  "",
+                  "const brazilTax = (amount) => amount * 0.17;",
+                  "const portugalTax = (amount) => amount * 0.23;",
+                  "",
+                  "invoiceTotal([{ price: 100 }], brazilTax);     // 117",
+                  "invoiceTotal([{ price: 100 }], portugalTax);   // 123",
+                ].join("\n"),
+              },
+              explanation:
+                "`invoiceTotal` não conhece nenhum país. Uma nova regra de imposto é uma nova função, sem alterar o " +
+                "cálculo da fatura.",
+            },
+            {
+              title: "Nem tudo que parece variar precisa de isolamento",
+              context: "Isolar algo que nunca mudou só acrescenta indireção.",
+              code: {
+                language: "javascript",
+                filename: "premature.js",
+                code: [
+                  "// Exagero: uma fábrica para uma constante que nunca mudou em anos",
+                  "class MaxRetriesProviderFactory {",
+                  "  create() { return { get: () => 3 }; }",
+                  "}",
+                  "",
+                  "// Suficiente: uma constante, até que haja um motivo real para variar",
+                  "const MAX_RETRIES = 3;",
+                ].join("\n"),
+              },
+              explanation:
+                "Se o valor nunca mudou e ninguém pediu para mudar, uma constante basta. Quando surgir uma variação " +
+                "real, refatorar para isolá-la é barato.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A escolha do canal de notificação está repetida em duas funções. Adicionar o canal \"whatsapp\" exige " +
+              "editar as duas, e esquecer uma delas gera um bug silencioso.",
+            problemCode: {
+              language: "javascript",
+              filename: "notify.js",
+              code: [
+                "function notify(user, message) {",
+                "  if (user.channel === \"email\") return `email para ${user.email}: ${message}`;",
+                "  if (user.channel === \"sms\") return `sms para ${user.phone}: ${message}`;",
+                "  return `push para ${user.deviceId}: ${message}`;",
+                "}",
+                "",
+                "function notificationCost(user) {",
+                "  if (user.channel === \"email\") return 0;",
+                "  if (user.channel === \"sms\") return 0.1;",
+                "  return 0.01;",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Isole o que varia (o canal) para que adicionar \"whatsapp\" altere um único lugar, e faça `notify` e " +
+              "`notificationCost` só consultarem essa fronteira.",
+            hint: "O que muda é o canal. Que comportamento e que dado andam juntos para cada canal?",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "notify.fixed.js",
+                code: [
+                  "const channels = {",
+                  "  email: { send: (u, m) => `email para ${u.email}: ${m}`,   cost: 0 },",
+                  "  sms:   { send: (u, m) => `sms para ${u.phone}: ${m}`,     cost: 0.1 },",
+                  "  push:  { send: (u, m) => `push para ${u.deviceId}: ${m}`, cost: 0.01 },",
+                  "};",
+                  "",
+                  "const notify = (user, message) => channels[user.channel].send(user, message);",
+                  "const notificationCost = (user) => channels[user.channel].cost;",
+                  "",
+                  "// Novo canal: uma entrada em `channels`, nenhuma outra função muda",
+                ].join("\n"),
+              },
+              explanation:
+                "A variação (canal) ficou em `channels`, e as duas funções só consultam essa tabela. Um efeito a " +
+                "notar: um canal desconhecido agora falha de forma explícita, em vez de cair silenciosamente em push.",
+            },
+          },
         }),
         concept({
           order: 30,
           title: "Program to an Interface",
           requires: ["Programming Foundations / Programming Fundamentals / Interface"],
           note: "depender do contrato, não da implementação — revisita também Type Systems / Structural Typing (Epic 01)",
+          summary:
+            "Escreva o código para depender do contrato (o que algo faz), não de uma implementação concreta (como " +
+            "ela faz) — assim a implementação pode ser trocada sem mexer em quem a usa.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Program to an Interface diz que o código deve depender do que algo promete fazer, e não de qual " +
+                "classe concreta o faz. \"Interface\" aqui é o contrato (Interface e Contract, módulo Programming " +
+                "Fundamentals), não a palavra-chave de uma linguagem. Em JavaScript, ele aparece como o formato que a " +
+                "função espera: qualquer objeto com o método `write()`, e não uma classe específica. É a mesma ideia " +
+                "de Structural Typing (módulo Type Systems), em que basta ter a forma certa.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Dependa do que algo faz, e não do que ele é: a implementação passa a poder mudar sem que quem a usa " +
+                "perceba.",
+            },
+            { type: "heading", text: "Por que importa" },
+            {
+              type: "paragraph",
+              text:
+                "Quem depende de uma classe concreta fica preso a ela: trocar o banco, o provedor de pagamento ou o " +
+                "serviço de e-mail obriga a mexer em todos os que o usam. Testar também fica difícil, porque não há " +
+                "como substituir a peça real por uma simples e rápida (Test Doubles). Dependendo do contrato, o " +
+                "acoplamento (Coupling) diminui, e a implementação vira um detalhe intercambiável.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Este princípio trata de não depender do concreto. Quem define o contrato, o alto nível ou o baixo " +
+                "nível, é a questão do Dependency Inversion Principle, visto no módulo anterior.",
+            },
+            { type: "heading", text: "Na prática" },
+            { type: "paragraph", text: "um serviço preso a uma implementação concreta, e o mesmo serviço dependendo de um contrato:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "program-to-interface.js",
+              code: [
+                "// Antes: o serviço cria e conhece a implementação concreta",
+                "class ReportService {",
+                "  constructor() { this.storage = new S3Storage(); }   // preso ao S3",
+                "  save(report) { this.storage.upload(report.name, report.body); }",
+                "}",
+                "",
+                "// Depois: depende do contrato { write(name, body) }",
+                "class ReportServiceV2 {",
+                "  constructor(storage) { this.storage = storage; }    // qualquer coisa com write()",
+                "  save(report) { this.storage.write(report.name, report.body); }",
+                "}",
+                "",
+                "class S3Storage {",
+                "  write(name, body) { /* envia ao S3 */ }",
+                "}",
+                "class MemoryStorage {",
+                "  constructor() { this.files = new Map(); }",
+                "  write(name, body) { this.files.set(name, body); }",
+                "}",
+                "",
+                "new ReportServiceV2(new MemoryStorage()).save({ name: \"r1\", body: \"...\" });   // teste sem S3",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "`ReportServiceV2` não sabe se o destino é o S3 ou a memória. Trocar de armazenamento é passar outro " +
+                "objeto, sem editar o serviço.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "Uma interface com uma única implementação e nenhuma perspectiva de outra pode ser só indireção sem benefício.",
+                "Um contrato que espelha a implementação, com detalhes do S3, por exemplo, não desacopla nada; desenhe-o pelo que quem usa precisa.",
+                "A assinatura sozinha não basta: o comportamento esperado e os erros também fazem parte do contrato, e sem eles as implementações divergem.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Trocar a implementação sem tocar em quem usa",
+              context: "Quem registra mensagens não deveria saber para onde elas vão.",
+              code: {
+                language: "javascript",
+                filename: "logger.js",
+                code: [
+                  "const consoleLogger = { log: (msg) => console.log(msg) };",
+                  "const fileLogger = { log: (msg) => appendToFile(\"app.log\", msg) };",
+                  "",
+                  "function processOrder(order, logger) {",
+                  "  logger.log(`processando ${order.id}`);   // só exige log(msg)",
+                  "  // ...",
+                  "}",
+                  "",
+                  "processOrder({ id: 1 }, consoleLogger);",
+                  "processOrder({ id: 2 }, fileLogger);",
+                ].join("\n"),
+              },
+              explanation:
+                "`processOrder` funciona com qualquer coisa que tenha `log`. Trocar o destino dos logs, ou usar um " +
+                "logger silencioso em testes, não exige nenhuma alteração nela.",
+            },
+            {
+              title: "Depender de \"algo iterável\", e não de Array",
+              context: "A linguagem já oferece contratos: o de iteração aceita mais do que arrays.",
+              code: {
+                language: "javascript",
+                filename: "iterable.js",
+                code: [
+                  "// Antes: exige um Array e usa métodos que só ele tem",
+                  "function sumArray(numbers) { return numbers.reduce((t, n) => t + n, 0); }",
+                  "",
+                  "// Depois: depende só do contrato de iteração",
+                  "function sum(numbers) {",
+                  "  let total = 0;",
+                  "  for (const n of numbers) total += n;",
+                  "  return total;",
+                  "}",
+                  "",
+                  "sum([1, 2, 3]);              // 6",
+                  "sum(new Set([1, 2, 3]));     // 6",
+                  "sum((function* () { yield 1; yield 2; })());   // 3",
+                ].join("\n"),
+              },
+              explanation:
+                "`sum` pede apenas \"algo sobre o que se possa iterar\". Arrays, Sets e geradores cumprem o contrato, e " +
+                "`sumArray` só aceitaria o primeiro.",
+            },
+            {
+              title: "Um contrato que espelha a implementação vaza detalhes",
+              context: "A abstração precisa ser pensada a partir de quem usa, e não do que o fornecedor oferece.",
+              code: {
+                language: "javascript",
+                filename: "leaky-contract.js",
+                code: [
+                  "// Vaza: o contrato repete a API do S3 (bucket, ACL)",
+                  "// storage.putObjectWithAcl(bucket, key, body, \"private\")",
+                  "",
+                  "// Melhor: o que quem usa realmente precisa",
+                  "// storage.write(name, body)",
+                  "",
+                  "class ReportService {",
+                  "  constructor(storage) { this.storage = storage; }",
+                  "  save(report) { this.storage.write(report.name, report.body); }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Se o contrato exige `bucket` e `ACL`, todo cliente e toda implementação continuam presos ao S3. O " +
+                "contrato certo descreve a necessidade (gravar), e os detalhes ficam na implementação.",
+            },
+          ],
+          exercise: {
+            problem:
+              "`CheckoutService` cria o gateway de pagamento dentro de si. Não há como testar `pay` sem chamar a API " +
+              "real, nem como trocar de provedor sem editar a classe.",
+            problemCode: {
+              language: "javascript",
+              filename: "checkout.js",
+              code: [
+                "class StripeGateway {",
+                "  charge(amount) { /* chama a API real do Stripe */ return { ok: true }; }",
+                "}",
+                "",
+                "class CheckoutService {",
+                "  constructor() { this.gateway = new StripeGateway(); }",
+                "  pay(total) {",
+                "    const result = this.gateway.charge(total);",
+                "    return result.ok ? \"pago\" : \"recusado\";",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Faça `CheckoutService` depender do contrato `{ charge(amount) }`, recebendo o gateway de fora, e mostre " +
+              "um teste do caso \"recusado\" sem usar o Stripe.",
+            hint: "A classe deve receber, de fora, algo que tenha `charge()`, sem saber qual implementação é.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "checkout.fixed.js",
+                code: [
+                  "class CheckoutService {",
+                  "  constructor(gateway) { this.gateway = gateway; }   // qualquer objeto com charge()",
+                  "  pay(total) {",
+                  "    const result = this.gateway.charge(total);",
+                  "    return result.ok ? \"pago\" : \"recusado\";",
+                  "  }",
+                  "}",
+                  "",
+                  "// Produção: new CheckoutService(new StripeGateway())",
+                  "",
+                  "// Teste: um gateway falso que recusa",
+                  "const decliningGateway = { charge: () => ({ ok: false }) };",
+                  "new CheckoutService(decliningGateway).pay(100);   // \"recusado\"",
+                ].join("\n"),
+              },
+              explanation:
+                "`CheckoutService` conhece só o contrato `charge`. O teste usa um objeto de uma linha, e trocar de " +
+                "provedor é passar outra implementação.",
+            },
+          },
         }),
         concept({
           order: 40,
@@ -3066,6 +3681,209 @@ export default area({
             "Programming Foundations / Programming Fundamentals / Inheritance",
           ],
           note: "heurística realocada do Epic 01 — escolhe entre os dois mecanismos já ensinados",
+          summary:
+            "Prefira montar comportamento combinando objetos menores (tem-um) a herdá-lo de uma classe base " +
+            "(é-um): a herança prende as classes umas às outras, e a composição permite trocar e combinar as peças.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Composition over Inheritance é uma heurística para escolher entre dois mecanismos já vistos no módulo " +
+                "Programming Fundamentals: Inheritance, em que uma subclasse herda da base (é-um), e Composition, em " +
+                "que um objeto usa outros e delega a eles (tem-um). A heurística diz para começar pela composição e " +
+                "reservar a herança para quando a relação é de fato \"é um\" e a subclasse cumpre todo o contrato da base.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Comece por composição: use herança só quando a relação é realmente \"é um\" e a subclasse cumpre todo o " +
+                "contrato da classe base.",
+            },
+            { type: "heading", text: "Por que importa" },
+            {
+              type: "paragraph",
+              text:
+                "A herança cria o acoplamento mais forte entre duas classes: a subclasse depende de detalhes da base " +
+                "e herda tudo, inclusive o que não quer. Uma mudança na base pode quebrar as subclasses, e uma " +
+                "subclasse que não cumpre o contrato viola o Liskov Substitution Principle. Além disso, a hierarquia é " +
+                "fixada no momento em que se escreve o código: combinar variações independentes (formato e criptografia, " +
+                "voar e nadar) faz o número de classes explodir.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Com composição, cada comportamento é uma peça separada que pode ser trocada, testada e combinada de " +
+                "forma independente, até em tempo de execução. É a base de vários dos padrões de projeto dos módulos " +
+                "seguintes.",
+            },
+            { type: "heading", text: "Na prática" },
+            { type: "paragraph", text: "uma hierarquia que não consegue combinar comportamentos, e as mesmas peças compostas:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "composition.js",
+              code: [
+                "// Antes: cada comportamento é uma subclasse",
+                "class Animal {}",
+                "class FlyingAnimal extends Animal { move() { return \"voa\"; } }",
+                "class SwimmingAnimal extends Animal { move() { return \"nada\"; } }",
+                "// E um pato, que voa e nada? Nenhuma das duas classes serve.",
+                "",
+                "// Depois: comportamentos como peças que se combinam",
+                "const canFly = () => ({ fly: () => \"voa\" });",
+                "const canSwim = () => ({ swim: () => \"nada\" });",
+                "",
+                "const createDuck = (name) => ({ name, ...canFly(), ...canSwim() });",
+                "const createFish = (name) => ({ name, ...canSwim() });",
+                "",
+                "const duck = createDuck(\"Pato\");",
+                "duck.fly();    // \"voa\"",
+                "duck.swim();   // \"nada\"",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Cada capacidade existe uma vez e é combinada onde faz falta. Um novo animal é uma nova combinação, e " +
+                "não uma nova classe na hierarquia.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "É uma regra de bolso, não uma proibição: a herança continua adequada para uma relação \"é um\" estável e que respeita o contrato.",
+                "A composição exige mais código de ligação, com delegação explícita, e pode espalhar o comportamento em muitas peças pequenas.",
+                "Peças combinadas com spread ou mixins podem colidir em nomes; mantenha cada peça com uma responsabilidade clara e nomes distintos.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "A subclasse que herda o que não quer",
+              context: "Estender uma classe pronta para reaproveitar um método traz junto toda a sua interface.",
+              code: {
+                language: "javascript",
+                filename: "stack.js",
+                code: [
+                  "// Herança: Stack é um Array, e herda métodos que quebram a regra LIFO",
+                  "class BadStack extends Array {}",
+                  "const bad = new BadStack();",
+                  "bad.push(1);",
+                  "bad.push(2);",
+                  "bad.unshift(0);   // insere no fundo — a pilha deixou de ser uma pilha",
+                  "",
+                  "// Composição: Stack tem um array e expõe só o que faz sentido",
+                  "class Stack {",
+                  "  #items = [];",
+                  "  push(item) { this.#items.push(item); }",
+                  "  pop() { return this.#items.pop(); }",
+                  "  get size() { return this.#items.length; }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Na versão composta, o array é um detalhe privado. A interface pública é só a de uma pilha, e trocar o " +
+                "array por outra estrutura não afeta quem usa.",
+            },
+            {
+              title: "Trocar o comportamento em tempo de execução",
+              context: "Uma peça recebida pode ser substituída depois; uma superclasse, não.",
+              code: {
+                language: "javascript",
+                filename: "swap-behavior.js",
+                code: [
+                  "const sword = { attack: () => \"golpe de espada (10)\" };",
+                  "const bow = { attack: () => \"flecha (7)\" };",
+                  "",
+                  "class Hero {",
+                  "  constructor(weapon) { this.weapon = weapon; }",
+                  "  attack() { return this.weapon.attack(); }   // delega à peça",
+                  "}",
+                  "",
+                  "const hero = new Hero(sword);",
+                  "hero.attack();       // \"golpe de espada (10)\"",
+                  "hero.weapon = bow;   // muda de comportamento sem criar outra classe",
+                  "hero.attack();       // \"flecha (7)\"",
+                ].join("\n"),
+              },
+              explanation:
+                "Com herança, `SwordHero` e `BowHero` seriam classes fixas, e mudar de arma exigiria criar outro " +
+                "objeto. Com composição, basta trocar a peça.",
+            },
+            {
+              title: "Quando a herança ainda é a escolha certa",
+              context: "A heurística diz \"prefira\", e não \"nunca\".",
+              code: {
+                language: "javascript",
+                filename: "valid-inheritance.js",
+                code: [
+                  "// Um ValidationError realmente é um Error, e cumpre o contrato dele",
+                  "class ValidationError extends Error {",
+                  "  constructor(field, message) {",
+                  "    super(message);",
+                  "    this.name = \"ValidationError\";",
+                  "    this.field = field;",
+                  "  }",
+                  "}",
+                  "",
+                  "try {",
+                  "  throw new ValidationError(\"email\", \"formato inválido\");",
+                  "} catch (err) {",
+                  "  console.log(err instanceof Error);   // true — pode ser usado onde um Error é esperado",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "A relação é de fato \"é um\", estável, e a subclasse pode substituir a base em qualquer lugar. Aqui a " +
+                "herança expressa a intenção melhor que a composição.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Cada combinação de formato e criptografia virou uma classe. Adicionar compressão dobraria o número de " +
+              "classes de novo.",
+            problemCode: {
+              language: "javascript",
+              filename: "reports.js",
+              code: [
+                "class Report { constructor(data) { this.data = data; } }",
+                "",
+                "class PdfReport extends Report { render() { return `PDF(${this.data})`; } }",
+                "class CsvReport extends Report { render() { return `CSV(${this.data})`; } }",
+                "",
+                "class EncryptedPdfReport extends PdfReport { render() { return `ENC(${super.render()})`; } }",
+                "class EncryptedCsvReport extends CsvReport { render() { return `ENC(${super.render()})`; } }",
+              ].join("\n"),
+            },
+            task:
+              "Refatore para composição: trate o formato e a criptografia como peças independentes que um único " +
+              "`Report` recebe e combina.",
+            hint: "O formato é uma função que transforma os dados; a criptografia pode ser uma função que envolve outra.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "reports.fixed.js",
+                code: [
+                  "const pdf = (data) => `PDF(${data})`;",
+                  "const csv = (data) => `CSV(${data})`;",
+                  "const encrypted = (format) => (data) => `ENC(${format(data)})`;",
+                  "",
+                  "class Report {",
+                  "  constructor(data, formatter) { this.data = data; this.formatter = formatter; }",
+                  "  render() { return this.formatter(this.data); }",
+                  "}",
+                  "",
+                  "new Report(\"vendas\", pdf).render();              // \"PDF(vendas)\"",
+                  "new Report(\"vendas\", encrypted(csv)).render();   // \"ENC(CSV(vendas))\"",
+                ].join("\n"),
+              },
+              explanation:
+                "Uma única classe `Report` e peças que se combinam substituem quatro classes. Adicionar compressão é uma " +
+                "nova função, e não uma nova camada da hierarquia.",
+            },
+          },
         }),
       ],
     }),
