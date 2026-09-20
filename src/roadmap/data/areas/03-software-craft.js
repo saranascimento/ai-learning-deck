@@ -6405,70 +6405,78 @@ export default area({
             "Em vez de lançar uma exceção, a função devolve um valor que diz se deu certo ou errado — tornando a " +
             "possibilidade de falha parte explícita da assinatura e obrigando o chamador a tratá-la.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "O Result Pattern representa o desfecho de uma operação como um valor: ou um sucesso carregando o " +
-                "resultado, ou uma falha carregando o erro. Em vez de a função lançar (um efeito que salta " +
-                "fora do fluxo normal), ela devolve o desfecho como qualquer outro retorno — por exemplo " +
-                "{ ok: true, value } ou { ok: false, error }. Em linguagens com tipos, isso aparece na assinatura.",
+                "O Result Pattern é um padrão que encapsula o resultado de uma operação em um objeto, que pode representar sucesso (Ok) " +
+                "ou falha (Err). Ele evita o uso de exceções para o fluxo de controle, tornando o código mais explícito, previsível e " +
+                "fácil de testar.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Por que isso é importante?",
+              text: "Tratamento de erro deixa de ser um caso excepcional e passa a fazer parte do fluxo normal do código.",
+            },
+            { type: "heading", text: "Como funciona" },
             {
               type: "paragraph",
               text:
-                "Uma exceção é um caminho de saída invisível: olhando a assinatura de uma função, não se sabe que ela " +
-                "pode falhar, e esquecer de tratar só se descobre em execução. Isso é o oposto de uma função " +
-                "pura (Pure Functions, Side Effects — módulo Functional Programming), cujo resultado depende só dos " +
-                "argumentos e que não tem saídas escondidas. Com um Result, a falha vira dado: dá para " +
-                "compor, testar e passar adiante como qualquer outro valor, e o código não avança sem olhar os " +
-                "dois casos.",
+                "Em vez de lançar uma exceção, a função retorna um objeto `Result` com dois possíveis estados: `Ok` (sucesso) ou `Err` " +
+                "(falha). O chamador precisa tratar explicitamente os dois casos.",
             },
             {
-              type: "paragraph",
-              text:
-                "Não substitui as exceções em tudo. Result funciona bem para falhas esperadas e frequentes " +
-                "(validação, \"não encontrado\", entrada malformada), onde o chamador quase sempre precisa reagir. " +
-                "Exceções seguem adequadas para falhas inesperadas e bugs, que sobem até um ponto de tratamento " +
-                "geral. O custo do Result é a verbosidade: cada chamada exige checar o desfecho.",
+              type: "flow",
+              label: "Operação que pode falhar, depois Result com Ok(value) ou Err(error), depois tratamento explícito do resultado",
+              steps: [
+                { lines: ["Operação", "pode falhar"] },
+                {
+                  title: "Result<T, E>",
+                  tags: [
+                    { text: "Ok(value)", tone: "ok" },
+                    { text: "Err(error)", tone: "err" },
+                  ],
+                },
+                { lines: ["Tratamento", "explícito do resultado"] },
+              ],
             },
-            { type: "heading", text: "Exemplo mínimo" },
-            { type: "paragraph", text: "uma função que devolve o desfecho em vez de lançar, e o chamador que precisa olhar os dois casos:" },
+            { type: "heading", text: "Estrutura" },
+            { type: "paragraph", text: "Uma implementação simples em TypeScript:" },
             {
               type: "code",
-              language: "javascript",
-              filename: "result-pattern.js",
+              language: "typescript",
+              label: "TypeScript",
               code: [
-                "const ok = (value) => ({ ok: true, value });",
-                "const fail = (error) => ({ ok: false, error });",
+                "type Result<T, E> =",
+                "  | { ok: true; value: T }",
+                "  | { ok: false; error: E };",
                 "",
-                "function parsePort(text) {",
-                "  const port = Number(text);",
-                "  if (!Number.isInteger(port)) return fail(\"a porta deve ser um número inteiro\");",
-                "  if (port < 1 || port > 65535) return fail(\"a porta deve estar entre 1 e 65535\");",
-                "  return ok(port);",
+                "function ok<T>(value: T): Result<T, never> {",
+                "  return { ok: true, value };",
                 "}",
                 "",
-                "const result = parsePort(input);",
-                "if (!result.ok) {",
-                "  showError(result.error);",
-                "} else {",
-                "  connect(result.value);",
+                "function err<E>(error: E): Result<never, E> {",
+                "  return { ok: false, error };",
                 "}",
               ].join("\n"),
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "paragraph",
-              text:
-                "parsePort é uma função total: para qualquer entrada, devolve um resultado, sem saídas escondidas. " +
-                "Quem a chama enxerga, no próprio código, que há dois desfechos possíveis e precisa lidar com ambos.",
+              type: "list",
+              items: [
+                "Quando você quer tornar o tratamento de erro explícito.",
+                "Em domínios onde falhas são esperadas (ex.: validações, APIs externas, parsing).",
+                "Quando o código precisa ser mais previsível e testável.",
+              ],
             },
+            { type: "heading", text: "Quando não usar / Limitações" },
             {
-              type: "takeaway",
-              text:
-                "Trate a falha esperada como dado: devolvê-la como valor torna o erro visível na assinatura e " +
-                "impossível de esquecer — reserve exceções para o inesperado.",
+              type: "list",
+              items: [
+                "Em situações realmente excepcionais (ex.: falha de infraestrutura, bugs inesperados).",
+                "Pode aumentar a verbosidade do código.",
+                "Em projetos pequenos, pode ser mais simples usar exceções.",
+              ],
             },
           ],
           examples: [

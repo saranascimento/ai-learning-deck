@@ -1381,16 +1381,67 @@ for (const area of model.areas()) {
       `páginas com subtítulo (note não vazio): ${withSubtitle.length}`,
       withSubtitle.length > 0 && PILOT_SLUGS.every((slug) => withSubtitle.includes(slug))
     );
-    const withTakeaway = conceptPages
-      .filter(({ concept }) => (concept.content || []).some((b) => b.type === "takeaway"))
+    // Todo Concept com conteúdo real tem um bloco de síntese: «Em resumo» (takeaway) OU um destaque (callout).
+    const withResumoBlock = conceptPages
+      .filter(({ concept }) => (concept.content || []).some((b) => b.type === "takeaway" || b.type === "callout"))
       .map(({ concept }) => concept.slug)
       .sort();
-    const expectedTakeaway = [...PILOT_SLUGS].sort();
+    const expectedResumoBlock = [...PILOT_SLUGS].sort();
     record(
       "Concept — cobertura de blocos (renderer ↔ dataset)",
-      `Concepts com bloco «Em resumo»: ${withTakeaway.join(", ") || "nenhum"} (esperado: ${expectedTakeaway.join(", ")})`,
-      withTakeaway.length === expectedTakeaway.length && withTakeaway.every((slug, i) => slug === expectedTakeaway[i])
+      `Concepts com bloco de síntese («Em resumo» ou destaque): ${withResumoBlock.length} (esperado: ${expectedResumoBlock.length})`,
+      withResumoBlock.length === expectedResumoBlock.length && withResumoBlock.every((slug, i) => slug === expectedResumoBlock[i])
     );
+    // ---- Blocos de conteúdo (schema estendido): list · callout · flow · código inline · code com label ----
+    {
+      const g = "Blocos de conteúdo (schema estendido)";
+      const base = conceptPages.find(({ concept }) => concept.slug === "result-pattern").vm;
+      const withContent = (content) => renderConcept({ ...base, concept: { ...base.concept, content } });
+      const flowOk = {
+        type: "flow",
+        label: "A, depois B, depois C",
+        steps: [{ lines: ["A", "início"] }, { title: "B", tags: [{ text: "Ok", tone: "ok" }, { text: "Err", tone: "err" }] }, { lines: ["C"] }],
+      };
+      const html = withContent([
+        { type: "heading", text: "Um" },
+        { type: "paragraph", text: "usa `Result` e <b>não</b> confia em HTML `<script>x</script>`; crase `solta" },
+        { type: "callout", title: "Título do destaque", text: "texto com `code`" },
+        flowOk,
+        { type: "heading", text: "Dois" },
+        { type: "list", items: ["item `um`", "item <i>dois</i>"] },
+        { type: "code", language: "typescript", label: "TypeScript", code: "const x: number = 1;" },
+        { type: "takeaway", text: "resumo com `x`" },
+      ]);
+      const count = (re) => (html.match(re) || []).length;
+      expect(g, "paragraph: crases viram <code class=inline-code>", count(/<code class="inline-code">/g), 5);
+      record(g, "texto do dataset é escapado (nenhum <b>, <i> ou <script> vivo)", !/<b>|<i>|<script>x/.test(html.replace(/<pre[\s\S]*?<\/pre>/g, "")) && html.includes("&lt;b&gt;não"));
+      record(g, "crase sem par permanece texto literal", html.includes("crase `solta"));
+      expect(g, "list: <ul class=content-list> com 2 <li>", count(/<ul class="content-list">/g) + "/" + count(/<li>item /g), "1/2");
+      record(g, "callout: título + texto + ícone (lâmpada)", html.includes('class="callout__title">Título do destaque<') && html.includes('class="callout__text">texto com <code class="inline-code">code</code>') && html.includes("callout__svg"));
+      record(g, "flow: role=group + aria-label + 3 caixas + 2 setas aria-hidden", html.includes('role="group" aria-label="A, depois B, depois C"') && count(/class="flow__box/g) === 3 && count(/class="flow__arrow" aria-hidden="true"/g) === 2);
+      record(g, "flow: tags tag--ok / tag--err com separador «ou»", html.includes('class="tag tag--ok">Ok<') && html.includes('class="tag tag--err">Err<') && html.includes('class="flow__or">ou<'));
+      {
+        // só o cabeçalho DESTE bloco (a página-base ainda tem exemplos com ícone de arquivo)
+        const seg = html.split('<div class="code-block__header">').find((x) => x.includes('code-block__filename">TypeScript<')) || "";
+        const head = seg.slice(0, seg.indexOf("</button>"));
+        record(g, "code com label: selo TS + rótulo + botão Copiar (sem ícone de arquivo)", head.includes('class="code-block__badge" aria-hidden="true">TS<') && head.includes("data-copy-code") && !head.includes("code-block__file-icon"));
+      }
+      record(g, "code com label: syntax highlight aplicado", html.includes('class="tok-keyword"'));
+      record(g, "headings ganham id sequencial e único (sec-1, sec-2)", html.includes('id="sec-1">Um<') && html.includes('id="sec-2">Dois<'));
+      record(g, "takeaway (formato anterior) continua válido e aceita crases", html.includes("takeaway__body") && html.includes('resumo com <code class="inline-code">x</code>'));
+      // blocos malformados FALHAM (nunca renderizam em silêncio)
+      record(g, "tipo de bloco desconhecido lança erro", throws(() => withContent([{ type: "tabela", text: "x" }])));
+      record(g, "list vazia lança erro", throws(() => withContent([{ type: "list", items: [] }])));
+      record(g, "callout sem título lança erro", throws(() => withContent([{ type: "callout", text: "x" }])));
+      record(g, "flow sem label lança erro", throws(() => withContent([{ ...flowOk, label: "" }])));
+      record(g, "flow com menos de 2 passos lança erro", throws(() => withContent([{ ...flowOk, steps: [{ lines: ["só um"] }] }])));
+      record(g, "flow com tone inválido lança erro", throws(() => withContent([{ ...flowOk, steps: [{ lines: ["A"] }, { title: "B", tags: [{ text: "x", tone: "azul" }] }] }])));
+      // Result Pattern REAL usa os blocos novos, com os títulos do modelo aprovado
+      const real = conceptPages.find(({ concept }) => concept.slug === "result-pattern").html;
+      const titles = [...real.matchAll(/<h4 class="content-block__heading" id="sec-\d+">([^<]*)<\/h4>/g)].map((m) => m[1]);
+      expect(g, "Result Pattern: títulos das seções", titles.join(" | "), "Conceito | Como funciona | Estrutura | Quando usar | Quando não usar / Limitações");
+      record(g, "Result Pattern: fluxo + destaque + 2 listas + selo TS + código inline", real.includes('class="flow"') && real.includes('class="callout"') && (real.match(/class="content-list"/g) || []).length === 2 && real.includes("code-block__badge") && real.includes('<code class="inline-code">Result</code>'));
+    }
     for (const slug of PILOT_SLUGS) {
       const page = conceptPages.find(({ concept }) => concept.slug === slug);
       const ph = page ? page.html : "";

@@ -27,6 +27,12 @@
  * ao padrão APG Tabs, e wire o botão Copiar (Clipboard API). Sem o script,
  * nada muda no HTML base.
  *
+ * Blocos de `concept.content` (schema): heading · paragraph · code · takeaway · list · callout · flow.
+ *   - texto de paragraph/list/callout/takeaway aceita `código inline` entre crases (renderInline);
+ *   - code aceita `label` opcional (mostra selo da linguagem + rótulo, em vez de ícone de arquivo + filename);
+ *   - flow = diagrama de caixas com setas (só quando o conceito tem um fluxo real — bloco OPCIONAL);
+ *   - tipo de bloco desconhecido ou bloco malformado LANÇA erro (nunca renderiza "undefined" em silêncio).
+ *
  * note: R3.5.11 passa a exibir como subtítulo sob o H1 (tradução curta do
  * termo em inglês) quando presente — deixou de ser 100% invisível. collision/
  * isNew/relocated/suggestions continuam NÃO aparecendo (metadata editorial).
@@ -35,7 +41,7 @@
  * real — nenhum branching por slug, só por presença de dado.
  */
 import { renderDocument } from "./html.mjs";
-import { escapeHtml, escapeAttr, num, renderChipList, renderRelationList, renderRelationPill } from "./partials.mjs";
+import { escapeHtml, escapeAttr, num, renderChipList, renderInline, renderRelationList, renderRelationPill } from "./partials.mjs";
 import { icon } from "./icons.mjs";
 import { highlight } from "./highlight.mjs";
 
@@ -51,14 +57,20 @@ const PANEL_ICON = { conteudo: "book", exemplos: "code", exercicio: "pencil" };
 // Bloco de código — cabeçalho (ícone arquivo + filename/language + botão
 // Copiar, inerte sem JS) + <pre><code> com highlight() (sempre escapado
 // antes de virar <span> — o dataset nunca é HTML confiável).
-function renderCode({ language, code, filename }) {
+// `label` (opcional): troca o ícone de arquivo por um selo da linguagem e o filename pelo rótulo.
+const LANG_BADGE = { typescript: "TS", ts: "TS", tsx: "TSX", javascript: "JS", js: "JS", jsx: "JSX" };
+
+function renderCode({ language, code, filename, label }) {
   const lang = language || "text";
-  const label = filename || lang;
+  const name = label || filename || lang;
+  const lead = label
+    ? `<span class="code-block__badge" aria-hidden="true">${escapeHtml(LANG_BADGE[lang] || lang.slice(0, 3).toUpperCase())}</span>`
+    : icon("file", "code-block__file-icon");
   return [
     '              <div class="code-block">',
     '                <div class="code-block__header">',
-    `                  ${icon("file", "code-block__file-icon")}`,
-    `                  <span class="code-block__filename">${escapeHtml(label)}</span>`,
+    `                  ${lead}`,
+    `                  <span class="code-block__filename">${escapeHtml(name)}</span>`,
     '                  <button type="button" class="code-block__copy" data-copy-code>',
     `                    ${icon("clipboard", "code-block__copy-icon")}`,
     '                    <span data-copy-label>Copiar</span>',
@@ -69,21 +81,71 @@ function renderCode({ language, code, filename }) {
   ].join("\n");
 }
 
-// concept.content: { type: "heading" | "paragraph" | "code" | "takeaway", ... }[] | null
+// flow — diagrama de caixas com setas. Cada passo é `{ lines: [...] }` (caixa simples) ou
+// `{ title, tags: [{ text, tone }] }` (caixa principal, com estados). tone: ok | err | neutral.
+const FLOW_TONES = new Set(["ok", "err", "neutral"]);
+
+function renderFlow(block) {
+  const { label, steps } = block;
+  if (!label || typeof label !== "string") throw new Error("concept.content: bloco flow exige `label` (texto alternativo do diagrama)");
+  if (!Array.isArray(steps) || steps.length < 2 || steps.length > 5) throw new Error("concept.content: bloco flow exige de 2 a 5 `steps`");
+  const boxes = steps.map((step) => {
+    if (step.title) {
+      const tags = step.tags || [];
+      for (const t of tags) {
+        if (!t.text || !FLOW_TONES.has(t.tone)) throw new Error("concept.content: tag de flow exige `text` e `tone` em ok|err|neutral");
+      }
+      const tagHtml = tags
+        .map((t, i) => (i ? '<span class="flow__or">ou</span>' : "") + `<code class="tag tag--${t.tone}">${escapeHtml(t.text)}</code>`)
+        .join("");
+      return `<div class="flow__box flow__box--main"><strong class="flow__title">${escapeHtml(step.title)}</strong>${tagHtml ? `<div class="flow__states">${tagHtml}</div>` : ""}</div>`;
+    }
+    if (!Array.isArray(step.lines) || !step.lines.length) throw new Error("concept.content: passo de flow exige `title` ou `lines`");
+    return `<div class="flow__box">${step.lines.map((l) => `<span>${escapeHtml(l)}</span>`).join("")}</div>`;
+  });
+  return `              <div class="flow" role="group" aria-label="${escapeAttr(label)}">${boxes.join('<span class="flow__arrow" aria-hidden="true">→</span>')}</div>`;
+}
+
+// concept.content: { type: "heading" | "paragraph" | "code" | "takeaway" | "list" | "callout" | "flow", ... }[] | null
+// Títulos ganham id sequencial (`sec-1`, `sec-2`…) — âncora para "Neste conteúdo" e links diretos.
 function renderContentBlocks(blocks) {
+  let headings = 0;
   return blocks
     .map((block) => {
-      if (block.type === "heading") return `              <h4 class="content-block__heading">${escapeHtml(block.text)}</h4>`;
-      if (block.type === "code") return renderCode(block);
-      if (block.type === "takeaway") {
-        return [
-          '              <div class="takeaway">',
-          `                <p class="takeaway__label">${icon("check-circle", "takeaway__icon")}<span>Em resumo</span></p>`,
-          `                <p class="takeaway__body">${escapeHtml(block.text)}</p>`,
-          "              </div>",
-        ].join("\n");
+      switch (block.type) {
+        case "heading":
+          return `              <h4 class="content-block__heading" id="sec-${++headings}">${escapeHtml(block.text)}</h4>`;
+        case "paragraph":
+          return `              <p>${renderInline(block.text)}</p>`;
+        case "code":
+          return renderCode(block);
+        case "takeaway":
+          return [
+            '              <div class="takeaway">',
+            `                <p class="takeaway__label">${icon("check-circle", "takeaway__icon")}<span>Em resumo</span></p>`,
+            `                <p class="takeaway__body">${renderInline(block.text)}</p>`,
+            "              </div>",
+          ].join("\n");
+        case "list": {
+          if (!Array.isArray(block.items) || !block.items.length) throw new Error("concept.content: bloco list exige `items` não vazio");
+          return `              <ul class="content-list">${block.items.map((item) => `<li>${renderInline(item)}</li>`).join("")}</ul>`;
+        }
+        case "callout":
+          if (!block.title || !block.text) throw new Error("concept.content: bloco callout exige `title` e `text`");
+          return [
+            '              <div class="callout">',
+            `                <span class="callout__icon">${icon("lightbulb", "callout__svg")}</span>`,
+            '                <div class="callout__body">',
+            `                  <p class="callout__title">${escapeHtml(block.title)}</p>`,
+            `                  <p class="callout__text">${renderInline(block.text)}</p>`,
+            "                </div>",
+            "              </div>",
+          ].join("\n");
+        case "flow":
+          return renderFlow(block);
+        default:
+          throw new Error(`concept.content: tipo de bloco desconhecido "${block.type}"`);
       }
-      return `              <p>${escapeHtml(block.text)}</p>`;
     })
     .join("\n");
 }
@@ -98,9 +160,9 @@ function renderExamples(examples) {
           '                <li class="example">\n' +
           `                  <p class="example__number">${num(i)}</p>\n` +
           `                  <h4 class="example__title">${escapeHtml(ex.title)}</h4>\n` +
-          `                  <p class="example__context">${escapeHtml(ex.context)}</p>\n` +
+          `                  <p class="example__context">${renderInline(ex.context)}</p>\n` +
           (ex.code ? renderCode(ex.code) + "\n" : "") +
-          `                  <p class="example__explanation">${escapeHtml(ex.explanation)}</p>\n` +
+          `                  <p class="example__explanation">${renderInline(ex.explanation)}</p>\n` +
           "                </li>"
       )
       .join("\n") +
@@ -111,16 +173,16 @@ function renderExamples(examples) {
 // concept.exercise: { problem, problemCode:{language,code,filename}|null, task, hint,
 //                      solution: { code:{language,code,filename}|null, explanation } }
 function renderExercise(ex) {
-  const problemBody = [`<p>${escapeHtml(ex.problem)}</p>`, ex.problemCode ? renderCode(ex.problemCode) : ""].filter(Boolean).join("\n");
+  const problemBody = [`<p>${renderInline(ex.problem)}</p>`, ex.problemCode ? renderCode(ex.problemCode) : ""].filter(Boolean).join("\n");
   return [
     card("exercise-problem", "target", "Problema", problemBody, 4, "info-card--exercise"),
-    card("exercise-task", "checklist", "Sua tarefa", `<p>${escapeHtml(ex.task)}</p>`, 4, "info-card--exercise"),
-    card("exercise-hint", "lightbulb", "Dica", `<p>${escapeHtml(ex.hint)}</p>`, 4, "info-card--exercise"),
+    card("exercise-task", "checklist", "Sua tarefa", `<p>${renderInline(ex.task)}</p>`, 4, "info-card--exercise"),
+    card("exercise-hint", "lightbulb", "Dica", `<p>${renderInline(ex.hint)}</p>`, 4, "info-card--exercise"),
     '              <details class="solution-toggle">',
     `                <summary class="solution-toggle__summary">${icon("eye")}<span>Ver solução</span><span class="solution-toggle__arrow" aria-hidden="true">→</span></summary>`,
     '                <div class="solution-toggle__body">',
     ex.solution.code ? renderCode(ex.solution.code) : "",
-    `                  <p>${escapeHtml(ex.solution.explanation)}</p>`,
+    `                  <p>${renderInline(ex.solution.explanation)}</p>`,
     "                </div>",
     "              </details>",
   ].join("\n");
@@ -194,7 +256,7 @@ export function renderConcept(vm) {
     "concept-resumo",
     "info",
     "Resumo",
-    concept.summary ? `<p>${escapeHtml(concept.summary)}</p>` : `<p class="empty-state">${EMPTY.resumo}</p>`,
+    concept.summary ? `<p>${renderInline(concept.summary)}</p>` : `<p class="empty-state">${EMPTY.resumo}</p>`,
     2
   );
   const requiresCard = card(

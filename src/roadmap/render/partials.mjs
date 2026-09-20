@@ -12,6 +12,15 @@ import { escapeHtml, escapeAttr } from "./html.mjs";
 export { escapeHtml, escapeAttr };
 
 /**
+ * renderInline(text) — texto do dataset → HTML inline seguro. O texto é SEMPRE escapado
+ * primeiro (o dataset nunca é HTML confiável); só depois `trecho entre crases` vira
+ * <code class="inline-code">. Crase sem par fica como texto literal. Sem markdown além disso.
+ */
+export function renderInline(text) {
+  return escapeHtml(text).replace(/`([^`\n]+)`/g, '<code class="inline-code">$1</code>');
+}
+
+/**
  * num(index) → "01".."99" — numeração pedagógica dos kickers (Área/Módulo/
  * Conceito). Mesmo formato de views.js (`String(i + 1).padStart(2, "0")`).
  */

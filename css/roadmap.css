@@ -1059,3 +1059,178 @@ a.relation-pill:focus-visible {
     gap: var(--space-sm);
   }
 }
+
+/* ================= Blocos de conteúdo do Concept (schema estendido) =================
+   Conteúdo com seções numeradas, código inline, listas, destaque e diagrama de fluxo.
+   Usa --area-color (definido no wrapper .view da página). */
+
+.concept-study .study-panel[data-study-panel="conteudo"] {
+  counter-reset: sec;
+}
+.concept-study .study-panel[data-study-panel="conteudo"] .content-block__heading {
+  counter-increment: sec;
+  margin-top: 1.4rem;
+  font-size: 1.35rem;
+  scroll-margin-top: 1rem;
+}
+.concept-study .study-panel[data-study-panel="conteudo"] .content-block__heading::before {
+  content: counter(sec) ". ";
+}
+
+.inline-code {
+  padding: 0.1em 0.4em;
+  border-radius: 0.3rem;
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.9em;
+  color: var(--color-text);
+}
+
+/* list — bolinhas na cor da Área. base.css fixa o font-size no <li>: herdar não basta. */
+.concept-study .content-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin: 0.4rem 0;
+  padding: 0;
+  list-style: none;
+}
+.content-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  font-size: 0.95rem;
+}
+.content-list li::before {
+  content: "";
+  flex: none;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--area-color);
+}
+
+/* callout — destaque com lâmpada */
+.concept-study .callout {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  margin: 0.75rem 0;
+  padding: 1rem 1.25rem;
+  border: 1px solid color-mix(in srgb, var(--area-color) 30%, var(--color-border));
+  border-radius: 0.6rem;
+  background: color-mix(in srgb, var(--area-color) 9%, transparent);
+}
+.callout__icon {
+  flex: none;
+  color: var(--area-color);
+}
+.concept-study .callout__svg {
+  width: 2rem;
+  height: 2rem;
+}
+.callout__body {
+  min-width: 0;
+}
+.concept-study .callout__body p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+.concept-study .callout__body .callout__title {
+  margin-bottom: 0.15rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+/* flow — diagrama de caixas com setas (bloco opcional) */
+.flow {
+  --flow-ok: #5be3a2;
+  --flow-err: #ff7aa8;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+.flow__box {
+  display: flex;
+  flex: 1 1 6.5rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.6rem;
+  background: var(--color-surface);
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+.flow__box--main {
+  flex: 3 1 18rem;
+  color: var(--color-text);
+}
+.flow__title {
+  margin-bottom: 0.6rem;
+  font-size: 1rem;
+}
+.flow__states {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+}
+.flow__arrow {
+  flex: none;
+  font-size: 1.5rem;
+  color: var(--color-text-muted);
+}
+.tag {
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.4rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+}
+.tag--ok {
+  border-color: color-mix(in srgb, var(--flow-ok) 55%, transparent);
+  background: color-mix(in srgb, var(--flow-ok) 10%, transparent);
+  color: var(--flow-ok);
+}
+.tag--err {
+  border-color: color-mix(in srgb, var(--flow-err) 55%, transparent);
+  background: color-mix(in srgb, var(--flow-err) 10%, transparent);
+  color: var(--flow-err);
+}
+@media (max-width: 40rem) {
+  .flow {
+    flex-direction: column;
+  }
+  .flow__box {
+    width: 100%;
+    flex: none;
+  }
+  .flow__states {
+    flex-wrap: wrap;
+  }
+  .flow__arrow {
+    transform: rotate(90deg);
+  }
+}
+
+/* selo da linguagem no cabeçalho do code block (quando o bloco tem `label`) */
+.code-block__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  padding: 0 0.2rem;
+  border-radius: 0.25rem;
+  background: #3178c6;
+  color: #fff;
+  font: 700 0.65rem system-ui, sans-serif;
+}
