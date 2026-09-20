@@ -2689,7 +2689,7 @@ export default area({
             "Escrever o teste antes do código que ele testa — uma disciplina que usa o próprio ato de testar " +
             "para guiar o design da solução, não só para verificá-la depois de pronta.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -2699,7 +2699,14 @@ export default area({
                 "esperado (e que, nesse momento, falha — porque o código ainda não existe), e só então escrever " +
                 "o código mínimo necessário para fazer esse teste passar.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "TDD inverte a ordem tradicional: o teste vem primeiro, e o código de produção existe só para " +
+                "fazê-lo passar — uma disciplina que usa o teste para guiar o design, não só para verificá-lo depois.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -2716,7 +2723,7 @@ export default area({
                 "custo é disciplina: escrever testes primeiro exige uma mudança de hábito e desacelera o ritmo " +
                 "no curto prazo, em troca de design mais limpo e uma rede de segurança mais completa no longo prazo.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "o teste é escrito e roda (falhando) antes de calculateTotal existir:" },
             {
               type: "code",
@@ -2743,11 +2750,24 @@ export default area({
                 "depois de ver essa falha é que calculateTotal foi escrito — o mínimo necessário para o teste " +
                 "passar, nada além disso.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "TDD inverte a ordem tradicional: o teste vem primeiro, e o código de produção existe só para " +
-                "fazê-lo passar — uma disciplina que usa o teste para guiar o design, não só para verificá-lo depois.",
+              type: "list",
+              items: [
+                "Quando o design ainda está aberto: escrever o teste primeiro força a pensar na interface antes da " +
+                "implementação.",
+                "Em lógica com regras claras, onde cada teste vira um pequeno passo verificável.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Em exploração ou protótipo, quando ainda não se sabe o que construir, os testes escritos primeiro podem ser " +
+                "descartados.",
+                "TDD não substitui outros níveis de teste nem garante um bom design: os testes guiam, mas a decisão continua " +
+                "sendo sua.",
+              ],
             },
           ],
           examples: [
@@ -2838,7 +2858,7 @@ export default area({
             "escrever o código mínimo que o faz passar (Green), melhorar o código com a segurança da barra " +
             "verde (Refactor) — e repetir.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -2848,7 +2868,14 @@ export default area({
                 "que a implementação não seja elegante; Refactor — com o teste passando como rede de segurança, " +
                 "melhorar a estrutura do código sem mudar seu comportamento externo.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Red-Green-Refactor é o motor operacional do TDD: falhar de propósito, passar com o mínimo, " +
+                "depois melhorar em segurança — um passo de cada vez, nunca os três ao mesmo tempo.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -2865,7 +2892,7 @@ export default area({
                 "silenciosamente. Sem esse passo, código escrito só para \"passar no teste mais rápido " +
                 "possível\" tende a acumular dívida técnica.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "os três passos do ciclo, em sequência, sobre a mesma função:" },
             {
               type: "code",
@@ -2904,11 +2931,22 @@ export default area({
                 "nesse exemplo simples, não teve o que melhorar; em exemplos maiores, é aqui que nomes, " +
                 "duplicação e estrutura são revisados com a segurança da barra verde.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Red-Green-Refactor é o motor operacional do TDD: falhar de propósito, passar com o mínimo, " +
-                "depois melhorar em segurança — um passo de cada vez, nunca os três ao mesmo tempo.",
+              type: "list",
+              items: [
+                "Em cada ciclo curto de TDD, um comportamento de cada vez.",
+                "Para refatorar com segurança: a barra verde garante que o comportamento se manteve.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Não pule o Red: um teste que nunca falhou não prova que verifica algo.",
+                "No Green, escreva o mínimo que passa; o Refactor melhora o código sem alterar o comportamento nem " +
+                "acrescentar testes novos.",
+              ],
             },
           ],
           examples: [
