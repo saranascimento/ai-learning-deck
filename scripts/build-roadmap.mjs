@@ -1352,6 +1352,11 @@ for (const area of model.areas()) {
     "builder",
     "prototype",
     "singleton",
+    "adapter",
+    "decorator",
+    "facade",
+    "proxy",
+    "composite",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",

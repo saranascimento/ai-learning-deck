@@ -6023,11 +6023,1079 @@ export default area({
         "Flyweight — nicho: otimização de memória por compartilhamento de estado",
       ],
       concepts: [
-        concept({ order: 10, title: "Adapter" }),
-        concept({ order: 20, title: "Decorator" }),
-        concept({ order: 30, title: "Facade" }),
-        concept({ order: 40, title: "Proxy" }),
-        concept({ order: 50, title: "Composite", note: "relaciona-se com Data Structures / Tree (Epic 01) — aplicação, não Requires" }),
+        concept({
+          order: 10,
+          title: "Adapter",
+          note: "traduz uma interface para a que o cliente espera",
+          summary:
+            "Converte a interface de uma classe ou serviço na interface que o código cliente espera, para que peças " +
+            "com contratos diferentes possam trabalhar juntas sem serem alteradas.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Adapter é um padrão estrutural que faz a ponte entre duas interfaces incompatíveis. Seu código espera " +
+                "um contrato (`charge(amount)`), mas a biblioteca de terceiros, ou o código legado, oferece outro " +
+                "(`sendPayment(cents, currency)`). Em vez de alterar um dos lados, ou espalhar a conversão pelo " +
+                "sistema, um objeto intermediário, o adapter, traduz as chamadas de um contrato para o outro. É a " +
+                "ferramenta natural para Program to an Interface quando a implementação não é sua.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Não mude o que já existe nem deixe a diferença de contratos vazar: um adapter em volta traduz o " +
+                "que o cliente pede para o que o outro lado entende.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "O adapter implementa o contrato que o cliente espera e guarda uma referência ao objeto adaptado. " +
+                "Cada chamada recebida é convertida, nos nomes, na ordem e nos formatos dos argumentos, e repassada.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "adapter.js",
+              code: [
+                "// Código de terceiros, com outro contrato: valores em centavos e moeda explícita",
+                "class LegacyPaymentSdk {",
+                "  sendPayment(cents, currency) { return { status: \"OK\", id: `tx-${cents}-${currency}` }; }",
+                "}",
+                "",
+                "// O contrato que o seu código espera: charge(amount) → { ok, id }",
+                "class PaymentAdapter {",
+                "  constructor(sdk, currency = \"BRL\") {",
+                "    this.sdk = sdk;",
+                "    this.currency = currency;",
+                "  }",
+                "  charge(amount) {",
+                "    const result = this.sdk.sendPayment(Math.round(amount * 100), this.currency);",
+                "    return { ok: result.status === \"OK\", id: result.id };",
+                "  }",
+                "}",
+                "",
+                "// O cliente só conhece charge(); nada nele sabe do SDK",
+                "function checkout(gateway, total) { return gateway.charge(total); }",
+                "",
+                "checkout(new PaymentAdapter(new LegacyPaymentSdk()), 49.9);   // { ok: true, id: \"tx-4990-BRL\" }",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A conversão de reais para centavos e a leitura do `status` ficam em um só lugar. Trocar de SDK é " +
+                "escrever outro adapter, sem tocar em `checkout`.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Para integrar uma biblioteca, um serviço externo ou um código legado cujo contrato difere do que o seu código espera.",
+                "Para isolar uma dependência de terceiros atrás de um contrato seu, de modo que ela possa ser trocada.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Se você pode alterar a interface original, ajustá-la direto costuma ser mais simples que manter uma camada de tradução.",
+                "O adapter só traduz a forma: se os contratos diferem no comportamento, como síncrono contra assíncrono, ou em garantias de erro, a tradução não basta.",
+                "Cada adapter é código a mais para manter, e uma cadeia de adapters é sinal de que os contratos deveriam ser revistos.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Traduzir a resposta de uma API para o seu modelo",
+              context: "O adapter também aparece na fronteira de dados: o formato externo não deve invadir o seu domínio.",
+              code: {
+                language: "javascript",
+                filename: "api-adapter.js",
+                code: [
+                  "// Formato da API externa",
+                  "const apiUser = { user_id: 7, full_name: \"Ana Souza\", e_mail: \"ana@x.com\" };",
+                  "",
+                  "// O adapter converte para o modelo usado no resto do sistema",
+                  "function toUser(apiUser) {",
+                  "  return { id: apiUser.user_id, name: apiUser.full_name, email: apiUser.e_mail };",
+                  "}",
+                  "",
+                  "const user = toUser(apiUser);   // { id: 7, name: \"Ana Souza\", email: \"ana@x.com\" }",
+                ].join("\n"),
+              },
+              explanation:
+                "Se a API mudar o nome de um campo, só `toUser` é alterado. O restante do sistema continua usando " +
+                "`id`, `name` e `email`.",
+            },
+            {
+              title: "Duas implementações atrás do mesmo contrato",
+              context: "Com um adapter por fornecedor, o cliente não precisa saber qual está em uso.",
+              code: {
+                language: "javascript",
+                filename: "two-adapters.js",
+                code: [
+                  "class StripeAdapter {",
+                  "  constructor(stripe) { this.stripe = stripe; }",
+                  "  charge(amount) { return this.stripe.paymentIntents.create({ amount: amount * 100 }); }",
+                  "}",
+                  "class PixAdapter {",
+                  "  constructor(pix) { this.pix = pix; }",
+                  "  charge(amount) { return this.pix.cobrar({ valor: amount.toFixed(2) }); }",
+                  "}",
+                  "",
+                  "// Mesmo contrato, fornecedores diferentes",
+                  "const gateways = { card: new StripeAdapter(stripe), pix: new PixAdapter(pix) };",
+                  "gateways[order.method].charge(order.total);",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada adapter esconde as particularidades do seu fornecedor. O código de cobrança usa apenas " +
+                "`charge`, e um novo fornecedor é um novo adapter.",
+            },
+            {
+              title: "Quando o adapter não resolve",
+              context: "A tradução da forma não corrige uma diferença de comportamento.",
+              code: {
+                language: "javascript",
+                filename: "semantic-mismatch.js",
+                code: [
+                  "// O cliente espera algo síncrono:",
+                  "// const balance = account.getBalance();",
+                  "",
+                  "// O serviço só oferece uma chamada assíncrona:",
+                  "class RemoteAccount { async fetchBalance() { return 100; } }",
+                  "",
+                  "// Um adapter que só troca o nome devolve uma Promise, e não um número",
+                  "class AccountAdapter {",
+                  "  constructor(remote) { this.remote = remote; }",
+                  "  getBalance() { return this.remote.fetchBalance(); }   // Promise, e não number",
+                  "}",
+                  "// O contrato do cliente precisa mudar para ser assíncrono também.",
+                ].join("\n"),
+              },
+              explanation:
+                "Sem mudar o contrato do cliente para aceitar uma Promise, o adapter entrega algo diferente do que " +
+                "foi prometido. A incompatibilidade de comportamento pede uma decisão de design, e não só tradução.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Sua aplicação usa um logger com `info(message)` e `error(message)`, mas a biblioteca legada só oferece " +
+              "`writeLine(level, text)`. Hoje cada chamada monta a conversão à mão.",
+            problemCode: {
+              language: "javascript",
+              filename: "logging.js",
+              code: [
+                "class LegacyLogger {",
+                "  writeLine(level, text) { console.log(`[${level}] ${text}`); }",
+                "}",
+                "",
+                "const legacy = new LegacyLogger();",
+                "",
+                "// Espalhado pelo código, com o nível escrito à mão em cada chamada",
+                "legacy.writeLine(\"INFO\", \"servidor iniciado\");",
+                "legacy.writeLine(\"ERROR\", \"falha ao conectar\");",
+                "",
+                "function startServer(logger) { logger.info(\"servidor iniciado\"); }   // o que o código quer",
+              ].join("\n"),
+            },
+            task:
+              "Crie um adapter com `info(message)` e `error(message)` sobre o `LegacyLogger`, e use-o em " +
+              "`startServer`.",
+            hint: "O adapter guarda o logger legado e traduz cada método para `writeLine` com o nível correto.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "logging.fixed.js",
+                code: [
+                  "class LoggerAdapter {",
+                  "  constructor(legacy) { this.legacy = legacy; }",
+                  "  info(message) { this.legacy.writeLine(\"INFO\", message); }",
+                  "  error(message) { this.legacy.writeLine(\"ERROR\", message); }",
+                  "}",
+                  "",
+                  "const logger = new LoggerAdapter(new LegacyLogger());",
+                  "",
+                  "function startServer(logger) { logger.info(\"servidor iniciado\"); }",
+                  "startServer(logger);   // \"[INFO] servidor iniciado\"",
+                ].join("\n"),
+              },
+              explanation:
+                "O código da aplicação usa só `info` e `error`, e o conhecimento do formato legado, `writeLine` e os " +
+                "níveis, fica no adapter. Trocar a biblioteca é trocar o adapter.",
+            },
+          },
+        }),
+        concept({
+          order: 20,
+          title: "Decorator",
+          note: "acrescenta comportamento envolvendo o objeto, sem herança",
+          summary:
+            "Acrescenta comportamento a um objeto envolvendo-o em outro com a mesma interface — uma alternativa " +
+            "flexível à herança para combinar funcionalidades.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Decorator é um padrão estrutural em que um objeto envolve outro que tem o mesmo contrato e acrescenta " +
+                "comportamento antes ou depois de repassar a chamada. Como o decorador tem a mesma interface do objeto " +
+                "envolvido, o cliente não percebe a diferença, e vários decoradores podem ser empilhados. É a aplicação " +
+                "mais clara de Composition over Inheritance: em vez de uma subclasse para cada combinação de " +
+                "funcionalidades (com log, com cache, com os dois), cada funcionalidade é uma peça combinável.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Envolva o objeto em outro com a mesma interface para acrescentar comportamento: as funcionalidades " +
+                "viram peças que se empilham, e não subclasses.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "O decorador implementa o mesmo contrato do objeto e guarda uma referência a ele. Em cada método, " +
+                "faz o seu trabalho extra e delega ao objeto envolvido. O resultado pode ser envolvido de novo.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "decorator.js",
+              code: [
+                "class Api {",
+                "  get(path) { return `dados de ${path}`; }",
+                "}",
+                "",
+                "class LoggingApi {",
+                "  constructor(inner) { this.inner = inner; }",
+                "  get(path) {",
+                "    console.log(`GET ${path}`);",
+                "    return this.inner.get(path);",
+                "  }",
+                "}",
+                "",
+                "class CachedApi {",
+                "  constructor(inner) { this.inner = inner; this.cache = new Map(); }",
+                "  get(path) {",
+                "    if (!this.cache.has(path)) this.cache.set(path, this.inner.get(path));",
+                "    return this.cache.get(path);",
+                "  }",
+                "}",
+                "",
+                "// Empilhar: o cache envolve o log, que envolve a API",
+                "const api = new CachedApi(new LoggingApi(new Api()));",
+                "api.get(\"/users\");   // registra a chamada e busca",
+                "api.get(\"/users\");   // vem do cache, sem chegar ao log",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Cada funcionalidade existe uma vez. Para ter só log, só cache ou os dois, basta escolher quais " +
+                "decoradores empilhar, sem criar classes novas.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Para acrescentar responsabilidades transversais, como log, cache, retry, medição de tempo ou autorização, sem alterar a classe original.",
+                "Quando as funcionalidades precisam ser combinadas de formas variadas, e uma subclasse por combinação seria inviável.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "A ordem dos decoradores muda o resultado, como cache antes ou depois do log, e errar a ordem gera bugs sutis.",
+                "Muitas camadas dificultam a depuração: o stack trace passa por todas e fica difícil saber qual fez o quê.",
+                "Com uma interface grande, cada método precisa ser repassado à mão, o que dá trabalho e é fácil de esquecer.",
+                "O decorador é outro objeto: comparações de identidade e `instanceof` com o original deixam de valer.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Decorador como função",
+              context: "Em JavaScript, uma função de ordem superior costuma bastar para decorar outra função.",
+              code: {
+                language: "javascript",
+                filename: "function-decorator.js",
+                code: [
+                  "function withRetry(fn, attempts = 3) {",
+                  "  return async (...args) => {",
+                  "    let lastError;",
+                  "    for (let i = 0; i < attempts; i++) {",
+                  "      try { return await fn(...args); }",
+                  "      catch (error) { lastError = error; }",
+                  "    }",
+                  "    throw lastError;",
+                  "  };",
+                  "}",
+                  "",
+                  "const fetchUser = async (id) => { /* pode falhar */ };",
+                  "const fetchUserWithRetry = withRetry(fetchUser);   // mesma assinatura, comportamento extra",
+                ].join("\n"),
+              },
+              explanation:
+                "`withRetry` recebe uma função e devolve outra com o mesmo contrato, que tenta de novo em caso de " +
+                "falha. É Higher-Order Function aplicada ao padrão.",
+            },
+            {
+              title: "A ordem importa",
+              context: "Empilhar os mesmos decoradores em ordens diferentes dá comportamentos diferentes.",
+              code: {
+                language: "javascript",
+                filename: "order.js",
+                code: [
+                  "// Cache por fora: uma segunda chamada não chega ao log",
+                  "const a = new CachedApi(new LoggingApi(new Api()));",
+                  "a.get(\"/x\"); a.get(\"/x\");   // registra 1 vez",
+                  "",
+                  "// Log por fora: toda chamada é registrada, mesmo as servidas pelo cache",
+                  "const b = new LoggingApi(new CachedApi(new Api()));",
+                  "b.get(\"/x\"); b.get(\"/x\");   // registra 2 vezes",
+                ].join("\n"),
+              },
+              explanation:
+                "Nos dois casos os decoradores são os mesmos. O que muda é qual camada vê cada chamada, e escolher a " +
+                "ordem faz parte do design.",
+            },
+            {
+              title: "A explosão de subclasses que o Decorator evita",
+              context: "Com herança, cada combinação de funcionalidades vira uma classe.",
+              code: {
+                language: "javascript",
+                filename: "explosion.js",
+                code: [
+                  "// Com herança: 3 funcionalidades geram 7 combinações possíveis",
+                  "// LoggedApi, CachedApi, RetryApi,",
+                  "// LoggedCachedApi, LoggedRetryApi, CachedRetryApi, LoggedCachedRetryApi",
+                  "",
+                  "// Com decoradores: 3 peças, combinadas onde forem necessárias",
+                  "const api = new RetryApi(new CachedApi(new LoggingApi(new Api())));",
+                ].join("\n"),
+              },
+              explanation:
+                "O número de subclasses cresce exponencialmente com as funcionalidades, e o de decoradores cresce " +
+                "linearmente. É o argumento central de Composition over Inheritance.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Cada combinação de log e cache virou uma subclasse de `Api`. Adicionar medição de tempo dobraria o " +
+              "número de classes.",
+            problemCode: {
+              language: "javascript",
+              filename: "api-subclasses.js",
+              code: [
+                "class Api { get(path) { return `dados de ${path}`; } }",
+                "",
+                "class LoggedApi extends Api {",
+                "  get(path) { console.log(`GET ${path}`); return super.get(path); }",
+                "}",
+                "class CachedApi extends Api {",
+                "  cache = new Map();",
+                "  get(path) {",
+                "    if (!this.cache.has(path)) this.cache.set(path, super.get(path));",
+                "    return this.cache.get(path);",
+                "  }",
+                "}",
+                "class LoggedCachedApi extends CachedApi {",
+                "  get(path) { console.log(`GET ${path}`); return super.get(path); }   // log repetido",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Refatore para decoradores: `LoggingApi` e `CachedApi` envolvem qualquer objeto com `get`, e o " +
+              "`LoggedCachedApi` deixa de existir.",
+            hint: "Cada decorador recebe o objeto envolvido no construtor e delega a ele em `get`. As combinações são feitas ao empilhar.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "api-decorators.js",
+                code: [
+                  "class Api { get(path) { return `dados de ${path}`; } }",
+                  "",
+                  "class LoggingApi {",
+                  "  constructor(inner) { this.inner = inner; }",
+                  "  get(path) { console.log(`GET ${path}`); return this.inner.get(path); }",
+                  "}",
+                  "",
+                  "class CachedApi {",
+                  "  constructor(inner) { this.inner = inner; this.cache = new Map(); }",
+                  "  get(path) {",
+                  "    if (!this.cache.has(path)) this.cache.set(path, this.inner.get(path));",
+                  "    return this.cache.get(path);",
+                  "  }",
+                  "}",
+                  "",
+                  "const onlyLog = new LoggingApi(new Api());",
+                  "const both = new CachedApi(new LoggingApi(new Api()));   // no lugar de LoggedCachedApi",
+                ].join("\n"),
+              },
+              explanation:
+                "O log e o cache passaram a existir uma vez cada, e qualquer combinação é uma escolha de quais " +
+                "empilhar. Medir tempo agora é um decorador novo, e não uma subclasse para cada combinação.",
+            },
+          },
+        }),
+        concept({
+          order: 30,
+          title: "Facade",
+          note: "uma interface simples na frente de um subsistema complexo",
+          summary:
+            "Oferece uma interface simples e única na frente de um subsistema com muitas peças, para que quem o usa " +
+            "não precise conhecer nem coordenar cada uma delas.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Facade é um padrão estrutural que põe uma interface simples na frente de um conjunto de classes " +
+                "complexo. Em vez de o cliente conhecer o estoque, o pagamento, o frete e o e-mail, e chamá-los na " +
+                "ordem certa, ele chama uma operação da fachada, `placeOrder(order)`, e ela coordena o resto. Não " +
+                "adiciona funcionalidade nem traduz contratos, como o Adapter: só reduz o que quem usa precisa saber.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Uma porta de entrada simples para um subsistema complicado: quem usa faz uma chamada, e a fachada " +
+                "coordena as peças.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "A fachada guarda as peças do subsistema e expõe poucas operações de alto nível. Cada operação " +
+                "coordena as chamadas necessárias. O subsistema continua existindo e pode ser usado diretamente por " +
+                "quem precisar de mais controle.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "facade.js",
+              code: [
+                "// Subsistema: cada peça tem sua própria interface",
+                "class Inventory { reserve(items) { /* ... */ return true; } }",
+                "class Payment { charge(user, total) { /* ... */ return { ok: true }; } }",
+                "class Shipping { schedule(address, items) { /* ... */ return \"ENV-1\"; } }",
+                "class Mailer { send(to, text) { /* ... */ } }",
+                "",
+                "// Fachada: uma operação que coordena tudo, na ordem certa",
+                "class OrderFacade {",
+                "  constructor(inventory, payment, shipping, mailer) {",
+                "    Object.assign(this, { inventory, payment, shipping, mailer });",
+                "  }",
+                "  placeOrder(order) {",
+                "    if (!this.inventory.reserve(order.items)) return { ok: false, reason: \"sem estoque\" };",
+                "    const charge = this.payment.charge(order.user, order.total);",
+                "    if (!charge.ok) return { ok: false, reason: \"pagamento recusado\" };",
+                "    const tracking = this.shipping.schedule(order.address, order.items);",
+                "    this.mailer.send(order.user.email, `Pedido enviado: ${tracking}`);",
+                "    return { ok: true, tracking };",
+                "  }",
+                "}",
+                "",
+                "// O cliente faz uma chamada só",
+                "const shop = new OrderFacade(new Inventory(), new Payment(), new Shipping(), new Mailer());",
+                "shop.placeOrder({ items: [1], user: { email: \"a@x.com\" }, total: 50, address: \"Rua A\" });",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Quem chama `placeOrder` não conhece as quatro classes nem a ordem entre elas. Se o subsistema mudar, " +
+                "o ajuste fica na fachada.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Para simplificar o uso de um subsistema com muitas peças, ou de uma biblioteca complexa, oferecendo uma interface de alto nível para os casos comuns.",
+                "Como porta de entrada de um módulo, para que o resto do sistema dependa só dela e não dos detalhes internos (Coupling).",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Se a fachada acumular regras de negócio, e não apenas coordenar chamadas, ela vira um \"objeto deus\"; a lógica pertence às peças do subsistema.",
+                "Esconder demais atrapalha quem precisa de controle fino: mantenha o subsistema acessível para os casos que a fachada não cobre.",
+                "Uma fachada que só repassa uma chamada, sem coordenar nada, não simplifica e é indireção inútil.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Uma fachada sobre `fetch`",
+              context: "Uma chamada HTTP comum exige vários passos repetidos; a fachada os reúne.",
+              code: {
+                language: "javascript",
+                filename: "http-facade.js",
+                code: [
+                  "// Sem fachada, cada chamada repete os mesmos passos",
+                  "const response = await fetch(\"/users/7\", { headers: { accept: \"application/json\" } });",
+                  "if (!response.ok) throw new Error(`HTTP ${response.status}`);",
+                  "const user = await response.json();",
+                  "",
+                  "// Fachada: um ponto que faz tudo isso",
+                  "const http = {",
+                  "  async getJson(url) {",
+                  "    const response = await fetch(url, { headers: { accept: \"application/json\" } });",
+                  "    if (!response.ok) throw new Error(`HTTP ${response.status}`);",
+                  "    return response.json();",
+                  "  },",
+                  "};",
+                  "",
+                  "const user2 = await http.getJson(\"/users/7\");",
+                ].join("\n"),
+              },
+              explanation:
+                "`getJson` esconde o cabeçalho, a checagem de status e a leitura do corpo. O código que a usa só diz " +
+                "o que quer, e as regras de como falar HTTP ficam em um lugar.",
+            },
+            {
+              title: "A fachada convive com o acesso direto",
+              context: "A fachada cobre o caso comum; quem precisa de mais usa o subsistema diretamente.",
+              code: {
+                language: "javascript",
+                filename: "coexist.js",
+                code: [
+                  "// Caso comum: pela fachada",
+                  "shop.placeOrder(order);",
+                  "",
+                  "// Caso especial: um estorno manual, que a fachada não oferece, usa a peça direto",
+                  "payment.refund(order.paymentId);",
+                ].join("\n"),
+              },
+              explanation:
+                "A fachada não fecha o subsistema. Ela oferece o caminho fácil, e as peças continuam acessíveis para " +
+                "os casos fora do comum.",
+            },
+            {
+              title: "Quando a fachada vira um objeto deus",
+              context: "O erro mais comum é deixar a fachada acumular a lógica em vez de só coordenar.",
+              code: {
+                language: "javascript",
+                filename: "god-object.js",
+                code: [
+                  "// Errado: a fachada calcula desconto, valida cupom e aplica regras de frete",
+                  "class OrderFacade {",
+                  "  placeOrder(order) {",
+                  "    let total = order.total;",
+                  "    if (order.coupon === \"BLACK\") total *= 0.5;          // regra de preço na fachada",
+                  "    if (order.address.state === \"AM\") total += 80;       // regra de frete na fachada",
+                  "    // ...",
+                  "  }",
+                  "}",
+                  "",
+                  "// Certo: as regras vivem nas peças, e a fachada só as chama",
+                  "// const total = this.pricing.total(order);",
+                  "// const shippingCost = this.shipping.quote(order.address);",
+                ].join("\n"),
+              },
+              explanation:
+                "Regras de preço e de frete pertencem a `Pricing` e `Shipping`. Quando a fachada as absorve, ela " +
+                "deixa de simplificar e passa a ser o ponto onde tudo se acumula.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Gerar um relatório exige quatro chamadas em ordem, repetidas em três telas. Uma delas esqueceu o " +
+              "filtro e mostra dados de todos os usuários.",
+            problemCode: {
+              language: "javascript",
+              filename: "report-usage.js",
+              code: [
+                "// Tela 1",
+                "const rows = loadData(range);",
+                "const filtered = applyFilters(rows, user);",
+                "const totals = computeTotals(filtered);",
+                "const html = render(filtered, totals);",
+                "",
+                "// Tela 2: esqueceu applyFilters",
+                "const rows2 = loadData(range);",
+                "const totals2 = computeTotals(rows2);",
+                "const html2 = render(rows2, totals2);",
+              ].join("\n"),
+            },
+            task:
+              "Crie uma fachada `generateReport(range, user)` que faça as quatro etapas na ordem certa, e mostre as " +
+              "telas usando-a.",
+            hint: "A fachada só coordena as chamadas existentes; ela não deve reimplementar nenhuma etapa.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "report-facade.js",
+                code: [
+                  "function generateReport(range, user) {",
+                  "  const rows = loadData(range);",
+                  "  const filtered = applyFilters(rows, user);   // nunca mais esquecido",
+                  "  const totals = computeTotals(filtered);",
+                  "  return render(filtered, totals);",
+                  "}",
+                  "",
+                  "// Telas",
+                  "const html1 = generateReport(range, user);",
+                  "const html2 = generateReport(range2, user);",
+                ].join("\n"),
+              },
+              explanation:
+                "A ordem e o filtro obrigatório ficaram em um só lugar, e as telas não podem mais esquecê-los. As " +
+                "etapas continuam sendo funções separadas, e a fachada apenas as coordena.",
+            },
+          },
+        }),
+        concept({
+          order: 40,
+          title: "Proxy",
+          note: "um substituto que controla o acesso ao objeto real",
+          summary:
+            "Um substituto com a mesma interface do objeto real, que controla o acesso a ele — para adiar a criação, " +
+            "checar permissões, guardar em cache ou registrar chamadas.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Proxy é um padrão estrutural em que um objeto substituto, com a mesma interface do objeto real, fica " +
+                "na frente dele e decide se, quando e como a chamada chega. O cliente usa o proxy como se fosse o " +
+                "objeto real. Tem a mesma estrutura do Decorator, mas outra intenção: o decorador acrescenta " +
+                "comportamento, e o proxy controla o acesso, muitas vezes cuidando de criar ou de alcançar o objeto real.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Um substituto com a mesma interface controla o acesso ao objeto real: ele decide se, quando e como a " +
+                "chamada chega até lá.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "O proxy implementa o contrato do objeto real e guarda (ou cria sob demanda) uma referência a ele. " +
+                "A cada chamada, aplica a regra de acesso, como criar só agora, verificar a permissão ou contar, e " +
+                "então delega.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "proxy.js",
+              code: [
+                "// Objeto real: caro de criar",
+                "class HeavyReport {",
+                "  constructor() { console.log(\"carregando dados…\"); this.rows = [1, 2, 3]; }",
+                "  read() { return this.rows; }",
+                "}",
+                "",
+                "// Proxy virtual: só cria o objeto real quando alguém realmente o usa",
+                "class LazyReport {",
+                "  #real = null;",
+                "  read() {",
+                "    this.#real ??= new HeavyReport();",
+                "    return this.#real.read();",
+                "  }",
+                "}",
+                "",
+                "const report = new LazyReport();   // nada foi carregado ainda",
+                "report.read();                     // \"carregando dados…\" — só agora",
+                "report.read();                     // reaproveita o objeto criado",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Criar `LazyReport` é barato. O custo do `HeavyReport` só é pago na primeira leitura, e o cliente usa " +
+                "`read()` sem saber que há um proxy.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Para adiar a criação de um objeto caro até o primeiro uso (proxy virtual).",
+                "Para controlar o acesso, como permissões, limites de uso, cache ou registro de chamadas, sem alterar o objeto real (proxy de proteção).",
+                "Para representar um objeto que está em outro lugar, como um serviço remoto, com a mesma interface de um objeto local.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Esconde custos e falhas: o cliente acha que chama um objeto local, mas pode haver latência, atraso na criação ou erros de rede.",
+                "Cada camada extra dificulta a depuração e acrescenta uma chamada a mais.",
+                "O `Proxy` nativo do JavaScript tem custo de desempenho e não funciona bem com campos privados (`#campo`): o método roda com `this` sendo o proxy, e não o alvo.",
+                "Se o objetivo é só acrescentar comportamento, sem controlar o acesso, o Decorator descreve melhor a intenção.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Proxy de proteção",
+              context: "A regra de quem pode fazer o quê fica no proxy, e o objeto real não a conhece.",
+              code: {
+                language: "javascript",
+                filename: "protection-proxy.js",
+                code: [
+                  "class Document {",
+                  "  constructor(text) { this.text = text; }",
+                  "  read() { return this.text; }",
+                  "  delete() { return \"apagado\"; }",
+                  "}",
+                  "",
+                  "class ProtectedDocument {",
+                  "  constructor(document, user) { this.document = document; this.user = user; }",
+                  "  read() { return this.document.read(); }",
+                  "  delete() {",
+                  "    if (this.user.role !== \"admin\") throw new Error(\"sem permissão\");",
+                  "    return this.document.delete();",
+                  "  }",
+                  "}",
+                  "",
+                  "const doc = new ProtectedDocument(new Document(\"contrato\"), { role: \"viewer\" });",
+                  "doc.read();     // \"contrato\"",
+                  "doc.delete();   // Error: sem permissão",
+                ].join("\n"),
+              },
+              explanation:
+                "`Document` continua simples, sem saber de permissões. O proxy aplica a regra, e o cliente usa a " +
+                "mesma interface de antes.",
+            },
+            {
+              title: "O `Proxy` nativo do JavaScript",
+              context: "A linguagem oferece um objeto `Proxy` que intercepta leituras e escritas de propriedades.",
+              code: {
+                language: "javascript",
+                filename: "native-proxy.js",
+                code: [
+                  "const user = { name: \"Ana\", age: 30 };",
+                  "",
+                  "const validated = new Proxy(user, {",
+                  "  set(target, property, value) {",
+                  "    if (property === \"age\" && (!Number.isInteger(value) || value < 0)) {",
+                  "      throw new TypeError(\"age deve ser um inteiro não negativo\");",
+                  "    }",
+                  "    target[property] = value;",
+                  "    return true;",
+                  "  },",
+                  "});",
+                  "",
+                  "validated.age = 31;        // ok",
+                  "validated.age = -5;        // TypeError",
+                ].join("\n"),
+              },
+              explanation:
+                "A armadilha `set` intercepta cada escrita e valida antes de gravar. É um proxy de proteção sem " +
+                "precisar escrever uma classe por objeto.",
+            },
+            {
+              title: "Proxy nativo e campos privados",
+              context: "Uma limitação prática: métodos que usam `#campo` falham quando chamados através do proxy.",
+              code: {
+                language: "javascript",
+                filename: "private-fields.js",
+                code: [
+                  "class Counter {",
+                  "  #count = 0;",
+                  "  increment() { return ++this.#count; }",
+                  "}",
+                  "",
+                  "const broken = new Proxy(new Counter(), {});",
+                  "try { broken.increment(); }",
+                  "catch (error) { error.name; }   // \"TypeError\" — `this` é o proxy, e não tem o campo privado",
+                  "",
+                  "// Solução: vincular os métodos ao alvo",
+                  "const working = new Proxy(new Counter(), {",
+                  "  get(target, property) {",
+                  "    const value = Reflect.get(target, property, target);",
+                  "    return typeof value === \"function\" ? value.bind(target) : value;",
+                  "  },",
+                  "});",
+                  "working.increment();   // 1",
+                ].join("\n"),
+              },
+              explanation:
+                "Campos privados pertencem ao objeto real, e não ao proxy. Vincular os métodos ao alvo resolve, mas " +
+                "é um exemplo de como a transparência do proxy nem sempre é total.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A verificação de permissão está repetida em cada ponto que apaga um documento, e uma das telas se " +
+              "esqueceu dela. A classe `Document` não deveria conhecer permissões.",
+            problemCode: {
+              language: "javascript",
+              filename: "documents.js",
+              code: [
+                "class Document {",
+                "  constructor(id) { this.id = id; }",
+                "  delete() { return `documento ${this.id} apagado`; }",
+                "}",
+                "",
+                "// Tela A",
+                "if (user.role === \"admin\") doc.delete();",
+                "",
+                "// Tela B: esqueceu a checagem",
+                "doc.delete();",
+              ].join("\n"),
+            },
+            task:
+              "Crie um proxy de proteção que aplique a regra de admin em um só lugar, e use-o no lugar do documento " +
+              "nas duas telas.",
+            hint: "O proxy tem os mesmos métodos do documento, guarda o usuário e só delega `delete()` se ele for admin.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "documents.fixed.js",
+                code: [
+                  "class ProtectedDocument {",
+                  "  constructor(document, user) { this.document = document; this.user = user; }",
+                  "  delete() {",
+                  "    if (this.user.role !== \"admin\") throw new Error(\"sem permissão\");",
+                  "    return this.document.delete();",
+                  "  }",
+                  "}",
+                  "",
+                  "const doc = new ProtectedDocument(new Document(7), user);",
+                  "",
+                  "// Telas A e B: a regra vale em qualquer uma",
+                  "doc.delete();",
+                ].join("\n"),
+              },
+              explanation:
+                "A regra de permissão vive em um só lugar, no proxy, e nenhuma tela consegue esquecê-la. `Document` " +
+                "permaneceu sem saber nada sobre permissões.",
+            },
+          },
+        }),
+        concept({
+          order: 50,
+          title: "Composite",
+          note: "relaciona-se com Data Structures / Tree (Epic 01) — aplicação, não Requires",
+          summary:
+            "Permite tratar objetos individuais e grupos de objetos do mesmo jeito, organizando-os em uma estrutura " +
+            "de árvore em que cada nó, folha ou grupo, responde à mesma interface.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Composite é um padrão estrutural para estruturas parte-todo: um grupo contém outros elementos, que " +
+                "podem ser folhas ou outros grupos, e tanto a folha quanto o grupo cumprem o mesmo contrato. O cliente " +
+                "chama uma operação, como `size()`, sem precisar saber se está diante de um item ou de um conjunto: " +
+                "o grupo aplica a operação a cada filho e combina os resultados. É a aplicação de uma Tree (módulo " +
+                "Data Structures) com um contrato uniforme entre os nós.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Folha e grupo têm a mesma interface: quem usa a estrutura trata os dois do mesmo jeito, e o grupo " +
+                "propaga a operação aos seus filhos.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "A folha implementa a operação diretamente. O grupo guarda uma lista de filhos e implementa a mesma " +
+                "operação percorrendo-os, com recursão (Recursion). Como todos cumprem o mesmo contrato, a árvore " +
+                "pode ter qualquer profundidade.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "composite.js",
+              code: [
+                "// Folha",
+                "class File {",
+                "  constructor(name, bytes) { this.name = name; this.bytes = bytes; }",
+                "  size() { return this.bytes; }",
+                "}",
+                "",
+                "// Grupo: também tem size(), calculado a partir dos filhos",
+                "class Folder {",
+                "  constructor(name, children = []) { this.name = name; this.children = children; }",
+                "  add(child) { this.children.push(child); return this; }",
+                "  size() { return this.children.reduce((total, child) => total + child.size(), 0); }",
+                "}",
+                "",
+                "const root = new Folder(\"projeto\", [",
+                "  new File(\"readme.md\", 200),",
+                "  new Folder(\"src\", [new File(\"a.js\", 500), new File(\"b.js\", 300)]),",
+                "]);",
+                "",
+                "root.size();   // 1000 — a mesma chamada, seja em um arquivo, uma pasta ou a raiz",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "`size()` funciona em qualquer nó. O cliente não distingue arquivo de pasta, e adicionar um novo nível " +
+                "de pastas não exige mudar nenhum código que consulta o tamanho.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Para estruturas em árvore de parte e todo, como arquivos e pastas, menus com submenus, componentes de interface e expressões.",
+                "Quando o cliente deve tratar elementos individuais e grupos de forma uniforme, sem `if` para distinguir.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Se as folhas e os grupos são muito diferentes, a interface comum fica genérica demais, com métodos que não fazem sentido em um dos lados, como `add` em uma folha.",
+                "Para uma estrutura plana, uma lista basta: a recursão do composite só se justifica quando há aninhamento.",
+                "Árvores muito profundas percorridas por recursão podem estourar a pilha, e operações que dependem do tipo do nó voltam a exigir checagens.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Menus com submenus",
+              context: "Um item de menu e um submenu respondem à mesma operação de renderização.",
+              code: {
+                language: "javascript",
+                filename: "menu.js",
+                code: [
+                  "class MenuItem {",
+                  "  constructor(label) { this.label = label; }",
+                  "  render(depth = 0) { return `${\"  \".repeat(depth)}- ${this.label}`; }",
+                  "}",
+                  "",
+                  "class Submenu {",
+                  "  constructor(label, items = []) { this.label = label; this.items = items; }",
+                  "  render(depth = 0) {",
+                  "    const children = this.items.map((item) => item.render(depth + 1));",
+                  "    return [`${\"  \".repeat(depth)}+ ${this.label}`, ...children].join(\"\\n\");",
+                  "  }",
+                  "}",
+                  "",
+                  "const menu = new Submenu(\"Arquivo\", [",
+                  "  new MenuItem(\"Novo\"),",
+                  "  new Submenu(\"Abrir recente\", [new MenuItem(\"a.txt\"), new MenuItem(\"b.txt\")]),",
+                  "]);",
+                  "menu.render();",
+                ].join("\n"),
+              },
+              explanation:
+                "O submenu chama `render` em cada filho, sem saber se é um item ou outro submenu. Adicionar mais um " +
+                "nível não altera nenhuma das duas classes.",
+            },
+            {
+              title: "Outra operação sobre a mesma árvore",
+              context: "Uma vez montada a estrutura, novas operações seguem o mesmo esquema de propagar aos filhos.",
+              code: {
+                language: "javascript",
+                filename: "count.js",
+                code: [
+                  "class File {",
+                  "  constructor(name, bytes) { this.name = name; this.bytes = bytes; }",
+                  "  size() { return this.bytes; }",
+                  "  count() { return 1; }",
+                  "}",
+                  "",
+                  "class Folder {",
+                  "  constructor(name, children = []) { this.name = name; this.children = children; }",
+                  "  size() { return this.children.reduce((sum, c) => sum + c.size(), 0); }",
+                  "  count() { return this.children.reduce((sum, c) => sum + c.count(), 0); }   // só arquivos",
+                  "}",
+                  "",
+                  "const root = new Folder(\"p\", [new File(\"a\", 1), new Folder(\"s\", [new File(\"b\", 2)])]);",
+                  "root.count();   // 2",
+                ].join("\n"),
+              },
+              explanation:
+                "O padrão se repete: a folha responde diretamente, e o grupo combina as respostas dos filhos. Cada " +
+                "nova operação exige acrescentá-la nos dois tipos.",
+            },
+            {
+              title: "O problema da interface comum",
+              context: "Operações que só fazem sentido para um dos lados forçam uma escolha de design.",
+              code: {
+                language: "javascript",
+                filename: "interface-tradeoff.js",
+                code: [
+                  "// Opção 1: `add` só existe no grupo (mais seguro; o cliente precisa saber o tipo para adicionar)",
+                  "class Folder { add(child) { /* ... */ } }",
+                  "class File { /* sem add */ }",
+                  "",
+                  "// Opção 2: `add` em todos os nós (mais uniforme; a folha precisa recusar)",
+                  "class Leaf {",
+                  "  add() { throw new Error(\"uma folha não tem filhos\"); }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Não há resposta única: a opção 1 protege o cliente de erros, e a opção 2 mantém a uniformidade. " +
+                "É o principal custo do padrão, e a escolha depende de o quanto o cliente precisa ignorar a diferença.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Para calcular o preço de um carrinho com produtos e combos (que contêm produtos e outros combos), o " +
+              "código distingue os tipos com `Array.isArray` em cada lugar.",
+            problemCode: {
+              language: "javascript",
+              filename: "cart-price.js",
+              code: [
+                "const cart = [",
+                "  { name: \"caneta\", price: 5 },",
+                "  [{ name: \"caderno\", price: 20 }, { name: \"lápis\", price: 3 }],   // um combo",
+                "];",
+                "",
+                "function totalPrice(items) {",
+                "  let total = 0;",
+                "  for (const item of items) {",
+                "    if (Array.isArray(item)) total += totalPrice(item);   // grupo",
+                "    else total += item.price;                              // produto",
+                "  }",
+                "  return total;",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Aplique Composite: `Product` e `Bundle` com a mesma operação `price()`, e um combo que aplica 10% de " +
+              "desconto sobre a soma dos seus itens.",
+            hint: "O `Product` devolve o próprio preço. O `Bundle` soma o `price()` dos filhos, sem `Array.isArray`, e aplica o desconto.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "cart-price.fixed.js",
+                code: [
+                  "class Product {",
+                  "  constructor(name, value) { this.name = name; this.value = value; }",
+                  "  price() { return this.value; }",
+                  "}",
+                  "",
+                  "class Bundle {",
+                  "  constructor(items, discount = 0.1) { this.items = items; this.discount = discount; }",
+                  "  price() {",
+                  "    const sum = this.items.reduce((total, item) => total + item.price(), 0);",
+                  "    return sum * (1 - this.discount);",
+                  "  }",
+                  "}",
+                  "",
+                  "const cart = new Bundle([",
+                  "  new Product(\"caneta\", 5),",
+                  "  new Bundle([new Product(\"caderno\", 20), new Product(\"lápis\", 3)]),",
+                  "], 0);",
+                  "",
+                  "cart.price();   // 5 + (20 + 3) × 0,9 = 25,7",
+                ].join("\n"),
+              },
+              explanation:
+                "O cliente chama `price()` em qualquer nó, sem checar o tipo. O combo aninhado aplica o seu desconto, " +
+                "e o total do carrinho, que também é um `Bundle` sem desconto, apenas soma.",
+            },
+          },
+        }),
       ],
     }),
     module({
