@@ -28,7 +28,7 @@ export default area({
             "A classe é a definição — quais dados e quais comportamentos algo tem —, e o objeto é uma instância " +
             "concreta dessa definição, com seu próprio estado. Uma classe, muitos objetos.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -37,7 +37,14 @@ export default area({
                 "os objetos são as casas construídas: todas seguem a mesma planta, mas cada uma tem seus próprios " +
                 "moradores, sua cor de parede, seu estado.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "A classe define, o objeto existe: uma definição pode gerar muitos objetos, cada um com seu próprio " +
+                "estado — e saber o que é de cada objeto e o que é da classe evita bugs de estado compartilhado.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -56,7 +63,7 @@ export default area({
                 "existe uma vez só, visível para todas as instâncias — o que causa bugs quando se esperava um estado " +
                 "por objeto.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "uma classe e dois objetos com estados independentes:" },
             {
               type: "code",
@@ -89,11 +96,15 @@ export default area({
                 "Account é escrita uma vez e define o que toda conta tem e faz. anaAccount e brunoAccount são objetos " +
                 "distintos com estados independentes — depositar em uma não altera a outra.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "A classe define, o objeto existe: uma definição pode gerar muitos objetos, cada um com seu próprio " +
-                "estado — e saber o que é de cada objeto e o que é da classe evita bugs de estado compartilhado.",
+              type: "list",
+              items: [
+                "Membro da classe (`static`) é compartilhado por todos os objetos: um contador ou cache ali vira estado " +
+                "global disfarçado.",
+                "Confundir a classe com o objeto leva a esperar que alterar um objeto mude os outros; cada instância guarda " +
+                "o seu próprio estado.",
+              ],
             },
           ],
           examples: [
@@ -232,7 +243,7 @@ export default area({
             "O que torna dois objetos \"o mesmo\": a mesma referência na memória, o mesmo identificador de domínio, " +
             "ou apenas os mesmos valores — três noções diferentes que precisam ser distinguidas.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -242,7 +253,14 @@ export default area({
                 "(o usuário de id 42). Igualdade por valor: são intercambiáveis porque têm os mesmos dados (duas " +
                 "notas de R$ 10).",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "\"Ser o mesmo\" pode significar mesma referência, mesmo id ou mesmos valores — decida qual vale para " +
+                "cada tipo de objeto e expresse isso em código.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -261,7 +279,7 @@ export default area({
                 "mudar; se é \"todos os valores\", a igualdade é por valor. E a resposta deve estar refletida em um " +
                 "método explícito (equals), não deixada ao acaso do operador padrão.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "as três noções de \"ser o mesmo\" lado a lado:" },
             {
               type: "code",
@@ -294,11 +312,15 @@ export default area({
                 "importante é saber qual delas faz sentido para o tipo em questão — para um usuário, o id; para uma " +
                 "coordenada, os valores.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "\"Ser o mesmo\" pode significar mesma referência, mesmo id ou mesmos valores — decida qual vale para " +
-                "cada tipo de objeto e expresse isso em código.",
+              type: "list",
+              items: [
+                "`===` compara referência: duas cópias com os mesmos dados são objetos diferentes, mesmo representando o " +
+                "mesmo cliente.",
+                "Comparar todos os campos como se fosse identidade quebra quando um atributo muda; um id estável não quebra.",
+                "Nem todo tipo precisa de identidade: para valores puros, comparar pelos dados é o correto.",
+              ],
             },
           ],
           examples: [
@@ -423,7 +445,7 @@ export default area({
             "Um objeto do domínio definido pela sua identidade, não pelos seus atributos: ele continua sendo o mesmo " +
             "ao longo do tempo mesmo quando seus dados mudam.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -432,7 +454,14 @@ export default area({
                 "ORD-1001, a conta 7. Seus atributos mudam (endereço, status, saldo), mas ela continua sendo a mesma. " +
                 "Duas entidades são iguais se, e só se, têm o mesmo identificador.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Uma entidade é \"aquela coisa\" — identificada por um id estável e igual a outra só se o id for o " +
+                "mesmo, não importa o quanto seus atributos tenham mudado.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -449,7 +478,7 @@ export default area({
                 "a entidade normalmente é mutável, mas suas mudanças devem passar por métodos que preservem as " +
                 "regras do negócio, não por atribuições diretas de campos.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "uma entidade com identificador, estado que muda e igualdade pelo id:" },
             {
               type: "code",
@@ -486,11 +515,22 @@ export default area({
                 "O pedido muda de status ao longo da vida, mas continua sendo ORD-1001. A regra de que só se paga um " +
                 "pedido recém-criado fica dentro da própria entidade, em vez de espalhada por quem a usa.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Uma entidade é \"aquela coisa\" — identificada por um id estável e igual a outra só se o id for o " +
-                "mesmo, não importa o quanto seus atributos tenham mudado.",
+              type: "list",
+              items: [
+                "Quando o objeto precisa ser reconhecido como o mesmo ao longo do tempo: cliente, pedido, conta.",
+                "Quando ele tem ciclo de vida, com estados e regras sobre como passa de um para outro.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Não use um atributo mutável, como e-mail ou nome, como identidade: quando ele muda, a entidade deixa de ser " +
+                "reconhecida.",
+                "Se só importa o valor, e não \"quem\" é, um Value Object é mais simples e mais seguro.",
+              ],
             },
           ],
           examples: [
@@ -636,7 +676,7 @@ export default area({
             "Um objeto definido apenas pelos seus valores, sem identidade própria: dois com os mesmos dados são " +
             "intercambiáveis, e ele é imutável — para mudar, cria-se outro.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -645,7 +685,14 @@ export default area({
                 "valores. Duas notas de R$ 10 são intercambiáveis; ninguém pergunta \"qual\" delas. Por isso a " +
                 "igualdade é por valor, e o objeto costuma ser imutável: trocar o valor significa criar um novo objeto.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Se importa o valor e não a identidade, faça um Value Object: imutável, validado ao ser criado e igual " +
+                "por valor — em vez de um primitivo solto que qualquer um pode usar errado.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -663,7 +710,7 @@ export default area({
                 "como Money.add(). A imutabilidade é essencial: como o objeto pode ser compartilhado sem risco, " +
                 "ninguém o altera por baixo de quem o usa (veja Mutable vs Immutable Objects).",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "um objeto de valor para dinheiro: validado, imutável e com igualdade por valor:" },
             {
               type: "code",
@@ -700,11 +747,21 @@ export default area({
                 "Dois objetos Money com os mesmos valores são iguais para todos os efeitos. Somar devolve um novo " +
                 "objeto, sem alterar os originais — por isso pode ser compartilhado sem cuidado.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Se importa o valor e não a identidade, faça um Value Object: imutável, validado ao ser criado e igual " +
-                "por valor — em vez de um primitivo solto que qualquer um pode usar errado.",
+              type: "list",
+              items: [
+                "Para conceitos definidos só pelo valor, como e-mail, dinheiro, período ou CPF, no lugar de um primitivo solto.",
+                "Quando o valor tem regras de validação que devem valer sempre, checadas uma única vez na criação.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Não serve para algo que precisa ser reconhecido ao longo do tempo: isso é uma Entity.",
+                "O mesmo conceito pode ser Entity num contexto e Value Object em outro; a escolha depende do domínio.",
+              ],
             },
           ],
           examples: [
@@ -837,7 +894,7 @@ export default area({
             "Um objeto mutável pode ter seu estado alterado depois de criado; um imutável nunca muda — e cada " +
             "modelo tem seus custos e benefícios, com o compartilhamento de estado sendo o ponto crítico.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -846,7 +903,14 @@ export default area({
                 "original intacto. É a aplicação da ideia de Immutability (módulo Functional Programming) a objetos " +
                 "com estado, em vez de a simples valores.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Estado compartilhado e mutável é a raiz de muitos bugs — prefira imutabilidade para valores e " +
+                "mutabilidade controlada para entidades, e nunca exponha o estado interno.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -865,7 +929,7 @@ export default area({
                 "protegem as regras); e nunca exponha diretamente uma coleção interna mutável. Em JavaScript, " +
                 "Object.freeze torna um objeto imutável, mas de forma rasa (só o primeiro nível).",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "o bug do aliasing com um objeto mutável, e a versão imutável que o evita:" },
             {
               type: "code",
@@ -891,11 +955,16 @@ export default area({
                 "Na versão mutável, quem alterou copy afetou o original sem perceber. Na imutável, não há como isso " +
                 "acontecer: cada versão do valor é independente das outras.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Estado compartilhado e mutável é a raiz de muitos bugs — prefira imutabilidade para valores e " +
-                "mutabilidade controlada para entidades, e nunca exponha o estado interno.",
+              type: "list",
+              items: [
+                "Devolver uma referência ao estado interno, como um array, deixa qualquer um alterá-lo por aliasing e quebra " +
+                "as regras da classe.",
+                "`Object.freeze` é raso: os objetos aninhados continuam mutáveis.",
+                "Imutabilidade tem custo: cada alteração cria um novo objeto, o que pode pesar em estruturas grandes ou em " +
+                "laços quentes.",
+              ],
             },
           ],
           examples: [
@@ -1031,7 +1100,7 @@ export default area({
             "Diga ao objeto o que fazer, em vez de perguntar pelos seus dados para decidir por ele — mantendo a " +
             "lógica junto do estado a que ela pertence.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -1040,7 +1109,14 @@ export default area({
                 "alterar o objeto (if (order.status === \"paid\") order.status = \"shipped\"). A lógica sobre o " +
                 "estado de um objeto deve estar dentro do objeto.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Se você lê o estado de um objeto para decidir como mudá-lo, mova essa decisão para dentro dele — " +
+                "diga o que fazer e deixe o objeto cuidar das regras.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -1059,7 +1135,7 @@ export default area({
                 "decisões e mudanças de estado: se você está lendo um valor de um objeto para decidir como alterá-lo, " +
                 "provavelmente a decisão deveria estar no objeto.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "a mesma operação com a lógica fora e dentro do objeto:" },
             {
               type: "code",
@@ -1091,11 +1167,13 @@ export default area({
                 "Na primeira versão, toda pessoa que precisar sacar terá de repetir a verificação — e um dia alguém " +
                 "esquecerá. Na segunda, a regra existe em um só lugar e é impossível de contornar.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Se você lê o estado de um objeto para decidir como mudá-lo, mova essa decisão para dentro dele — " +
-                "diga o que fazer e deixe o objeto cuidar das regras.",
+              type: "list",
+              items: [
+                "Nem toda leitura é violação: perguntar um dado para exibi-lo, sem decidir nada por cima dele, é legítimo.",
+                "Levado ao extremo, empilha no objeto responsabilidades que não são dele, como formatação e persistência.",
+              ],
             },
           ],
           examples: [
@@ -1232,7 +1310,7 @@ export default area({
             "Um objeto deve conversar apenas com seus vizinhos imediatos — e não com os objetos que estão dentro deles. " +
             "É uma regra concreta para reduzir acoplamento: \"não fale com estranhos\".",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -1242,7 +1320,14 @@ export default area({
                 "getCity() é o exemplo típico de violação — quem chama fica sabendo que o pedido tem um cliente, que o " +
                 "cliente tem um endereço e que o endereço tem uma cidade.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Converse só com seus vizinhos imediatos: peça o que precisa a quem você conhece, em vez de navegar por " +
+                "dentro dos objetos dele.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -1260,7 +1345,7 @@ export default area({
                 "viola a lei de forma relevante, pois o que importa é o acoplamento a estruturas internas de " +
                 "objetos de domínio, não a contagem de pontos.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "uma cadeia que expõe a estrutura e a versão que delega:" },
             {
               type: "code",
@@ -1289,11 +1374,15 @@ export default area({
                 "Se o endereço passar a ficar em outro lugar, só Customer precisa mudar. Quem consulta a cidade de " +
                 "entrega continua chamando order.deliveryCity() e nem percebe.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Converse só com seus vizinhos imediatos: peça o que precisa a quem você conhece, em vez de navegar por " +
-                "dentro dos objetos dele.",
+              type: "list",
+              items: [
+                "Nem toda cadeia de chamadas é violação: encadear métodos que devolvem o próprio objeto, como num builder, " +
+                "não expõe estrutura interna.",
+                "Aplicada mecanicamente, gera uma pilha de métodos de repasse que só escondem a navegação; delegue " +
+                "comportamento, não apenas acesso.",
+              ],
             },
           ],
           examples: [
@@ -1413,7 +1502,7 @@ export default area({
             "Um modelo em que os objetos do domínio só guardam dados (getters e setters) e toda a lógica fica em " +
             "serviços separados — a forma de orientação a objetos sem os benefícios dela.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -1423,7 +1512,14 @@ export default area({
                 "manipulam esses dados por fora. Martin Fowler o descreveu como um anti-padrão: tem a estrutura de " +
                 "orientação a objetos e o estilo procedural.",
             },
-            { type: "heading", text: "Por que é um problema?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Se seus objetos de negócio são só getters e setters e a lógica está em serviços, as regras estão " +
+                "desprotegidas — o objeto deveria ser o guardião do próprio estado.",
+            },
+            { type: "heading", text: "Por que é um problema" },
             {
               type: "paragraph",
               text:
@@ -1441,7 +1537,7 @@ export default area({
                 "(DTOs) e aplicações simples de cadastro (CRUD), sem regras de negócio relevantes, podem viver bem " +
                 "assim. O anti-padrão é quando há regras de negócio e elas estão fora dos objetos.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "um pedido anêmico e um serviço que carrega todas as regras:" },
             {
               type: "code",
@@ -1475,11 +1571,16 @@ export default area({
                 "A regra \"só envia se pago\" existe, mas só se todos os chamadores usarem o serviço. Como o objeto " +
                 "aceita qualquer status, qualquer código pode contorná-la — e é questão de tempo até alguém fazer isso.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Se seus objetos de negócio são só getters e setters e a lógica está em serviços, as regras estão " +
-                "desprotegidas — o objeto deveria ser o guardião do próprio estado.",
+              type: "list",
+              items: [
+                "Um modelo simples de dados é apropriado quando quase não há regra de negócio, como em CRUD ou em objetos de " +
+                "transferência (DTO).",
+                "Migrar para um modelo rico sem regras reais a proteger só acrescenta cerimônia.",
+                "Setters públicos deixam qualquer serviço colocar o objeto em estado inválido, e a mesma regra acaba " +
+                "duplicada em vários lugares.",
+              ],
             },
           ],
           examples: [
@@ -1604,7 +1705,7 @@ export default area({
             "Um modelo em que os objetos do domínio combinam dados e comportamento, expõem operações na linguagem do " +
             "negócio e protegem as suas próprias regras — de modo que não seja possível colocá-los em estado inválido.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -1614,7 +1715,14 @@ export default area({
                 "isso o objeto nunca fica em um estado que o negócio considera inválido. É o contraponto direto do " +
                 "modelo anêmico.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Dê ao objeto os dados e as regras que os governam, exponha operações do negócio em vez de setters — " +
+                "e o estado inválido deixa de ser representável.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -1633,7 +1741,7 @@ export default area({
                 "de negócio. Para aplicações simples de cadastro, sem regras relevantes, o esforço não compensa: a " +
                 "escolha entre rico e anêmico deve refletir a complexidade real do domínio.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "o mesmo domínio do Concept anterior, agora com as regras dentro do objeto:" },
             {
               type: "code",
@@ -1669,11 +1777,22 @@ export default area({
                 "As regras (capacidade e matrícula única) estão dentro de Course, e o array é privado, então não " +
                 "existe caminho para ultrapassá-las. Quem usa apenas diz course.enroll(student).",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Dê ao objeto os dados e as regras que os governam, exponha operações do negócio em vez de setters — " +
-                "e o estado inválido deixa de ser representável.",
+              type: "list",
+              items: [
+                "Quando o domínio tem regras e invariantes que precisam valer sempre, como saldo, estados de pedido e limites.",
+                "Quando várias partes do sistema alteram o mesmo objeto e a regra não pode ficar espalhada.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Em CRUD sem regras de negócio, o custo de modelar comportamento não compensa.",
+                "Não coloque no objeto o que é orquestração, como enviar e-mail ou salvar no banco: isso continua sendo " +
+                "papel de serviços.",
+              ],
             },
           ],
           examples: [
