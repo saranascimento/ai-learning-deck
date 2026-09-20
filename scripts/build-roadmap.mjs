@@ -1342,6 +1342,11 @@ for (const area of model.areas()) {
     "encapsulate-what-varies",
     "program-to-an-interface",
     "composition-over-inheritance",
+    "inversion-of-control-ioc",
+    "dependency-injection",
+    "constructor-injection",
+    "dependency-injection-container",
+    "service-locator",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",

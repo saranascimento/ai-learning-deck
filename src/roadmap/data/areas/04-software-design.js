@@ -3896,7 +3896,197 @@ export default area({
         "O guarda-chuva (IoC) → a técnica (DI) → a forma concreta (Constructor Injection) → a automação " +
         "(Container) → o contraponto (Service Locator).",
       concepts: [
-        concept({ order: 10, title: "Inversion of Control (IoC)", note: "guarda-chuva: quem controla o fluxo e a criação de dependências" }),
+        concept({
+          order: 10,
+          title: "Inversion of Control (IoC)",
+          note: "guarda-chuva: quem controla o fluxo e a criação de dependências",
+          summary:
+            "Em vez de o seu código controlar quando as coisas acontecem e criar tudo o que usa, ele entrega o " +
+            "controle a alguém de fora — um framework, um contêiner, um chamador — que decide quando e com o que chamá-lo.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Inversion of Control é um princípio guarda-chuva: o controle do fluxo, ou da criação das " +
+                "dependências, sai do seu código e vai para outro lugar. No fluxo normal, você chama a biblioteca " +
+                "quando quer. Com IoC, você entrega uma função ou um objeto e quem controla chama você quando for a " +
+                "hora — o \"princípio de Hollywood\": não nos chame, nós chamamos você. Callbacks, manipuladores de " +
+                "eventos, frameworks e Dependency Injection são formas de IoC.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Não é o seu código que chama e monta tudo: ele declara o que oferece e do que precisa, e quem " +
+                "controla decide quando e com o que ligá-lo.",
+            },
+            { type: "heading", text: "Por que importa" },
+            {
+              type: "paragraph",
+              text:
+                "Quando seu código controla tudo, ele também precisa saber tudo: em que ordem chamar, quais " +
+                "implementações criar, quando parar. Com IoC, essas decisões ficam concentradas em um só lugar (o " +
+                "framework, o ponto de montagem), e as peças ficam menores, mais fáceis de trocar e de testar. É a " +
+                "base do Dependency Inversion Principle e o que torna possível a maior parte da estrutura de " +
+                "frameworks web e de testes.",
+            },
+            { type: "heading", text: "Na prática" },
+            { type: "paragraph", text: "um fluxo controlado pelo seu código, e o mesmo fluxo com o controle invertido:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "ioc.js",
+              code: [
+                "// Sem IoC: o seu código controla o fluxo do começo ao fim",
+                "function main() {",
+                "  const request = readRequest();",
+                "  const response = handleUsers(request);",
+                "  send(response);",
+                "}",
+                "",
+                "// Com IoC: você registra o que fazer; o framework decide quando chamar",
+                "const routes = new Map();",
+                "const app = {",
+                "  get: (path, handler) => routes.set(path, handler),",
+                "  dispatch: (path, request) => routes.get(path)(request),   // o framework controla o fluxo",
+                "};",
+                "",
+                "app.get(\"/users\", (request) => ({ status: 200, body: [\"Ana\", \"Bruno\"] }));",
+                "app.dispatch(\"/users\", {});   // o handler roda quando o framework chama",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O handler não sabe quem o chama, nem quando. Ele só cumpre o contrato (recebe uma requisição, " +
+                "devolve uma resposta), e o app decide o resto.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "O fluxo deixa de ser linear: para entender o que acontece, é preciso saber como o framework chama seu código, e os stack traces ficam mais difíceis de seguir.",
+                "IoC não é o mesmo que Dependency Injection: DI é uma das formas de inverter o controle, a que trata da criação de dependências.",
+                "Frameworks que fazem demais escondem o comportamento; quando algo dá errado, a \"mágica\" atrapalha a depuração.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Callbacks e eventos: quem chama é o outro",
+              context: "Todo manipulador de evento é IoC: você registra a função e o ambiente decide quando executá-la.",
+              code: {
+                language: "javascript",
+                filename: "callbacks.js",
+                code: [
+                  "// Você não chama onClick: a plataforma chama quando o clique acontece",
+                  "button.addEventListener(\"click\", () => console.log(\"clicou\"));",
+                  "",
+                  "// O mesmo vale para timers",
+                  "setTimeout(() => console.log(\"passou 1s\"), 1000);",
+                ].join("\n"),
+              },
+              explanation:
+                "Em nenhum dos dois casos o seu código decide o momento da chamada. Você entrega a função e o " +
+                "ambiente (o navegador, o Event Loop) controla o fluxo.",
+            },
+            {
+              title: "Quem controla o laço",
+              context: "Em métodos como `map`, o laço é da biblioteca, e você só fornece o que fazer com cada item.",
+              code: {
+                language: "javascript",
+                filename: "loop-control.js",
+                code: [
+                  "const prices = [10, 20, 30];",
+                  "",
+                  "// Você controla o laço",
+                  "const withTax = [];",
+                  "for (const price of prices) withTax.push(price * 1.1);",
+                  "",
+                  "// O controle é invertido: map controla o laço, você só entrega a regra",
+                  "const withTax2 = prices.map((price) => price * 1.1);",
+                ].join("\n"),
+              },
+              explanation:
+                "O `map` decide a ordem, a repetição e o resultado, e chama a sua função em cada passo. É a mesma " +
+                "inversão, aplicada a algo pequeno.",
+            },
+            {
+              title: "IoC na criação de dependências",
+              context: "Em vez de a classe criar o que usa, ela recebe o que usa — a forma de IoC que dá nome ao módulo.",
+              code: {
+                language: "javascript",
+                filename: "creation-control.js",
+                code: [
+                  "// Sem inversão: a classe controla a criação da dependência",
+                  "class Notifier {",
+                  "  constructor() { this.mailer = new SmtpMailer(); }",
+                  "}",
+                  "",
+                  "// Com inversão: quem monta decide qual mailer entregar",
+                  "class InvertedNotifier {",
+                  "  constructor(mailer) { this.mailer = mailer; }",
+                  "}",
+                  "",
+                  "new InvertedNotifier(new SmtpMailer());",
+                  "new InvertedNotifier({ send() {} });   // um mailer falso, em um teste",
+                ].join("\n"),
+              },
+              explanation:
+                "A decisão de qual `mailer` usar saiu da classe e foi para quem a monta. Esse é o assunto do próximo " +
+                "Concept, Dependency Injection.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O fluxo de checkout abaixo controla a ordem e a lista de passos. Para incluir um passo novo, como " +
+              "\"aplicar cupom\", é preciso editar `checkoutFlow`.",
+            problemCode: {
+              language: "javascript",
+              filename: "checkout-flow.js",
+              code: [
+                "function checkoutFlow(cart) {",
+                "  validate(cart);",
+                "  const total = calculateTotal(cart);",
+                "  chargeCard(cart.user, total);",
+                "  sendReceipt(cart.user);",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Inverta o controle: crie um executor que percorre uma lista de passos recebida de fora, de modo que " +
+              "adicionar um passo não exija editar o executor.",
+            hint: "O executor deve saber apenas que cada passo é uma função que recebe o contexto; quem monta a lista decide quais e em que ordem.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "checkout-flow.fixed.js",
+                code: [
+                  "// O executor controla o fluxo; os passos são entregues de fora",
+                  "function runSteps(context, steps) {",
+                  "  for (const step of steps) step(context);",
+                  "}",
+                  "",
+                  "const steps = [",
+                  "  (ctx) => validate(ctx.cart),",
+                  "  (ctx) => { ctx.total = calculateTotal(ctx.cart); },",
+                  "  (ctx) => chargeCard(ctx.cart.user, ctx.total),",
+                  "  (ctx) => sendReceipt(ctx.cart.user),",
+                  "];",
+                  "",
+                  "runSteps({ cart }, steps);",
+                  "",
+                  "// Novo passo: uma entrada na lista, sem editar runSteps",
+                  "steps.splice(2, 0, (ctx) => { ctx.total = applyCoupon(ctx.total); });",
+                ].join("\n"),
+              },
+              explanation:
+                "`runSteps` não conhece nenhum passo: ele só percorre a lista. Quem monta os passos decide o conteúdo e " +
+                "a ordem, e o fluxo passa a ser controlado de fora do código dos passos.",
+            },
+          },
+        }),
         concept({
           order: 20,
           title: "Dependency Injection",
@@ -3904,14 +4094,855 @@ export default area({
           note:
             "a técnica concreta — forma mais comum de aplicar IoC. DI é aplicação da testabilidade (via inversa já registrada no Epic 02), não o contrário",
           revisit: ["Testing & Quality Engineering / Testing Strategy / Testability"],
+          summary:
+            "Um objeto recebe de fora as dependências de que precisa, em vez de criá-las por dentro — a forma mais " +
+            "comum de aplicar Inversion of Control.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Dependency Injection é a técnica em que um objeto recebe as suas dependências (o banco, o serviço de " +
+                "e-mail, o relógio) de quem o cria, em vez de instanciá-las com `new` dentro de si. Quem monta o objeto " +
+                "decide qual implementação entregar. É a forma mais comum de aplicar Inversion of Control e o que torna " +
+                "prático seguir o Dependency Inversion Principle e a testabilidade (Testability, módulo Testing Strategy).",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Não crie as suas dependências: receba-as. Assim a classe declara do que precisa, e quem a monta " +
+                "escolhe o quê — uma implementação real em produção e uma falsa em um teste.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "A dependência entra por um de três caminhos: pelo construtor (Constructor Injection, o mais comum), " +
+                "por um método `set…` ou por um parâmetro da própria operação. O código que as escolhe e liga fica " +
+                "concentrado em um só ponto, perto do início do programa, o \"ponto de composição\".",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "di.js",
+              code: [
+                "// Sem DI: a classe cria a dependência e fica presa a ela",
+                "class WelcomeService {",
+                "  constructor() { this.mailer = new SmtpMailer(); }",
+                "  greet(user) { this.mailer.send(user.email, \"Bem-vindo!\"); }",
+                "}",
+                "",
+                "// Com DI: a dependência chega de fora",
+                "class WelcomeServiceDI {",
+                "  constructor(mailer) { this.mailer = mailer; }",
+                "  greet(user) { this.mailer.send(user.email, \"Bem-vindo!\"); }",
+                "}",
+                "",
+                "// Ponto de composição: quem monta decide",
+                "const service = new WelcomeServiceDI(new SmtpMailer());",
+                "",
+                "// Em um teste: uma implementação falsa, sem enviar e-mail de verdade",
+                "const sent = [];",
+                "new WelcomeServiceDI({ send: (to, text) => sent.push({ to, text }) }).greet({ email: \"ana@x.com\" });",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "`WelcomeServiceDI` não sabe se o mailer é o real ou um falso. Isso é o que permite o teste: ele " +
+                "entrega um objeto de uma linha e verifica o que foi \"enviado\".",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Para dependências que envolvem I/O ou efeitos externos, como banco, rede, e-mail, relógio e arquivos.",
+                "Quando há, ou pode haver, mais de uma implementação, ou é preciso substituí-la em testes.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Não injete o que é estável e sem efeito, como `Math` ou funções puras utilitárias: só acrescenta parâmetros.",
+                "Uma classe com muitas dependências injetadas costuma indicar responsabilidades demais; o problema é o design, e não a injeção.",
+                "DI só move a decisão de lugar: alguém ainda precisa montar o grafo, e em sistemas grandes isso pede um ponto de composição organizado.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Injetar o relógio",
+              context: "A hora atual é uma dependência escondida que torna testes imprevisíveis.",
+              code: {
+                language: "javascript",
+                filename: "clock.js",
+                code: [
+                  "// Antes: depende da hora real, e o teste muda a cada execução",
+                  "function isExpired(token) {",
+                  "  return Date.now() > token.expiresAt;",
+                  "}",
+                  "",
+                  "// Depois: o relógio entra como parâmetro, com um valor padrão",
+                  "function isExpiredAt(token, now = Date.now) {",
+                  "  return now() > token.expiresAt;",
+                  "}",
+                  "",
+                  "const token = { expiresAt: 1000 };",
+                  "isExpiredAt(token, () => 999);    // false",
+                  "isExpiredAt(token, () => 1001);   // true",
+                ].join("\n"),
+              },
+              explanation:
+                "Recebendo `now`, a função fica determinística nos testes e continua funcionando em produção com o " +
+                "padrão. É DI aplicada por parâmetro, sem nenhuma classe.",
+            },
+            {
+              title: "Trocar a implementação no ponto de composição",
+              context: "A decisão de qual implementação usar fica em um só lugar, e as classes não mudam.",
+              code: {
+                language: "javascript",
+                filename: "composition-root.js",
+                code: [
+                  "class ConsoleMailer { send(to, text) { console.log(`para ${to}: ${text}`); } }",
+                  "class SmtpMailer { send(to, text) { /* envia por SMTP */ } }",
+                  "",
+                  "class WelcomeService {",
+                  "  constructor(mailer) { this.mailer = mailer; }",
+                  "  greet(user) { this.mailer.send(user.email, \"Bem-vindo!\"); }",
+                  "}",
+                  "",
+                  "// Único lugar que sabe qual implementação usar",
+                  "const mailer = process.env.NODE_ENV === \"production\" ? new SmtpMailer() : new ConsoleMailer();",
+                  "const welcome = new WelcomeService(mailer);",
+                ].join("\n"),
+              },
+              explanation:
+                "Em desenvolvimento a mensagem vai para o console, e em produção, por SMTP. `WelcomeService` não " +
+                "muda: quem escolhe é o ponto de composição.",
+            },
+            {
+              title: "DI manual, sem container nem framework",
+              context: "A técnica não exige biblioteca: ligar as peças à mão, em um `main`, já é DI.",
+              code: {
+                language: "javascript",
+                filename: "manual-wiring.js",
+                code: [
+                  "class Database { query(sql) { /* ... */ } }",
+                  "class UserRepository { constructor(db) { this.db = db; } }",
+                  "class UserService { constructor(repository) { this.repository = repository; } }",
+                  "",
+                  "function main() {",
+                  "  const db = new Database();",
+                  "  const repository = new UserRepository(db);",
+                  "  const service = new UserService(repository);",
+                  "  return service;",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "O grafo inteiro é montado em um lugar legível, sem mágica. Para muitos projetos, esse é o ponto de " +
+                "composição suficiente; um container só compensa quando o grafo cresce.",
+            },
+          ],
+          exercise: {
+            problem:
+              "`ReminderService` cria o cliente de SMS e lê a hora sozinho. Não há como testá-lo sem enviar mensagens " +
+              "de verdade nem depender da hora do dia.",
+            problemCode: {
+              language: "javascript",
+              filename: "reminder.js",
+              code: [
+                "class ReminderService {",
+                "  constructor() { this.sms = new TwilioClient(); }",
+                "  remind(user) {",
+                "    const hour = new Date().getHours();",
+                "    if (hour < 8 || hour >= 20) return \"fora do horário\";",
+                "    this.sms.send(user.phone, \"Não esqueça da consulta\");",
+                "    return \"enviado\";",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Aplique DI: receba o cliente de SMS e o relógio de fora e escreva um teste do caso \"fora do horário\", " +
+              "sem enviar SMS.",
+            hint: "As duas dependências ocultas são o `new TwilioClient()` e o `new Date()`. Ambas devem chegar pelo construtor.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "reminder.fixed.js",
+                code: [
+                  "class ReminderService {",
+                  "  constructor(sms, now = () => new Date()) {",
+                  "    this.sms = sms;",
+                  "    this.now = now;",
+                  "  }",
+                  "  remind(user) {",
+                  "    const hour = this.now().getHours();",
+                  "    if (hour < 8 || hour >= 20) return \"fora do horário\";",
+                  "    this.sms.send(user.phone, \"Não esqueça da consulta\");",
+                  "    return \"enviado\";",
+                  "  }",
+                  "}",
+                  "",
+                  "// Teste: SMS falso e uma hora fixa às 22h",
+                  "const sent = [];",
+                  "const service = new ReminderService(",
+                  "  { send: (phone, text) => sent.push({ phone, text }) },",
+                  "  () => new Date(2026, 0, 1, 22, 0),",
+                  ");",
+                  "service.remind({ phone: \"1199999-0000\" });   // \"fora do horário\"; sent continua vazio",
+                ].join("\n"),
+              },
+              explanation:
+                "O cliente e o relógio agora entram de fora. O teste controla a hora e usa um SMS falso, e verifica que " +
+                "nada foi enviado, sem tocar na rede.",
+            },
+          },
         }),
-        concept({ order: 30, title: "Constructor Injection", requires: ["Dependency Injection"], note: "a forma mais comum de DI" }),
-        concept({ order: 40, title: "Dependency Injection Container", requires: ["Dependency Injection"], note: "automatiza a montagem do grafo de dependências" }),
+        concept({
+          order: 30,
+          title: "Constructor Injection",
+          requires: ["Dependency Injection"],
+          note: "a forma mais comum de DI",
+          summary:
+            "Declarar as dependências como parâmetros do construtor: o objeto só existe com tudo de que precisa, e " +
+            "fica completo e pronto para uso desde a criação.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Constructor Injection é a forma de Dependency Injection em que as dependências obrigatórias são " +
+                "recebidas no construtor e guardadas no objeto. A assinatura do construtor passa a ser a lista honesta " +
+                "do que a classe precisa, e um objeto só pode ser criado se todas forem fornecidas. Depois de construído, " +
+                "ele já está pronto para uso, sem nenhuma etapa de configuração pendente.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Tudo o que o objeto precisa entra pelo construtor: ele nasce completo, com dependências explícitas e " +
+                "sem estados \"quase prontos\".",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "O construtor recebe as dependências, opcionalmente confere se vieram, e as guarda em campos privados " +
+                "que não mudam depois. Quem lê a classe vê de relance do que ela depende.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "constructor-injection.js",
+              code: [
+                "class OrderService {",
+                "  #repository;",
+                "  #notifier;",
+                "",
+                "  constructor(repository, notifier) {",
+                "    if (!repository || !notifier) throw new Error(\"OrderService precisa de repository e notifier\");",
+                "    this.#repository = repository;",
+                "    this.#notifier = notifier;",
+                "  }",
+                "",
+                "  place(order) {",
+                "    this.#repository.save(order);",
+                "    this.#notifier.send(`pedido ${order.id} recebido`);",
+                "  }",
+                "}",
+                "",
+                "// A assinatura conta do que a classe depende; esquecer uma falha logo na criação",
+                "new OrderService(repository, notifier);",
+                "new OrderService(repository);   // Error: OrderService precisa de repository e notifier",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A falha por dependência ausente acontece na criação, na linha que montou o objeto, e não muito depois, " +
+                "quando um método usaria um campo `undefined`.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Para dependências obrigatórias, sem as quais o objeto não funciona.",
+                "Quando você quer objetos completos e imutáveis desde a criação, sem estados intermediários.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Para dependências opcionais, um valor padrão ou um parâmetro na operação costuma ser mais simples que um construtor com muitos casos.",
+                "Uma dependência usada só em um método pode entrar como parâmetro desse método, e não pelo construtor.",
+                "Muitos parâmetros (mais de quatro, como referência) indicam responsabilidades demais; divida a classe.",
+                "Não resolve dependências circulares: se A precisa de B e B de A, o problema está no design.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Dependência opcional com valor padrão",
+              context: "O que é opcional pode ter um padrão sensato, sem abrir mão de poder ser trocado.",
+              code: {
+                language: "javascript",
+                filename: "default-dependency.js",
+                code: [
+                  "class ReportService {",
+                  "  constructor(storage, logger = { log() {} }) {   // logger é opcional",
+                  "    this.storage = storage;",
+                  "    this.logger = logger;",
+                  "  }",
+                  "  save(report) {",
+                  "    this.storage.write(report.name, report.body);",
+                  "    this.logger.log(`salvo: ${report.name}`);",
+                  "  }",
+                  "}",
+                  "",
+                  "new ReportService(storage);                // sem log",
+                  "new ReportService(storage, console);       // com log",
+                ].join("\n"),
+              },
+              explanation:
+                "O `storage` é obrigatório e o `logger` é opcional, com um padrão que não faz nada. Nenhum dos dois " +
+                "é criado dentro da classe.",
+            },
+            {
+              title: "Falhar cedo quando falta uma dependência",
+              context: "Validar no construtor transforma um erro tardio e confuso em um erro imediato e claro.",
+              code: {
+                language: "javascript",
+                filename: "fail-fast.js",
+                code: [
+                  "class InvoiceService {",
+                  "  constructor(repository) {",
+                  "    this.repository = repository;",
+                  "  }",
+                  "  total(id) { return this.repository.find(id).total; }",
+                  "}",
+                  "",
+                  "const service = new InvoiceService();   // esqueceu o repository",
+                  "// ... muito depois, em outro ponto do programa:",
+                  "service.total(1);   // TypeError: Cannot read properties of undefined",
+                  "",
+                  "// Com verificação no construtor, o erro aparece onde está a causa:",
+                  "// constructor(repository) {",
+                  "//   if (!repository) throw new Error(\"InvoiceService precisa de repository\");",
+                  "// }",
+                ].join("\n"),
+              },
+              explanation:
+                "Sem a checagem, o erro só aparece quando alguém usa o objeto, longe de onde ele foi montado " +
+                "errado. Com ela, a causa e o sintoma ficam juntos.",
+            },
+            {
+              title: "Muitos parâmetros são um sinal de design",
+              context: "Um construtor longo mostra, de forma honesta, que a classe faz coisas demais.",
+              code: {
+                language: "javascript",
+                filename: "too-many-params.js",
+                code: [
+                  "// Sinal de alerta: sete dependências, e a classe provavelmente faz demais",
+                  "class CheckoutService {",
+                  "  constructor(cart, stock, payment, shipping, tax, coupons, mailer) { /* ... */ }",
+                  "}",
+                  "",
+                  "// Melhor: dividir por responsabilidade, e compor as partes",
+                  "class PricingService { constructor(tax, coupons) { /* ... */ } }",
+                  "class FulfillmentService { constructor(stock, shipping, mailer) { /* ... */ } }",
+                  "class Checkout { constructor(pricing, fulfillment, payment) { /* ... */ } }",
+                ].join("\n"),
+              },
+              explanation:
+                "Constructor Injection não cria o problema: ele o expõe. A saída é dividir a classe (Single " +
+                "Responsibility Principle), e não esconder as dependências.",
+            },
+          ],
+          exercise: {
+            problem:
+              "`OrderService` recebe as dependências por métodos `set…`. Esquecer de chamar um deles deixa o objeto " +
+              "pela metade e o erro só aparece em `place`.",
+            problemCode: {
+              language: "javascript",
+              filename: "order-service.js",
+              code: [
+                "class OrderService {",
+                "  setRepository(repository) { this.repository = repository; }",
+                "  setNotifier(notifier) { this.notifier = notifier; }",
+                "  place(order) {",
+                "    this.repository.save(order);",
+                "    this.notifier.send(`pedido ${order.id}`);",
+                "  }",
+                "}",
+                "",
+                "const service = new OrderService();",
+                "service.setRepository(repository);   // esqueceu setNotifier",
+                "service.place({ id: 1 });            // TypeError, depois de já ter salvo o pedido",
+              ].join("\n"),
+            },
+            task:
+              "Converta para Constructor Injection: as duas dependências entram pelo construtor, ficam privadas, e a " +
+              "falta de qualquer uma falha na criação.",
+            hint: "Troque os dois `set…` por parâmetros do construtor, valide-os ali e guarde-os em campos privados.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "order-service.fixed.js",
+                code: [
+                  "class OrderService {",
+                  "  #repository;",
+                  "  #notifier;",
+                  "",
+                  "  constructor(repository, notifier) {",
+                  "    if (!repository || !notifier) throw new Error(\"OrderService precisa de repository e notifier\");",
+                  "    this.#repository = repository;",
+                  "    this.#notifier = notifier;",
+                  "  }",
+                  "",
+                  "  place(order) {",
+                  "    this.#repository.save(order);",
+                  "    this.#notifier.send(`pedido ${order.id}`);",
+                  "  }",
+                  "}",
+                  "",
+                  "new OrderService(repository, notifier).place({ id: 1 });",
+                  "new OrderService(repository);   // falha aqui, na criação, antes de salvar qualquer coisa",
+                ].join("\n"),
+              },
+              explanation:
+                "O objeto só existe completo: o erro passou a acontecer na criação, antes de qualquer efeito, e as " +
+                "dependências deixaram de poder ser trocadas por acidente depois.",
+            },
+          },
+        }),
+        concept({
+          order: 40,
+          title: "Dependency Injection Container",
+          requires: ["Dependency Injection"],
+          note: "automatiza a montagem do grafo de dependências",
+          summary:
+            "Um componente que sabe como construir cada dependência e monta, sozinho, o grafo de objetos inteiro — " +
+            "com controle do ciclo de vida de cada um.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Um Dependency Injection Container (ou IoC container) registra como criar cada dependência e, ao ser " +
+                "pedido um objeto, resolve recursivamente tudo de que ele precisa. Em vez de escrever à mão a cadeia " +
+                "de `new` do ponto de composição, você a descreve uma vez, e o container a executa. Ele também " +
+                "controla o ciclo de vida: um único objeto compartilhado (singleton) ou um novo a cada pedido.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "O container automatiza a montagem do grafo de dependências que você faria à mão — e só vale a " +
+                "pena quando esse grafo é grande o bastante para justificar a automação.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "Cada componente é registrado com uma função de fábrica que pode pedir ao container as suas próprias " +
+                "dependências. Ao resolver um nome, o container executa a fábrica, guarda o resultado se for singleton " +
+                "e o devolve. Bibliotecas reais fazem isso, com mais recursos, mas a ideia central cabe em poucas linhas:",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "container.js",
+              code: [
+                "class Container {",
+                "  #entries = new Map();",
+                "  #singletons = new Map();",
+                "",
+                "  register(name, factory, { singleton = true } = {}) {",
+                "    this.#entries.set(name, { factory, singleton });",
+                "  }",
+                "",
+                "  resolve(name) {",
+                "    const entry = this.#entries.get(name);",
+                "    if (!entry) throw new Error(`não registrado: ${name}`);",
+                "    if (!entry.singleton) return entry.factory(this);",
+                "    if (!this.#singletons.has(name)) this.#singletons.set(name, entry.factory(this));",
+                "    return this.#singletons.get(name);",
+                "  }",
+                "}",
+                "",
+                "class Database {}",
+                "class UserRepository { constructor(db) { this.db = db; } }",
+                "class UserService { constructor(repository) { this.repository = repository; } }",
+                "",
+                "const container = new Container();",
+                "container.register(\"db\", () => new Database());",
+                "container.register(\"userRepository\", (c) => new UserRepository(c.resolve(\"db\")));",
+                "container.register(\"userService\", (c) => new UserService(c.resolve(\"userRepository\")));",
+                "",
+                "const service = container.resolve(\"userService\");   // monta db → repository → service",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Quem pede `userService` não precisa saber que ele depende de um repositório, nem que este depende de " +
+                "um banco: o container percorre o grafo. Note que apenas o ponto de composição fala com o container; as " +
+                "classes continuam recebendo suas dependências no construtor.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Quando o grafo de dependências é grande e a montagem manual vira uma cadeia longa e repetida em vários pontos de entrada.",
+                "Quando o ciclo de vida importa, como um singleton para o banco e um objeto novo por requisição.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Em aplicações pequenas, montar à mão no ponto de composição é mais simples e mais legível que adotar um container.",
+                "Containers com resolução automática escondem o grafo, e um erro de registro só aparece ao executar, e não ao compilar.",
+                "Passar o container para dentro das classes e chamar `resolve` ali transforma o container em um Service Locator, e perde a vantagem da DI.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Singleton ou novo a cada pedido",
+              context: "O ciclo de vida define se todos compartilham o mesmo objeto ou cada um recebe o seu.",
+              code: {
+                language: "javascript",
+                filename: "lifetimes.js",
+                code: [
+                  "const container = new Container();",
+                  "container.register(\"db\", () => new Database());                            // singleton (padrão)",
+                  "container.register(\"requestContext\", () => ({ id: Math.random() }), { singleton: false });",
+                  "",
+                  "container.resolve(\"db\") === container.resolve(\"db\");                       // true — o mesmo",
+                  "container.resolve(\"requestContext\") === container.resolve(\"requestContext\"); // false — um novo por pedido",
+                ].join("\n"),
+              },
+              explanation:
+                "O banco deve ser compartilhado, porque abrir uma conexão a cada uso seria caro. O contexto de uma " +
+                "requisição não pode ser compartilhado, senão os dados de uma vazariam para outra.",
+            },
+            {
+              title: "Substituir um registro em um teste",
+              context: "Como o grafo é descrito em um lugar só, trocar uma peça é registrar outra no seu lugar.",
+              code: {
+                language: "javascript",
+                filename: "override.js",
+                code: [
+                  "const container = buildContainer();   // registra as implementações reais",
+                  "",
+                  "// Em um teste: um repositório em memória no lugar do real",
+                  "container.register(\"userRepository\", () => new InMemoryUserRepository());",
+                  "",
+                  "const service = container.resolve(\"userService\");   // usa o repositório falso",
+                ].join("\n"),
+              },
+              explanation:
+                "O `userService` continua sendo construído do mesmo jeito, mas agora recebe o repositório falso. Nenhuma " +
+                "classe precisou mudar, e só o registro foi trocado.",
+            },
+            {
+              title: "Dependência não registrada e ciclos",
+              context: "Erros de montagem aparecem na resolução, e ciclos precisam ser detectados.",
+              code: {
+                language: "javascript",
+                filename: "errors.js",
+                code: [
+                  "const container = new Container();",
+                  "container.register(\"a\", (c) => ({ b: c.resolve(\"b\") }));",
+                  "container.register(\"b\", (c) => ({ a: c.resolve(\"a\") }));",
+                  "",
+                  "container.resolve(\"c\");   // Error: não registrado: c",
+                  "container.resolve(\"a\");   // RangeError: Maximum call stack size exceeded (a ↔ b)",
+                ].join("\n"),
+              },
+              explanation:
+                "Um container simples só descobre esses problemas ao resolver, e um ciclo causa estouro de pilha. " +
+                "Bibliotecas maduras detectam e explicam o ciclo, mas a causa continua sendo o design: A e B se conhecem demais.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O container abaixo cria um objeto novo a cada `resolve`. Assim, `resolve(\"db\")` devolve conexões " +
+              "diferentes, quando o banco deveria ser compartilhado.",
+            problemCode: {
+              language: "javascript",
+              filename: "simple-container.js",
+              code: [
+                "class Container {",
+                "  #factories = new Map();",
+                "  register(name, factory) { this.#factories.set(name, factory); }",
+                "  resolve(name) {",
+                "    const factory = this.#factories.get(name);",
+                "    if (!factory) throw new Error(`não registrado: ${name}`);",
+                "    return factory(this);",
+                "  }",
+                "}",
+                "",
+                "const container = new Container();",
+                "container.register(\"db\", () => ({ connection: Math.random() }));",
+                "container.resolve(\"db\") === container.resolve(\"db\");   // false — devia ser true",
+              ].join("\n"),
+            },
+            task:
+              "Adicione o ciclo de vida de singleton: o container guarda a primeira instância e a devolve nas " +
+              "próximas chamadas.",
+            hint: "Guarde o resultado de cada fábrica em um `Map` e consulte-o antes de chamar a fábrica de novo.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "simple-container.fixed.js",
+                code: [
+                  "class Container {",
+                  "  #factories = new Map();",
+                  "  #instances = new Map();",
+                  "",
+                  "  register(name, factory) { this.#factories.set(name, factory); }",
+                  "",
+                  "  resolve(name) {",
+                  "    if (this.#instances.has(name)) return this.#instances.get(name);",
+                  "    const factory = this.#factories.get(name);",
+                  "    if (!factory) throw new Error(`não registrado: ${name}`);",
+                  "    const instance = factory(this);",
+                  "    this.#instances.set(name, instance);",
+                  "    return instance;",
+                  "  }",
+                  "}",
+                  "",
+                  "const container = new Container();",
+                  "container.register(\"db\", () => ({ connection: Math.random() }));",
+                  "container.resolve(\"db\") === container.resolve(\"db\");   // true",
+                ].join("\n"),
+              },
+              explanation:
+                "A fábrica só roda na primeira resolução, e as demais devolvem a mesma instância. É o comportamento " +
+                "de singleton que containers reais oferecem como opção de ciclo de vida.",
+            },
+          },
+        }),
         concept({
           order: 50,
           title: "Service Locator",
           requires: ["Dependency Injection"],
           note: "alternativa/anti-padrão comum a DI — ensinado em contraste",
+          summary:
+            "Um registro central de onde as classes buscam por conta própria o que precisam — o oposto de Dependency " +
+            "Injection, em que as dependências são entregues de fora.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Service Locator é um registro global ao qual uma classe pede as dependências de que precisa: " +
+                "`locator.get(\"mailer\")`. Ele também inverte a criação (a classe não usa `new`), mas de outra forma: " +
+                "com Dependency Injection, as dependências são empurradas para dentro pelo construtor; com o Locator, " +
+                "a classe vai buscá-las. É ensinado aqui em contraste, porque é a alternativa mais comum, e muitas vezes " +
+                "considerada um anti-padrão.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "DI mostra do que a classe precisa; o Service Locator esconde: quem lê o construtor não vê as " +
+                "dependências, e só descobre quando o código executa e falha.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "O locator guarda instâncias ou fábricas por nome. Cada classe consulta o locator, geralmente global, " +
+                "no momento em que precisa de uma dependência.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "service-locator.js",
+              code: [
+                "const Locator = {",
+                "  services: new Map(),",
+                "  register(name, service) { this.services.set(name, service); },",
+                "  get(name) {",
+                "    if (!this.services.has(name)) throw new Error(`não registrado: ${name}`);",
+                "    return this.services.get(name);",
+                "  },",
+                "};",
+                "",
+                "// A classe busca o que precisa; o construtor não diz nada sobre dependências",
+                "class InvoiceService {",
+                "  send(invoice) {",
+                "    Locator.get(\"mailer\").send(invoice.email, \"Sua fatura\");",
+                "  }",
+                "}",
+                "",
+                "Locator.register(\"mailer\", new SmtpMailer());",
+                "new InvoiceService().send({ email: \"ana@x.com\" });",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "`new InvoiceService()` parece não depender de nada, mas falha se o mailer não estiver registrado. A " +
+                "dependência existe, só que está escondida dentro do método.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Como passo intermediário ao migrar código legado, em que passar dependências por todo o caminho ainda não é viável.",
+                "Quando o serviço é escolhido dinamicamente, em tempo de execução, por nome, como em sistemas de plugins.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "As dependências ficam escondidas: a assinatura da classe não diz do que ela precisa, e a falta só aparece ao executar.",
+                "O locator é um estado global: testes precisam registrar e limpar serviços, e um teste pode vazar configuração para o seguinte.",
+                "Todas as classes passam a depender do locator, o que as acopla a ele e dificulta reutilizá-las fora do projeto.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "A dependência escondida",
+              context: "Comparar as assinaturas mostra a diferença: uma conta o que precisa, a outra não.",
+              code: {
+                language: "javascript",
+                filename: "hidden-dependency.js",
+                code: [
+                  "// Service Locator: o construtor não revela nada",
+                  "class ReportService {",
+                  "  generate() { return Locator.get(\"database\").query(\"SELECT ...\"); }",
+                  "}",
+                  "new ReportService().generate();   // Error: não registrado: database",
+                  "",
+                  "// Dependency Injection: a necessidade está na assinatura",
+                  "class ReportServiceDI {",
+                  "  constructor(database) { this.database = database; }",
+                  "  generate() { return this.database.query(\"SELECT ...\"); }",
+                  "}",
+                  "// new ReportServiceDI() já deixa claro que falta o database",
+                ].join("\n"),
+              },
+              explanation:
+                "Com o Locator, é preciso ler o corpo dos métodos para descobrir as dependências. Com DI, a " +
+                "assinatura já as informa, e a falta é notada ao criar o objeto.",
+            },
+            {
+              title: "Estado global vazando entre testes",
+              context: "O locator é compartilhado por todos os testes, e isso os acopla.",
+              code: {
+                language: "javascript",
+                filename: "test-leak.js",
+                code: [
+                  "// Teste 1: registra um mailer falso e não limpa",
+                  "Locator.register(\"mailer\", { send() { /* falso */ } });",
+                  "new InvoiceService().send({ email: \"a@x.com\" });   // passa",
+                  "",
+                  "// Teste 2, em outro arquivo, esperava o erro de \"mailer não registrado\"",
+                  "// mas o registro do teste 1 continua lá — o resultado depende da ordem dos testes",
+                  "",
+                  "// Com DI, cada teste monta o seu objeto e nada é compartilhado",
+                  "new InvoiceServiceDI({ send() {} }).send({ email: \"a@x.com\" });",
+                ].join("\n"),
+              },
+              explanation:
+                "O estado do locator sobrevive entre testes e cria dependência de ordem (Test Isolation). Com " +
+                "injeção, o objeto de cada teste é montado do zero.",
+            },
+            {
+              title: "O container usado como Service Locator",
+              context: "O mesmo container pode ser DI ou Locator, dependendo de quem o chama.",
+              code: {
+                language: "javascript",
+                filename: "container-as-locator.js",
+                code: [
+                  "// Anti-padrão: a classe recebe o container e busca o que precisa",
+                  "class CheckoutService {",
+                  "  constructor(container) { this.container = container; }",
+                  "  pay(order) { this.container.resolve(\"payment\").charge(order.total); }",
+                  "}",
+                  "",
+                  "// Correto: só o ponto de composição usa o container; a classe recebe o que usa",
+                  "class CheckoutServiceDI {",
+                  "  constructor(payment) { this.payment = payment; }",
+                  "  pay(order) { this.payment.charge(order.total); }",
+                  "}",
+                  "const checkout = new CheckoutServiceDI(container.resolve(\"payment\"));",
+                ].join("\n"),
+              },
+              explanation:
+                "Quando a classe recebe o container, ela pode pedir qualquer coisa e volta a esconder as dependências. " +
+                "O container deve ficar na borda do programa, ligando as peças, e não dentro delas.",
+            },
+          ],
+          exercise: {
+            problem:
+              "`InvoiceService` busca o mailer e o repositório em um Service Locator global. O construtor não mostra " +
+              "as dependências, e o teste precisa mexer no estado global.",
+            problemCode: {
+              language: "javascript",
+              filename: "invoice-service.js",
+              code: [
+                "class InvoiceService {",
+                "  send(invoiceId) {",
+                "    const invoice = Locator.get(\"invoiceRepository\").find(invoiceId);",
+                "    Locator.get(\"mailer\").send(invoice.email, `Fatura ${invoice.id}`);",
+                "  }",
+                "}",
+                "",
+                "Locator.register(\"invoiceRepository\", new InvoiceRepository());",
+                "Locator.register(\"mailer\", new SmtpMailer());",
+                "new InvoiceService().send(7);",
+              ].join("\n"),
+            },
+            task:
+              "Converta para Dependency Injection (Constructor Injection): a classe recebe as duas dependências, e o " +
+              "único ponto que usa o locator é a montagem.",
+            hint: "Passe `invoiceRepository` e `mailer` ao construtor e troque as chamadas a `Locator.get` por essas referências.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "invoice-service.fixed.js",
+                code: [
+                  "class InvoiceService {",
+                  "  constructor(invoiceRepository, mailer) {",
+                  "    this.invoiceRepository = invoiceRepository;",
+                  "    this.mailer = mailer;",
+                  "  }",
+                  "  send(invoiceId) {",
+                  "    const invoice = this.invoiceRepository.find(invoiceId);",
+                  "    this.mailer.send(invoice.email, `Fatura ${invoice.id}`);",
+                  "  }",
+                  "}",
+                  "",
+                  "// Ponto de composição: o único lugar que sabe montar as peças",
+                  "const service = new InvoiceService(new InvoiceRepository(), new SmtpMailer());",
+                  "service.send(7);",
+                  "",
+                  "// Teste: nenhum estado global",
+                  "const sent = [];",
+                  "new InvoiceService(",
+                  "  { find: () => ({ id: 7, email: \"a@x.com\" }) },",
+                  "  { send: (to, text) => sent.push({ to, text }) },",
+                  ").send(7);",
+                ].join("\n"),
+              },
+              explanation:
+                "A assinatura do construtor agora mostra as duas dependências, e o teste as entrega diretamente, " +
+                "sem registrar nem limpar nada em um locator global.",
+            },
+          },
         }),
       ],
     }),
