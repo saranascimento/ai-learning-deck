@@ -1950,7 +1950,7 @@ export default area({
             "Cada módulo ou classe deve ter uma única razão para mudar — ou seja, responder a um único assunto ou " +
             "grupo de interessados, para que uma mudança em um não arraste (nem quebre) o outro.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -1959,7 +1959,14 @@ export default area({
                 "significa que tudo o que está ali muda pelo mesmo motivo — geralmente porque atende ao mesmo " +
                 "assunto de negócio ou ao mesmo grupo de pessoas que pedem mudanças.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Uma classe, uma razão para mudar: agrupe o que muda junto e separe o que muda por motivos diferentes — " +
+                "sem dividir a ponto de espalhar um assunto único.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -1979,7 +1986,7 @@ export default area({
                 "também vale: dividir demais gera dezenas de classes minúsculas e difíceis de seguir. A pergunta útil " +
                 "é \"quem poderia pedir uma mudança aqui?\" — se são grupos diferentes, são responsabilidades diferentes.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "uma classe com três razões para mudar, e a divisão em três:" },
             {
               type: "code",
@@ -2013,11 +2020,15 @@ export default area({
                 "Agora o layout da impressão pode mudar sem tocar no cálculo, e trocar o banco não afeta nenhuma regra " +
                 "de negócio. Invoice pode ser testada sem imprimir nada e sem banco de dados.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Uma classe, uma razão para mudar: agrupe o que muda junto e separe o que muda por motivos diferentes — " +
-                "sem dividir a ponto de espalhar um assunto único.",
+              type: "list",
+              items: [
+                "Dividir demais espalha um assunto único por muitas classes minúsculas e obriga a pular entre arquivos para " +
+                "entender uma regra.",
+                "\"Uma responsabilidade\" não é \"fazer uma coisa só\": o critério é quem pede a mudança, não o número de " +
+                "métodos.",
+              ],
             },
           ],
           examples: [
@@ -2172,7 +2183,7 @@ export default area({
             "Um módulo deve permitir novos comportamentos por meio de código novo (extensão), sem exigir que o " +
             "código existente e já testado seja editado (modificação).",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -2182,7 +2193,14 @@ export default area({
                 "O mecanismo habitual é o polimorfismo: o código estável depende de um contrato, e cada novo " +
                 "comportamento é uma nova implementação desse contrato.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Projete o ponto de variação para que o novo comportamento seja código adicionado, não editado — mas " +
+                "só depois que a variação for real, não por antecipação.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -2201,7 +2219,7 @@ export default area({
                 "terceira seja uma extensão. O ponto de variação — onde as novidades tendem a aparecer — é o único que " +
                 "vale a pena \"abrir\".",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "um switch que exige edição a cada novo tipo, e a versão extensível:" },
             {
               type: "code",
@@ -2238,11 +2256,14 @@ export default area({
                 "Acrescentar o desconto \"senior\" é uma linha nova; a função já testada não foi reaberta. O ponto de " +
                 "variação (as regras de desconto) ficou explícito e isolado.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Projete o ponto de variação para que o novo comportamento seja código adicionado, não editado — mas " +
-                "só depois que a variação for real, não por antecipação.",
+              type: "list",
+              items: [
+                "Abstrair antes de a variação existir acrescenta indireção para algo que talvez nunca varie.",
+                "Nem todo `switch` é problema: se os casos são estáveis e poucos, ele é mais claro que uma hierarquia.",
+                "Não dá para fechar o código contra todas as mudanças; escolha os pontos de variação que já se mostraram reais.",
+              ],
             },
           ],
           examples: [
@@ -2371,7 +2392,7 @@ export default area({
             "Um subtipo deve poder ser usado no lugar do tipo base sem que o código que o usa quebre ou precise " +
             "saber qual é o subtipo — herdar exige respeitar o contrato, não só reaproveitar código.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -2380,7 +2401,14 @@ export default area({
                 "uma subclasse não pode apenas ter os mesmos métodos — precisa manter as mesmas promessas. Ele dá " +
                 "um critério para usar Inheritance e Polymorphism (módulo Programming Fundamentals) sem armadilhas.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Só herde se o subtipo cumprir todas as promessas do tipo base — se substituir quebra o código que o " +
+                "usa, a hierarquia está errada, por mais que \"faça sentido\" no mundo real.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -2400,7 +2428,7 @@ export default area({
                 "costuma ser rever a hierarquia — usar composição, ou separar em tipos diferentes — em vez de forçar a " +
                 "herança.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "o exemplo clássico: um quadrado que \"é um\" retângulo, mas quebra o contrato:" },
             {
               type: "code",
@@ -2437,11 +2465,15 @@ export default area({
                 "altura mudam de forma independente, e Square não consegue cumprir isso. Substituí-lo produz um " +
                 "resultado errado.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Só herde se o subtipo cumprir todas as promessas do tipo base — se substituir quebra o código que o " +
-                "usa, a hierarquia está errada, por mais que \"faça sentido\" no mundo real.",
+              type: "list",
+              items: [
+                "Que a relação \"faz sentido\" no mundo real não basta: o que vale é o contrato, e uma subclasse que lança " +
+                "\"não suportado\" o quebra.",
+                "Exigir pré-condições mais fortes ou prometer pós-condições mais fracas que o tipo base viola a substituição.",
+                "Quando a substituição falha, a saída costuma ser separar a hierarquia ou trocar herança por composição.",
+              ],
             },
           ],
           examples: [
@@ -2583,7 +2615,7 @@ export default area({
             "Nenhum cliente deve ser forçado a depender de métodos que não usa — prefira várias interfaces pequenas e " +
             "coesas a uma interface grande que serve a todos.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -2592,7 +2624,14 @@ export default area({
                 "responsabilidades variadas, obriga cada implementação e cada cliente a lidar com o conjunto inteiro. " +
                 "A alternativa são interfaces pequenas, cada uma descrevendo um papel coeso.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Contratos pequenos e coesos: cada cliente depende só do que usa, e cada implementação promete só o " +
+                "que consegue cumprir.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -2611,7 +2650,7 @@ export default area({
                 "design sem benefício. O critério é o papel: métodos usados juntos pelos mesmos clientes ficam " +
                 "juntos.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "uma interface \"gorda\" que força uma implementação a fingir, e a versão segregada:" },
             {
               type: "code",
@@ -2644,11 +2683,13 @@ export default area({
                 "OldPrinter tinha de mentir sobre o que faz. Com papéis separados, SimplePrinter é só uma impressora, " +
                 "e printReport aceita qualquer coisa que imprima, sem se importar se também digitaliza.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Contratos pequenos e coesos: cada cliente depende só do que usa, e cada implementação promete só o " +
-                "que consegue cumprir.",
+              type: "list",
+              items: [
+                "Segregar demais gera dezenas de interfaces de um método só, difíceis de descobrir e de manter.",
+                "Divida pelos papéis de quem usa, não por cada método da implementação.",
+              ],
             },
           ],
           examples: [
@@ -2790,7 +2831,7 @@ export default area({
             "Os módulos de alto nível (regras de negócio) não devem depender dos de baixo nível (banco, rede, " +
             "bibliotecas): ambos devem depender de abstrações — e é o alto nível que define o contrato.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -2800,7 +2841,14 @@ export default area({
                 "deve importar diretamente o cliente do Stripe ou o driver do MySQL; ela declara o que precisa " +
                 "(\"algo que cobra um valor\") e a infraestrutura se adapta a esse contrato.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Faça as regras de negócio definirem o contrato de que precisam e a infraestrutura se adaptar a ele — " +
+                "assim o que é estável não fica preso ao que muda.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -2819,7 +2867,7 @@ export default area({
                 "nível: a interface é escrita em termos do que o negócio precisa, não copiando a API da biblioteca " +
                 "de baixo nível.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "a regra dependendo diretamente de um fornecedor, e depois de um contrato:" },
             {
               type: "code",
@@ -2855,11 +2903,16 @@ export default area({
                 "OrderService agora não sabe que o Stripe existe: conhece apenas \"algo que cobra\". Trocar de provedor é " +
                 "escrever outro gateway com o mesmo método, sem tocar na regra de negócio.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Faça as regras de negócio definirem o contrato de que precisam e a infraestrutura se adaptar a ele — " +
-                "assim o que é estável não fica preso ao que muda.",
+              type: "list",
+              items: [
+                "DIP não é Dependency Injection: injetar dependências é uma técnica, e inverter é decidir quem define o " +
+                "contrato.",
+                "Se a abstração é desenhada pelo baixo nível, espelhando a API do banco ou da biblioteca, a dependência " +
+                "continua apontando para o lado errado.",
+                "Para dependências estáveis e sem chance real de troca, uma abstração a mais é só cerimônia.",
+              ],
             },
           ],
           examples: [
