@@ -11385,7 +11385,7 @@ export default area({
             "O primeiro documento que quem chega a um projeto lê: diz o que ele é, como instalá-lo e rodá-lo, como " +
             "usá-lo e como contribuir — o suficiente para começar em poucos minutos.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -11394,7 +11394,14 @@ export default area({
                 "a única documentação que será lida. Seu objetivo é responder rapidamente: o que é isto, para que " +
                 "serve, como eu começo?",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "O README responde \"o que é, como rodo, como uso\" em minutos — e só vale se os passos escritos " +
+                "funcionarem de fato.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -11413,7 +11420,7 @@ export default area({
                 "documentação — quando o assunto crescer, ele aponta para documentos mais detalhados. O maior " +
                 "risco é ficar desatualizado: um README com comandos que não funcionam é pior que nenhum.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "a estrutura essencial e uma função que verifica se as seções básicas existem:" },
             {
               type: "code",
@@ -11458,11 +11465,22 @@ export default area({
                 "Em poucas linhas, quem chega sabe o que é o projeto, como instalá-lo e usá-lo. Verificações simples " +
                 "no CI ajudam a manter o mínimo, mas o que garante a utilidade é alguém seguir os passos de verdade.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "O README responde \"o que é, como rodo, como uso\" em minutos — e só vale se os passos escritos " +
-                "funcionarem de fato.",
+              type: "list",
+              items: [
+                "Em todo projeto, como primeiro documento: o que é, como rodar e como usar, do zero ao funcionando em minutos.",
+                "Com quickstart testado por alguém que nunca viu o projeto.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Só vale se os passos escritos funcionarem de fato.",
+                "Exemplos de código que ninguém executa envelhecem em silêncio; um teste que os roda avisa quando a " +
+                "documentação se separa do código.",
+              ],
             },
           ],
           examples: [
@@ -11588,7 +11606,7 @@ export default area({
             "O registro, organizado por versão, das mudanças relevantes de um projeto — escrito para quem o usa, " +
             "para que saiba o que mudou, o que corrigiu e o que pode quebrar antes de atualizar.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -11598,7 +11616,14 @@ export default area({
                 "(novidades), Changed (mudanças), Deprecated (marcado como obsoleto), Removed (removido), Fixed " +
                 "(correções) e Security (segurança).",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "O changelog é escrito para quem usa, não para quem desenvolve: diga o que mudou para eles, agrupado " +
+                "por versão, e destaque tudo o que pode quebrar.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -11616,7 +11641,7 @@ export default area({
                 "quebram compatibilidade, com a indicação de como migrar; e não confundir com o log do Git — despejar " +
                 "os commits em um arquivo não é um changelog, porque a maior parte dos commits não interessa a quem usa.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "um changelog no formato comum e uma função que agrupa mudanças por categoria:" },
             {
               type: "code",
@@ -11667,11 +11692,21 @@ export default area({
                 "Cada versão traz as mudanças agrupadas por tipo, na linguagem de quem usa o projeto. A mudança que " +
                 "quebra compatibilidade está marcada e indica o que usar no lugar.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "O changelog é escrito para quem usa, não para quem desenvolve: diga o que mudou para eles, agrupado " +
-                "por versão, e destaque tudo o que pode quebrar.",
+              type: "list",
+              items: [
+                "Para quem usa o projeto saber, por versão, o que mudou, o que foi corrigido e o que pode quebrar.",
+                "Com uma seção `Unreleased`, escrita no momento da mudança, quando a informação está fresca.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Não é o log do Git despejado: commits como `wip` e `typo` não afetam quem usa.",
+                "Mudanças que quebram compatibilidade precisam trazer o que mudou e como migrar.",
+              ],
             },
           ],
           examples: [
@@ -11787,7 +11822,7 @@ export default area({
             "Um documento curto que registra uma decisão de arquitetura — o contexto, o que foi decidido e suas " +
             "consequências — para que o porquê não se perca quando as pessoas e a memória mudarem.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -11796,7 +11831,14 @@ export default area({
                 "arquivo de texto no próprio repositório, numerado em sequência (docs/adr/0007-usar-postgresql.md), " +
                 "com um status: proposto, aceito, rejeitado ou substituído.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "O ADR guarda o porquê de uma decisão importante junto ao código — curto, sobre uma decisão só e " +
+                "nunca reescrito: quando a decisão muda, um novo ADR substitui o antigo.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -11814,7 +11856,7 @@ export default area({
                 "novo, que aponta para o anterior — o histórico das decisões (e do seu porquê) permanece. Escreva um ADR para " +
                 "decisões difíceis de reverter, com impacto amplo ou que gerariam a pergunta \"por que fizeram assim?\".",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "a estrutura de um ADR e uma função que gera o esqueleto com o nome de arquivo padronizado:" },
             {
               type: "code",
@@ -11860,11 +11902,21 @@ export default area({
                 "Em uma página, o ADR registra o problema, a escolha, as alternativas descartadas e o preço que se " +
                 "aceitou pagar. Quem chegar depois entende não só o que a equipe decidiu, mas por quê.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "O ADR guarda o porquê de uma decisão importante junto ao código — curto, sobre uma decisão só e " +
-                "nunca reescrito: quando a decisão muda, um novo ADR substitui o antigo.",
+              type: "list",
+              items: [
+                "Para decisões de arquitetura caras de reverter, cujo \"por que fizeram assim?\" será perguntado no futuro.",
+                "Registrando as alternativas descartadas e o motivo, para não repetir a discussão.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Decisões baratas de desfazer não pedem ADR; o commit já basta.",
+                "Um ADR não é reescrito: quando a decisão muda, um novo ADR substitui o antigo.",
+              ],
             },
           ],
           examples: [
@@ -11988,7 +12040,7 @@ export default area({
             "Um documento de proposta, escrito antes de tomar uma decisão de peso, que expõe o problema e a solução " +
             "sugerida para receber críticas e construir consenso — e que, aceito, gera o registro de decisão.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -11997,7 +12049,14 @@ export default area({
                 "proposta, as alternativas e os riscos, e convida as pessoas afetadas a comentar. É uma ferramenta " +
                 "de decisão coletiva: o objetivo é discutir a ideia enquanto ela ainda é barata de mudar.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "O RFC é a conversa antes da decisão: escreva-o para mudanças grandes e difíceis de reverter, deixe " +
+                "as pessoas afetadas comentarem e, aceito, registre a decisão em um ADR.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -12016,7 +12075,7 @@ export default area({
                 "Ciclo: rascunho → período de revisão (com prazo) → decisão (aceito, rejeitado, adiado) → " +
                 "implementação. Não é para tudo: para mudanças pequenas e reversíveis, um RFC é burocracia.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "o esqueleto de um RFC e um critério simples para decidir se a mudança precisa de um:" },
             {
               type: "code",
@@ -12065,11 +12124,22 @@ export default area({
                 "O critério é apenas ilustrativo, mas mostra a lógica: quanto mais gente é afetada e quanto mais difícil é " +
                 "desfazer, mais o custo de discutir antes se justifica.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "O RFC é a conversa antes da decisão: escreva-o para mudanças grandes e difíceis de reverter, deixe " +
-                "as pessoas afetadas comentarem e, aceito, registre a decisão em um ADR.",
+              type: "list",
+              items: [
+                "Antes de decisões grandes e difíceis de reverter, para expor a proposta e receber críticas de quem seria " +
+                "afetado.",
+                "Depois de aceito, registrando a decisão em um ADR.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Para decisões pequenas é exagero: exigir RFC para tudo leva a evitar o processo ou a documentos vazios.",
+                "Sem prazo e revisores definidos, o RFC é ignorado ou se arrasta.",
+              ],
             },
           ],
           examples: [
@@ -12182,7 +12252,7 @@ export default area({
             "Um guia passo a passo para operar um sistema e responder a problemas conhecidos — escrito para ser " +
             "seguido sob pressão, por quem talvez nunca tenha visto aquele componente.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -12191,7 +12261,14 @@ export default area({
                 "incidentes conhecidos. Enquanto o README ensina a usar e desenvolver, o runbook ensina a operar " +
                 "e a consertar quando algo dá errado.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Escreva o runbook para a pessoa cansada, às três da manhã, que nunca viu o sistema: comandos " +
+                "exatos, passos em ordem e um ponto claro de escalonamento.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -12210,7 +12287,7 @@ export default area({
                 "após cada incidente — o que se aprendeu em uma análise pós-incidente (postmortem) deve voltar " +
                 "para o runbook.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "um runbook para um alerta específico, com um trecho de diagnóstico executável:" },
             {
               type: "code",
@@ -12259,11 +12336,22 @@ export default area({
                 "o resultado e sabe quando pedir ajuda. O script de diagnóstico foi escrito uma vez, por quem " +
                 "entende, e usado por qualquer pessoa.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Escreva o runbook para a pessoa cansada, às três da manhã, que nunca viu o sistema: comandos " +
-                "exatos, passos em ordem e um ponto claro de escalonamento.",
+              type: "list",
+              items: [
+                "Para problemas conhecidos, com comandos exatos, passos em ordem e um ponto claro de escalonamento.",
+                "Atualizado a cada incidente, para que o aprendizado volte ao documento.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Passos vagos, que pressupõem contexto, são só uma lembrança, e não um runbook.",
+                "Um passo executado sempre da mesma forma pode virar script ou automação, deixando o runbook para o que " +
+                "exige decisão humana.",
+              ],
             },
           ],
           examples: [
