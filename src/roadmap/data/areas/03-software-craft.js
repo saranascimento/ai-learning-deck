@@ -3337,7 +3337,7 @@ export default area({
             "Mudar a estrutura interna do código sem alterar o que ele faz por fora — em passos pequenos e " +
             "seguros — para que a próxima mudança fique mais barata e menos arriscada.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -3346,7 +3346,14 @@ export default area({
                 "Não é reescrever, e não é corrigir bugs nem adicionar funcionalidade — é reorganizar, em passos " +
                 "pequenos, o que já funciona.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Refatorar é mudar a estrutura sem mudar o comportamento, em passos pequenos, sempre separado " +
+                "de adicionar funcionalidade — o objetivo é tornar a próxima mudança barata.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -3367,7 +3374,7 @@ export default area({
                 "terceira vez. Quando não refatorar: código que será descartado, código sem qualquer forma de " +
                 "verificar o comportamento, ou quando uma reescrita completa é de fato a melhor opção.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "refatorar antes de acrescentar: a estrutura muda, o comportamento não:" },
             {
               type: "code",
@@ -3402,11 +3409,16 @@ export default area({
                 "O passo 1 não muda nenhum resultado — qualquer teste existente continua passando igual. Só o " +
                 "passo 2 muda o comportamento, e por estar separado, se algo quebrar, a origem é óbvia.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Refatorar é mudar a estrutura sem mudar o comportamento, em passos pequenos, sempre separado " +
-                "de adicionar funcionalidade — o objetivo é tornar a próxima mudança barata.",
+              type: "list",
+              items: [
+                "Se você precisa alterar um teste existente para que ele passe, houve mudança de comportamento: não era só " +
+                "refatoração.",
+                "Misturar refatoração e funcionalidade nova no mesmo passo esconde qual das mudanças causou um eventual bug.",
+                "Não compensa em código descartável nem em código sem nenhuma forma de verificar o comportamento; nesse " +
+                "caso, crie primeiro a rede de segurança.",
+              ],
             },
           ],
           examples: [
@@ -3546,7 +3558,7 @@ export default area({
             "Tirar um trecho de código de dentro de uma função e dar a ele uma função própria com um nome que " +
             "explica o que faz — a técnica que corrige funções longas e trechos duplicados.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -3554,6 +3566,13 @@ export default area({
                 "fragmento original por uma chamada a ela. O nome da função deve dizer o que o trecho faz (a " +
                 "intenção), não como faz. É a técnica de refatoração mais usada e a correção padrão para os smells " +
                 "Long Method e Duplicate Code.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Extraia quando puder dar ao trecho um nome que diga sua intenção — as variáveis lidas viram " +
+                "parâmetros, as alteradas viram o retorno.",
             },
             { type: "heading", text: "Como fazer" },
             {
@@ -3572,7 +3591,7 @@ export default area({
                 "que o bloco faz (o comentário vira o nome), ou o mesmo código aparece em mais de um lugar. Não " +
                 "compensa extrair se o nome não dizer nada além do que o código já diz.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "um trecho com um propósito claro extraído com um nome:" },
             {
               type: "code",
@@ -3609,11 +3628,22 @@ export default area({
                 "O trecho lia invoice.lines (virou o parâmetro lines) e produzia total (virou o retorno). O " +
                 "comportamento é exatamente o mesmo, mas calculateTotal agora pode ser testada e reutilizada sozinha.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Extraia quando puder dar ao trecho um nome que diga sua intenção — as variáveis lidas viram " +
-                "parâmetros, as alteradas viram o retorno.",
+              type: "list",
+              items: [
+                "Quando o trecho pode receber um nome que diz a intenção, como cálculos, condições complexas e corpos de laço.",
+                "Para corrigir funções longas e trechos duplicados: o mesmo trecho extraído passa a ter um único lugar.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Se o nome não acrescenta nada além do que o próprio trecho já diz, a extração só cria indireção.",
+                "Um trecho que altera variáveis do escopo devolve o valor em vez de mutar: a função extraída não deve " +
+                "depender de estado externo.",
+              ],
             },
           ],
           examples: [
@@ -3756,13 +3786,20 @@ export default area({
             "Dar um nome, por meio de uma variável local, a uma expressão complexa ou repetida — para que o " +
             "código explique o que a expressão representa em vez de só como é calculada.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
                 "Extract Variable substitui uma expressão (ou parte dela) por uma variável local com um nome " +
                 "que explica o seu significado. Também é chamada de \"variável explicativa\": ela não muda o que o " +
                 "código calcula, apenas torna visível a intenção por trás do cálculo.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Se uma expressão precisa de esforço para ser entendida, dê nome ao seu resultado — a variável " +
+                "explica o porquê que a expressão sozinha esconde.",
             },
             { type: "heading", text: "Como fazer" },
             {
@@ -3781,7 +3818,7 @@ export default area({
                 "for útil em vários lugares, considere Extract Function em vez disso. E se o nome apenas repetir o " +
                 "que a expressão já diz de forma óbvia, a variável é ruído.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "uma condição opaca ganha nomes que explicam cada parte:" },
             {
               type: "code",
@@ -3809,11 +3846,21 @@ export default area({
                 "A regra agora se lê como uma frase (pedido grande, cliente fiel e em dia). Cada critério tem um " +
                 "nome, o que também ajuda a depurar: dá para inspecionar o valor de cada variável separadamente.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Se uma expressão precisa de esforço para ser entendida, dê nome ao seu resultado — a variável " +
-                "explica o porquê que a expressão sozinha esconde.",
+              type: "list",
+              items: [
+                "Quando uma expressão exige esforço para ser entendida e o nome do resultado explica o porquê que ela esconde.",
+                "Quando a mesma expressão aparece mais de uma vez e evita recalcular ou repetir o caminho.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Se o nome só repete a expressão (`isEmpty` para `items.length === 0`), a variável é ruído.",
+                "Uma expressão que já é autoexplicativa não ganha nada ao ser separada.",
+              ],
             },
           ],
           examples: [
@@ -3931,7 +3978,7 @@ export default area({
             "Trocar o nome de uma variável, função, classe ou arquivo por outro que descreva melhor o que ela é — " +
             "a refatoração mais simples e uma das que mais aumenta a clareza.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -3939,6 +3986,13 @@ export default area({
                 "módulo, arquivo) e atualiza todos os lugares que o usam, sem alterar o comportamento. Se Naming " +
                 "(módulo Clean Code) trata de escolher bons nomes na primeira vez, Rename trata de corrigi-los " +
                 "depois — porque o entendimento sobre o problema evolui e os nomes precisam acompanhar.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Renomear é barato e vale muito: quando o nome deixa de refletir o que a coisa é ou faz, corrija-o " +
+                "com a ferramenta do editor, não com um busca-e-substitui às cegas.",
             },
             { type: "heading", text: "Como fazer" },
             {
@@ -3958,7 +4012,7 @@ export default area({
                 "marcado como obsoleto por um tempo e migre aos poucos. Nomes usados por reflexão, em strings ou em " +
                 "arquivos de configuração também não são pegos pela ferramenta e precisam ser conferidos à mão.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "um nome que passou a mentir depois que a função mudou, e o novo:" },
             {
               type: "code",
@@ -3984,11 +4038,22 @@ export default area({
                 "A lógica não mudou uma linha. Só o nome passou a comunicar o efeito real — que, se ficasse como " +
                 "getUser, levaria alguém a chamá-la achando que ela apenas lê.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Renomear é barato e vale muito: quando o nome deixa de refletir o que a coisa é ou faz, corrija-o " +
-                "com a ferramenta do editor, não com um busca-e-substitui às cegas.",
+              type: "list",
+              items: [
+                "Assim que o nome deixa de refletir o que a coisa é ou faz; não é preciso esperar uma grande limpeza.",
+                "Para variáveis locais, funções, classes e arquivos, sempre com a ferramenta de rename do editor.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Em API pública, renomear de uma vez quebra quem depende do nome antigo: mantenha o antigo, com aviso, " +
+                "durante a transição.",
+                "Busca-e-substitui às cegas trata funções, campos e texto como iguais e costuma gerar bugs silenciosos.",
+              ],
             },
           ],
           examples: [
@@ -4108,7 +4173,7 @@ export default area({
             "Substituir a chamada de uma função pelo próprio corpo dela e remover a função — o inverso de Extract " +
             "Function, útil quando a indireção não acrescenta clareza.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -4116,6 +4181,13 @@ export default area({
                 "função, você traz o corpo da função de volta para onde ela é chamada e apaga a função. Serve " +
                 "quando a função é tão simples que o corpo é tão claro quanto o nome, ou quando um conjunto de " +
                 "funções está mal dividido e vale desfazer a divisão antes de reorganizar.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Uma função só ganha seu lugar se o nome acrescenta algo que o corpo não diz — quando não " +
+                "acrescenta, incorpore-a de volta.",
             },
             { type: "heading", text: "Como fazer" },
             {
@@ -4135,7 +4207,7 @@ export default area({
                 "seu trabalho. As duas técnicas se completam: extraia para dar nome, incorpore para remover " +
                 "nomes que não ajudam.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "uma função que só repassa a chamada, incorporada onde é usada:" },
             {
               type: "code",
@@ -4162,11 +4234,22 @@ export default area({
                 "O nome moreThanFiveLateDeliveries apenas repetia a condição em palavras, e obrigava o leitor a " +
                 "pular para outra função. Incorporada, a regra aparece onde é usada e está tão clara quanto antes.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Uma função só ganha seu lugar se o nome acrescenta algo que o corpo não diz — quando não " +
-                "acrescenta, incorpore-a de volta.",
+              type: "list",
+              items: [
+                "Quando a função só delega e o nome não acrescenta informação além do corpo.",
+                "Quando um conjunto de funções está mal dividido e vale juntar tudo para extrair de novo do jeito certo.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Se a função é usada em vários lugares e o nome esclarece a intenção, incorporar duplica a regra e troca um " +
+                "nome por uma expressão a decifrar.",
+                "Não serve para toda função curta, só para as que não acrescentam valor.",
+              ],
             },
           ],
           examples: [
@@ -4300,7 +4383,7 @@ export default area({
             "Dividir uma classe que faz demais criando uma nova para as responsabilidades que se agrupam, movendo " +
             "campos e métodos para ela — a correção do smell Large Class.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -4308,6 +4391,13 @@ export default area({
                 "em uma classe grande demais. A classe original passa a se relacionar com a nova por composição. " +
                 "É a resposta ao smell Large Class: onde a coesão era baixa (vários assuntos em um lugar), " +
                 "passam a existir duas classes com um assunto cada.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Se um grupo de campos e métodos forma um assunto próprio dentro de uma classe grande, dê a ele uma " +
+                "classe — e mova em passos pequenos, com os testes verdes a cada um.",
             },
             { type: "heading", text: "Como fazer" },
             {
@@ -4326,7 +4416,7 @@ export default area({
                 "disjuntos de campos, ou um subconjunto de dados que muda junto. O critério final é sempre o " +
                 "mesmo: cada classe resultante deve ter um único assunto que se descreve em uma frase.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "os campos de telefone saem de Person e viram uma classe própria:" },
             {
               type: "code",
@@ -4367,11 +4457,22 @@ export default area({
                 "As regras de formato do telefone agora vivem em PhoneNumber, e Person só sabe que tem um. Se " +
                 "surgir a necessidade de validar o DDD, ela tem um lugar natural para ser escrita.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Se um grupo de campos e métodos forma um assunto próprio dentro de uma classe grande, dê a ele uma " +
-                "classe — e mova em passos pequenos, com os testes verdes a cada um.",
+              type: "list",
+              items: [
+                "Quando um grupo de campos e métodos forma um assunto próprio dentro de uma classe grande, como campos com o " +
+                "mesmo prefixo.",
+                "Como correção do smell Large Class, movendo em passos pequenos com os testes verdes a cada um.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Tamanho não é o critério, coesão é: uma classe pequena com um assunto só não deve ser dividida.",
+                "Dividir por dividir cria classes anêmicas e acrescenta acoplamento entre as partes.",
+              ],
             },
           ],
           examples: [
@@ -4527,7 +4628,7 @@ export default area({
             "Mover uma função para a classe ou módulo onde estão os dados ou o contexto que ela usa — para que " +
             "comportamento e dados fiquem juntos e o acoplamento entre as partes diminua.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -4535,6 +4636,13 @@ export default area({
                 "classe cujos dados ela usa, o módulo do assunto a que pertence, ou o escopo em que é realmente " +
                 "usada. É a correção clássica para o smell Feature Envy, e também serve para reorganizar módulos " +
                 "conforme o entendimento do domínio evolui.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Coloque cada função perto dos dados e do assunto de que ela depende — e, se não estiver claro, mova " +
+                "e observe: mover é barato e reversível.",
             },
             { type: "heading", text: "Como fazer" },
             {
@@ -4553,7 +4661,7 @@ export default area({
                 "ela usa, comparado aos de B?) e a que assunto ela pertence. Se estiver em dúvida, mova, observe " +
                 "como fica e, se não melhorar, mova de volta — a refatoração é reversível.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "uma função de utilidade usada só por um módulo, movida para junto dele:" },
             {
               type: "code",
@@ -4582,11 +4690,21 @@ export default area({
                 "encontra tudo o que precisa sem sair do arquivo. Se outra parte do sistema passar a precisar " +
                 "dela, aí sim ela pode ir para um módulo compartilhado com um nome de assunto.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Coloque cada função perto dos dados e do assunto de que ela depende — e, se não estiver claro, mova " +
-                "e observe: mover é barato e reversível.",
+              type: "list",
+              items: [
+                "Quando a função só mexe nos dados de outro objeto, como no smell Feature Envy.",
+                "Quando funções acumuladas em um módulo genérico pertencem a assuntos específicos.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Com chamadores existentes, a função antiga deve virar uma ponte para a nova; trocar todos os usos de uma " +
+                "vez é arriscado.",
+              ],
             },
           ],
           examples: [
@@ -4723,7 +4841,7 @@ export default area({
             "A receita passo a passo para transformar uma função cheia de ifs aninhados em uma sequência de " +
             "guard clauses, mantendo o comportamento — a técnica que produz o estilo de Guard Clauses.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -4731,6 +4849,13 @@ export default area({
                 "sair cedo —, esta refatoração é a mecânica para chegar lá a partir de um código existente com " +
                 "condicionais aninhadas. Ela transforma, um caso de cada vez, os ramos excepcionais em retornos " +
                 "antecipados, deixando o caminho principal no nível base.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Inverta a condição mais externa, retorne cedo, rode os testes e repita — cada passo é seguro, e o " +
+                "aninhamento desaparece aos poucos.",
             },
             { type: "heading", text: "Como fazer" },
             {
@@ -4750,7 +4875,7 @@ export default area({
                 "devem ser verificadas na mesma ordem lógica que as condições aninhadas originais, para que " +
                 "casos que dependiam da ordem continuem dando o mesmo resultado.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "a transformação em passos: cada condição aninhada vira uma guarda:" },
             {
               type: "code",
@@ -4786,11 +4911,21 @@ export default area({
                 "A variável result e os else desapareceram. O comportamento é idêntico, e agora cada caso " +
                 "aparece em uma linha, na ordem em que é verificado.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Inverta a condição mais externa, retorne cedo, rode os testes e repita — cada passo é seguro, e o " +
-                "aninhamento desaparece aos poucos.",
+              type: "list",
+              items: [
+                "Quando há um caso excepcional e um caminho principal, e os `if` aninhados escondem o caminho principal.",
+                "Quando há testes para conferir cada passo: inverter, retornar cedo, rodar os testes e repetir.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Se os dois ramos são igualmente comuns, `if/else` comunica melhor que um retorno antecipado.",
+                "Guardas com resultados diferentes (mensagens de erro específicas) devem continuar separadas, não consolidadas.",
+              ],
             },
           ],
           examples: [
@@ -4943,7 +5078,7 @@ export default area({
             "Trocar um if/switch que decide o comportamento conforme o tipo de algo por classes diferentes que " +
             "implementam o mesmo método — o comportamento passa a ser escolhido pelo objeto, não por condições.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -4952,7 +5087,14 @@ export default area({
                 "conjunto de classes, cada uma com o mesmo método e a sua própria versão do comportamento. É a " +
                 "aplicação prática do Polymorphism (módulo Programming Fundamentals) como refatoração.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Se o mesmo switch por tipo se repete em vários lugares, faça cada tipo carregar o seu " +
+                "comportamento — um caso novo passa a ser uma classe nova, não uma edição espalhada.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -4970,7 +5112,7 @@ export default area({
                 "passo. Quando não usar: condicional que aparece em um só lugar, com poucos casos estáveis — nesse " +
                 "caso o switch é mais simples do que uma hierarquia de classes.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "um switch por tipo trocado por classes que sabem o seu comportamento:" },
             {
               type: "code",
@@ -5005,11 +5147,22 @@ export default area({
                 "Um novo formato (Triangle) é uma classe nova com o seu area(), sem alterar nenhuma função " +
                 "existente — em vez de encontrar e editar cada switch que fala de formas.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Se o mesmo switch por tipo se repete em vários lugares, faça cada tipo carregar o seu " +
-                "comportamento — um caso novo passa a ser uma classe nova, não uma edição espalhada.",
+              type: "list",
+              items: [
+                "Quando o mesmo `switch` por tipo se repete em várias funções e cada caso novo exige editá-las todas.",
+                "Quando a condicional tende a crescer, e cada tipo pode carregar o próprio comportamento.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Um `switch` simples e único não justifica uma hierarquia de classes: polimorfismo troca simplicidade local " +
+                "por extensibilidade.",
+                "A condicional não some: fica concentrada no ponto onde o objeto é criado.",
+              ],
             },
           ],
           examples: [
@@ -5168,7 +5321,7 @@ export default area({
             "Agrupar parâmetros que sempre viajam juntos em um único objeto com nome — a correção do smell Long " +
             "Parameter List, que também cria um lugar para o comportamento que pertence àqueles dados.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -5177,6 +5330,13 @@ export default area({
                 "Function Arguments (escrever bem) e no smell (reconhecer a violação). O ganho é maior do que " +
                 "encurtar a assinatura: o grupo ganha um nome de conceito, e esse conceito pode receber " +
                 "comportamento.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Dados que viajam juntos merecem um nome — e, com o nome, um lugar para o comportamento que os " +
+                "envolve: validações e cálculos que estavam espalhados passam a viver ali.",
             },
             { type: "heading", text: "Como fazer" },
             {
@@ -5196,7 +5356,7 @@ export default area({
                 "cálculos que eram repetidos em cada função tendem a se mudar para dentro do novo objeto, onde " +
                 "ficam em um lugar só.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "dois parâmetros que sempre andam juntos viram um objeto, que ganha comportamento:" },
             {
               type: "code",
@@ -5227,11 +5387,20 @@ export default area({
                 "A validação \"fim não pode ser antes do início\" antes teria de estar em cada função; agora está no " +
                 "construtor, uma vez. E contains é um comportamento que só faz sentido junto desses dados.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Dados que viajam juntos merecem um nome — e, com o nome, um lugar para o comportamento que os " +
-                "envolve: validações e cálculos que estavam espalhados passam a viver ali.",
+              type: "list",
+              items: [
+                "Quando os mesmos parâmetros viajam juntos por várias assinaturas e formam um conceito do domínio.",
+                "Quando validações e cálculos repetidos nos chamadores podem passar a viver no objeto.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Agrupar parâmetros sem relação entre si só esconde uma função que faz demais; nesse caso, divida a função.",
+              ],
             },
           ],
           examples: [
@@ -5377,7 +5546,7 @@ export default area({
             "Refatorar em ciclos curtos com uma rede de testes automatizados como garantia: sem testes verdes " +
             "antes e depois de cada passo, não há como saber se o comportamento foi preservado.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -5386,7 +5555,14 @@ export default area({
                 "de um ciclo curto: rodar os testes (verdes), fazer um passo pequeno, rodar de novo. Se ficarem " +
                 "vermelhos, o último passo — e só ele — é o culpado, e pode ser desfeito.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Teste verde, passo pequeno, teste verde — sem testes, refatorar é palpite; com eles, é um " +
+                "procedimento seguro que se pode desfazer a qualquer momento.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -5405,7 +5581,7 @@ export default area({
                 "interface pública, não a implementação interna; testes acoplados aos detalhes quebram a cada " +
                 "refatoração e viram um obstáculo em vez de uma rede.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "o ciclo: teste verde, um passo pequeno, teste verde:" },
             {
               type: "code",
@@ -5435,11 +5611,22 @@ export default area({
                 "Como cada passo é pequeno, uma falha aponta diretamente para a causa. Sem o ciclo, depois de vinte " +
                 "alterações seguidas, um teste vermelho deixaria a dúvida de qual delas foi a responsável.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Teste verde, passo pequeno, teste verde — sem testes, refatorar é palpite; com eles, é um " +
-                "procedimento seguro que se pode desfazer a qualquer momento.",
+              type: "list",
+              items: [
+                "Antes de qualquer refatoração relevante: teste verde, passo pequeno, teste verde.",
+                "Em código legado sem testes, começando por testes de caracterização que fixam o comportamento atual.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Testes acoplados à implementação quebram a cada refatoração, mesmo sem mudança de comportamento; teste o " +
+                "resultado, não o como.",
+                "Sem testes confiáveis, refatorar é palpite: crie a rede de segurança primeiro.",
+              ],
             },
           ],
           examples: [
