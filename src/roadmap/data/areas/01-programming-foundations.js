@@ -8932,7 +8932,7 @@ export default area({
             "execução numa única CPU; parallelism é executar várias tarefas literalmente ao mesmo tempo, em " +
             "CPUs diferentes — distinto também de async, que é sobre ordem, não sobre quantas CPUs estão em uso.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -8941,7 +8941,16 @@ export default area({
                 "avança um pouco) sem nunca rodar literalmente simultânea. Parallelism é executar várias " +
                 "tarefas literalmente ao mesmo tempo, em CPUs (ou núcleos) diferentes, de verdade em paralelo.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Concurrency é gerenciar várias tarefas em andamento, possivelmente intercaladas numa única " +
+                "CPU; parallelism é executá-las literalmente ao mesmo tempo, em CPUs diferentes — e nenhum " +
+                "dos dois é sinônimo de async, que é sobre ordem de execução, não sobre quantos núcleos estão " +
+                "em uso.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -8953,7 +8962,7 @@ export default area({
                 "Loop) mas roda numa única thread principal — não é paralelo, a menos que Web Workers (ou " +
                 "worker_threads no Node) sejam usados para rodar código em núcleos separados de verdade.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "text",
@@ -8976,13 +8985,15 @@ export default area({
                 "múltiplos núcleos, pode ser as duas coisas ao mesmo tempo (várias tarefas concorrentes, " +
                 "algumas rodando de fato em paralelo).",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Concurrency é gerenciar várias tarefas em andamento, possivelmente intercaladas numa única " +
-                "CPU; parallelism é executá-las literalmente ao mesmo tempo, em CPUs diferentes — e nenhum " +
-                "dos dois é sinônimo de async, que é sobre ordem de execução, não sobre quantos núcleos estão " +
-                "em uso.",
+              type: "list",
+              items: [
+                "Concorrência não implica paralelismo: várias tarefas podem se intercalar numa única CPU sem que duas rodem " +
+                "ao mesmo tempo.",
+                "Paralelismo só acelera o que se divide em partes independentes; a parte sequencial limita o ganho.",
+                "Nenhum dos dois é sinônimo de async: async trata da ordem de execução, e não de quantas CPUs estão em uso.",
+              ],
             },
           ],
           examples: [
@@ -9047,7 +9058,7 @@ export default area({
             "processos não podem acessar diretamente a memória um do outro, o que os torna a unidade mais " +
             "básica (e mais isolada) de execução concorrente num sistema operacional.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -9056,7 +9067,15 @@ export default area({
                 "nenhum outro processo consegue acessar diretamente. Abrir dois programas (ou duas abas de " +
                 "navegador, em muitos casos) cria dois processos separados.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Process é uma instância em execução com espaço de memória isolado do sistema operacional — " +
+                "o isolamento protege processos uns dos outros, ao custo de mais memória e trocas de contexto " +
+                "mais caras do que a alternativa mais leve (Thread).",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -9065,7 +9084,7 @@ export default area({
                 "gerenciar essa separação (mais memória usada, troca de contexto mais cara) em troca de " +
                 "segurança e estabilidade: travar um processo normalmente não derruba os outros.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "text",
@@ -9082,12 +9101,21 @@ export default area({
                 "Mesmo rodando o mesmo programa (o navegador), cada aba tem seu próprio espaço de memória " +
                 "isolado — travar uma aba não corrompe o estado da outra.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Process é uma instância em execução com espaço de memória isolado do sistema operacional — " +
-                "o isolamento protege processos uns dos outros, ao custo de mais memória e trocas de contexto " +
-                "mais caras do que a alternativa mais leve (Thread).",
+              type: "list",
+              items: [
+                "Quando o isolamento importa: uma falha ou vazamento de memória num processo não afeta os outros.",
+                "Para usar vários núcleos com segurança, como com `child_process` no Node.js.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Criar e trocar de contexto entre processos é mais caro em memória e tempo do que com threads.",
+                "Sem memória compartilhada, a comunicação exige um mecanismo explícito, como pipes ou mensagens.",
+              ],
             },
           ],
           examples: [
@@ -9155,7 +9183,7 @@ export default area({
             "outras threads daquele processo — mais leve de criar que um Process novo, mas sem o isolamento " +
             "que protegia processos uns dos outros.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -9164,7 +9192,15 @@ export default area({
                 "o MESMO espaço de memória do processo — variáveis globais, heap — só a Call Stack e alguns " +
                 "registradores são próprios de cada thread.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Thread é uma unidade de execução dentro de um Process, compartilhando memória com as demais " +
+                "threads do mesmo processo — mais leve que criar um Process novo, mas o compartilhamento de " +
+                "memória é exatamente o que introduz os problemas de concorrência estudados a seguir.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -9173,7 +9209,7 @@ export default area({
                 "total, Thread oferece uma unidade mais leve — criar e trocar entre threads custa muito menos " +
                 "do que entre processos, exatamente porque elas compartilham memória em vez de duplicá-la.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "text",
@@ -9191,12 +9227,23 @@ export default area({
                 "a mesma variável \"contador\" diretamente — é exatamente esse compartilhamento que abre a " +
                 "porta pro problema estudado no próximo Concept (Shared State).",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Thread é uma unidade de execução dentro de um Process, compartilhando memória com as demais " +
-                "threads do mesmo processo — mais leve que criar um Process novo, mas o compartilhamento de " +
-                "memória é exatamente o que introduz os problemas de concorrência estudados a seguir.",
+              type: "list",
+              items: [
+                "Para dividir uma tarefa em partes que trabalham em paralelo sobre os mesmos dados.",
+                "Quando criar um processo novo seria pesado e o compartilhamento de memória é útil.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "A memória compartilhada é a origem das race conditions e dos deadlocks; sem sincronização, o resultado é " +
+                "imprevisível.",
+                "Em JavaScript, seu código roda numa única thread; a paralelização real exige Workers, que se comunicam por " +
+                "mensagens.",
+              ],
             },
           ],
           examples: [
@@ -9260,7 +9307,7 @@ export default area({
             "pré-condição necessária para todos os problemas de concorrência estudados a seguir; dado " +
             "imutável, por definição, nunca é um problema aqui.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -9269,7 +9316,15 @@ export default area({
                 "variável global, um objeto no heap referenciado por duas threads, um arquivo que dois " +
                 "processos escrevem — todos são Shared State.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Shared State é dado mutável acessível por mais de uma execução concorrente — a pré-condição " +
+                "necessária para Race Condition e os demais problemas do módulo; dado imutável nunca é Shared " +
+                "State problemático, porque nada nele muda para haver conflito.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -9280,7 +9335,7 @@ export default area({
                 "ser lido por quantas threads quiserem ao mesmo tempo sem nenhum desses problemas — porque " +
                 "ninguém escreve nele.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "text",
@@ -9300,12 +9355,16 @@ export default area({
                 "ler e escrever nela sem coordenação, produzindo resultados que dependem de timing, não da " +
                 "lógica do programa.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Shared State é dado mutável acessível por mais de uma execução concorrente — a pré-condição " +
-                "necessária para Race Condition e os demais problemas do módulo; dado imutável nunca é Shared " +
-                "State problemático, porque nada nele muda para haver conflito.",
+              type: "list",
+              items: [
+                "Só é problema se for mutável: dado imutável pode ser compartilhado livremente, porque nada nele muda.",
+                "Um contador global e um cache compartilhado parecem inofensivos, mas qualquer escrita concorrente precisa " +
+                "de proteção.",
+                "Imutabilidade elimina o problema, mas mudanças ainda precisam ser publicadas, e a troca da referência é um " +
+                "ponto de atenção.",
+              ],
             },
           ],
           examples: [
@@ -9370,7 +9429,7 @@ export default area({
             "acessam o mesmo Shared State — o mesmo código pode produzir resultados diferentes em execuções " +
             "diferentes, dependendo só de timing.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -9379,7 +9438,15 @@ export default area({
                 "variar entre execuções. O nome vem de threads \"competindo\" (racing) pra ler/escrever o " +
                 "mesmo dado primeiro.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Race Condition é quando o resultado depende da ordem imprevisível de acesso a Shared State — " +
+                "operações que parecem atômicas (como incrementar) na verdade têm vários passos, e intercalar " +
+                "esses passos entre execuções concorrentes pode perder atualizações silenciosamente.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -9389,7 +9456,7 @@ export default area({
                 "formas que perdem uma das atualizações — sem nenhum erro visível, sem exceção, só um " +
                 "resultado numericamente errado.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "text",
@@ -9411,12 +9478,17 @@ export default area({
                 "As duas threads fizeram exatamente o que o código dizia — o bug não está numa linha " +
                 "específica, está na FALTA de coordenação entre os três passos (ler, somar, escrever) de cada uma.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Race Condition é quando o resultado depende da ordem imprevisível de acesso a Shared State — " +
-                "operações que parecem atômicas (como incrementar) na verdade têm vários passos, e intercalar " +
-                "esses passos entre execuções concorrentes pode perder atualizações silenciosamente.",
+              type: "list",
+              items: [
+                "Operações que parecem de um passo, como `count++`, têm vários passos (ler, somar, gravar), e intercalá-los " +
+                "perde atualizações.",
+                "Também ocorrem em JavaScript sem threads, quando um `await` entre ler e gravar deixa outra tarefa alterar o " +
+                "estado.",
+                "O bug é intermitente e depende de timing, por isso é difícil de reproduzir; um teste que passa não prova " +
+                "que não existe.",
+              ],
             },
           ],
           examples: [
@@ -9502,7 +9574,7 @@ export default area({
             "uma thread ao mesmo tempo — nomear essa seção é o primeiro passo antes de protegê-la com algum " +
             "mecanismo de exclusão mútua.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -9510,7 +9582,15 @@ export default area({
                 "forma que precisa de acesso exclusivo — só uma thread pode estar executando aquele trecho " +
                 "por vez, ou uma Race Condition pode acontecer.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Critical Section é o trecho de código que acessa Shared State de forma que exige exclusão " +
+                "mútua — identificar exatamente esse trecho (e só ele) é o que permite proteger o mínimo " +
+                "necessário, em vez de serializar o programa inteiro.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -9520,7 +9600,7 @@ export default area({
                 "código rodar livremente e concorrente. É também o vocabulário necessário antes de introduzir " +
                 "as ferramentas que fazem essa proteção (Mutex, Semaphore).",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "text",
@@ -9541,12 +9621,15 @@ export default area({
                 "Só as duas linhas que leem e escrevem \"saldo\" precisam de exclusão mútua — os registrarLog " +
                 "podem continuar rodando concorrentemente sem risco, porque não tocam Shared State.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Critical Section é o trecho de código que acessa Shared State de forma que exige exclusão " +
-                "mútua — identificar exatamente esse trecho (e só ele) é o que permite proteger o mínimo " +
-                "necessário, em vez de serializar o programa inteiro.",
+              type: "list",
+              items: [
+                "Uma seção crítica grande demais serializa o programa e perde o ganho da concorrência; proteja só o trecho " +
+                "que acessa o estado compartilhado.",
+                "Uma seção pequena demais, que deixa parte das operações de fora, mantém a race condition.",
+                "Identificar a seção crítica vem antes de escolher o mecanismo, seja um mutex ou uma operação atômica.",
+              ],
             },
           ],
           examples: [
@@ -9628,7 +9711,7 @@ export default area({
             "execução concorrente possa intercalar — a forma mais direta de eliminar uma Race Condition, " +
             "quando disponível.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -9637,7 +9720,15 @@ export default area({
                 "\"pela metade\". Não existe janela de tempo onde outra execução possa ler um estado " +
                 "intermediário ou intercalar sua própria escrita no meio.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Atomic Operation executa como um único passo indivisível, sem janela pra intercalar — quando " +
+                "disponível (tipicamente para operações simples, suportadas pelo hardware), elimina Race " +
+                "Condition sem precisar de um lock explícito como Mutex.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -9648,7 +9739,7 @@ export default area({
                 "Nem toda operação pode ser atômica (operações complexas geralmente não), mas operações " +
                 "simples (incrementar, comparar-e-trocar) frequentemente têm versões atômicas no hardware.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "text",
@@ -9668,12 +9759,21 @@ export default area({
                 "sempre resultam no valor correto — não existe intercalação possível, porque a operação " +
                 "inteira é tratada como uma unidade única pelo hardware.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Atomic Operation executa como um único passo indivisível, sem janela pra intercalar — quando " +
-                "disponível (tipicamente para operações simples, suportadas pelo hardware), elimina Race " +
-                "Condition sem precisar de um lock explícito como Mutex.",
+              type: "list",
+              items: [
+                "Para operações simples sobre um único valor, como incrementar um contador, sem precisar de um lock.",
+                "Com compare-and-swap, a base de muitas estruturas sem lock.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Nem tudo pode ser atômico: operações com vários passos ou variáveis precisam de um mutex.",
+                "Em JavaScript, `Atomics` só funciona sobre `SharedArrayBuffer`, e não sobre objetos comuns.",
+              ],
             },
           ],
           examples: [
@@ -9735,7 +9835,7 @@ export default area({
             "thread que tente entrar precisa esperar até a primeira liberar o lock, o mecanismo mais " +
             "direto de exclusão mútua.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -9744,7 +9844,15 @@ export default area({
                 "depois espera (bloqueada) até o mutex ser liberado. Só uma thread por vez consegue segurar o " +
                 "mutex — daí o nome, exclusão mútua.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Mutex é um lock que garante exclusão mútua sobre uma Critical Section — só uma thread " +
+                "executa o trecho protegido por vez, e qualquer outra espera até o mutex ser liberado, mesmo " +
+                "quando a Critical Section tem múltiplos passos ou variáveis.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -9754,7 +9862,7 @@ export default area({
                 "de código: em vez de depender de uma instrução atômica de hardware, ele serializa o acesso à " +
                 "Critical Section inteira, não importa quantos passos ela tenha.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "text",
@@ -9775,12 +9883,23 @@ export default area({
                 "Enquanto uma thread segura o mutex dentro de transferir, qualquer outra thread chamando " +
                 "transferir fica bloqueada em mutex.adquirir() até a primeira terminar e liberar.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Mutex é um lock que garante exclusão mútua sobre uma Critical Section — só uma thread " +
-                "executa o trecho protegido por vez, e qualquer outra espera até o mutex ser liberado, mesmo " +
-                "quando a Critical Section tem múltiplos passos ou variáveis.",
+              type: "list",
+              items: [
+                "Para proteger uma seção crítica com vários passos ou variáveis, que uma operação atômica não cobre.",
+                "Com um mutex por recurso, e não um único lock global.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Esquecer de liberar o mutex, por exemplo numa exceção, trava as outras threads para sempre; libere sempre " +
+                "num `finally`.",
+                "Vários mutexes adquiridos em ordens diferentes causam deadlock.",
+                "Cada espera por lock reduz o paralelismo; mantenha a seção protegida a menor possível.",
+              ],
             },
           ],
           examples: [
@@ -9853,7 +9972,7 @@ export default area({
             "Mutex (que permite exatamente 1) para permitir N acessos concorrentes, útil para limitar uso de " +
             "recursos como conexões ou slots de processamento.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -9863,7 +9982,15 @@ export default area({
                 "thread por vez). Um Semaphore com contador inicial N permite até N threads acessando " +
                 "simultaneamente.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Semaphore é um contador que limita quantas threads acessam um recurso concorrentemente — " +
+                "generaliza Mutex (que é o caso especial de limite 1) para permitir N acessos simultâneos, " +
+                "útil pra controlar uso de recursos limitados como conexões ou slots de processamento.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -9872,7 +9999,7 @@ export default area({
                 "Semaphore generaliza a ideia de Mutex para expressar exatamente esse limite — permitir " +
                 "concorrência controlada, não zero concorrência.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "text",
@@ -9892,12 +10019,22 @@ export default area({
                 "Até 3 chamadas de processarImagem podem estar rodando ao mesmo tempo; a 4ª chamada espera " +
                 "em semaphore.adquirir() até uma das 3 primeiras liberar.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Semaphore é um contador que limita quantas threads acessam um recurso concorrentemente — " +
-                "generaliza Mutex (que é o caso especial de limite 1) para permitir N acessos simultâneos, " +
-                "útil pra controlar uso de recursos limitados como conexões ou slots de processamento.",
+              type: "list",
+              items: [
+                "Para limitar o uso de um recurso escasso, como conexões de banco ou chamadas de rede simultâneas.",
+                "Quando até N acessos ao mesmo tempo são seguros, e não apenas um.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Não garante exclusão mútua sobre dados: com N maior que 1, várias threads entram juntas; para isso, use um " +
+                "mutex.",
+                "Sem uma ordem de fila justa, algumas threads podem esperar indefinidamente, o que é starvation.",
+              ],
             },
           ],
           examples: [
@@ -9965,7 +10102,7 @@ export default area({
             "está segurando — uma espera circular onde nenhuma consegue avançar, e o programa trava " +
             "permanentemente naquele ponto.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -9974,7 +10111,15 @@ export default area({
                 "avançar. Diferente de um bug que produz resultado errado, Deadlock trava o programa " +
                 "completamente naquele ponto, para sempre.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Deadlock é uma espera circular entre threads segurando locks que as outras precisam — o " +
+                "programa trava permanentemente naquele ponto; a causa mais comum é adquirir múltiplos locks " +
+                "em ordens diferentes entre threads diferentes.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -9984,7 +10129,7 @@ export default area({
                 "segurando. Nenhuma libera o que já tem (porque ainda não terminou), então nenhuma consegue o " +
                 "que falta.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "text",
@@ -10004,12 +10149,15 @@ export default area({
                 "Esse cenário clássico acontece quando duas transferências entre as mesmas duas contas rodam " +
                 "concorrentemente, cada uma adquirindo os mutexes das contas em ordem OPOSTA.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Deadlock é uma espera circular entre threads segurando locks que as outras precisam — o " +
-                "programa trava permanentemente naquele ponto; a causa mais comum é adquirir múltiplos locks " +
-                "em ordens diferentes entre threads diferentes.",
+              type: "list",
+              items: [
+                "A causa mais comum é adquirir vários locks em ordens diferentes em threads diferentes; adote uma ordem " +
+                "única e consistente.",
+                "Envolve duas ou mais threads: um ciclo de espera com três threads também trava tudo.",
+                "Quando acontece, o programa para em silêncio, sem erro; timeouts nas esperas ajudam a detectá-lo.",
+              ],
             },
           ],
           examples: [
@@ -10110,7 +10258,7 @@ export default area({
             "(como Deadlock), mas porque outras threads sempre passam na frente dela — uma falha de " +
             "liveness diferente, mas do mesmo tipo geral (o sistema não avança) que Deadlock.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -10119,7 +10267,15 @@ export default area({
                 "outra thread \"fura a fila\" e consegue primeiro. A thread faminta continua tecnicamente livre " +
                 "para tentar de novo, só nunca tem sucesso.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Starvation é quando uma thread nunca consegue avançar porque outras sempre passam na frente " +
+                "dela — diferente de Deadlock (ciclo de espera sem saída lógica), mas do mesmo tipo de " +
+                "problema: uma falha de liveness, onde o sistema não garante progresso pra todo mundo.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -10129,7 +10285,7 @@ export default area({
                 "prioridade, ou por azar de timing), outra thread pode acabar sempre perdendo a vez — " +
                 "starvation é o nome desse padrão de má sorte sistemática.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "text",
@@ -10149,12 +10305,15 @@ export default area({
                 "A diferença chave para Deadlock: aqui não há espera circular nem impossibilidade lógica de " +
                 "avançar — é uma questão de política de agendamento consistentemente injusta.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Starvation é quando uma thread nunca consegue avançar porque outras sempre passam na frente " +
-                "dela — diferente de Deadlock (ciclo de espera sem saída lógica), mas do mesmo tipo de " +
-                "problema: uma falha de liveness, onde o sistema não garante progresso pra todo mundo.",
+              type: "list",
+              items: [
+                "Não é um ciclo de espera como no deadlock: a thread pode avançar em tese, mas outras sempre passam na " +
+                "frente dela.",
+                "Prioridade fixa e semáforos sem ordem de fila são causas comuns.",
+                "A correção costuma ser fairness, com atendimento em ordem FIFO, ao custo de um pouco de desempenho.",
+              ],
             },
           ],
           examples: [
@@ -10214,7 +10373,7 @@ export default area({
             "threads concorrentemente, sem Race Condition, Deadlock ou Starvation — a síntese de todas as " +
             "ferramentas do módulo, combinadas ou usadas conforme o caso.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -10224,7 +10383,16 @@ export default area({
                 "indefinidamente. Não é uma ferramenta nova, é o OBJETIVO que Mutex, Semaphore, Atomic " +
                 "Operation e Immutability existem para alcançar.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Thread Safety é o objetivo de todo o módulo: código que se comporta corretamente sob " +
+                "execução concorrente, sem Race Condition, Deadlock ou Starvation — alcançado combinando " +
+                "Atomic Operation, Mutex/Semaphore e, quando possível, eliminando o problema pela raiz com " +
+                "Immutability.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -10235,7 +10403,7 @@ export default area({
                 "mutável usando Immutability, o que torna o código thread-safe por construção, sem precisar " +
                 "de locks nenhum.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "text",
@@ -10255,13 +10423,16 @@ export default area({
                 "as ferramentas do módulo são as opções disponíveis pra chegar lá, cada uma com seu trade-off " +
                 "de performance e complexidade.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Thread Safety é o objetivo de todo o módulo: código que se comporta corretamente sob " +
-                "execução concorrente, sem Race Condition, Deadlock ou Starvation — alcançado combinando " +
-                "Atomic Operation, Mutex/Semaphore e, quando possível, eliminando o problema pela raiz com " +
-                "Immutability.",
+              type: "list",
+              items: [
+                "Não existe \"thread-safe\" sem contexto: um componente seguro para uma operação pode não ser para uma " +
+                "sequência delas.",
+                "Combinar duas operações individualmente seguras não garante segurança; a sequência ainda pode ser intercalada.",
+                "A forma mais simples de obter segurança é evitar o estado mutável compartilhado, com Immutability, antes de " +
+                "adicionar locks.",
+              ],
             },
           ],
           examples: [
