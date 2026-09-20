@@ -1212,7 +1212,7 @@ export default area({
             "Cada pedaço de conhecimento — uma regra, uma constante, uma decisão — deve ter uma única " +
             "representação no sistema, para que mudá-lo exija mexer em um lugar só.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -1220,7 +1220,14 @@ export default area({
                 "autoritativa. Repare na palavra: conhecimento, não texto. O alvo não é código que \"parece igual\", " +
                 "e sim a mesma regra ou decisão escrita em mais de um lugar.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "DRY é sobre não duplicar conhecimento, não sobre não repetir texto — centralize a regra que precisa " +
+                "mudar junto, e deixe separado o que só parece igual.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -1238,7 +1245,7 @@ export default area({
                 "repetição. Uma regra prática é esperar a terceira ocorrência antes de abstrair. A manifestação " +
                 "concreta da violação, vista no código, é o smell Duplicate Code (módulo Code Smells).",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "a mesma regra de negócio escrita em dois lugares, e depois centralizada:" },
             {
               type: "code",
@@ -1278,11 +1285,16 @@ export default area({
                 "Se o frete grátis passar a valer a partir de 250, a mudança é uma linha, e a tela e o cálculo " +
                 "continuam concordando — porque as duas leem a mesma regra.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "DRY é sobre não duplicar conhecimento, não sobre não repetir texto — centralize a regra que precisa " +
-                "mudar junto, e deixe separado o que só parece igual.",
+              type: "list",
+              items: [
+                "DRY trata de conhecimento duplicado, não de texto parecido: dois trechos com o mesmo formato podem mudar " +
+                "por motivos diferentes.",
+                "Unificar duplicação acidental obriga a inventar parâmetros ou a quebrar um dos usos quando as regras se " +
+                "separarem.",
+                "Listas e dados derivados de outra fonte também contam: escrevê-los duas vezes recria o problema.",
+              ],
             },
           ],
           examples: [
@@ -1418,7 +1430,7 @@ export default area({
             "Preferir a solução mais simples que resolve o problema — complexidade tem custo de leitura, de teste " +
             "e de manutenção, e só se justifica quando compra algo que a versão simples não compra.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -1426,7 +1438,14 @@ export default area({
                 "simples de entender e de mudar. Simples aqui não quer dizer \"curta\" nem \"fácil de escrever\": " +
                 "quer dizer com poucas partes móveis e com um caminho de leitura direto.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Simples é o que se entende rápido e se muda com segurança — não o que tem menos linhas. Só aceite " +
+                "complexidade que esteja comprando algo real.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -1443,7 +1462,7 @@ export default area({
                 "linguagem ou a biblioteca padrão já oferece. KISS não é contra a complexidade necessária: se o " +
                 "problema é complexo, a solução será. A pergunta é se cada parte complexa está pagando o seu custo.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "uma solução \"esperta\" e uma simples para o mesmo problema:" },
             {
               type: "code",
@@ -1468,11 +1487,15 @@ export default area({
                 "A segunda versão é mais longa, mas é a mais simples de ler: cada regra é uma linha, na ordem em que " +
                 "é verificada, sem condições aninhadas ou lógica invertida para decifrar.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Simples é o que se entende rápido e se muda com segurança — não o que tem menos linhas. Só aceite " +
-                "complexidade que esteja comprando algo real.",
+              type: "list",
+              items: [
+                "Simples não é o que tem menos linhas: uma expressão compacta pode ser cara de ler.",
+                "Estrutura demais para um problema pequeno vira o próprio problema; introduza-a quando as regras crescerem " +
+                "de verdade.",
+                "Reimplementar o que a biblioteca padrão já oferece cria código a mais para manter.",
+              ],
             },
           ],
           examples: [
@@ -1591,7 +1614,7 @@ export default area({
             "Não construir funcionalidade nem flexibilidade antes de existir uma necessidade real — o que se " +
             "prevê que vai ser preciso quase sempre custa mais do que rende.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -1599,7 +1622,14 @@ export default area({
                 "futuro\". Ela vale para funcionalidades, opções, parâmetros e camadas de abstração: só entram no " +
                 "código quando há uma necessidade concreta e presente.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Construa para o que é preciso agora e mantenha o código fácil de mudar — o futuro imaginado quase " +
+                "nunca chega do jeito previsto.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -1618,7 +1648,7 @@ export default area({
                 "Speculative Generality (módulo Code Smells): YAGNI é o princípio, que se aplica antes de escrever; o " +
                 "smell é o resultado visível de tê-lo ignorado, ao olhar o código pronto.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "um recurso \"para o futuro\" que ninguém usa, e a versão sem ele:" },
             {
               type: "code",
@@ -1646,11 +1676,14 @@ export default area({
                 "realmente necessário, o requisito real (versão, schema, campos) provavelmente será diferente do " +
                 "que se imaginaria hoje — e adicioná-lo a uma função simples é barato.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Construa para o que é preciso agora e mantenha o código fácil de mudar — o futuro imaginado quase " +
-                "nunca chega do jeito previsto.",
+              type: "list",
+              items: [
+                "Parâmetros e opções criados \"por flexibilidade\" viram superfície a testar e a explicar, mesmo sem uso.",
+                "Uma abstração para uma troca que talvez nunca aconteça adiciona uma camada com uma única implementação.",
+                "Não vale para tudo: decisões caras de reverter, como o formato de dados já gravados, merecem previsão.",
+              ],
             },
           ],
           examples: [
@@ -1774,7 +1807,7 @@ export default area({
             "O código deve se comportar do jeito que quem lê ou usa espera — nomes, convenções e efeitos que " +
             "surpreendem são fonte de bugs, mesmo quando \"funcionam\".",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -1783,7 +1816,14 @@ export default area({
                 "getter que altera estado, um retorno de tipo diferente conforme o caso — o código está " +
                 "surpreendendo quem o usa.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Se quem lê o nome espera uma coisa e a função faz outra, o problema é do código, não de quem " +
+                "chamou — faça o comportamento coincidir com a expectativa razoável.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -1800,7 +1840,7 @@ export default area({
                 "também), retornos de tipo previsível e padrões que não escondem comportamentos perigosos. Em " +
                 "dúvida, escolha o comportamento que a maioria das pessoas assumiria.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "uma função cujo nome promete uma coisa e o corpo faz duas:" },
             {
               type: "code",
@@ -1834,11 +1874,15 @@ export default area({
                 "e gravaria no banco — um efeito que ninguém procuraria ao ler o nome getUser. Na segunda, o que " +
                 "cada função faz está na cara do nome.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Se quem lê o nome espera uma coisa e a função faz outra, o problema é do código, não de quem " +
-                "chamou — faça o comportamento coincidir com a expectativa razoável.",
+              type: "list",
+              items: [
+                "Funções irmãs com convenções diferentes (uma altera o original, outra devolve cópia) levam a erros de uso.",
+                "Devolver tipos diferentes para o mesmo caso obriga quem chama a checar tudo e permite tratar \"ausente\" " +
+                "como valor.",
+                "Um valor padrão não deve esconder uma ação destrutiva: o perigoso só acontece quando pedido de forma explícita.",
+              ],
             },
           ],
           examples: [
