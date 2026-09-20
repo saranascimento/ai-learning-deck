@@ -9440,7 +9440,7 @@ export default area({
             "A unidade básica de histórico do Git: um registro do estado do projeto com autor, data e mensagem — " +
             "que deve conter uma mudança lógica só e explicar por que ela foi feita.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -9450,7 +9450,14 @@ export default area({
                 "mudanças escolhidas vão para a área de preparação (staging area, com git add) — é isso que " +
                 "permite decidir o que entra em cada commit.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Um commit, uma mudança lógica, com uma mensagem que diz por que — o histórico só é útil se cada " +
+                "commit puder ser entendido, revertido ou movido sem levar outras coisas junto.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -9469,7 +9476,7 @@ export default area({
                 "motivo e o contexto. Mensagens como \"ajustes\", \"fix\" ou \"wip\" não ajudam ninguém que " +
                 "leia o histórico depois.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "os comandos básicos e uma função que verifica a forma de uma boa mensagem:" },
             {
               type: "code",
@@ -9505,11 +9512,21 @@ export default area({
                 "o bastante para caber nas listas do histórico (git log --oneline) e específico o bastante para ser " +
                 "útil meses depois.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Um commit, uma mudança lógica, com uma mensagem que diz por que — o histórico só é útil se cada " +
-                "commit puder ser entendido, revertido ou movido sem levar outras coisas junto.",
+              type: "list",
+              items: [
+                "Uma mudança lógica por commit, mesmo quando várias foram feitas na mesma sessão de trabalho.",
+                "Com staging parcial, quando um arquivo tem duas mudanças de propósitos diferentes.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Um commit que mistura mudanças não pode ser desfeito nem movido sem levar outras coisas junto.",
+                "Uma mensagem que só repete o diff não ajuda depois; o diff mostra o que mudou, só a mensagem registra o porquê.",
+              ],
             },
           ],
           examples: [
@@ -9625,7 +9642,7 @@ export default area({
             "Combina o trabalho de duas branches em uma, preservando o histórico de ambas — seja apenas avançando o " +
             "ponteiro (fast-forward) ou criando um novo commit de mesclagem.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -9635,7 +9652,14 @@ export default area({
                 "sem novo commit), ou um merge commit, um commit especial com dois pais que registra a junção " +
                 "de duas linhas de trabalho que divergiram.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Merge junta branches sem reescrever o histórico: avança o ponteiro quando dá, e cria um commit " +
+                "de mesclagem quando as histórias divergiram.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -9653,7 +9677,7 @@ export default area({
                 "existiu uma branch de funcionalidade; e --abort desfaz um merge em andamento se ele tomar um " +
                 "rumo indesejado (por exemplo, com conflitos).",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "o comando, e um modelo do histórico como lista que mostra quando o merge é um simples avanço:" },
             {
               type: "code",
@@ -9689,11 +9713,21 @@ export default area({
                 "as duas têm commits que a outra não tem, o Git cria um merge commit com dois pais para reunir " +
                 "as linhas.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Merge junta branches sem reescrever o histórico: avança o ponteiro quando dá, e cria um commit " +
-                "de mesclagem quando as histórias divergiram.",
+              type: "list",
+              items: [
+                "Para juntar branches sem reescrever o histórico, com fast-forward quando a destino não avançou.",
+                "Com `--no-ff`, quando a política da equipe é registrar cada funcionalidade como uma unidade.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "O fast-forward só é possível quando a branch de destino não recebeu commits novos.",
+                "Merge commits geram um grafo mais ramificado, ainda que ele reflita a verdade do trabalho em paralelo.",
+              ],
             },
           ],
           examples: [
@@ -9802,7 +9836,7 @@ export default area({
             "Reaplica os commits de uma branch sobre outra base, produzindo um histórico linear — ao custo de " +
             "reescrever esses commits (que ganham novos hashes) e da regra de não fazer isso em branches compartilhadas.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -9811,7 +9845,14 @@ export default area({
                 "a partir do ponto mais recente. É a alternativa ao merge para integrar mudanças: em vez de criar " +
                 "um commit de junção, reescreve-se a sua branch para que ela pareça ter sido feita depois.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Rebase limpa o histórico reaplicando seus commits sobre uma nova base — mas cria commits novos, então " +
+                "só reescreva o que ainda não é de mais ninguém.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -9830,7 +9871,7 @@ export default area({
                 "resultado é confusão e duplicação. O rebase é seguro em branches locais ou de uso individual, " +
                 "antes de compartilhar.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "o comando, e um modelo mostrando que os commits são refeitos sobre a nova base:" },
             {
               type: "code",
@@ -9864,11 +9905,21 @@ export default area({
                 "A linha ficou reta: A, B, E e depois o trabalho da feature. Mas C' e D' não são C e D — quem tivesse " +
                 "C e D locais agora tem commits \"órfãos\" em relação à nova história.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Rebase limpa o histórico reaplicando seus commits sobre uma nova base — mas cria commits novos, então " +
-                "só reescreva o que ainda não é de mais ninguém.",
+              type: "list",
+              items: [
+                "Para trazer as novidades da main para a sua branch antes de abrir o PR, deixando o histórico reto.",
+                "Com `git pull --rebase`, para não criar merge commits só para atualizar com o remoto.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Rebase cria commits novos (com novos hashes): nunca reescreva o que já é compartilhado; use merge.",
+                "Em branches já publicadas, exige atenção redobrada.",
+              ],
             },
           ],
           examples: [
@@ -9971,7 +10022,7 @@ export default area({
             "Um rebase que abre a lista de commits para você reordenar, editar mensagens, juntar (squash) ou descartar " +
             "— a ferramenta para limpar o histórico local antes de compartilhá-lo.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -9981,7 +10032,14 @@ export default area({
                 "reword (mudar só a mensagem), edit (parar para alterar o commit), squash (juntar ao anterior, " +
                 "combinando as mensagens), fixup (juntar ao anterior descartando a mensagem) e drop (remover).",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Use o rebase interativo para transformar o rascunho em história limpa antes de compartilhar — " +
+                "squash, reword, reordenar e descartar — e só em commits que ainda são seus.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -9997,7 +10055,7 @@ export default area({
                 "ainda não compartilhados. Se algo der errado no meio, git rebase --abort volta ao estado " +
                 "inicial, e o reflog (Concept mais adiante) permite recuperar mesmo depois de concluir.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "a lista de tarefas do rebase interativo, e uma função que ilustra o que squash faz com dois commits:" },
             {
               type: "code",
@@ -10041,11 +10099,21 @@ export default area({
                 "O trabalho é o mesmo, mas o histórico conta uma história limpa: um commit por mudança lógica, sem " +
                 "os passos intermediários do rascunho.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Use o rebase interativo para transformar o rascunho em história limpa antes de compartilhar — " +
-                "squash, reword, reordenar e descartar — e só em commits que ainda são seus.",
+              type: "list",
+              items: [
+                "Para transformar o rascunho em história limpa antes de compartilhar: squash, reword, reordenar e descartar.",
+                "Com `fixup` e `--autosquash`, para corrigir onde achou o problema e limpar tudo de uma vez no fim.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Só em commits que ainda são seus, pelos mesmos motivos do rebase comum.",
+                "Reordenar commits que dependem uns dos outros gera conflitos que precisam ser resolvidos.",
+              ],
             },
           ],
           examples: [
@@ -10161,7 +10229,7 @@ export default area({
             "O que acontece quando duas mudanças alteram a mesma parte de um arquivo e o Git não consegue decidir " +
             "sozinho qual vale — e como resolver escolhendo, combinando e verificando o resultado.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -10170,7 +10238,14 @@ export default area({
                 "marca os trechos em conflito no arquivo e espera que uma pessoa decida. Conflitos aparecem em merge, " +
                 "rebase, cherry-pick e em qualquer operação que combine mudanças.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Um conflito é uma decisão que só uma pessoa pode tomar: entenda as duas mudanças, combine o que " +
+                "for preciso, remova os marcadores e rode os testes antes de continuar.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -10189,7 +10264,7 @@ export default area({
                 "uma sem entender — e gerar um código que compila mas está errado. Se a resolução ficar complicada, " +
                 "git merge --abort (ou rebase --abort) volta ao começo.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "o arquivo com os marcadores e a versão resolvida combinando as duas intenções:" },
             {
               type: "code",
@@ -10223,11 +10298,14 @@ export default area({
                 "queria: arredondar o peso e cobrar a taxa fixa. Essa decisão exige entender as duas mudanças — e " +
                 "um teste depois, para confirmar.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Um conflito é uma decisão que só uma pessoa pode tomar: entenda as duas mudanças, combine o que " +
-                "for preciso, remova os marcadores e rode os testes antes de continuar.",
+              type: "list",
+              items: [
+                "Ficar sem marcadores não prova que o código está certo: rode os testes depois de resolver.",
+                "Manter as duas versões \"para garantir\" produz código que compila, mas se comporta de forma errada.",
+                "`--ours` e `--theirs` descartam o trabalho do outro lado; no rebase, os papéis de cada lado se invertem.",
+              ],
             },
           ],
           examples: [
@@ -10338,7 +10416,7 @@ export default area({
             "Copia um commit específico de uma branch para a atual, criando um commit novo com a mesma mudança — " +
             "útil para levar uma correção pontual sem trazer o resto do trabalho.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -10346,7 +10424,14 @@ export default area({
                 "você está, como um commit novo (com hash diferente). Ao contrário de merge e rebase, que integram " +
                 "linhas inteiras de histórico, o cherry-pick copia apenas o que você escolhe.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Cherry-pick leva só o commit que você escolhe para outra branch — ótimo para hotfixes pontuais, " +
+                "mas para trazer muita coisa, prefira merge ou rebase.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -10365,7 +10450,7 @@ export default area({
                 "original, deixando o rastro. Se você quer trazer muitas mudanças, use merge ou rebase, não " +
                 "uma sequência de cherry-picks.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "levar uma correção da main para a branch de release, e um modelo do que acontece com o commit:" },
             {
               type: "code",
@@ -10400,11 +10485,21 @@ export default area({
                 "A release ganhou a correção sem receber nenhuma das outras mudanças da main. O commit novo é uma " +
                 "cópia: o conteúdo é o mesmo, mas a identidade (o hash) é diferente.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Cherry-pick leva só o commit que você escolhe para outra branch — ótimo para hotfixes pontuais, " +
-                "mas para trazer muita coisa, prefira merge ou rebase.",
+              type: "list",
+              items: [
+                "Para levar uma correção pontual, como um hotfix numa branch de release, sem o resto do trabalho.",
+                "Com `-x`, para registrar na mensagem de onde o commit foi copiado.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Copiar commits cria duplicatas que o Git não relaciona entre si e torna o histórico menos previsível.",
+                "Se precisa copiar muitos commits, merge ou rebase costumam ser mais adequados.",
+              ],
             },
           ],
           examples: [
@@ -10510,7 +10605,7 @@ export default area({
             "Desfaz um commit criando um novo commit que aplica a mudança inversa — sem apagar nada do histórico, " +
             "o que torna a operação segura para branches compartilhadas.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -10519,7 +10614,14 @@ export default area({
                 "revert o traz de volta. O histórico fica com os dois commits — o original e o que o desfaz — e " +
                 "conta a história completa do que aconteceu.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Em uma branch compartilhada, desfaça com revert: ele adiciona um commit inverso em vez de reescrever " +
+                "o passado, e por isso ninguém é prejudicado.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -10537,7 +10639,7 @@ export default area({
                 "um revert — o que traz a mudança de volta, útil quando um problema foi corrigido e o " +
                 "recurso original pode voltar.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "o comando e um modelo em que o revert é a mudança inversa:" },
             {
               type: "code",
@@ -10573,11 +10675,22 @@ export default area({
                 "O revert é uma mudança normal, que pode ser revisada, testada e publicada como qualquer outra — e " +
                 "que registra, no histórico, que aquele commit foi desfeito.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Em uma branch compartilhada, desfaça com revert: ele adiciona um commit inverso em vez de reescrever " +
-                "o passado, e por isso ninguém é prejudicado.",
+              type: "list",
+              items: [
+                "Para desfazer um commit que já está numa branch compartilhada, sem reescrever o passado.",
+                "Para trazer de volta uma mudança revertida, revertendo o próprio revert.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Reverter um merge commit exige dizer ao Git qual linha é a principal, e reintegrar a branch depois pede " +
+                "cuidado.",
+                "O histórico continua com o commit original e o inverso: ele desfaz o efeito, não apaga a mudança.",
+              ],
             },
           ],
           examples: [
@@ -10677,7 +10790,7 @@ export default area({
             "Move o ponteiro da branch para outro commit, e (conforme o modo) também a área de preparação e os arquivos " +
             "— a forma de desfazer trabalho local, com o risco de reescrever histórico e de perder mudanças.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -10687,7 +10800,14 @@ export default area({
                 "desfaz a preparação, mas mantém os arquivos como estão; --hard descarta tudo, voltando os arquivos " +
                 "ao estado do commit.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Reset é para desfazer o que é só seu: escolha o modo pelo que quer preservar, e desconfie do " +
+                "--hard, que descarta mudanças sem volta.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -10705,7 +10825,7 @@ export default area({
                 "outros. Se você desfizer algo por engano, o reflog (próximo Concept) costuma permitir recuperar os " +
                 "commits \"perdidos\" — mas nunca as mudanças que nunca foram commitadas.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "os três modos e um modelo das três \"áreas\" que o reset pode mover:" },
             {
               type: "code",
@@ -10742,11 +10862,21 @@ export default area({
                 "Cada modo vai um passo mais fundo: soft mexe só no ponteiro, mixed também na preparação, hard nos três. " +
                 "Saber quantos lugares o comando vai mexer é a chave para usá-lo sem susto.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Reset é para desfazer o que é só seu: escolha o modo pelo que quer preservar, e desconfie do " +
-                "--hard, que descarta mudanças sem volta.",
+              type: "list",
+              items: [
+                "Para desfazer o que é só seu: `--soft` refaz o commit, `--mixed` tira arquivos da preparação.",
+                "Escolha o modo pelo que quer preservar, e desconfie de `--hard`.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "`--hard` descarta as mudanças não commitadas sem volta, e nem o reflog as recupera.",
+                "Reset reescreve o histórico da branch: não use em commits que já são compartilhados; nesse caso, `revert`.",
+              ],
             },
           ],
           examples: [
@@ -10848,7 +10978,7 @@ export default area({
             "O registro local de todos os lugares para onde o HEAD e as branches apontaram — a rede de segurança que " +
             "permite recuperar commits \"perdidos\" depois de um reset, rebase ou branch apagada.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -10857,7 +10987,14 @@ export default area({
                 "como HEAD@{0} (agora), HEAD@{1} (a posição anterior) e assim por diante, cada uma com o " +
                 "hash e o que aconteceu.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Errou um reset, rebase ou apagou uma branch? Não entre em pânico: git reflog lista onde o HEAD estava, " +
+                "e um commit commitado quase nunca está realmente perdido.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -10874,7 +11011,7 @@ export default area({
                 "apagados. E ele só registra o que foi commitado: mudanças que nunca chegaram a um commit " +
                 "(descartadas com reset --hard) não podem ser recuperadas por aqui.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "recuperar depois de um reset --hard, e um modelo do reflog como uma lista de posições:" },
             {
               type: "code",
@@ -10911,11 +11048,22 @@ export default area({
                 "Mesmo depois do reset, C3 ainda está registrado como a posição anterior. Enquanto a entrada existir, o " +
                 "commit pode ser resgatado.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Errou um reset, rebase ou apagou uma branch? Não entre em pânico: git reflog lista onde o HEAD estava, " +
-                "e um commit commitado quase nunca está realmente perdido.",
+              type: "list",
+              items: [
+                "Para recuperar uma branch apagada, já que só o nome some e os commits continuam no repositório.",
+                "Para desfazer um rebase ou reset que deu errado, voltando ao ponto anterior.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Só o que foi commitado aparece: o trabalho que nunca virou commit não tem registro.",
+                "É uma rede de segurança local e temporária, não um backup; comite (mesmo um commit temporário) antes de " +
+                "operações destrutivas.",
+              ],
             },
           ],
           examples: [
@@ -11034,7 +11182,7 @@ export default area({
             "O conjunto de regras que uma equipe adota sobre quais branches existem, quanto tempo vivem e como o " +
             "trabalho chega à principal — da integração contínua do trunk-based ao fluxo em camadas do Git Flow.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -11043,7 +11191,14 @@ export default area({
                 "viver, como o trabalho volta para a linha principal e como as versões chegam à produção. É a " +
                 "camada de fluxo de trabalho sobre as operações que você já viu (Merge, Rebase).",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "A pergunta central de uma estratégia de branching é quanto tempo o trabalho fica isolado — quanto mais " +
+                "curto, menos conflito; escolha o modelo pelo contexto da equipe, não pela moda.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -11070,7 +11225,7 @@ export default area({
                 "tempo. Equipes que entregam com frequência e têm boa automação tendem ao trunk-based; produtos " +
                 "com versões instaladas pelos clientes e releases datadas às vezes precisam do Git Flow.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "o fluxo de um dia no trunk-based, com a funcionalidade incompleta escondida por uma flag:" },
             {
               type: "code",
@@ -11105,11 +11260,14 @@ export default area({
                 "O trabalho é integrado em pedaços pequenos e frequentes, e a decisão de liberar é separada da de " +
                 "integrar. Não há uma branch de longa duração para divergir — o que remove a fonte principal de conflitos.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "A pergunta central de uma estratégia de branching é quanto tempo o trabalho fica isolado — quanto mais " +
-                "curto, menos conflito; escolha o modelo pelo contexto da equipe, não pela moda.",
+              type: "list",
+              items: [
+                "Branches de longa duração encarecem a integração: o custo de mesclar cresce mais rápido que o tempo.",
+                "Git Flow com deploys diários acrescenta cerimônia sem benefício; ele faz sentido para releases planejadas.",
+                "Trunk-based sem testes automatizados coloca a main em risco.",
+              ],
             },
           ],
           examples: [
