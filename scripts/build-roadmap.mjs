@@ -1309,6 +1309,16 @@ for (const area of model.areas()) {
     "deprecation",
     "dependency-management",
     "incremental-migration",
+    "commit",
+    "merge",
+    "rebase",
+    "interactive-rebase",
+    "merge-conflicts",
+    "cherry-pick",
+    "revert",
+    "reset",
+    "reflog",
+    "branching-strategies",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",
