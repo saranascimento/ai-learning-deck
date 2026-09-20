@@ -8051,7 +8051,7 @@ export default area({
             "O custo futuro acumulado por atalhos e decisões de projeto que aceleram a entrega hoje mas tornam " +
             "cada mudança seguinte mais lenta e arriscada — uma dívida que cobra juros até ser paga.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -8061,7 +8061,14 @@ export default area({
                 "corrigir o atalho; os juros são o custo extra pago a cada vez que se trabalha perto dele " +
                 "enquanto ele existe.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Dívida técnica é um empréstimo: às vezes vale a pena tomá-lo, mas só se for consciente, registrado " +
+                "e com plano — a dívida invisível é a que cobra os juros mais altos.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -8081,7 +8088,7 @@ export default area({
                 "poucos junto com o trabalho normal (refatorar o que se toca) e decidir de forma consciente " +
                 "quando aceitar mais.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "um atalho deliberado, registrado com o contexto necessário para ser pago:" },
             {
               type: "code",
@@ -8107,11 +8114,16 @@ export default area({
                 "muito diferente de um valor fixo esquecido no código, do qual ninguém se lembra e que vai " +
                 "aparecer como surpresa quando as taxas mudarem.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Dívida técnica é um empréstimo: às vezes vale a pena tomá-lo, mas só se for consciente, registrado " +
-                "e com plano — a dívida invisível é a que cobra os juros mais altos.",
+              type: "list",
+              items: [
+                "Dívida invisível, sem registro nem plano, é a que cobra os juros mais altos.",
+                "Nem toda dívida é falha de alguém: a prudente e deliberada é uma ferramenta, a inadvertida é o preço de " +
+                "aprender.",
+                "Esperar uma pausa para \"pagar a dívida\" raramente funciona; pequenos pagamentos no trabalho de rotina " +
+                "impedem que ela cresça.",
+              ],
             },
           ],
           examples: [
@@ -8228,7 +8240,7 @@ export default area({
             "Código que é difícil e arriscado de mudar com segurança — em geral sem testes, sem dono claro e sem o " +
             "contexto original preservado — e que, mesmo assim, é o que faz o sistema funcionar hoje.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -8238,7 +8250,14 @@ export default area({
                 "Michael Feathers, é \"código legado é código sem testes\" — útil porque sem testes não há como " +
                 "saber se uma mudança preservou o comportamento, embora não seja uma definição universal.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Legado é código que dá medo de mudar — não o jogue fora: proteja-o com testes, abra costuras e " +
+                "evolua em passos pequenos.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -8257,7 +8276,7 @@ export default area({
                 "passos pequenos, escrevendo o código novo de forma testável ao lado do antigo. A técnica de fazer " +
                 "isso de forma gradual é o tema de Incremental Migration.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "uma função legada difícil de testar, e uma costura que a torna testável sem mudar o comportamento:" },
             {
               type: "code",
@@ -8288,11 +8307,15 @@ export default area({
                 "a função passou a ter uma costura para ser testada. É uma mudança mínima, segura, que abre " +
                 "a porta para refatorar depois.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Legado é código que dá medo de mudar — não o jogue fora: proteja-o com testes, abra costuras e " +
-                "evolua em passos pequenos.",
+              type: "list",
+              items: [
+                "Reescrever do zero costuma perder conhecimento embutido e demorar mais do que o previsto.",
+                "Há exceções em que reescrever é a decisão certa, como tecnologia sem suporte ou sistema pequeno.",
+                "Não jogue o legado fora: ele é o que faz o sistema funcionar hoje; proteja-o com testes e evolua em passos " +
+                "pequenos.",
+              ],
             },
           ],
           examples: [
@@ -8427,7 +8450,7 @@ export default area({
             "Um esquema de numeração MAJOR.MINOR.PATCH em que cada número comunica o tipo de mudança — quebra de " +
             "compatibilidade, novidade compatível ou correção — para que quem usa saiba o risco de atualizar.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -8437,7 +8460,14 @@ export default area({
                 "incompatíveis — que podem quebrar quem usa. O número é uma promessa do que o software " +
                 "garante em cada atualização.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "MAJOR quebra, MINOR adiciona, PATCH corrige — o número é uma promessa sobre o risco de atualizar, " +
+                "e só vale se for classificado com honestidade.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -8455,7 +8485,7 @@ export default area({
                 "coisa pode mudar). Um sufixo como 1.0.0-beta.1 marca uma pré-versão, anterior à final. E " +
                 "sempre que MAJOR sobe, MINOR e PATCH voltam a zero.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "uma função que calcula a próxima versão conforme o tipo de mudança:" },
             {
               type: "code",
@@ -8482,11 +8512,22 @@ export default area({
                 "reconhecer o que é uma quebra de compatibilidade (assunto do próximo Concept) é o que dá " +
                 "valor ao número.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "MAJOR quebra, MINOR adiciona, PATCH corrige — o número é uma promessa sobre o risco de atualizar, " +
-                "e só vale se for classificado com honestidade.",
+              type: "list",
+              items: [
+                "Para comunicar a quem usa a biblioteca o risco de atualizar: MAJOR quebra, MINOR adiciona, PATCH corrige.",
+                "O critério é sempre o efeito sobre a API pública: remover ou renomear quebra, acrescentar não quebra.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "O número é uma promessa que só vale se a mudança for classificada com honestidade.",
+                "Versões `0.y.z` e pré-versões não prometem estabilidade: a API ainda pode mudar a qualquer momento.",
+                "Comparar versões como texto falha (\"1.10.0\" fica antes de \"1.9.0\"); compare cada parte como número.",
+              ],
             },
           ],
           examples: [
@@ -8602,7 +8643,7 @@ export default area({
             "A propriedade de uma nova versão continuar funcionando com o código, os dados e os clientes feitos " +
             "para a versão anterior — o que o SemVer promete ao subir apenas MINOR ou PATCH.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -8611,7 +8652,14 @@ export default area({
                 "exigir alterações. É a propriedade que o SemVer comunica: subir apenas MINOR ou PATCH promete " +
                 "compatibilidade; subir MAJOR avisa que ela pode ter sido quebrada.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Evolua acrescentando, não alterando ou removendo — se a mudança faz um código antigo deixar de " +
+                "funcionar, é uma quebra e precisa ser tratada como tal.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -8629,7 +8677,7 @@ export default area({
                 "compatibilidade: prefira mudanças aditivas, use padrões, ofereça um adaptador para o formato " +
                 "antigo e, quando precisar mesmo quebrar, use Deprecation e um novo MAJOR.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "a mesma evolução feita de forma compatível e de forma que quebra:" },
             {
               type: "code",
@@ -8658,11 +8706,16 @@ export default area({
                 "A diferença entre as duas versões é uma linha, mas o efeito em quem já usa a função é oposto: a " +
                 "primeira mantém todos os chamadores funcionando; a segunda os quebra silenciosamente.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Evolua acrescentando, não alterando ou removendo — se a mudança faz um código antigo deixar de " +
-                "funcionar, é uma quebra e precisa ser tratada como tal.",
+              type: "list",
+              items: [
+                "Adicionar campos só é seguro se os clientes ignoram campos desconhecidos; alterar o tipo de um campo " +
+                "existente sempre quebra.",
+                "Compatibilidade vale para tudo o que persiste entre versões (arquivos, bancos, mensagens), não só para a " +
+                "API do código.",
+                "Um nome melhor não justifica quebrar quem usa o antigo: mantenha os dois durante a transição.",
+              ],
             },
           ],
           examples: [
@@ -8777,7 +8830,7 @@ export default area({
             "O processo de avisar que algo será removido, oferecer a alternativa e dar tempo para migrar — para " +
             "poder retirar funcionalidades antigas sem quebrar quem ainda depende delas.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -8786,7 +8839,14 @@ export default area({
                 "retirada e indicando o que usar no lugar. É o mecanismo que permite remover coisas sem quebrar " +
                 "a compatibilidade de forma abrupta.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Não remova de surpresa: avise, ofereça o caminho novo, dê prazo e só então retire — de preferência " +
+                "em um novo MAJOR.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -8804,7 +8864,7 @@ export default area({
                 "MAJOR seguinte, comunicando a remoção. Remover sem aviso — ou avisar sem dizer o que fazer — é " +
                 "quebrar a confiança de quem depende de você.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "uma função marcada como obsoleta, que continua funcionando e avisa uma única vez:" },
             {
               type: "code",
@@ -8832,11 +8892,23 @@ export default area({
                 "remoção acontece, e o registro só aparece uma vez para não inundar o log. Editores costumam " +
                 "riscar automaticamente funções marcadas com @deprecated.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Não remova de surpresa: avise, ofereça o caminho novo, dê prazo e só então retire — de preferência " +
-                "em um novo MAJOR.",
+              type: "list",
+              items: [
+                "Para retirar funcionalidades antigas sem quebrar quem depende delas: avisar, oferecer a alternativa e dar " +
+                "prazo.",
+                "Depois de medir o uso, para saber quem ainda depende do que será removido.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Avisar sem dizer o que fazer não ajuda; o aviso só é útil se aponta a alternativa, o motivo e o prazo.",
+                "Remover algo ainda muito usado transforma uma limpeza em um incidente; a remoção, de preferência, vai num " +
+                "novo MAJOR.",
+              ],
             },
           ],
           examples: [
@@ -8953,7 +9025,7 @@ export default area({
             "Declarar, travar e atualizar de forma controlada as bibliotecas de terceiros de que o projeto depende — " +
             "porque cada dependência traz benefícios e também riscos de segurança, compatibilidade e manutenção.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -8962,7 +9034,14 @@ export default area({
                 "manifesto, como package.json), travar as versões exatas que foram resolvidas (o lockfile), " +
                 "entender o grafo de dependências (as diretas e as transitivas) e atualizar de forma planejada.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "O manifesto diz o que é aceitável, o lockfile diz o que foi instalado — versionem os dois, " +
+                "atualizem em pequenos passos e tratem cada dependência nova como um compromisso.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -8982,7 +9061,7 @@ export default area({
                 "abrem PRs automáticos), auditar vulnerabilidades, separar dependências de desenvolvimento e " +
                 "de produção, avaliar uma biblioteca antes de adotá-la e preferir poucas e bem mantidas.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "o que um intervalo de versão aceita — a regra que o manifesto usa por trás:" },
             {
               type: "code",
@@ -9012,11 +9091,22 @@ export default area({
                 "as que podem quebrar. O lockfile, por sua vez, fixa qual versão exata dentro do intervalo foi " +
                 "instalada, para que todos usem a mesma.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "O manifesto diz o que é aceitável, o lockfile diz o que foi instalado — versionem os dois, " +
-                "atualizem em pequenos passos e tratem cada dependência nova como um compromisso.",
+              type: "list",
+              items: [
+                "Sempre: versionar o manifesto e o lockfile para que todos, o CI e a produção instalem as mesmas versões.",
+                "Para problemas difíceis, como criptografia e parsing de formatos complexos, usar uma biblioteca madura.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Para lógica trivial, uma dependência custa mais do que economiza: é código de terceiros que você passa a " +
+                "manter.",
+                "A superfície de risco é o grafo inteiro, com as dependências transitivas, e não só a lista do manifesto.",
+              ],
             },
           ],
           examples: [
@@ -9128,7 +9218,7 @@ export default area({
             "Trocar uma parte do sistema por outra em passos pequenos e reversíveis, com o antigo e o novo " +
             "convivendo durante a transição — em vez de uma substituição total e arriscada de uma só vez.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -9137,7 +9227,14 @@ export default area({
                 "é removido quando ninguém mais depende dele. Em cada passo o sistema continua funcionando e cada " +
                 "mudança pode ser desfeita.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Não troque tudo de uma vez — deixe o antigo e o novo conviverem, migre aos poucos e remova o antigo " +
+                "só quando ninguém mais o usar.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -9157,7 +9254,7 @@ export default area({
                 "\"estrangulado\". Feature flags: liga o novo caminho para poucos usuários, mede, e amplia. " +
                 "Em todos, o critério é o mesmo: cada passo é pequeno, seguro e reversível.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "as três fases de Parallel Change ao trocar o formato de um retorno:" },
             {
               type: "code",
@@ -9189,11 +9286,23 @@ export default area({
                 "Em nenhum momento o sistema ficou quebrado: na etapa 1, os antigos chamadores continuam " +
                 "funcionando; na 2, cada migração é um pequeno commit; e a 3 só acontece quando é segura.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Não troque tudo de uma vez — deixe o antigo e o novo conviverem, migre aos poucos e remova o antigo " +
-                "só quando ninguém mais o usar.",
+              type: "list",
+              items: [
+                "Para trocar uma parte do sistema, ou o sistema inteiro (Strangler Fig), em passos pequenos e reversíveis.",
+                "Com feature flag, ligando o novo caminho para uma fração dos usuários e ampliando aos poucos.",
+                "Em mudanças de dados, como renomear uma coluna, em fases compatíveis com o código antigo e o novo.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Cada etapa precisa funcionar com as versões de código que convivem durante o deploy; uma renomeação direta " +
+                "quebraria as instâncias antigas.",
+                "O antigo só deve ser removido quando ninguém mais o usar: a convivência é transitória.",
+              ],
             },
           ],
           examples: [
