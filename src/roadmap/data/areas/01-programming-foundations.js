@@ -6832,7 +6832,7 @@ export default area({
             "tempo em segundos (que depende da máquina), mas a taxa de crescimento, o que permite comparar " +
             "algoritmos de forma independente de hardware.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -6840,7 +6840,15 @@ export default area({
                 "conforme o tamanho da entrada (n) aumenta. Não é uma medida de tempo em segundos — é uma " +
                 "medida de taxa de crescimento, abstraída de qual máquina está rodando o código.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Time Complexity mede como o número de operações de um algoritmo cresce em função do tamanho " +
+                "da entrada — não tempo em segundos, mas taxa de crescimento, o que torna algoritmos " +
+                "comparáveis independente de hardware.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -6849,7 +6857,7 @@ export default area({
                 "com o número de operações? Essa pergunta tem a mesma resposta em qualquer máquina, e é isso " +
                 "que torna algoritmos comparáveis de forma justa.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -6863,12 +6871,15 @@ export default area({
                 "(aproximadamente) o número de operações. Essa relação é ensinada com um nome próprio no " +
                 "próximo Concept (Big O).",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Time Complexity mede como o número de operações de um algoritmo cresce em função do tamanho " +
-                "da entrada — não tempo em segundos, mas taxa de crescimento, o que torna algoritmos " +
-                "comparáveis independente de hardware.",
+              type: "list",
+              items: [
+                "Complexidade descreve o crescimento, não o tempo real: um algoritmo de classe pior pode ser mais rápido " +
+                "para entradas pequenas.",
+                "Uma constante grande escondida pode pesar mais que a classe de complexidade na prática; meça antes de otimizar.",
+                "Otimizar um trecho que não domina o tempo total não muda o resultado; comece pelo que cresce mais.",
+              ],
             },
           ],
           examples: [
@@ -6933,7 +6944,7 @@ export default area({
             "Como a quantidade de memória extra que um algoritmo usa cresce conforme o tamanho da entrada " +
             "aumenta — o par natural de Time Complexity, medindo espaço em vez de tempo.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -6941,7 +6952,14 @@ export default area({
                 "da entrada original, cresce em função do tamanho da entrada. Assim como Time Complexity, não " +
                 "é uma medida em bytes exatos — é uma taxa de crescimento.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Space Complexity mede como a memória extra usada por um algoritmo cresce em função do " +
+                "tamanho da entrada — o par de Time Complexity, e às vezes um trade-off direto contra ela.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -6949,7 +6967,7 @@ export default area({
                 "trocam mais memória por menos tempo (ou vice-versa). Nomear Space Complexity separadamente " +
                 "permite raciocinar sobre esse trade-off explicitamente.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -6971,11 +6989,15 @@ export default area({
                 "sumInPlace usa uma única variável, não importa o tamanho de arr — espaço constante. " +
                 "doubleAll cria um array novo do mesmo tamanho do original — espaço proporcional a n.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Space Complexity mede como a memória extra usada por um algoritmo cresce em função do " +
-                "tamanho da entrada — o par de Time Complexity, e às vezes um trade-off direto contra ela.",
+              type: "list",
+              items: [
+                "Recursão conta: cada chamada usa um frame da call stack, então uma recursão de profundidade `n` gasta O(n) " +
+                "de espaço.",
+                "Trocar espaço por tempo, com cache, por exemplo, tem um limite: a memória também é finita.",
+                "Meça só a memória extra do algoritmo, sem contar a entrada.",
+              ],
             },
           ],
           examples: [
@@ -7030,7 +7052,7 @@ export default area({
             "A notação matemática que expressa a taxa de crescimento de um algoritmo, focando no pior caso e " +
             "ignorando constantes e termos menores — a forma padrão de comunicar Time/Space Complexity.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -7038,7 +7060,15 @@ export default area({
                 "etc. Ela descreve o comportamento assintótico do pior caso, ignorando constantes " +
                 "multiplicativas e termos de menor ordem — O(2n + 100) simplifica pra O(n).",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Big O é a notação que expressa a taxa de crescimento assintótica de um algoritmo, focando no " +
+                "pior caso e ignorando constantes e termos menores — a linguagem padrão pra comparar Time/Space " +
+                "Complexity entre algoritmos diferentes.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -7046,7 +7076,7 @@ export default area({
                 "precisa e universal: dizer que um algoritmo é O(n) e outro é O(n²) comunica imediatamente que " +
                 "o segundo vai crescer muito mais rápido, sem ambiguidade.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -7057,12 +7087,14 @@ export default area({
               type: "paragraph",
               text: "Somar O(1) com O(n) dá O(n) — Big O descarta o termo menor, porque conforme n cresce, ele se torna irrelevante.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Big O é a notação que expressa a taxa de crescimento assintótica de um algoritmo, focando no " +
-                "pior caso e ignorando constantes e termos menores — a linguagem padrão pra comparar Time/Space " +
-                "Complexity entre algoritmos diferentes.",
+              type: "list",
+              items: [
+                "Ignora constantes e termos menores: O(n) e O(2n) são a mesma classe, mas o segundo pode ser o dobro do tempo.",
+                "Foca no pior caso; o caso típico, ou o melhor, pode ser bem diferente, e o melhor caso não muda o Big O.",
+                "Blocos em sequência somam, e blocos aninhados multiplicam; confundir isso leva à classe errada.",
+              ],
             },
           ],
           examples: [
@@ -7119,7 +7151,7 @@ export default area({
             "Um catálogo das taxas de crescimento mais comuns — O(1), O(log n), O(n), O(n log n), O(n²) — " +
             "cada uma com um exemplo canônico, pra reconhecer de cara qual classe um algoritmo pertence.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -7127,7 +7159,15 @@ export default area({
                 "prática, da mais rápida pra mais lenta: O(1) constante, O(log n) logarítmica, O(n) linear, " +
                 "O(n log n) linearítmica, O(n²) quadrática.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "As classes de crescimento mais comuns, da mais rápida pra mais lenta, são O(1), O(log n), " +
+                "O(n), O(n log n), O(n²) — cada uma com um padrão de código reconhecível, que vale a pena " +
+                "memorizar pra acelerar análise de complexidade no dia a dia.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -7135,7 +7175,7 @@ export default area({
                 "repertório de exemplos canônicos acelera muito a análise de código novo, porque a maioria " +
                 "dos algoritmos do dia a dia se encaixa numa dessas classes já vistas antes.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "paragraph",
               text: "As 5 classes, uma linha cada, do mais rápido ao mais lento:",
@@ -7157,12 +7197,15 @@ export default area({
               text:
                 "Memorizar esses padrões torna reconhecer complexidade em código novo muito mais rápido.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "As classes de crescimento mais comuns, da mais rápida pra mais lenta, são O(1), O(log n), " +
-                "O(n), O(n log n), O(n²) — cada uma com um padrão de código reconhecível, que vale a pena " +
-                "memorizar pra acelerar análise de complexidade no dia a dia.",
+              type: "list",
+              items: [
+                "Um laço não significa sempre O(n): o que conta é quanto do problema cada passo elimina ou repete.",
+                "O(n²) escondida, como uma busca linear dentro de um laço, é a origem comum de lentidão que só aparece com " +
+                "dados grandes.",
+                "O catálogo é um atalho para reconhecer padrões, e não substitui contar as operações.",
+              ],
             },
           ],
           examples: [
@@ -7243,7 +7286,7 @@ export default area({
             "terminar a coleção) — a estratégia mais simples possível, O(n) no pior caso, e a única opção " +
             "quando os dados não estão ordenados.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -7251,7 +7294,15 @@ export default area({
                 "procurado, até encontrar uma correspondência ou chegar ao fim. É a estratégia de busca mais " +
                 "direta possível — sem nenhuma suposição sobre a organização dos dados.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Linear Search percorre elemento por elemento até encontrar (ou esgotar a coleção) — O(n) no " +
+                "pior caso, simples e sem exigir ordenação prévia, mas o padrão de busca mais lento entre as " +
+                "opções deste módulo.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -7259,7 +7310,7 @@ export default area({
                 "ordenação, não tem como \"pular\" partes com segurança. No pior caso, Linear Search precisa " +
                 "examinar todos os n elementos — O(n).",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -7270,12 +7321,22 @@ export default area({
               type: "paragraph",
               text: "No pior caso, o loop examina todos os n elementos antes de concluir que o valor não está presente — O(n).",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Linear Search percorre elemento por elemento até encontrar (ou esgotar a coleção) — O(n) no " +
-                "pior caso, simples e sem exigir ordenação prévia, mas o padrão de busca mais lento entre as " +
-                "opções deste módulo.",
+              type: "list",
+              items: [
+                "Quando os dados não estão ordenados ou a coleção é pequena.",
+                "Quando a condição é arbitrária, como um predicado, e não uma simples igualdade.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Em coleções grandes e buscadas com frequência, O(n) a cada busca pesa; ordene e use busca binária, ou use " +
+                "um Set ou Hash Table.",
+                "O melhor caso, achar na primeira posição, não muda o Big O, que é do pior caso.",
+              ],
             },
           ],
           examples: [
@@ -7323,7 +7384,7 @@ export default area({
             "Buscar um valor descartando metade do espaço de busca a cada passo — exige dados ordenados, mas " +
             "em troca entrega O(log n), muito mais rápido que percorrer tudo linearmente.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -7332,7 +7393,14 @@ export default area({
                 "maior, só pode estar na direita. O mesmo princípio já visto na busca dentro de uma Binary " +
                 "Search Tree.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Binary Search descarta metade do espaço de busca a cada comparação, dando O(log n) — muito " +
+                "mais rápido que Linear Search, mas exige que os dados estejam ordenados como pré-requisito.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -7340,7 +7408,7 @@ export default area({
                 "dados estão ordenados, cada comparação elimina metade do que resta — O(log n). O preço é o " +
                 "pré-requisito: os dados precisam estar ordenados antes de começar.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -7364,11 +7432,21 @@ export default area({
                 "Pra um array de 1 milhão de elementos, no máximo ~20 comparações são necessárias " +
                 "(log₂ 1.000.000 ≈ 20).",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Binary Search descarta metade do espaço de busca a cada comparação, dando O(log n) — muito " +
-                "mais rápido que Linear Search, mas exige que os dados estejam ordenados como pré-requisito.",
+              type: "list",
+              items: [
+                "Em coleções ordenadas e grandes, onde descartar metade a cada passo faz uma grande diferença.",
+                "Quando você fará muitas buscas sobre os mesmos dados, para compensar o custo de ordenar uma vez.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Exige dados ordenados; em dados não ordenados o resultado é errado, sem nenhum aviso.",
+                "Para uma única busca em dados desordenados, ordenar antes custa mais que uma busca linear.",
+              ],
             },
           ],
           examples: [
@@ -7459,7 +7537,7 @@ export default area({
             "Ordenar uma coleção — o problema clássico que ilustra melhor do que qualquer outro a diferença " +
             "prática entre uma abordagem O(n²) ingênua e uma O(n log n) eficiente.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -7469,7 +7547,15 @@ export default area({
                 "(O(n log n), como Merge Sort, Quick Sort — os mesmos usados internamente por .sort() na " +
                 "maioria das linguagens modernas).",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Sorting divide algoritmos em ingênuos O(n²) (comparações par a par repetidas) e eficientes " +
+                "O(n log n) (que dividem o problema em vez de comparar tudo com tudo) — como a estratégia de " +
+                "um algoritmo determina sua classe de complexidade, não só o problema em si.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -7478,7 +7564,7 @@ export default area({
                 "e os eficientes conseguem O(n log n) (usam divisão do problema) é uma lente que se aplica a " +
                 "muitos outros problemas de algoritmos.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "paragraph",
               text: "Bubble Sort, o ingênuo mais didático:",
@@ -7504,12 +7590,22 @@ export default area({
               type: "paragraph",
               text: "Dois loops aninhados, comparando pares vizinhos repetidamente — o padrão clássico de O(n²).",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Sorting divide algoritmos em ingênuos O(n²) (comparações par a par repetidas) e eficientes " +
-                "O(n log n) (que dividem o problema em vez de comparar tudo com tudo) — como a estratégia de " +
-                "um algoritmo determina sua classe de complexidade, não só o problema em si.",
+              type: "list",
+              items: [
+                "Antes de uma busca binária, ou quando o resultado precisa ser apresentado em ordem.",
+                "Com o `.sort()` nativo em quase todos os casos: ele já usa um algoritmo eficiente.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Algoritmos ingênuos, como Selection Sort, são O(n²) e só servem para aprender ou para coleções minúsculas.",
+                "O `.sort()` do JavaScript ordena como texto por padrão e altera o array original; passe uma função de " +
+                "comparação para números.",
+              ],
             },
           ],
           examples: [
@@ -7580,7 +7676,7 @@ export default area({
             "mesmo problema — cada chamada empilha um frame na Call Stack, até alcançar um caso base que " +
             "interrompe a recursão.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -7589,7 +7685,15 @@ export default area({
                 "bastante pra resolver diretamente. Já vimos a mecânica por trás disso em Call Stack: cada " +
                 "chamada recursiva empilha um novo frame.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Recursion resolve um problema chamando a própria função com uma versão menor do mesmo " +
+                "problema, até um caso base — cada chamada usa um frame da Call Stack, e toda recursão " +
+                "precisa de um caso base efetivamente alcançável, ou o resultado é um stack overflow.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -7598,7 +7702,7 @@ export default area({
                 "chamada é uma busca menor). Recursion expressa a solução de forma direta, espelhando a " +
                 "própria definição do problema.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -7611,12 +7715,23 @@ export default area({
                 "factorial(5) chama factorial(4), que chama factorial(3), até factorial(1) (o caso base) " +
                 "parar a cadeia — cada chamada empilha um frame na Call Stack.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Recursion resolve um problema chamando a própria função com uma versão menor do mesmo " +
-                "problema, até um caso base — cada chamada usa um frame da Call Stack, e toda recursão " +
-                "precisa de um caso base efetivamente alcançável, ou o resultado é um stack overflow.",
+              type: "list",
+              items: [
+                "Quando o problema se divide em versões menores dele mesmo, como percorrer uma árvore.",
+                "Quando a versão recursiva é bem mais clara que uma iterativa com pilha manual.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Sem um caso base alcançável, ou com profundidade demais, a recursão termina em stack overflow.",
+                "Chamadas múltiplas podem repetir o mesmo cálculo, como no Fibonacci ingênuo; use memoization ou uma versão " +
+                "iterativa.",
+                "Nem toda linguagem otimiza a recursão de cauda; não conte com isso para profundidades grandes.",
+              ],
             },
           ],
           examples: [
@@ -7665,7 +7780,7 @@ export default area({
             "mesmo resultado de novo — só funciona com segurança sobre Pure Functions, e resolve diretamente " +
             "o problema de recursão exponencial visto em Fibonacci.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -7673,7 +7788,15 @@ export default area({
                 "uma função, indexados pelos argumentos de entrada — na próxima vez que a função for chamada " +
                 "com os mesmos argumentos, o resultado é devolvido direto do cache, sem recalcular.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Memoization guarda resultados de chamadas anteriores num cache, evitando recalcular o mesmo " +
+                "resultado — só funciona com segurança sobre Pure Functions, e resolve diretamente a recursão " +
+                "exponencial redundante que algoritmos como Fibonacci recursivo ingênuo produzem.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -7682,7 +7805,7 @@ export default area({
                 "reaproveita nas próximas vezes. Só é seguro fazer isso com Pure Functions — se o resultado " +
                 "pudesse variar pro mesmo input, o cache devolveria respostas erradas.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -7709,12 +7832,21 @@ export default area({
                 "memoize é uma Higher-Order Function que envolve qualquer função pura com um cache — cada n " +
                 "só é calculado uma vez.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Memoization guarda resultados de chamadas anteriores num cache, evitando recalcular o mesmo " +
-                "resultado — só funciona com segurança sobre Pure Functions, e resolve diretamente a recursão " +
-                "exponencial redundante que algoritmos como Fibonacci recursivo ingênuo produzem.",
+              type: "list",
+              items: [
+                "Quando a mesma chamada, com os mesmos argumentos, se repete, como na recursão exponencial de Fibonacci.",
+                "Em funções puras e caras de calcular, chamadas muitas vezes.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Só é seguro sobre funções puras: com uma função impura, o cache devolve um valor que já não é o certo.",
+                "O cache consome memória e cresce sem limite se não houver uma política de descarte.",
+              ],
             },
           ],
           examples: [
