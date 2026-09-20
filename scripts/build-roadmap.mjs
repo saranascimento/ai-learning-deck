@@ -1324,6 +1324,15 @@ for (const area of model.areas()) {
     "adr",
     "rfc",
     "runbook",
+    "object-vs-class",
+    "identity",
+    "entity",
+    "value-object",
+    "mutable-vs-immutable-objects",
+    "tell-don-t-ask",
+    "law-of-demeter-principle-of-least-knowledge",
+    "anemic-domain-model",
+    "rich-domain-model",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",
