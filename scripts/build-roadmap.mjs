@@ -1319,6 +1319,11 @@ for (const area of model.areas()) {
     "reset",
     "reflog",
     "branching-strategies",
+    "readme",
+    "changelog",
+    "adr",
+    "rfc",
+    "runbook",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",

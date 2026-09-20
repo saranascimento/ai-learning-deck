@@ -10590,14 +10590,1008 @@ export default area({
       summary: "Do ponto de entrada de um repositório até a documentação operacional: README → Changelog → ADR → RFC → Runbook.",
       suggestions: ["API Documentation (Platform / API Fundamentals, futuro)"],
       concepts: [
-        concept({ order: 10, title: "README", note: "ponto de entrada de um repositório/projeto" }),
-        concept({ order: 20, title: "Changelog", note: "registro por mudança" }),
-        concept({ order: 30, title: "ADR", note: "Architecture Decision Record — registro por decisão" }),
-        concept({ order: 40, title: "RFC", note: "proposta pré-decisão para mudanças maiores" }),
+        concept({
+          order: 10,
+          title: "README",
+          note: "ponto de entrada de um repositório/projeto",
+          summary:
+            "O primeiro documento que quem chega a um projeto lê: diz o que ele é, como instalá-lo e rodá-lo, como " +
+            "usá-lo e como contribuir — o suficiente para começar em poucos minutos.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "O README é o arquivo na raiz de um repositório (geralmente README.md) que funciona como a porta de " +
+                "entrada do projeto. É a primeira coisa que aparece em plataformas como o GitHub e, para muita gente, " +
+                "a única documentação que será lida. Seu objetivo é responder rapidamente: o que é isto, para que " +
+                "serve, como eu começo?",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Sem um README, quem chega ao projeto — uma pessoa nova na equipe, alguém que quer usar a biblioteca, você " +
+                "mesma seis meses depois — precisa adivinhar como ele funciona ou interromper alguém para perguntar. " +
+                "Um README bom transforma \"perdi uma tarde tentando rodar\" em \"funcionou em cinco minutos\", e " +
+                "reduz perguntas repetidas para a equipe. Ele também funciona como teste do próprio projeto: se é " +
+                "difícil explicar como instalar, provavelmente é difícil de instalar.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "O que costuma conter, nesta ordem: o nome e uma frase que diz o que o projeto faz; um guia rápido " +
+                "(quickstart) com os passos mínimos para rodar; exemplos de uso; como rodar os testes e configurar o " +
+                "ambiente de desenvolvimento; como contribuir; e a licença. O README não deve tentar ser toda a " +
+                "documentação — quando o assunto crescer, ele aponta para documentos mais detalhados. O maior " +
+                "risco é ficar desatualizado: um README com comandos que não funcionam é pior que nenhum.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "a estrutura essencial e uma função que verifica se as seções básicas existem:" },
+            {
+              type: "code",
+              language: "text",
+              filename: "README.md",
+              code: [
+                "# slug-it",
+                "Converte textos em URLs amigáveis (\"Olá, mundo!\" → \"ola-mundo\").",
+                "",
+                "## Instalação",
+                "    npm install slug-it",
+                "",
+                "## Uso",
+                "    import { slugify } from \"slug-it\";",
+                "    slugify(\"Olá, mundo!\"); // \"ola-mundo\"",
+                "",
+                "## Desenvolvimento",
+                "    npm install && npm test",
+                "",
+                "## Licença",
+                "MIT",
+              ].join("\n"),
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "check-readme.js",
+              code: [
+                "const REQUIRED_SECTIONS = [\"Instalação\", \"Uso\", \"Licença\"];",
+                "",
+                "function missingSections(readmeText) {",
+                "  return REQUIRED_SECTIONS.filter((section) => !readmeText.includes(\"## \" + section));",
+                "}",
+                "",
+                "missingSections(\"# app\\n## Uso\");   // [\"Instalação\", \"Licença\"]",
+                "// Rodar isto no CI impede que o README volte a ficar sem o essencial.",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Em poucas linhas, quem chega sabe o que é o projeto, como instalá-lo e usá-lo. Verificações simples " +
+                "no CI ajudam a manter o mínimo, mas o que garante a utilidade é alguém seguir os passos de verdade.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "O README responde \"o que é, como rodo, como uso\" em minutos — e só vale se os passos escritos " +
+                "funcionarem de fato.",
+            },
+          ],
+          examples: [
+            {
+              title: "Um README que só tem o título",
+              context: "Um repositório sem orientação deixa a pessoa recém-chegada adivinhando tudo.",
+              code: {
+                language: "text",
+                filename: "bad-readme.md",
+                code: [
+                  "# projeto-x",
+                  "",
+                  "(nada mais)",
+                  "",
+                  "Perguntas que a pessoa precisa fazer a alguém:",
+                  "  O que isto faz? Que versão do Node? Como configuro o banco? Como rodo os testes?",
+                  "  Onde estão as variáveis de ambiente? Quem mantém isto?",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada pergunta sem resposta escrita vira uma interrupção para alguém da equipe, repetida para cada " +
+                "pessoa nova. Uma hora escrevendo o README economiza dezenas de horas de perguntas.",
+            },
+            {
+              title: "Um quickstart que realmente funciona",
+              context: "Os passos do README devem levar do zero ao projeto rodando, sem conhecimento oculto.",
+              code: {
+                language: "text",
+                filename: "quickstart.md",
+                code: [
+                  "## Começando",
+                  "Requisitos: Node 20+ e Docker.",
+                  "",
+                  "    git clone https://github.com/empresa/projeto-x && cd projeto-x",
+                  "    cp .env.example .env          # ajuste DATABASE_URL se necessário",
+                  "    docker compose up -d db       # sobe o banco local",
+                  "    npm install",
+                  "    npm run dev                   # http://localhost:3000",
+                  "",
+                  "Para rodar os testes: `npm test`",
+                ].join("\n"),
+              },
+              explanation:
+                "Os requisitos, os comandos na ordem certa e o resultado esperado (onde abrir) estão explícitos. O " +
+                "teste do README é simples: alguém que nunca viu o projeto consegue seguir e chegar lá?",
+            },
+            {
+              title: "Testar o README como se testa o código",
+              context: "O jeito mais confiável de evitar um README desatualizado é executá-lo automaticamente.",
+              code: {
+                language: "javascript",
+                filename: "test-readme-example.js",
+                code: [
+                  "import { slugify } from \"slug-it\";",
+                  "import assert from \"node:assert\";",
+                  "",
+                  "// O exemplo do README, transformado em teste: se a API mudar, o CI quebra",
+                  "assert.strictEqual(slugify(\"Olá, mundo!\"), \"ola-mundo\");",
+                ].join("\n"),
+              },
+              explanation:
+                "Exemplos de código no README que não são executados envelhecem em silêncio. Um teste que os roda avisa " +
+                "quando a documentação e o código se separam.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Você criou uma pequena biblioteca chamada \"date-range\", que dado um início e um fim devolve a lista " +
+              "de dias entre eles. Ela precisa de um README.",
+            problemCode: {
+              language: "javascript",
+              filename: "date-range.js",
+              code: [
+                "export function daysBetween(start, end) {",
+                "  const days = [];",
+                "  for (let day = new Date(start); day <= new Date(end); day.setDate(day.getDate() + 1)) {",
+                "    days.push(day.toISOString().slice(0, 10));",
+                "  }",
+                "  return days;",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Escreva um README com o essencial: o que é, instalação, exemplo de uso com o resultado, como rodar " +
+              "os testes e licença.",
+            hint: "Comece pela frase que diz o que a biblioteca faz e mostre um exemplo concreto com entrada e saída.",
+            solution: {
+              code: {
+                language: "text",
+                filename: "README.md",
+                code: [
+                  "# date-range",
+                  "Lista os dias entre duas datas, incluindo as duas pontas.",
+                  "",
+                  "## Instalação",
+                  "    npm install date-range",
+                  "",
+                  "## Uso",
+                  "    import { daysBetween } from \"date-range\";",
+                  "",
+                  "    daysBetween(\"2026-03-01\", \"2026-03-03\");",
+                  "    // [\"2026-03-01\", \"2026-03-02\", \"2026-03-03\"]",
+                  "",
+                  "## Desenvolvimento",
+                  "    npm install",
+                  "    npm test",
+                  "",
+                  "## Licença",
+                  "MIT",
+                ].join("\n"),
+              },
+              explanation:
+                "Em vinte linhas, uma pessoa entende para que serve, instala, vê a entrada e a saída de um exemplo real e sabe " +
+                "como rodar os testes. O exemplo com resultado é a parte mais valiosa: mostra o que a função devolve.",
+            },
+          },
+        }),
+        concept({
+          order: 20,
+          title: "Changelog",
+          note: "registro por mudança",
+          summary:
+            "O registro, organizado por versão, das mudanças relevantes de um projeto — escrito para quem o usa, " +
+            "para que saiba o que mudou, o que corrigiu e o que pode quebrar antes de atualizar.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "O changelog (CHANGELOG.md) é a lista de mudanças notáveis de cada versão de um projeto, da mais recente " +
+                "para a mais antiga. Ele responde à pergunta de quem usa o software: \"o que mudou desde a versão que eu " +
+                "tenho?\". Uma convenção muito usada, o Keep a Changelog, agrupa as entradas em categorias: Added " +
+                "(novidades), Changed (mudanças), Deprecated (marcado como obsoleto), Removed (removido), Fixed " +
+                "(correções) e Security (segurança).",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "O número da versão diz o quanto mudou (Semantic Versioning), mas não o quê. Sem um changelog, " +
+                "quem quer atualizar precisa ler o histórico de commits ou testar às cegas. O changelog é escrito " +
+                "para pessoas que usam o projeto, não para quem o desenvolve, então descreve o efeito de cada " +
+                "mudança (\"o filtro agora aceita datas relativas\"), e não a implementação (\"refatorado o " +
+                "módulo de filtros\").",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Boas práticas: manter uma seção \"Unreleased\" no topo, atualizada a cada mudança relevante, que vira " +
+                "uma versão numerada na hora do lançamento; usar datas no formato AAAA-MM-DD; destacar as mudanças que " +
+                "quebram compatibilidade, com a indicação de como migrar; e não confundir com o log do Git — despejar " +
+                "os commits em um arquivo não é um changelog, porque a maior parte dos commits não interessa a quem usa.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "um changelog no formato comum e uma função que agrupa mudanças por categoria:" },
+            {
+              type: "code",
+              language: "text",
+              filename: "CHANGELOG.md",
+              code: [
+                "# Changelog",
+                "",
+                "## [Unreleased]",
+                "### Added",
+                "- Suporte a datas relativas no filtro (`\"últimos 7 dias\"`).",
+                "",
+                "## [2.1.0] - 2026-03-15",
+                "### Added",
+                "- Exportação de relatórios em CSV.",
+                "### Fixed",
+                "- O total mensal ignorava pedidos estornados.",
+                "",
+                "## [2.0.0] - 2026-01-20",
+                "### Removed",
+                "- **Breaking:** a função `formatLegacy()` foi removida; use `formatDate()`.",
+              ].join("\n"),
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "build-changelog.js",
+              code: [
+                "function groupByCategory(entries) {",
+                "  const groups = {};",
+                "  for (const entry of entries) {",
+                "    (groups[entry.category] ??= []).push(entry.text);",
+                "  }",
+                "  return groups;",
+                "}",
+                "",
+                "groupByCategory([",
+                "  { category: \"Added\", text: \"Exportação em CSV\" },",
+                "  { category: \"Fixed\", text: \"Total mensal com estornos\" },",
+                "  { category: \"Added\", text: \"Filtro por data relativa\" },",
+                "]);",
+                "// { Added: [\"Exportação em CSV\", \"Filtro por data relativa\"], Fixed: [\"Total mensal com estornos\"] }",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Cada versão traz as mudanças agrupadas por tipo, na linguagem de quem usa o projeto. A mudança que " +
+                "quebra compatibilidade está marcada e indica o que usar no lugar.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "O changelog é escrito para quem usa, não para quem desenvolve: diga o que mudou para eles, agrupado " +
+                "por versão, e destaque tudo o que pode quebrar.",
+            },
+          ],
+          examples: [
+            {
+              title: "Log do Git despejado versus changelog",
+              context: "Os commits registram o trabalho de quem desenvolve; o changelog registra o efeito para quem usa.",
+              code: {
+                language: "text",
+                filename: "git-log-vs-changelog.txt",
+                code: [
+                  "Despejo do git log (ruim para quem usa):",
+                  "  a1b2c3 refatora o módulo de filtros",
+                  "  d4e5f6 wip",
+                  "  7a8b9c corrige typo",
+                  "  0d1e2f atualiza dependências",
+                  "",
+                  "Changelog (útil para quem usa):",
+                  "  ### Added",
+                  "  - O filtro agora aceita datas relativas, como \"últimos 7 dias\".",
+                  "  ### Fixed",
+                  "  - Filtros por data não respeitavam o fuso horário do usuário.",
+                ].join("\n"),
+              },
+              explanation:
+                "A refatoração, o wip e o typo não afetam quem usa; o que importa é o efeito visível. Escrever o " +
+                "changelog é uma tradução do que foi feito para o que muda para as pessoas.",
+            },
+            {
+              title: "Destacar mudanças que quebram",
+              context: "Quem atualiza precisa descobrir de imediato o que exigirá ação da sua parte.",
+              code: {
+                language: "text",
+                filename: "breaking-changes.md",
+                code: [
+                  "## [3.0.0] - 2026-06-01",
+                  "### Changed",
+                  "- **Breaking:** `listOrders()` agora devolve `{ items, nextCursor }` em vez de um array.",
+                  "  Migração: troque `orders.map(...)` por `orders.items.map(...)`.",
+                  "### Removed",
+                  "- **Breaking:** suporte ao Node 16. A versão mínima é o Node 18.",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada mudança que quebra compatibilidade traz o que mudou e como migrar. Isso complementa o número " +
+                "MAJOR da versão (SemVer) com o que a pessoa realmente precisa fazer.",
+            },
+            {
+              title: "O fluxo da seção Unreleased",
+              context: "Escrever o changelog no momento da mudança é bem mais fácil do que reconstruí-lo no dia do lançamento.",
+              code: {
+                language: "text",
+                filename: "unreleased-flow.txt",
+                code: [
+                  "1. Cada PR relevante acrescenta uma linha em \"## [Unreleased]\" (parte da revisão).",
+                  "2. No lançamento, \"Unreleased\" é renomeada para a versão e a data:",
+                  "     ## [2.2.0] - 2026-04-10",
+                  "3. Uma nova seção \"## [Unreleased]\" vazia é criada no topo.",
+                  "4. Os links de comparação no rodapé são atualizados:",
+                  "     [2.2.0]: https://github.com/empresa/projeto/compare/v2.1.0...v2.2.0",
+                ].join("\n"),
+              },
+              explanation:
+                "Quem faz a mudança é quem melhor sabe descrevê-la, e a informação é escrita enquanto está fresca. No " +
+                "lançamento, o changelog já está pronto.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Você está preparando a versão 2.0.0 de uma biblioteca de pagamentos. Estes são os commits desde a " +
+              "última versão.",
+            problemCode: {
+              language: "text",
+              filename: "commits.txt",
+              code: [
+                "refatora PaymentGateway para usar fetch",
+                "corrige o cálculo de juros em parcelamentos de 12x",
+                "adiciona suporte a pagamento por Pix",
+                "remove a função chargeLegacy()",
+                "atualiza dependências de desenvolvimento",
+                "wip",
+              ].join("\n"),
+            },
+            task:
+              "Escreva a entrada do changelog para a versão 2.0.0 (com data), agrupada por categoria, deixando " +
+              "de fora o que não interessa a quem usa e destacando a mudança que quebra compatibilidade.",
+            hint: "A refatoração, a atualização de dependências de desenvolvimento e o wip não afetam quem usa. A remoção de chargeLegacy() é uma quebra.",
+            solution: {
+              code: {
+                language: "text",
+                filename: "CHANGELOG.md",
+                code: [
+                  "## [2.0.0] - 2026-05-12",
+                  "### Added",
+                  "- Suporte a pagamento por Pix.",
+                  "### Fixed",
+                  "- O cálculo de juros em parcelamentos de 12x estava incorreto.",
+                  "### Removed",
+                  "- **Breaking:** a função `chargeLegacy()` foi removida; use `charge()`.",
+                ].join("\n"),
+              },
+              explanation:
+                "Três categorias, na linguagem de quem usa a biblioteca. A refatoração interna, as dependências de " +
+                "desenvolvimento e o wip ficaram de fora porque não mudam nada para o usuário, e a remoção " +
+                "aparece como quebra (o que também justifica o MAJOR 2.0.0).",
+            },
+          },
+        }),
+        concept({
+          order: 30,
+          title: "ADR",
+          note: "Architecture Decision Record — registro por decisão",
+          summary:
+            "Um documento curto que registra uma decisão de arquitetura — o contexto, o que foi decidido e suas " +
+            "consequências — para que o porquê não se perca quando as pessoas e a memória mudarem.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Um ADR (Architecture Decision Record) é um registro curto de uma única decisão importante: qual " +
+                "problema havia (contexto), o que se decidiu, por quê, e o que isso implica (consequências). Costuma ser um " +
+                "arquivo de texto no próprio repositório, numerado em sequência (docs/adr/0007-usar-postgresql.md), " +
+                "com um status: proposto, aceito, rejeitado ou substituído.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "O código mostra o que foi feito, mas raramente por quê. Seis meses depois, alguém encontra uma " +
+                "escolha estranha — um banco de dados incomum, um serviço separado — e não sabe se foi deliberada ou " +
+                "um acidente; ou a desfaz sem saber do problema que ela resolvia, ou a mantém por medo. O ADR guarda o " +
+                "raciocínio original, inclusive as alternativas descartadas, para que a decisão possa ser " +
+                "revisada com informação, não com adivinhação.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Características: curto (uma página), sobre uma decisão só, escrito no momento em que ela é tomada e " +
+                "guardado junto ao código. Um ADR aceito não é editado quando o mundo muda; ele é substituído por um " +
+                "novo, que aponta para o anterior — o histórico das decisões (e do seu porquê) permanece. Escreva um ADR para " +
+                "decisões difíceis de reverter, com impacto amplo ou que gerariam a pergunta \"por que fizeram assim?\".",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "a estrutura de um ADR e uma função que gera o esqueleto com o nome de arquivo padronizado:" },
+            {
+              type: "code",
+              language: "text",
+              filename: "docs/adr/0007-usar-postgresql.md",
+              code: [
+                "# 7. Usar PostgreSQL como banco principal",
+                "",
+                "Status: Aceito (2026-03-10)",
+                "",
+                "## Contexto",
+                "Precisamos de transações e consultas relacionais entre pedidos e clientes. A equipe já conhece SQL.",
+                "",
+                "## Decisão",
+                "Usaremos PostgreSQL. Descartamos MongoDB (sem transações entre coleções na época) e MySQL (a equipe",
+                "prefere os tipos JSON e as extensões do PostgreSQL).",
+                "",
+                "## Consequências",
+                "+ Consistência transacional e consultas com JOIN.",
+                "- Precisaremos operar o banco (backups, upgrades) — ou usar um serviço gerenciado.",
+              ].join("\n"),
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "new-adr.js",
+              code: [
+                "function newAdr(number, title) {",
+                "  const id = String(number).padStart(4, \"0\");",
+                "  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, \"-\").replace(/^-|-$/g, \"\");",
+                "  return {",
+                "    file: `docs/adr/${id}-${slug}.md`,",
+                "    body: `# ${number}. ${title}\\n\\nStatus: Proposto\\n\\n## Contexto\\n\\n## Decisão\\n\\n## Consequências\\n`,",
+                "  };",
+                "}",
+                "",
+                "newAdr(7, \"Usar PostgreSQL\").file;   // \"docs/adr/0007-usar-postgresql.md\"",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Em uma página, o ADR registra o problema, a escolha, as alternativas descartadas e o preço que se " +
+                "aceitou pagar. Quem chegar depois entende não só o que a equipe decidiu, mas por quê.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "O ADR guarda o porquê de uma decisão importante junto ao código — curto, sobre uma decisão só e " +
+                "nunca reescrito: quando a decisão muda, um novo ADR substitui o antigo.",
+            },
+          ],
+          examples: [
+            {
+              title: "Substituir em vez de editar",
+              context: "O histórico das decisões — inclusive as que foram mudadas — é parte do valor do registro.",
+              code: {
+                language: "text",
+                filename: "superseding-adr.txt",
+                code: [
+                  "docs/adr/0007-usar-postgresql.md",
+                  "  Status: Substituído por 0019",
+                  "",
+                  "docs/adr/0019-migrar-para-banco-gerenciado.md",
+                  "  Status: Aceito (2026-09-02)",
+                  "  Contexto: operar o PostgreSQL por conta própria consome tempo da equipe (ver ADR 0007).",
+                  "  Decisão: usar o serviço gerenciado do provedor; o PostgreSQL continua sendo o motor.",
+                ].join("\n"),
+              },
+              explanation:
+                "O ADR 0007 permanece como registro do que se pensava naquela época; o 0019 explica a mudança. Quem ler os " +
+                "dois entende como e por que a decisão evoluiu.",
+            },
+            {
+              title: "Quando vale escrever um ADR",
+              context: "Nem toda decisão merece um documento — a regra é o custo de reverter e o alcance.",
+              code: {
+                language: "text",
+                filename: "when-to-write-adr.txt",
+                code: [
+                  "Escreva um ADR:",
+                  "  - escolha de banco de dados, linguagem, framework ou provedor de nuvem",
+                  "  - dividir um serviço em dois, ou adotar mensageria",
+                  "  - convenção que afeta todo o código (formato de erros, estratégia de autenticação)",
+                  "",
+                  "Não precisa de ADR:",
+                  "  - renomear uma função, escolher o nome de uma variável",
+                  "  - decisões fáceis de reverter em uma tarde",
+                ].join("\n"),
+              },
+              explanation:
+                "Se a pergunta \"por que fizeram assim?\" provavelmente será feita no futuro e a resposta importa, é um " +
+                "candidato a ADR. Se a decisão é barata de desfazer, o commit já basta.",
+            },
+            {
+              title: "Registrar as alternativas descartadas",
+              context: "A parte mais valiosa de um ADR costuma ser o que não foi escolhido, e por quê.",
+              code: {
+                language: "text",
+                filename: "alternatives.md",
+                code: [
+                  "## Alternativas consideradas",
+                  "- **Manter o monólito:** simples hoje, mas os deploys de um time bloqueiam os outros dois.",
+                  "- **Microsserviços completos:** resolveria o bloqueio, mas exigiria uma plataforma de observabilidade",
+                  "  que ainda não temos.",
+                  "- **Módulos com fronteiras claras dentro do monólito (escolhida):** reduz o acoplamento agora e",
+                  "  deixa a extração para serviços como opção futura.",
+                ].join("\n"),
+              },
+              explanation:
+                "Sem essa seção, alguém sugeriria de novo, daqui a um ano, uma das opções descartadas, e a equipe repetiria " +
+                "a discussão. Com ela, o argumento já está registrado.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A equipe decidiu adotar TypeScript no projeto, que hoje é todo em JavaScript. A decisão foi tomada " +
+              "em uma reunião, e ninguém registrou o motivo.",
+            problemCode: {
+              language: "text",
+              filename: "meeting-notes.txt",
+              code: [
+                "Motivos citados: muitos bugs por tipos errados em produção; a equipe cresceu de 3 para 10 pessoas e",
+                "há pouca documentação sobre o formato dos dados; o editor ajuda mais com tipos.",
+                "Alternativa discutida: manter JavaScript e usar JSDoc + checagem de tipos.",
+                "Custo: converter o código existente aos poucos; tempo de aprendizado.",
+              ].join("\n"),
+            },
+            task:
+              "Escreva o ADR (número, título, status, contexto, decisão, alternativas e consequências) com base nas " +
+              "anotações da reunião.",
+            hint: "O contexto é o problema; a decisão é uma frase; as consequências têm lados bons e ruins.",
+            solution: {
+              code: {
+                language: "text",
+                filename: "docs/adr/0012-adotar-typescript.md",
+                code: [
+                  "# 12. Adotar TypeScript",
+                  "",
+                  "Status: Aceito (2026-04-22)",
+                  "",
+                  "## Contexto",
+                  "Temos tido bugs em produção causados por tipos incorretos. A equipe passou de 3 para 10 pessoas e o",
+                  "formato dos dados quase não está documentado, o que atrasa quem chega ao código.",
+                  "",
+                  "## Decisão",
+                  "Adotar TypeScript, convertendo o código existente de forma gradual (módulo a módulo).",
+                  "",
+                  "## Alternativas consideradas",
+                  "- Manter JavaScript com JSDoc e checagem de tipos: menos mudança, mas as anotações são mais",
+                  "  verbosas e a cobertura tende a ser irregular.",
+                  "",
+                  "## Consequências",
+                  "+ Erros de tipo detectados antes da execução; o código passa a documentar os dados.",
+                  "- Curva de aprendizado e um passo de compilação a mais.",
+                  "- Período de transição com código misto em JavaScript e TypeScript.",
+                ].join("\n"),
+              },
+              explanation:
+                "O ADR registra o problema que motivou a decisão, o que se escolheu, a alternativa descartada e o " +
+                "preço aceito. Se, dois anos depois, alguém questionar o TypeScript, o raciocínio original está no " +
+                "repositório.",
+            },
+          },
+        }),
+        concept({
+          order: 40,
+          title: "RFC",
+          note: "proposta pré-decisão para mudanças maiores",
+          summary:
+            "Um documento de proposta, escrito antes de tomar uma decisão de peso, que expõe o problema e a solução " +
+            "sugerida para receber críticas e construir consenso — e que, aceito, gera o registro de decisão.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Um RFC (Request for Comments, \"pedido de comentários\") é uma proposta escrita para uma mudança " +
+                "significativa, compartilhada antes de a implementação começar. Ele descreve o problema, a solução " +
+                "proposta, as alternativas e os riscos, e convida as pessoas afetadas a comentar. É uma ferramenta " +
+                "de decisão coletiva: o objetivo é discutir a ideia enquanto ela ainda é barata de mudar.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Mudanças grandes que afetam várias pessoas ou equipes são caras de errar. Descobrir, depois de três " +
+                "semanas de implementação, que outra equipe dependia do comportamento que você mudou, ou que existia uma " +
+                "solução mais simples, é desperdício. O RFC traz essas objeções para antes do código: quem escreve " +
+                "organiza o pensamento (muitas ideias falham só de serem escritas), e quem lê contribui com o " +
+                "contexto que o autor não tinha.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "A diferença para o ADR: o RFC é a discussão antes da decisão (uma proposta, aberta a mudança); o ADR é o " +
+                "registro depois dela (curto, fixo). Um RFC aceito costuma originar um ADR. Estrutura comum: resumo, " +
+                "motivação, desenho da solução, alternativas, desvantagens, questões em aberto e plano de adoção. " +
+                "Ciclo: rascunho → período de revisão (com prazo) → decisão (aceito, rejeitado, adiado) → " +
+                "implementação. Não é para tudo: para mudanças pequenas e reversíveis, um RFC é burocracia.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "o esqueleto de um RFC e um critério simples para decidir se a mudança precisa de um:" },
+            {
+              type: "code",
+              language: "text",
+              filename: "rfc-0023-fila-de-eventos.md",
+              code: [
+                "# RFC 0023: Introduzir uma fila de eventos entre Pedidos e Faturamento",
+                "Autor: Ana  |  Status: Em revisão  |  Prazo para comentários: 2026-05-20",
+                "",
+                "## Resumo",
+                "Trocar a chamada síncrona de Pedidos para Faturamento por eventos em uma fila.",
+                "## Motivação",
+                "Quando o Faturamento está lento, o checkout inteiro fica lento (3 incidentes no trimestre).",
+                "## Proposta",
+                "Pedidos publica `OrderPlaced`; Faturamento consome de forma assíncrona, com retentativas.",
+                "## Alternativas",
+                "Aumentar o timeout (não resolve a causa); cache das respostas (não se aplica a escritas).",
+                "## Desvantagens / riscos",
+                "Consistência eventual; mais uma peça de infraestrutura para operar.",
+                "## Questões em aberto",
+                "Qual fila usar? Como reprocessar eventos com falha?",
+              ].join("\n"),
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "needs-rfc.js",
+              code: [
+                "function needsRfc(change) {",
+                "  const signals = [",
+                "    change.affectsOtherTeams,",
+                "    change.hardToReverse,",
+                "    change.estimatedWeeks > 2,",
+                "    change.changesPublicInterface,",
+                "  ];",
+                "  return signals.filter(Boolean).length >= 2;",
+                "}",
+                "",
+                "needsRfc({ affectsOtherTeams: true, hardToReverse: true, estimatedWeeks: 4 }); // true",
+                "needsRfc({ affectsOtherTeams: false, hardToReverse: false, estimatedWeeks: 1 }); // false",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O critério é apenas ilustrativo, mas mostra a lógica: quanto mais gente é afetada e quanto mais difícil é " +
+                "desfazer, mais o custo de discutir antes se justifica.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "O RFC é a conversa antes da decisão: escreva-o para mudanças grandes e difíceis de reverter, deixe " +
+                "as pessoas afetadas comentarem e, aceito, registre a decisão em um ADR.",
+            },
+          ],
+          examples: [
+            {
+              title: "Do RFC ao ADR",
+              context: "Os dois documentos se complementam: um discute, o outro registra.",
+              code: {
+                language: "text",
+                filename: "rfc-to-adr.txt",
+                code: [
+                  "RFC 0023 (proposta, 2 semanas de comentários)",
+                  "   ↓ discussão: 14 comentários, 2 alternativas novas, 1 risco identificado por outra equipe",
+                  "   ↓ decisão: aceito, com uma alteração no plano de adoção",
+                  "ADR 0031 \"Usar fila de eventos entre Pedidos e Faturamento\" (registro curto do que foi decidido)",
+                  "",
+                  "O RFC guarda a conversa e as alternativas; o ADR guarda a decisão final para consulta rápida.",
+                ].join("\n"),
+              },
+              explanation:
+                "O RFC é o \"como chegamos aqui\", longo e aberto a mudança; o ADR é o \"o que decidimos\", curto e estável. " +
+                "Um projeto pode manter os dois, ou ligar um ao outro.",
+            },
+            {
+              title: "Um bom período de revisão",
+              context: "Um RFC precisa de um prazo e de revisores certos, senão vira um documento que ninguém lê.",
+              code: {
+                language: "text",
+                filename: "review-process.txt",
+                code: [
+                  "1. Autor publica o RFC e avisa os canais das equipes afetadas.",
+                  "2. Revisores obrigatórios são nomeados (quem opera o sistema, quem o consome, segurança).",
+                  "3. Prazo fixo para comentários: 5 dias úteis. Silêncio depois do prazo = sem objeções.",
+                  "4. O autor responde a cada comentário e atualiza o texto.",
+                  "5. Decisão registrada no topo do RFC: aceito / rejeitado / adiado, e por quê.",
+                ].join("\n"),
+              },
+              explanation:
+                "O prazo evita discussões eternas, e os revisores nomeados garantem que quem seria mais afetado se " +
+                "manifeste. Um RFC sem processo tende a ser ignorado ou a se arrastar.",
+            },
+            {
+              title: "Quando um RFC é exagero",
+              context: "Documentar demais uma decisão pequena atrasa a equipe sem trazer proteção.",
+              code: {
+                language: "text",
+                filename: "rfc-overkill.txt",
+                code: [
+                  "Não precisa de RFC:",
+                  "  - trocar uma biblioteca de datas dentro de um módulo, com uma tarde de trabalho",
+                  "  - adicionar um campo opcional a uma resposta de API interna",
+                  "  - reorganizar pastas de um serviço só",
+                  "",
+                  "Um PR bem descrito e revisado resolve. O RFC é para o que, se der errado, é caro de corrigir.",
+                ].join("\n"),
+              },
+              explanation:
+                "O custo do processo deve ser proporcional ao risco. Exigir um RFC para tudo faz as pessoas evitarem o " +
+                "processo ou escreverem documentos vazios apenas para cumprir tabela.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Quatro propostas de mudança apareceram nesta semana em uma equipe com cinco serviços. Nem todas " +
+              "justificam um RFC.",
+            problemCode: {
+              language: "text",
+              filename: "proposals.txt",
+              code: [
+                "A) Renomear uma função interna de um único serviço.",
+                "B) Trocar o formato de autenticação entre todos os serviços de tokens simples para JWT.",
+                "C) Adicionar um novo campo opcional na resposta de uma API usada só pelo front-end.",
+                "D) Migrar o banco de dados de pedidos de MySQL para PostgreSQL.",
+              ].join("\n"),
+            },
+            task:
+              "Decida quais precisam de RFC, justificando pelo alcance e pela dificuldade de reverter, e esboce as " +
+              "seções principais do RFC de uma delas.",
+            hint: "Pergunte: afeta outras equipes? É difícil de desfazer? Levaria semanas? Duas respostas \"sim\" já pedem um RFC.",
+            solution: {
+              code: {
+                language: "text",
+                filename: "proposals.answer.txt",
+                code: [
+                  "A) Sem RFC — mudança local e trivial; um PR resolve.",
+                  "B) RFC — afeta todos os serviços e é difícil de reverter (todos precisam migrar juntos).",
+                  "C) Sem RFC — opcional, compatível e restrito a um consumidor; um PR com boa descrição basta.",
+                  "D) RFC — migração de dados em produção, cara de reverter e com impacto em várias equipes.",
+                  "",
+                  "Esboço do RFC B (autenticação com JWT):",
+                  "  Resumo: substituir os tokens simples por JWT assinados.",
+                  "  Motivação: hoje cada serviço consulta o serviço de autenticação a cada requisição (latência e ponto único de falha).",
+                  "  Proposta: emissão centralizada de JWT; validação local por chave pública; expiração curta.",
+                  "  Alternativas: manter os tokens e adicionar cache; sessões compartilhadas.",
+                  "  Riscos: revogação mais difícil; rotação de chaves.",
+                  "  Plano de adoção: período de aceitar os dois formatos, migração serviço a serviço.",
+                ].join("\n"),
+              },
+              explanation:
+                "B e D afetam várias equipes e são caras de desfazer, então justificam a discussão prévia. A e C são " +
+                "pequenas e reversíveis: um RFC seria só burocracia. O esboço mostra a estrutura: problema, proposta, " +
+                "alternativas, riscos e plano.",
+            },
+          },
+        }),
         concept({
           order: 50,
           title: "Runbook",
           note: "documentação operacional. Ponte futura para Platform / Reliability Engineering (Postmortem) — sem Requires (Epic 05 ainda não aprovado)",
+          summary:
+            "Um guia passo a passo para operar um sistema e responder a problemas conhecidos — escrito para ser " +
+            "seguido sob pressão, por quem talvez nunca tenha visto aquele componente.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "Um runbook é a documentação operacional de um sistema: instruções concretas para tarefas repetíveis " +
+                "(fazer um deploy, rotacionar uma chave, reiniciar um serviço) e para responder a alertas e " +
+                "incidentes conhecidos. Enquanto o README ensina a usar e desenvolver, o runbook ensina a operar " +
+                "e a consertar quando algo dá errado.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Quando o alerta toca às três da manhã, a pessoa de plantão pode nunca ter mexido naquele serviço, está " +
+                "cansada e sob pressão. Depender da memória de quem construiu o sistema — que talvez esteja de férias — " +
+                "é uma aposta. Um runbook transforma conhecimento individual em um procedimento que qualquer pessoa " +
+                "consegue seguir, reduzindo o tempo de resposta e os erros.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "O que um bom runbook tem: o nome do alerta ou da situação e o impacto esperado; como diagnosticar (o " +
+                "que verificar, com os comandos exatos, prontos para copiar); as ações de mitigação em ordem; como " +
+                "confirmar que o problema foi resolvido; e quando e a quem escalar. Características: ser direto e acionável " +
+                "(comandos, não prosa), ser testado (alguém o segue de verdade), estar ligado ao alerta e ser atualizado " +
+                "após cada incidente — o que se aprendeu em uma análise pós-incidente (postmortem) deve voltar " +
+                "para o runbook.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "um runbook para um alerta específico, com um trecho de diagnóstico executável:" },
+            {
+              type: "code",
+              language: "text",
+              filename: "runbook-fila-parada.md",
+              code: [
+                "# Alerta: FilaDePedidosParada",
+                "Impacto: pedidos novos não são processados. Severidade: alta.",
+                "",
+                "## Diagnóstico",
+                "1. Confira o tamanho da fila:   node scripts/queue-depth.js",
+                "2. Os workers estão vivos?       kubectl get pods -l app=order-worker",
+                "3. Há erros recentes?            kubectl logs -l app=order-worker --since=15m | grep ERROR",
+                "",
+                "## Mitigação",
+                "- Workers travados: kubectl rollout restart deployment/order-worker",
+                "- Erro de conexão com o banco: ver runbook \"Banco indisponível\".",
+                "",
+                "## Verificação",
+                "A fila deve começar a diminuir em até 5 minutos (node scripts/queue-depth.js).",
+                "",
+                "## Escalonamento",
+                "Se a fila não diminuir em 15 minutos: acionar a equipe de Pedidos (#pedidos-oncall).",
+              ].join("\n"),
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "scripts/queue-depth.js",
+              code: [
+                "// Diagnóstico referenciado no runbook: mostra o tamanho da fila e um veredito",
+                "async function checkQueueDepth() {",
+                "  const depth = await queue.size(\"orders\");",
+                "  const status = depth > 1000 ? \"CRÍTICO\" : depth > 200 ? \"ATENÇÃO\" : \"OK\";",
+                "  console.log(`fila orders: ${depth} mensagens — ${status}`);",
+                "  return depth;",
+                "}",
+                "",
+                "checkQueueDepth();",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A pessoa de plantão não precisa entender o sistema: segue os passos, com comandos prontos, verifica " +
+                "o resultado e sabe quando pedir ajuda. O script de diagnóstico foi escrito uma vez, por quem " +
+                "entende, e usado por qualquer pessoa.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Escreva o runbook para a pessoa cansada, às três da manhã, que nunca viu o sistema: comandos " +
+                "exatos, passos em ordem e um ponto claro de escalonamento.",
+            },
+          ],
+          examples: [
+            {
+              title: "Runbook vago versus acionável",
+              context: "O detalhe que separa um runbook útil de um inútil é a especificidade dos passos.",
+              code: {
+                language: "text",
+                filename: "vague-vs-actionable.md",
+                code: [
+                  "Vago (não ajuda):",
+                  "  \"Se a API estiver lenta, verifique os logs e corrija o problema.\"",
+                  "",
+                  "Acionável:",
+                  "  1. Veja a latência:     curl -w '%{time_total}' https://api.empresa.com/health",
+                  "  2. Se > 2s, verifique o banco:  psql -c \"SELECT count(*) FROM pg_stat_activity\"",
+                  "  3. Se > 90 conexões: reinicie o pool:  kubectl rollout restart deployment/api",
+                  "  4. Confirme que a latência voltou a < 500 ms. Se não, escalone para #plataforma.",
+                ].join("\n"),
+              },
+              explanation:
+                "O primeiro texto pressupõe que a pessoa já sabe o que procurar; o segundo é um procedimento que " +
+                "alguém sem contexto consegue executar. A diferença é a que existe entre ter um runbook e ter uma lembrança.",
+            },
+            {
+              title: "Runbooks se atualizam com os incidentes",
+              context: "Cada incidente revela um passo que faltava ou um comando que mudou — e isso deve voltar para o documento.",
+              code: {
+                language: "text",
+                filename: "runbook-update.txt",
+                code: [
+                  "Incidente 2026-04-02: a fila parou; o runbook mandava reiniciar os workers, mas o problema era",
+                  "uma mensagem inválida que travava o consumo (\"poison message\").",
+                  "",
+                  "Ação pós-incidente: acrescentar ao runbook o passo 2b:",
+                  "  \"Se os workers reiniciam e travam de novo, inspecione a primeira mensagem da fila e mova-a",
+                  "   para a fila de mensagens mortas: node scripts/move-to-dlq.js <id>\"",
+                ].join("\n"),
+              },
+              explanation:
+                "Aqui o aprendizado da análise pós-incidente (postmortem, tema da área de Confiabilidade) se transforma em " +
+                "conhecimento reutilizável. Sem isso, o mesmo incidente será resolvido do zero a cada vez.",
+            },
+            {
+              title: "Transformar passos repetidos em automação",
+              context: "Um passo de runbook executado sempre da mesma forma pode virar um script — ou ser automatizado por completo.",
+              code: {
+                language: "javascript",
+                filename: "automate-runbook-step.js",
+                code: [
+                  "// Passos manuais 1–3 do runbook, agora em um único comando: node scripts/diagnose-queue.js",
+                  "async function diagnoseQueue() {",
+                  "  const depth = await queue.size(\"orders\");",
+                  "  const workers = await cluster.podsReady(\"order-worker\");",
+                  "  const recentErrors = await logs.count(\"order-worker\", \"ERROR\", { minutes: 15 });",
+                  "  console.log({ depth, workers, recentErrors });",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "O runbook passa a dizer \"execute o script e leia o resultado\". Se o problema for sempre o mesmo e a " +
+                "correção puder ser feita com segurança, o passo seguinte é automatizar a própria correção e deixar " +
+                "o runbook para os casos que exigem decisão humana.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Um serviço de arquivos costuma alertar \"disco quase cheio\" (mais de 85% de uso) no servidor de " +
+              "uploads. Hoje só uma pessoa da equipe sabe o que fazer.",
+            problemCode: {
+              language: "text",
+              filename: "context.txt",
+              code: [
+                "Alerta: DiscoQuaseCheio (servidor uploads-01, /var/data acima de 85%)",
+                "Causas conhecidas: arquivos temporários de upload não removidos; logs sem rotação.",
+                "Comandos úteis: df -h /var/data ; du -sh /var/data/* ; find /var/data/tmp -mtime +1",
+                "Os arquivos em /var/data/tmp com mais de 1 dia podem ser apagados com segurança.",
+                "Se o uso passar de 95%, o serviço para de aceitar uploads.",
+              ].join("\n"),
+            },
+            task:
+              "Escreva o runbook para esse alerta: impacto, diagnóstico, mitigação, verificação e escalonamento, " +
+              "com comandos exatos.",
+            hint: "Escreva para alguém que nunca viu esse servidor: ordene os passos, coloque os comandos prontos e diga qual é o resultado esperado de cada um.",
+            solution: {
+              code: {
+                language: "text",
+                filename: "runbook-disco-quase-cheio.md",
+                code: [
+                  "# Alerta: DiscoQuaseCheio (uploads-01)",
+                  "Impacto: acima de 95% o serviço para de aceitar uploads. Severidade: média (alta se > 95%).",
+                  "",
+                  "## Diagnóstico",
+                  "1. Uso atual:                df -h /var/data",
+                  "2. O que ocupa mais espaço:  du -sh /var/data/* | sort -h",
+                  "",
+                  "## Mitigação",
+                  "- Se /var/data/tmp é grande: apague arquivos com mais de 1 dia",
+                  "      find /var/data/tmp -mtime +1 -delete",
+                  "- Se são os logs: force a rotação  logrotate -f /etc/logrotate.d/uploads",
+                  "",
+                  "## Verificação",
+                  "df -h /var/data deve mostrar abaixo de 80%.",
+                  "",
+                  "## Escalonamento",
+                  "Se o uso não baixar ou passar de 95%: acionar a equipe de Plataforma (#plataforma-oncall) para",
+                  "ampliar o disco. Depois, abrir uma tarefa para automatizar a limpeza dos temporários.",
+                ].join("\n"),
+              },
+              explanation:
+                "Qualquer pessoa consegue seguir: comandos prontos, ordem clara, o resultado esperado e o momento de " +
+                "pedir ajuda. O último passo (automatizar a limpeza) mostra o destino natural de um runbook repetido: " +
+                "virar automação.",
+            },
+          },
         }),
       ],
     }),
