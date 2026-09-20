@@ -1497,7 +1497,7 @@ export default area({
             "O termo guarda-chuva para qualquer objeto que substitui uma dependência real dentro de um teste — " +
             "dummy, stub, fake, spy e mock são cinco variações dessa mesma ideia, cada uma com um propósito diferente.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -1507,7 +1507,15 @@ export default area({
                 "perigosa, um test double substitui a dependência real num cenário onde usá-la de verdade seria " +
                 "lento, instável ou impossível.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Test Double é o termo guarda-chuva para qualquer substituto de uma dependência real dentro de um " +
+                "teste — dummy, stub, fake, spy e mock são cinco variações dessa mesma ideia, cada uma " +
+                "emprestando só o comportamento que o teste precisa.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -1524,7 +1532,7 @@ export default area({
                 "responde de menos comportamento para mais e de nenhuma verificação para verificação ativa. " +
                 "Escolher o dublê certo é escolher o mínimo necessário para o teste, não o mais sofisticado disponível.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "um código que depende de um serviço de e-mail, e um dublê mínimo que o substitui no teste:" },
             {
               type: "code",
@@ -1556,12 +1564,16 @@ export default area({
                 "depender de um provedor de e-mail real — esse objeto simples já é um Test Double, mesmo antes " +
                 "de decidirmos que tipo específico ele é.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Test Double é o termo guarda-chuva para qualquer substituto de uma dependência real dentro de um " +
-                "teste — dummy, stub, fake, spy e mock são cinco variações dessa mesma ideia, cada uma " +
-                "emprestando só o comportamento que o teste precisa.",
+              type: "list",
+              items: [
+                "Dublês só são possíveis quando a dependência entra por fora, por injeção; sem isso, o código cria a " +
+                "dependência real por dentro.",
+                "Dublê demais deixa o teste preso à implementação e distante do comportamento real, e ele pode passar com o " +
+                "sistema quebrado.",
+                "Escolha o tipo mais simples que resolve: dummy, stub, fake, spy ou mock servem a propósitos diferentes.",
+              ],
             },
           ],
           examples: [
@@ -1654,7 +1666,7 @@ export default area({
             "O dublê mais inerte de todos: um objeto passado como argumento só porque a assinatura exige, mas " +
             "que nunca é de fato usado dentro do código sob teste.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -1664,7 +1676,15 @@ export default area({
                 "dummy: qualquer valor (às vezes até null ou {}) que satisfaça o tipo esperado, sem nenhum " +
                 "comportamento por trás.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Um dummy é o dublê mais inerte: existe só para preencher uma assinatura, sem nenhum " +
+                "comportamento por trás — o sinal de que aquele parâmetro é irrelevante para o que o teste está " +
+                "verificando.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -1681,7 +1701,7 @@ export default area({
                 "é irrelevante para o comportamento sendo testado — sem precisar investigar se ele é usado em " +
                 "algum lugar escondido.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "uma função que recebe um logger mas, no caminho testado, nunca chama nada nele:" },
             {
               type: "code",
@@ -1708,12 +1728,13 @@ export default area({
                 "a assinatura; se calculateTotal um dia passar a usar logger.info(...), esse teste quebraria e " +
                 "sinalizaria que o dummy não é mais suficiente.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Um dummy é o dublê mais inerte: existe só para preencher uma assinatura, sem nenhum " +
-                "comportamento por trás — o sinal de que aquele parâmetro é irrelevante para o que o teste está " +
-                "verificando.",
+              type: "list",
+              items: [
+                "Se o dummy for chamado, o teste quebra; isso é sinal de que o parâmetro não era irrelevante.",
+                "Muitos dummies em um teste indicam código mal desenhado: parâmetros demais ou responsabilidades misturadas.",
+              ],
             },
           ],
           examples: [
@@ -1826,7 +1847,7 @@ export default area({
             "Um dublê que devolve respostas pré-programadas e fixas quando chamado — ao contrário do dummy, o " +
             "stub é de fato usado, mas nunca verificado sobre como foi chamado.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -1836,7 +1857,15 @@ export default area({
                 "a dependência real, mas o teste em si não faz nenhuma asserção sobre o stub — só sobre o " +
                 "resultado do código que o usou.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Um stub devolve respostas fixas e pré-programadas quando chamado — usado de fato pelo código " +
+                "sob teste, mas nunca verificado quanto a como foi chamado; o teste avalia o efeito da resposta, " +
+                "não a chamada em si.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -1853,7 +1882,7 @@ export default area({
                 "teste — não é só um preenchedor de assinatura. A diferença de um spy ou mock é que ninguém " +
                 "verifica como o stub foi chamado; o teste só olha para o efeito indireto da resposta que ele devolveu.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "um stub que devolve uma taxa de câmbio fixa, para testar a conversão de moeda:" },
             {
               type: "code",
@@ -1881,12 +1910,21 @@ export default area({
                 "conhecida, sem depender de uma API de câmbio real (que poderia devolver um valor diferente a " +
                 "cada execução).",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Um stub devolve respostas fixas e pré-programadas quando chamado — usado de fato pelo código " +
-                "sob teste, mas nunca verificado quanto a como foi chamado; o teste avalia o efeito da resposta, " +
-                "não a chamada em si.",
+              type: "list",
+              items: [
+                "Para simular respostas que são difíceis de provocar de verdade, como erros de rede ou dados específicos.",
+                "Quando o teste avalia o efeito da resposta, e não como a dependência foi chamada.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Não faça assertion sobre o stub: se importa como ele foi chamado, o dublê certo é um spy ou um mock.",
+                "Respostas fixas não têm lógica nem estado; quando o cenário precisa disso, um fake é mais adequado.",
+              ],
             },
           ],
           examples: [
@@ -1996,7 +2034,7 @@ export default area({
             "Uma implementação de fato funcional da dependência, só que simplificada — como um repositório em " +
             "memória no lugar de um banco de dados real — em vez de respostas fixas ou verificações de chamada.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -2006,7 +2044,14 @@ export default area({
                 "vez de gravar em um banco de dados de verdade, mas que implementa save, findById, delete etc. " +
                 "com comportamento genuíno.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Um fake é uma implementação funcional e simplificada da dependência — tem lógica e estado " +
+                "reais, ao contrário de um stub (respostas fixas), mas é mais simples e mais rápida que a versão de produção.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -2023,7 +2068,7 @@ export default area({
                 "local (por exemplo, rodar a aplicação inteira com um banco em memória, sem precisar instalar " +
                 "Postgres) — um fake bem feito é reutilizável em mais de um contexto.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "um repositório em memória com comportamento real de salvar e buscar:" },
             {
               type: "code",
@@ -2063,11 +2108,21 @@ export default area({
                 "tem transações, não valida constraints), mas o comportamento de save + findById é genuíno o " +
                 "bastante para exercitar o código que depende de um repositório.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Um fake é uma implementação funcional e simplificada da dependência — tem lógica e estado " +
-                "reais, ao contrário de um stub (respostas fixas), mas é mais simples e mais rápida que a versão de produção.",
+              type: "list",
+              items: [
+                "Quando o teste precisa de comportamento real e com estado, como um repositório em memória no lugar do banco.",
+                "Quando a dependência real é lenta, cara ou instável, e o fake pode ser reutilizado em vários testes.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "O fake é código que também pode ter bugs e divergir da versão de produção; teste-o contra o mesmo contrato.",
+                "Para uma resposta única e fixa, um stub é mais simples que manter uma implementação inteira.",
+              ],
             },
           ],
           examples: [
@@ -2186,7 +2241,7 @@ export default area({
             "Um dublê que envolve um comportamento real (ou simplificado) e, além disso, registra como foi " +
             "chamado — quantas vezes, com quais argumentos — para que o teste verifique isso depois.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -2195,7 +2250,15 @@ export default area({
                 "argumentos, em que ordem. Depois que o código sob teste roda, o teste consulta esses registros " +
                 "e faz asserções sobre eles — \"send foi chamado exatamente uma vez, com o e-mail correto\".",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Um spy registra como foi chamado — quantas vezes, com quais argumentos — para que o teste " +
+                "verifique isso depois do Act; é a ferramenta certa quando o comportamento que importa é um " +
+                "efeito colateral, não um valor de retorno.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -2212,7 +2275,7 @@ export default area({
                 "no Assert, depois do Act). É comum um spy também funcionar como stub ao mesmo tempo — " +
                 "registrando chamadas E devolvendo um valor programado.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "um spy que registra as chamadas a send, sem nenhum comportamento real por trás:" },
             {
               type: "code",
@@ -2244,12 +2307,22 @@ export default area({
                 "Depois de chamar sender.send, o teste inspeciona sendSpy.calls para verificar quantas vezes " +
                 "send foi chamado e com que argumento — algo que um stub comum, sem esse registro, não permitiria verificar.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Um spy registra como foi chamado — quantas vezes, com quais argumentos — para que o teste " +
-                "verifique isso depois do Act; é a ferramenta certa quando o comportamento que importa é um " +
-                "efeito colateral, não um valor de retorno.",
+              type: "list",
+              items: [
+                "Quando o comportamento que importa é um efeito colateral, como disparar um evento ou enviar um e-mail, e " +
+                "não um valor de retorno.",
+                "Para verificar depois do Act quantas vezes e com quais argumentos algo foi chamado.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Verificar chamadas prende o teste à implementação; se há valor de retorno ou estado observável, verifique isso.",
+                "Assertions sobre argumentos exatos quebram com qualquer mudança inofensiva; verifique só o que importa.",
+              ],
             },
           ],
           examples: [
@@ -2384,7 +2457,7 @@ export default area({
             "sozinho — se a expectativa não é cumprida, o próprio mock falha o teste, em vez de o teste " +
             "consultar um registro depois.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -2394,7 +2467,14 @@ export default area({
                 "foi cumprida. Se não foi, o mock reporta a falha — a lógica de verificação vive dentro do " +
                 "dublê, não só no bloco Assert do teste.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Um mock é pré-programado com uma expectativa sobre como deve ser chamado e verifica essa " +
+                "expectativa sozinho — a interação, não só o valor de retorno, é o que decide se o teste passa.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -2412,7 +2492,7 @@ export default area({
                 "expectativa pré-programada. É o mais próximo de spy (ambos verificam como foram chamados), mas " +
                 "a verificação de um mock é interna e declarada antes; a de um spy é externa e consultada depois.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "um mock simples, com expectativa declarada antes e verificação explícita depois:" },
             {
               type: "code",
@@ -2452,11 +2532,21 @@ export default area({
                 "código, mas conceitual: aqui a expectativa é explícita e verificada por um método do próprio " +
                 "dublê, não reconstruída manualmente pelo teste a partir de um array de chamadas.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Um mock é pré-programado com uma expectativa sobre como deve ser chamado e verifica essa " +
-                "expectativa sozinho — a interação, não só o valor de retorno, é o que decide se o teste passa.",
+              type: "list",
+              items: [
+                "Quando a interação, como a ordem ou o número de chamadas, faz parte do comportamento a verificar.",
+                "Em fronteiras com sistemas externos, onde a chamada correta é o único resultado observável.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Over-mocking: quando quase tudo é mock, o teste verifica a si mesmo e quebra a cada refatoração.",
+                "Não use mock para simples respostas de dados; um stub basta e deixa o teste menos acoplado.",
+              ],
             },
           ],
           examples: [
