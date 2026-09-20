@@ -2793,7 +2793,7 @@ export default area({
             "execução (dinâmica) — determina se um erro de tipo é descoberto antes de rodar, ou só quando " +
             "aquele código específico executa.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -2801,7 +2801,15 @@ export default area({
                 "tipo impede o programa de sequer começar. Dynamic Typing verifica os tipos durante a " +
                 "execução — um erro de tipo só aparece quando aquela linha específica roda, nunca antes.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Static Typing verifica tipos antes de rodar (erro nunca chega em produção, mas exige " +
+                "compilação); Dynamic Typing verifica em tempo de execução (mais rápido de iterar, mas o erro " +
+                "só aparece se aquele código realmente rodar).",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -2810,7 +2818,7 @@ export default area({
                 "compilação. Dynamic Typing permite escrever e rodar código mais rápido, ao custo de erros de " +
                 "tipo só aparecerem em produção, se aquele caminho específico nunca foi exercitado em teste.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "paragraph",
               text: "A mesma função, em TypeScript (estática) e em JavaScript puro (dinâmica):",
@@ -2833,12 +2841,16 @@ export default area({
                 "A versão TypeScript recusa compilar; a versão JavaScript roda até o fim e devolve NaN, sem " +
                 "avisar de nada — o mesmo bug, descoberto em momentos completamente diferentes.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Static Typing verifica tipos antes de rodar (erro nunca chega em produção, mas exige " +
-                "compilação); Dynamic Typing verifica em tempo de execução (mais rápido de iterar, mas o erro " +
-                "só aparece se aquele código realmente rodar).",
+              type: "list",
+              items: [
+                "Tipagem dinâmica só descobre o erro se aquele caminho do código de fato rodar; um bug pode ficar escondido " +
+                "até produção.",
+                "Tipagem estática não pega todos os erros: valores vindos de fora, como JSON e entrada do usuário, precisam " +
+                "ser validados em tempo de execução.",
+                "Nenhuma das duas é melhor em tudo: a estática custa configuração e anotações, a dinâmica custa segurança.",
+              ],
             },
           ],
           examples: [
@@ -2912,7 +2924,7 @@ export default area({
             "linguagem converte automaticamente (fraca) ou exige conversão explícita (forte). Um eixo " +
             "independente de static/dynamic.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -2920,7 +2932,15 @@ export default area({
                 "operação sem reclamar. Tipagem fraca converte automaticamente (coerção implícita) quando os " +
                 "tipos não batem; tipagem forte recusa a operação até que a conversão seja feita explicitamente.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Strong/Weak mede o quanto uma linguagem converte tipos automaticamente numa operação — é um " +
+                "eixo independente de static/dynamic. JavaScript combina dinâmica + fraca, o que multiplica as " +
+                "duas fontes de surpresa.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -2929,7 +2949,7 @@ export default area({
                 "conversão silenciosa). Entender os dois eixos separadamente evita confundir \"tem erro de " +
                 "tipo em compilação\" com \"não faz conversão implícita\" — são coisas diferentes.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -2949,12 +2969,14 @@ export default area({
                 "implícita, tipagem fraca. Python recusa a mesma operação até a conversão ser explícita — " +
                 "tipagem forte, mesmo sendo dinâmica igual JavaScript.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Strong/Weak mede o quanto uma linguagem converte tipos automaticamente numa operação — é um " +
-                "eixo independente de static/dynamic. JavaScript combina dinâmica + fraca, o que multiplica as " +
-                "duas fontes de surpresa.",
+              type: "list",
+              items: [
+                "Não confunda com estática × dinâmica: são eixos independentes, e cada linguagem combina os dois de um jeito.",
+                "TypeScript checa tipos na compilação, mas o JavaScript resultante mantém a coerção fraca em tempo de execução.",
+                "Coerção implícita em comparações, como `\"5\" == 5`, produz resultados surpreendentes; prefira `===`.",
+              ],
             },
           ],
           examples: [
@@ -3009,7 +3031,7 @@ export default area({
             "A capacidade de um compilador deduzir o tipo de algo sem que ele seja declarado explicitamente — " +
             "combina a segurança de tipagem estática com boa parte da concisão de não escrever tipos toda hora.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -3017,7 +3039,15 @@ export default area({
                 "expressão a partir do contexto, sem que o tipo precise ser escrito explicitamente. Só faz " +
                 "sentido em linguagens de tipagem estática — é o compilador \"adivinhando\" o tipo certo.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Type Inference deixa o compilador deduzir tipos a partir do contexto, em vez de exigir " +
+                "anotação explícita em todo lugar — mantém a segurança da tipagem estática com a concisão de " +
+                "código dinamicamente tipado.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -3026,7 +3056,7 @@ export default area({
                 "sozinho, mantendo a segurança da tipagem estática sem a verbosidade de escrever o tipo em " +
                 "todo lugar.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "typescript",
@@ -3039,12 +3069,23 @@ export default area({
                 "Mesmo sem escrever : number, o TypeScript infere o tipo de count a partir do valor 5 — e " +
                 "continua aplicando a mesma checagem estática que aplicaria se o tipo fosse explícito.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Type Inference deixa o compilador deduzir tipos a partir do contexto, em vez de exigir " +
-                "anotação explícita em todo lugar — mantém a segurança da tipagem estática com a concisão de " +
-                "código dinamicamente tipado.",
+              type: "list",
+              items: [
+                "Em variáveis locais e em arrays e objetos, onde o tipo é evidente pelo valor.",
+                "Para manter a segurança da tipagem estática sem repetir o tipo em cada declaração.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Em fronteiras públicas, como parâmetros e retornos de funções exportadas, anote os tipos explicitamente: " +
+                "eles são o contrato.",
+                "A inferência pode ser mais ampla do que você quer, como `string` no lugar de um literal; anote quando " +
+                "precisar de mais precisão.",
+              ],
             },
           ],
           examples: [
@@ -3099,7 +3140,7 @@ export default area({
             "aconteçam — a propriedade que resulta de quando (static/dynamic) e quão estritamente (strong/weak) " +
             "os tipos são verificados.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -3107,7 +3148,15 @@ export default area({
                 "de uma linguagem, não apenas detectados tarde demais. Não é um eixo binário — é uma " +
                 "propriedade resultante de onde uma linguagem fica nos eixos static/dynamic e strong/weak.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Type Safety é o resultado prático de combinar quando os tipos são checados e quão " +
+                "estritamente são impostos — mais type-safe não significa \"melhor\" sempre, mas significa " +
+                "mais erros pegos antes de virarem incidente em produção.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -3117,7 +3166,7 @@ export default area({
                 "dinâmica e fraca tende a ser menos. TypeScript aumenta a Type Safety do JavaScript com " +
                 "checagem estática, mesmo mantendo parte da fraqueza de runtime herdada.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "typescript",
@@ -3136,12 +3185,15 @@ export default area({
                 "As duas funções fazem a mesma coisa — a diferença é quando (e se) um uso incorreto é " +
                 "impedido. Mais Type Safety significa mais categorias de erro pegas antes de virarem incidente.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Type Safety é o resultado prático de combinar quando os tipos são checados e quão " +
-                "estritamente são impostos — mais type-safe não significa \"melhor\" sempre, mas significa " +
-                "mais erros pegos antes de virarem incidente em produção.",
+              type: "list",
+              items: [
+                "`any` desliga a checagem e contamina o que o usa; prefira `unknown`, que obriga a checar antes de usar.",
+                "Casts como `as` afirmam ao compilador algo que ele não verifica; se estiverem errados, o erro aparece em " +
+                "execução.",
+                "Type safety em tempo de compilação não substitui validação dos dados que entram no sistema.",
+              ],
             },
           ],
           examples: [
@@ -3200,7 +3252,7 @@ export default area({
             "Dois tipos são compatíveis só se tiverem o mesmo nome/declaração — mesmo que a estrutura interna " +
             "seja idêntica, tipos declarados separadamente são tratados como diferentes.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -3209,7 +3261,15 @@ export default area({
                 "diferentes, são tratados como tipos diferentes — incompatíveis entre si, mesmo parecendo " +
                 "idênticos por dentro.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Nominal Typing decide compatibilidade pelo nome do tipo, não pela estrutura — útil pra " +
+                "impedir que dois conceitos de domínio que \"por acaso\" têm a mesma forma sejam trocados um " +
+                "pelo outro por engano.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -3218,7 +3278,7 @@ export default area({
                 "domínio — um UserId e um ProductId podem ser os dois só um number por dentro, mas misturar " +
                 "um pelo outro é um bug de domínio, não um erro estrutural.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "paragraph",
               text: "TypeScript não é nominal por padrão — o exemplo simula via um padrão comum, \"branded types\":",
@@ -3243,12 +3303,16 @@ export default area({
                 "UserId e ProductId são estruturalmente idênticos (ambos number por baixo), mas o brand força " +
                 "o compilador a tratá-los como tipos nominalmente diferentes.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Nominal Typing decide compatibilidade pelo nome do tipo, não pela estrutura — útil pra " +
-                "impedir que dois conceitos de domínio que \"por acaso\" têm a mesma forma sejam trocados um " +
-                "pelo outro por engano.",
+              type: "list",
+              items: [
+                "Exige declarar a relação de forma explícita: dois tipos de mesma estrutura, mas nomes diferentes, não se " +
+                "conversam.",
+                "O TypeScript é estrutural: para conseguir efeito nominal, é preciso simular, com marcas (brands) ou classes " +
+                "com campos privados.",
+                "Aplique onde trocar dois conceitos de mesma forma, como ids de usuário e de pedido, causa bug de domínio real.",
+              ],
             },
           ],
           examples: [
@@ -3323,7 +3387,7 @@ export default area({
             "Dois tipos são compatíveis se tiverem a mesma estrutura, independente do nome ou de onde foram " +
             "declarados — o oposto de Nominal Typing, e o modelo padrão do TypeScript.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -3331,7 +3395,15 @@ export default area({
                 "existem e seus tipos — não pelo nome. Se um valor tem todos os campos que um tipo exige, ele " +
                 "é compatível com esse tipo, mesmo declarado com outro nome (ou nenhum), e mesmo com campos a mais.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Structural Typing decide compatibilidade pela estrutura — se tem os campos certos, é aceito, " +
+                "não importa o nome ou a origem do tipo. É o oposto de Nominal Typing, e o modelo que o " +
+                "TypeScript usa por padrão.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -3340,7 +3412,7 @@ export default area({
                 "flexibilidade: uma função que espera { name: string } aceita qualquer objeto com esse campo, " +
                 "não importa como ele foi criado.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "typescript",
@@ -3366,12 +3438,16 @@ export default area({
                 "Nem Person nem dog foram declarados como Named explicitamente — os dois são aceitos porque " +
                 "têm a estrutura exigida. Isso é Structural Typing: compatibilidade pela forma, não pelo nome.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Structural Typing decide compatibilidade pela estrutura — se tem os campos certos, é aceito, " +
-                "não importa o nome ou a origem do tipo. É o oposto de Nominal Typing, e o modelo que o " +
-                "TypeScript usa por padrão.",
+              type: "list",
+              items: [
+                "Tipos diferentes que por acaso têm a mesma forma são intercambiáveis, o que pode esconder trocas de " +
+                "conceitos de domínio.",
+                "Campos a mais são aceitos em variáveis, mas literais de objeto passam por checagem de excesso, o que " +
+                "confunde no começo.",
+                "O compilador só confia na forma; nada garante que o valor cumpra o contrato do comportamento.",
+              ],
             },
           ],
           examples: [
@@ -3444,7 +3520,7 @@ export default area({
             "Escrever código parametrizado por tipo, mantendo a relação entre entrada e saída — reutilização " +
             "sem abrir mão da segurança de tipos.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -3452,7 +3528,14 @@ export default area({
                 "classe genérica funciona com qualquer tipo T, mas o compilador continua sabendo exatamente " +
                 "qual T está em jogo em cada uso, preservando a relação entre entrada e saída.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Generics abstraem o tipo concreto, mas preservam a relação entre os tipos envolvidos — " +
+                "resolvem o mesmo problema que any resolveria, sem abrir mão da Type Safety.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -3461,7 +3544,7 @@ export default area({
                 "escrever a função, mas fica conhecido e checado no momento de usar. É Abstraction aplicada a " +
                 "tipos — a função abstrai o tipo concreto, mas a relação entre entrada e saída continua garantida.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "typescript",
@@ -3481,11 +3564,22 @@ export default area({
                 "firstElement funciona com qualquer array, mas o TypeScript sabe que o retorno tem o mesmo " +
                 "tipo dos elementos — diferente de any, que perderia essa relação completamente.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Generics abstraem o tipo concreto, mas preservam a relação entre os tipos envolvidos — " +
-                "resolvem o mesmo problema que any resolveria, sem abrir mão da Type Safety.",
+              type: "list",
+              items: [
+                "Quando o código funciona igual para vários tipos, como coleções, e a saída depende do tipo de entrada.",
+                "No lugar de `any`, para manter a relação entre os tipos envolvidos e a segurança de tipos.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Se só um tipo concreto é usado, o parâmetro de tipo é complexidade sem benefício.",
+                "Parâmetros demais e restrições aninhadas tornam as mensagens de erro e a leitura difíceis; mantenha-os " +
+                "poucos e nomeados.",
+              ],
             },
           ],
           examples: [
@@ -3544,7 +3638,7 @@ export default area({
             "Um valor que pode ser de um tipo ou de outro — modela variação de forma explícita, em vez de " +
             "aceitar qualquer coisa (any) ou duplicar código pra cada caso separadamente.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -3552,7 +3646,14 @@ export default area({
                 "mesmo tempo, um dos dois, dependendo do caso. É a forma de expressar \"esse valor tem algumas " +
                 "formas possíveis conhecidas\" sem abrir mão de checagem de tipo.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Union Types modelam \"esse valor pode ser de um destes tipos\" de forma explícita e checada — " +
+                "mais preciso que any e mais simples que criar uma hierarquia de classes só pra representar variação.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -3561,7 +3662,7 @@ export default area({
                 "alternativa seria usar any (perdendo Type Safety) ou criar uma hierarquia de classes só pra " +
                 "isso. Union Types resolvem isso diretamente, no próprio sistema de tipos.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "typescript",
@@ -3572,11 +3673,22 @@ export default area({
               type: "paragraph",
               text: "id pode ser string OU number — nada mais é aceito. O compilador sabe exatamente quais formas são válidas.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Union Types modelam \"esse valor pode ser de um destes tipos\" de forma explícita e checada — " +
-                "mais preciso que any e mais simples que criar uma hierarquia de classes só pra representar variação.",
+              type: "list",
+              items: [
+                "Para modelar variação explícita, como estados de carregamento, ou um valor que pode ser `null`.",
+                "Com tipos literais, para restringir um valor a um conjunto conhecido.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Só se acessa o que é comum a todos os membros até fazer narrowing; sem isso o compilador recusa o acesso.",
+                "Uniões muito largas tornam cada uso cheio de checagens; prefira uma união discriminada, com um campo que " +
+                "identifica cada caso.",
+              ],
             },
           ],
           examples: [
@@ -3639,7 +3751,7 @@ export default area({
             "Um valor que precisa cumprir múltiplos tipos ao mesmo tempo (A & B) — o oposto de Union Types, " +
             "útil para combinar formas menores em uma maior sem herança.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -3647,7 +3759,14 @@ export default area({
                 "os campos de B ao mesmo tempo — diferente de Union (A | B, um ou outro), Intersection exige " +
                 "os dois simultaneamente.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Intersection Types combinam múltiplas formas menores numa forma maior que precisa cumprir " +
+                "todas ao mesmo tempo — o oposto de Union e uma alternativa a herança pra compor tipos.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -3656,7 +3775,7 @@ export default area({
                 "(o Concept de objetos) combina comportamento sem Inheritance. Interfaces menores e focadas " +
                 "podem ser combinadas sob demanda, só onde fizer sentido.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "typescript",
@@ -3674,11 +3793,21 @@ export default area({
               type: "paragraph",
               text: "Person exige todos os campos de Named E de Aged — a interseção combina as duas formas numa forma maior, sem herança nenhuma envolvida.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Intersection Types combinam múltiplas formas menores numa forma maior que precisa cumprir " +
-                "todas ao mesmo tempo — o oposto de Union e uma alternativa a herança pra compor tipos.",
+              type: "list",
+              items: [
+                "Para compor uma forma maior a partir de formas menores, sem criar uma hierarquia de herança.",
+                "Para acrescentar campos de contexto a um tipo base.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Tipos com propriedades conflitantes podem resultar em `never`, e o erro só aparece no uso.",
+                "Intersecções muito grandes ou aninhadas ficam difíceis de ler; nomeie o resultado.",
+              ],
             },
           ],
           examples: [
@@ -3744,7 +3873,7 @@ export default area({
             "Reduzir progressivamente as possibilidades de um Union Type dentro de um bloco de código, até o " +
             "compilador saber exatamente qual tipo específico está em jogo naquele ponto.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -3753,7 +3882,14 @@ export default area({
                 "instanceof, checagem de uma propriedade. Depois de um narrowing bem-sucedido, o compilador " +
                 "trata o valor como o tipo restante.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Type Narrowing é como um Union Type vira um tipo específico dentro de um bloco de código, " +
+                "através de checagens que o compilador entende e usa pra refinar o que sabe sobre aquele valor.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -3762,7 +3898,7 @@ export default area({
                 "de qual tipo está em jogo naquele ponto. Type Narrowing é como você \"prova\" isso pro " +
                 "compilador, ponto a ponto do código.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "typescript",
@@ -3783,11 +3919,24 @@ export default area({
                 "Fora do if, value é string | string[] — mas dentro de cada ramo, o typeof estreita o tipo pra " +
                 "um dos dois específicos, e o compilador acompanha essa dedução automaticamente.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Type Narrowing é como um Union Type vira um tipo específico dentro de um bloco de código, " +
-                "através de checagens que o compilador entende e usa pra refinar o que sabe sobre aquele valor.",
+              type: "list",
+              items: [
+                "Depois de checagens como `typeof`, `instanceof`, `in` ou um campo discriminante, para trabalhar com o tipo " +
+                "específico dentro do bloco.",
+                "Com uniões discriminadas, que dão ao compilador uma checagem simples e completa.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "O compilador só reconhece checagens que ele entende; uma função de checagem própria precisa declarar o tipo " +
+                "de retorno como predicado (type guard).",
+                "O narrowing vale só dentro do bloco: depois de uma atribuição ou chamada, o compilador pode perder o " +
+                "refinamento.",
+              ],
             },
           ],
           examples: [
