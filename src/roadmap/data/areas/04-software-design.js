@@ -8235,19 +8235,1506 @@ export default area({
         "Repository como base → Data Mapper × Active Record → Unit of Work → Service Layer → Specification e " +
         "DTO. Requires: Platform / Database Fundamentals — dependência formalizada na Fase 2 do Epic 05 (2026-09-05).",
       concepts: [
-        concept({ order: 10, title: "Repository Pattern", note: "abstrai o acesso a dados atrás de uma interface de coleção" }),
-        concept({ order: 20, title: "Data Mapper", requires: ["Repository Pattern"], note: "separa o objeto de domínio da forma como é persistido" }),
-        concept({ order: 30, title: "Active Record", requires: ["Repository Pattern"], note: "contraste direto com Data Mapper — o objeto que se persiste" }),
-        concept({ order: 40, title: "Unit of Work", requires: ["Repository Pattern"], note: "agrupa mudanças numa única transação lógica" }),
+        concept({
+          order: 10,
+          title: "Repository Pattern",
+          note: "abstrai o acesso a dados atrás de uma interface de coleção",
+          summary:
+            "Faz o acesso aos dados parecer uma coleção de objetos do domínio — `add`, `findById`, `remove` —, " +
+            "escondendo por trás dela como e onde eles são guardados.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Repository é um padrão que oferece ao domínio uma interface de coleção para obter e guardar objetos: " +
+                "\"me dê o usuário com este id\", \"adicione este pedido\". O código de negócio fala com o repositório " +
+                "nos termos do domínio, e o repositório cuida de traduzir isso para SQL, HTTP, arquivos ou memória. " +
+                "É a aplicação de Program to an Interface ao acesso a dados, e a forma comum de seguir o Dependency " +
+                "Inversion Principle na fronteira com o banco (Database Fundamentals).",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "O domínio enxerga uma coleção de objetos, e não um banco: como e onde eles são guardados é um " +
+                "detalhe atrás do repositório.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "Define-se o contrato do repositório com operações no vocabulário do domínio. Cada implementação, " +
+                "SQL, memória, API, cumpre o contrato. Quem usa recebe o repositório por injeção " +
+                "(Dependency Injection) e nunca importa o banco.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "repository.js",
+              code: [
+                "// Contrato: UserRepository { add(user), findById(id), findByEmail(email), remove(id) }",
+                "",
+                "// Implementação em memória",
+                "class InMemoryUserRepository {",
+                "  #users = new Map();",
+                "  add(user) { this.#users.set(user.id, user); }",
+                "  findById(id) { return this.#users.get(id) ?? null; }",
+                "  findByEmail(email) { return [...this.#users.values()].find((u) => u.email === email) ?? null; }",
+                "  remove(id) { this.#users.delete(id); }",
+                "}",
+                "",
+                "// Implementação em SQL: o mesmo contrato, outro detalhe",
+                "class SqlUserRepository {",
+                "  constructor(db) { this.db = db; }",
+                "  async findById(id) {",
+                "    const row = await this.db.queryOne(\"SELECT * FROM users WHERE id = ?\", [id]);",
+                "    return row ? { id: row.id, email: row.email } : null;",
+                "  }",
+                "  // add, findByEmail e remove seguem o mesmo esquema",
+                "}",
+                "",
+                "// O caso de uso só conhece o contrato",
+                "class RegisterUser {",
+                "  constructor(users) { this.users = users; }",
+                "  execute({ id, email }) {",
+                "    if (this.users.findByEmail(email)) throw new Error(\"e-mail já cadastrado\");",
+                "    this.users.add({ id, email });",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "`RegisterUser` funciona com o repositório em memória ou com o de SQL, sem mudar. As regras do " +
+                "negócio não citam tabelas, colunas nem consultas.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Quando o código de domínio não deve conhecer o banco, e você quer testá-lo com um repositório em memória, sem infraestrutura.",
+                "Quando há chance real de trocar a forma de armazenamento, ou de ter mais de uma, como banco e cache.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Se o ORM já oferece uma interface de coleção adequada e você não pretende trocá-lo, o repositório pode ser uma camada duplicada sem ganho.",
+                "Um repositório que expõe consultas genéricas, como `query(sql)`, vaza a persistência para o domínio e perde o sentido.",
+                "Um método para cada consulta possível faz o contrato crescer sem parar; considere um Specification para as consultas combináveis.",
+                "Consultas de relatório, com junções pesadas, costumam ficar melhor fora do repositório do domínio.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "O repositório em memória nos testes",
+              context: "Com o contrato, o teste do caso de uso não precisa de banco.",
+              code: {
+                language: "javascript",
+                filename: "test-with-memory.js",
+                code: [
+                  "const users = new InMemoryUserRepository();",
+                  "const register = new RegisterUser(users);",
+                  "",
+                  "register.execute({ id: 1, email: \"ana@x.com\" });",
+                  "users.findById(1);   // { id: 1, email: \"ana@x.com\" }",
+                  "",
+                  "register.execute({ id: 2, email: \"ana@x.com\" });   // Error: e-mail já cadastrado",
+                ].join("\n"),
+              },
+              explanation:
+                "O teste roda em milissegundos e sem preparar um banco. É o mesmo benefício de um Fake (Test Doubles) " +
+                "aplicado à persistência.",
+            },
+            {
+              title: "Vocabulário do domínio, e não da persistência",
+              context: "As operações do repositório devem dizer o que o negócio precisa, e não como o banco consulta.",
+              code: {
+                language: "javascript",
+                filename: "domain-vocabulary.js",
+                code: [
+                  "// Vaza a persistência: quem usa monta consultas e conhece tabelas",
+                  "// users.query(\"SELECT * FROM users WHERE active = 1 AND created_at < ?\", [date]);",
+                  "",
+                  "// Vocabulário do domínio: a intenção está no nome",
+                  "// users.findInactiveSince(date);",
+                  "",
+                  "class InMemoryUserRepository {",
+                  "  #users = [];",
+                  "  add(user) { this.#users.push(user); }",
+                  "  findInactiveSince(date) { return this.#users.filter((u) => u.lastLogin < date); }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Quem chama `findInactiveSince` não sabe se há SQL por trás. Se o repositório aceitasse SQL, o domínio " +
+                "voltaria a depender do banco.",
+            },
+            {
+              title: "Um repositório por conceito do domínio",
+              context: "A divisão acompanha o negócio, e não as tabelas do banco.",
+              code: {
+                language: "javascript",
+                filename: "per-concept.js",
+                code: [
+                  "// Um pedido e os seus itens são um só conceito de domínio, mesmo estando em duas tabelas",
+                  "class OrderRepository {",
+                  "  add(order) { /* grava em `orders` e em `order_items` */ }",
+                  "  findById(id) { /* reconstrói o pedido com os seus itens */ }",
+                  "}",
+                  "",
+                  "// Não: um repositório para cada tabela, e o código de negócio precisa juntá-los",
+                  "// class OrderRowRepository {}",
+                  "// class OrderItemRowRepository {}",
+                ].join("\n"),
+              },
+              explanation:
+                "O repositório entrega e recebe o pedido completo. Como isso é guardado, em uma ou em várias tabelas, " +
+                "é problema dele, e não de quem usa.",
+            },
+          ],
+          exercise: {
+            problem:
+              "`CancelOrder` escreve SQL diretamente. Não dá para testá-lo sem um banco, e qualquer mudança no " +
+              "esquema exige editar o caso de uso.",
+            problemCode: {
+              language: "javascript",
+              filename: "cancel-order.js",
+              code: [
+                "class CancelOrder {",
+                "  constructor(db) { this.db = db; }",
+                "  async execute(orderId) {",
+                "    const row = await this.db.queryOne(\"SELECT * FROM orders WHERE id = ?\", [orderId]);",
+                "    if (!row) throw new Error(\"pedido não encontrado\");",
+                "    if (row.status === \"shipped\") throw new Error(\"pedido já enviado\");",
+                "    await this.db.run(\"UPDATE orders SET status = 'cancelled' WHERE id = ?\", [orderId]);",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Introduza um `OrderRepository` com `findById` e `save`, faça `CancelOrder` depender só dele e mostre " +
+              "uma versão em memória para testar.",
+            hint: "As consultas SQL vão para a implementação do repositório; o caso de uso trabalha com o pedido e as suas regras.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "cancel-order.fixed.js",
+                code: [
+                  "class CancelOrder {",
+                  "  constructor(orders) { this.orders = orders; }",
+                  "  async execute(orderId) {",
+                  "    const order = await this.orders.findById(orderId);",
+                  "    if (!order) throw new Error(\"pedido não encontrado\");",
+                  "    if (order.status === \"shipped\") throw new Error(\"pedido já enviado\");",
+                  "    order.status = \"cancelled\";",
+                  "    await this.orders.save(order);",
+                  "  }",
+                  "}",
+                  "",
+                  "// Teste: repositório em memória, sem banco",
+                  "class InMemoryOrderRepository {",
+                  "  #orders = new Map();",
+                  "  constructor(initial = []) { initial.forEach((o) => this.#orders.set(o.id, o)); }",
+                  "  async findById(id) { return this.#orders.get(id) ?? null; }",
+                  "  async save(order) { this.#orders.set(order.id, order); }",
+                  "}",
+                  "",
+                  "const orders = new InMemoryOrderRepository([{ id: 1, status: \"pending\" }]);",
+                  "await new CancelOrder(orders).execute(1);",
+                  "(await orders.findById(1)).status;   // \"cancelled\"",
+                ].join("\n"),
+              },
+              explanation:
+                "`CancelOrder` deixou de conhecer SQL, e a regra \"pedido enviado não cancela\" pode ser testada sem " +
+                "banco. A versão de produção do repositório traz as consultas.",
+            },
+          },
+        }),
+        concept({
+          order: 20,
+          title: "Data Mapper",
+          requires: ["Repository Pattern"],
+          note: "separa o objeto de domínio da forma como é persistido",
+          summary:
+            "Uma camada de mapeamento que move dados entre os objetos de domínio e o banco, para que o objeto de " +
+            "domínio não saiba nada sobre como é persistido.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Data Mapper é um padrão em que um componente separado, o mapper, converte entre o objeto de domínio " +
+                "e a representação persistida, linhas, documentos, colunas. O objeto de domínio fica livre de " +
+                "persistência: não tem `save()`, não conhece nomes de coluna, nem o banco. É o que permite um Rich " +
+                "Domain Model sem que ele dependa da infraestrutura, e costuma ser usado dentro do Repository.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "O objeto de domínio não sabe como é guardado: um mapper traduz nos dois sentidos, entre o modelo do " +
+                "negócio e o formato do banco.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "O mapper tem uma função para reconstruir o objeto de domínio a partir do dado persistido e outra " +
+                "para o caminho inverso. O repositório usa o mapper: lê a linha, chama `toDomain`; ao salvar, chama " +
+                "`toRow`.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "data-mapper.js",
+              code: [
+                "// Domínio: comportamento e regras, sem persistência",
+                "class Customer {",
+                "  constructor(id, firstName, lastName, joinedAt) {",
+                "    Object.assign(this, { id, firstName, lastName, joinedAt });",
+                "  }",
+                "  get fullName() { return `${this.firstName} ${this.lastName}`; }",
+                "  isVeteran(now = new Date()) { return now.getFullYear() - this.joinedAt.getFullYear() >= 5; }",
+                "}",
+                "",
+                "// Mapper: conhece as colunas e faz a conversão nos dois sentidos",
+                "const CustomerMapper = {",
+                "  toDomain(row) {",
+                "    return new Customer(row.id, row.first_name, row.last_name, new Date(row.joined_at));",
+                "  },",
+                "  toRow(customer) {",
+                "    return {",
+                "      id: customer.id,",
+                "      first_name: customer.firstName,",
+                "      last_name: customer.lastName,",
+                "      joined_at: customer.joinedAt.toISOString(),",
+                "    };",
+                "  },",
+                "};",
+                "",
+                "const row = { id: 1, first_name: \"Ana\", last_name: \"Souza\", joined_at: \"2019-03-01T00:00:00.000Z\" };",
+                "const customer = CustomerMapper.toDomain(row);",
+                "customer.fullName;                            // \"Ana Souza\"",
+                "CustomerMapper.toRow(customer).first_name;   // \"Ana\"",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "`Customer` usa `firstName` e `joinedAt` (um `Date`); o banco usa `first_name` e uma string. A " +
+                "diferença fica inteira no mapper, e o domínio não sabe que ela existe.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Quando o modelo de domínio é rico e o esquema do banco difere dele, em nomes, em tipos ou em estrutura, como um objeto guardado em várias tabelas.",
+                "Quando você quer testar o domínio sem banco e manter as regras livres de detalhes de persistência.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "É código extra para escrever e manter, e cada mudança de campo passa pelo objeto, pelo mapper e pelo esquema.",
+                "Quando as tabelas e os objetos são praticamente iguais e o domínio é simples, o Active Record é mais direto.",
+                "ORMs como TypeORM e Hibernate já implementam Data Mapper: escrever os seus próprios mappers por cima é, em geral, duplicação.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Value Object montado a partir de várias colunas",
+              context: "O mapper também agrupa colunas soltas em conceitos do domínio.",
+              code: {
+                language: "javascript",
+                filename: "value-object-mapping.js",
+                code: [
+                  "class Money {",
+                  "  constructor(cents, currency) { this.cents = cents; this.currency = currency; }",
+                  "  format() { return `${(this.cents / 100).toFixed(2)} ${this.currency}`; }",
+                  "}",
+                  "",
+                  "const ProductMapper = {",
+                  "  toDomain: (row) => ({",
+                  "    id: row.id,",
+                  "    name: row.name,",
+                  "    price: new Money(row.price_cents, row.price_currency),   // duas colunas → um Value Object",
+                  "  }),",
+                  "  toRow: (product) => ({",
+                  "    id: product.id,",
+                  "    name: product.name,",
+                  "    price_cents: product.price.cents,",
+                  "    price_currency: product.price.currency,",
+                  "  }),",
+                  "};",
+                  "",
+                  "ProductMapper.toDomain({ id: 1, name: \"Caneta\", price_cents: 550, price_currency: \"BRL\" }).price.format();",
+                  "// \"5.50 BRL\"",
+                ].join("\n"),
+              },
+              explanation:
+                "O banco guarda duas colunas, e o domínio trabalha com um `Money`. Quem usa `Product` nunca vê " +
+                "`price_cents`.",
+            },
+            {
+              title: "Testar o domínio sem banco",
+              context: "Como o domínio não conhece a persistência, ele se testa com objetos comuns.",
+              code: {
+                language: "javascript",
+                filename: "domain-test.js",
+                code: [
+                  "const veteran = new Customer(1, \"Ana\", \"Souza\", new Date(\"2015-01-01\"));",
+                  "const newcomer = new Customer(2, \"Bia\", \"Lima\", new Date(\"2025-06-01\"));",
+                  "",
+                  "veteran.isVeteran(new Date(\"2026-01-01\"));    // true",
+                  "newcomer.isVeteran(new Date(\"2026-01-01\"));   // false",
+                ].join("\n"),
+              },
+              explanation:
+                "Nenhuma conexão, nenhuma linha, nenhum mock de banco. A separação feita pelo mapper é o que torna " +
+                "essa simplicidade possível.",
+            },
+            {
+              title: "Restaurar um objeto sem repetir a criação",
+              context: "Reconstruir a partir do banco não é o mesmo que criar um objeto novo.",
+              code: {
+                language: "javascript",
+                filename: "restore.js",
+                code: [
+                  "class Account {",
+                  "  constructor(id, balance) { this.id = id; this.balance = balance; }",
+                  "",
+                  "  // Criação de uma conta nova: aplica as regras de abertura",
+                  "  static open(id) { return new Account(id, 0); }",
+                  "",
+                  "  // Reconstrução a partir do banco: o estado já foi validado antes de ser gravado",
+                  "  static restore(id, balance) { return new Account(id, balance); }",
+                  "}",
+                  "",
+                  "const AccountMapper = {",
+                  "  toDomain: (row) => Account.restore(row.id, row.balance),",
+                  "};",
+                ].join("\n"),
+              },
+              explanation:
+                "Uma conta com saldo de 500 é válida ao ser lida do banco, mas `open` sempre a criaria zerada. Ter uma " +
+                "via própria para restaurar evita que as regras de criação sejam aplicadas à toa.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O banco guarda `name`, `email_address` e `created_at` (texto), mas o domínio usa `displayName`, " +
+              "`email` e `createdAt` (um `Date`). Hoje cada consulta faz essa conversão à mão.",
+            problemCode: {
+              language: "javascript",
+              filename: "member.js",
+              code: [
+                "class Member {",
+                "  constructor(id, displayName, email, createdAt) {",
+                "    Object.assign(this, { id, displayName, email, createdAt });",
+                "  }",
+                "}",
+                "",
+                "// Repetido em cada consulta",
+                "const row = { id: 3, name: \"Caio\", email_address: \"caio@x.com\", created_at: \"2024-05-10T12:00:00.000Z\" };",
+                "const member = new Member(row.id, row.name, row.email_address, new Date(row.created_at));",
+              ].join("\n"),
+            },
+            task:
+              "Escreva um `MemberMapper` com `toDomain(row)` e `toRow(member)`, que convertam nos dois sentidos, e " +
+              "mostre que ida e volta preservam os dados.",
+            hint: "`toRow` faz o inverso: `displayName → name`, `email → email_address` e o `Date` volta a ser uma string ISO.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "member.fixed.js",
+                code: [
+                  "const MemberMapper = {",
+                  "  toDomain: (row) => new Member(row.id, row.name, row.email_address, new Date(row.created_at)),",
+                  "  toRow: (member) => ({",
+                  "    id: member.id,",
+                  "    name: member.displayName,",
+                  "    email_address: member.email,",
+                  "    created_at: member.createdAt.toISOString(),",
+                  "  }),",
+                  "};",
+                  "",
+                  "const row = { id: 3, name: \"Caio\", email_address: \"caio@x.com\", created_at: \"2024-05-10T12:00:00.000Z\" };",
+                  "const roundTrip = MemberMapper.toRow(MemberMapper.toDomain(row));",
+                  "JSON.stringify(roundTrip) === JSON.stringify(row);   // true",
+                ].join("\n"),
+              },
+              explanation:
+                "A conversão passou a viver em um só lugar, nos dois sentidos, e o teste de ida e volta mostra que nada " +
+                "se perde. O restante do código usa apenas `Member`.",
+            },
+          },
+        }),
+        concept({
+          order: 30,
+          title: "Active Record",
+          requires: ["Repository Pattern"],
+          note: "contraste direto com Data Mapper — o objeto que se persiste",
+          summary:
+            "O próprio objeto de domínio sabe como se carregar e se salvar no banco — cada instância corresponde a " +
+            "uma linha, e tem métodos como `save()` e `find()`.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Active Record é um padrão em que uma classe representa uma linha de uma tabela e junta os dados, a " +
+                "lógica de negócio e a persistência: `user.save()`, `User.find(id)`. Não há um mapper separado, porque " +
+                "o objeto conhece o seu próprio esquema. É o oposto do Data Mapper e a escolha de frameworks como " +
+                "Rails e de muitas bibliotecas de ORM em JavaScript.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "O objeto que representa a linha também sabe se gravar e se buscar: menos peças e menos código, ao " +
+                "custo de misturar domínio e persistência.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "A classe tem métodos estáticos para consultar (`find`) e métodos de instância para gravar (`save`, " +
+                "`delete`), e os seus campos correspondem às colunas. O acesso ao banco costuma ser feito por uma " +
+                "conexão compartilhada.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "active-record.js",
+              code: [
+                "// Um \"banco\" mínimo em memória para o exemplo",
+                "const table = new Map();",
+                "let nextId = 1;",
+                "",
+                "class User {",
+                "  constructor({ id = null, name, email }) {",
+                "    this.id = id;",
+                "    this.name = name;",
+                "    this.email = email;",
+                "  }",
+                "",
+                "  static find(id) {",
+                "    const row = table.get(id);",
+                "    return row ? new User(row) : null;",
+                "  }",
+                "",
+                "  save() {                               // o próprio objeto se persiste",
+                "    if (this.id === null) this.id = nextId++;",
+                "    table.set(this.id, { id: this.id, name: this.name, email: this.email });",
+                "    return this;",
+                "  }",
+                "",
+                "  delete() { table.delete(this.id); }",
+                "",
+                "  // lógica de negócio na mesma classe",
+                "  hasCorporateEmail() { return this.email.endsWith(\"@empresa.com\"); }",
+                "}",
+                "",
+                "const user = new User({ name: \"Ana\", email: \"ana@empresa.com\" }).save();",
+                "User.find(user.id).hasCorporateEmail();   // true",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Não há repositório nem mapper: a classe `User` faz tudo. É rápido de escrever e fácil de entender " +
+                "para um cadastro simples.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Em aplicações de cadastro (CRUD) com pouca regra de negócio, em que a estrutura dos objetos acompanha a das tabelas.",
+                "Quando a velocidade de desenvolvimento importa mais que a separação de camadas, e o framework já o oferece.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Mistura duas responsabilidades, regras de negócio e persistência, e à medida que as regras crescem a classe fica difícil de manter (Single Responsibility Principle).",
+                "Acoplar o objeto ao esquema dificulta testar o domínio sem banco, e o acesso costuma ser global e estático.",
+                "O modelo de objetos fica preso ao formato das tabelas; um domínio rico com estruturas diferentes das tabelas é melhor servido por Data Mapper.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "O dia a dia com Active Record",
+              context: "O ciclo completo cabe em poucas linhas, e esse é o seu maior atrativo.",
+              code: {
+                language: "javascript",
+                filename: "usage.js",
+                code: [
+                  "const ana = new User({ name: \"Ana\", email: \"ana@empresa.com\" });",
+                  "ana.save();                     // insere e atribui o id",
+                  "",
+                  "const found = User.find(ana.id);",
+                  "found.name = \"Ana Souza\";",
+                  "found.save();                   // atualiza",
+                  "",
+                  "found.delete();",
+                  "User.find(ana.id);              // null",
+                ].join("\n"),
+              },
+              explanation:
+                "Criar, ler, atualizar e apagar não exigem nenhuma outra classe. Para cadastros simples, essa " +
+                "economia é real.",
+            },
+            {
+              title: "O acesso estático e o teste",
+              context: "Como o banco é acessado dentro da classe, trocar ou isolar o armazenamento é difícil.",
+              code: {
+                language: "javascript",
+                filename: "test-difficulty.js",
+                code: [
+                  "// A regra de negócio mora na mesma classe que grava no banco",
+                  "class Order {",
+                  "  constructor(items) { this.items = items; }",
+                  "  total() { return this.items.reduce((sum, i) => sum + i.price, 0); }",
+                  "  save() { db.insert(\"orders\", this); }   // depende de um `db` global",
+                  "}",
+                  "",
+                  "// total() pode ser testado sozinho, mas qualquer teste que chame save() precisa de um banco",
+                  "new Order([{ price: 10 }, { price: 5 }]).total();   // 15",
+                ].join("\n"),
+              },
+              explanation:
+                "Os métodos puros ainda são fáceis de testar. O problema é tudo que passa por `save()`: sem injeção, " +
+                "o teste depende do banco global.",
+            },
+            {
+              title: "Quando a classe começa a inchar",
+              context: "O sinal para migrar é a lógica de negócio crescendo dentro do objeto que também persiste.",
+              code: {
+                language: "javascript",
+                filename: "growing.js",
+                code: [
+                  "// Sinais de que o Active Record ficou pequeno para o domínio:",
+                  "class Invoice {",
+                  "  save() { /* persistência */ }",
+                  "  calculateTaxes() { /* regras fiscais complexas */ }",
+                  "  applyDiscounts() { /* regras comerciais */ }",
+                  "  toPdf() { /* apresentação */ }",
+                  "  sendByEmail() { /* infraestrutura */ }",
+                  "}",
+                  "",
+                  "// Caminho de saída: separar regras (domínio) de persistência (repositório + mapper)",
+                ].join("\n"),
+              },
+              explanation:
+                "Quando a mesma classe muda por causa de regras fiscais, de formato do PDF e do banco, ela tem várias " +
+                "razões para mudar. É a hora de separar as responsabilidades.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A classe `Note` mistura o dado, uma regra de negócio e a gravação no banco. Os testes da regra " +
+              "dependem de um banco global.",
+            problemCode: {
+              language: "javascript",
+              filename: "note.js",
+              code: [
+                "class Note {",
+                "  constructor(id, text) { this.id = id; this.text = text; }",
+                "  isTooLong() { return this.text.length > 280; }",
+                "  save() { db.set(this.id, { id: this.id, text: this.text }); }",
+                "  static find(id) { const row = db.get(id); return row ? new Note(row.id, row.text) : null; }",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Separe a persistência: `Note` fica só com dados e regras, e um `NoteRepository` recebe o banco e faz " +
+              "`save` e `find`.",
+            hint: "Mova `save` e `find` para o repositório, e injete o banco em seu construtor, no lugar do `db` global.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "note.fixed.js",
+                code: [
+                  "class Note {",
+                  "  constructor(id, text) { this.id = id; this.text = text; }",
+                  "  isTooLong() { return this.text.length > 280; }",
+                  "}",
+                  "",
+                  "class NoteRepository {",
+                  "  constructor(db) { this.db = db; }",
+                  "  save(note) { this.db.set(note.id, { id: note.id, text: note.text }); }",
+                  "  find(id) {",
+                  "    const row = this.db.get(id);",
+                  "    return row ? new Note(row.id, row.text) : null;",
+                  "  }",
+                  "}",
+                  "",
+                  "// A regra se testa sem banco",
+                  "new Note(1, \"x\".repeat(300)).isTooLong();   // true",
+                  "",
+                  "// E a persistência se testa com um banco em memória",
+                  "const repository = new NoteRepository(new Map());",
+                  "repository.save(new Note(1, \"olá\"));",
+                  "repository.find(1).text;   // \"olá\"",
+                ].join("\n"),
+              },
+              explanation:
+                "`Note` não sabe mais que existe um banco, e o repositório recebe o banco de fora. É o caminho do " +
+                "Active Record para o Repository com Data Mapper, quando o domínio pede.",
+            },
+          },
+        }),
+        concept({
+          order: 40,
+          title: "Unit of Work",
+          requires: ["Repository Pattern"],
+          note: "agrupa mudanças numa única transação lógica",
+          summary:
+            "Acompanha todas as mudanças feitas em objetos durante uma operação de negócio e as grava juntas, em " +
+            "uma única transação — ou tudo é salvo, ou nada.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Unit of Work registra o que foi criado, alterado e removido durante uma operação de negócio e, no " +
+                "final, grava tudo de uma vez em uma transação. Em vez de cada mudança ir imediatamente ao banco, elas " +
+                "se acumulam e são confirmadas com um `commit()`. Se algo falha no meio, nada é gravado. É a base do " +
+                "que ORMs oferecem como sessão, contexto ou gerenciador de entidades (Database Fundamentals, transações).",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Acumule as mudanças de uma operação e grave todas juntas, em uma transação: ou tudo é salvo, ou " +
+                "nada é.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "O objeto guarda listas de novos, alterados e removidos. Ao chamar `commit()`, abre uma transação, " +
+                "aplica cada mudança e a confirma, ou a desfaz se qualquer passo falhar.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "unit-of-work.js",
+              code: [
+                "// Um banco mínimo, com transação que desfaz tudo em caso de erro",
+                "class FakeDb {",
+                "  data = new Map();",
+                "  async transaction(work) {",
+                "    const snapshot = new Map(this.data);",
+                "    try { await work(this); }",
+                "    catch (error) { this.data = snapshot; throw error; }   // rollback",
+                "  }",
+                "}",
+                "",
+                "class UnitOfWork {",
+                "  #created = [];",
+                "  #changed = new Set();",
+                "  #removed = [];",
+                "",
+                "  constructor(db) { this.db = db; }",
+                "",
+                "  registerNew(entity) { this.#created.push(entity); }",
+                "  registerDirty(entity) { this.#changed.add(entity); }",
+                "  registerRemoved(entity) { this.#removed.push(entity); }",
+                "",
+                "  async commit() {",
+                "    await this.db.transaction(async (db) => {",
+                "      for (const e of this.#created) db.data.set(e.id, { ...e });",
+                "      for (const e of this.#changed) db.data.set(e.id, { ...e });",
+                "      for (const e of this.#removed) db.data.delete(e.id);",
+                "    });",
+                "    this.#created = []; this.#changed.clear(); this.#removed = [];",
+                "  }",
+                "}",
+                "",
+                "const db = new FakeDb();",
+                "const uow = new UnitOfWork(db);",
+                "uow.registerNew({ id: 1, name: \"Ana\" });",
+                "uow.registerNew({ id: 2, name: \"Bia\" });",
+                "// nada foi gravado ainda",
+                "await uow.commit();   // as duas são gravadas juntas",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Até o `commit`, o banco não vê nada. No `commit`, todas as mudanças são aplicadas em uma única " +
+                "transação, e uma falha as desfaz por inteiro.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Quando uma operação altera vários objetos que precisam ser gravados juntos, como uma transferência que debita uma conta e credita outra.",
+                "Quando você quer reduzir as idas ao banco, agrupando as gravações em um único momento.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Para uma única gravação simples, uma transação direta é suficiente e mais clara.",
+                "Rastrear as mudanças tem custo, e uma unidade de trabalho de vida longa acumula objetos na memória e pode operar sobre dados desatualizados.",
+                "Se o ORM já fornece esse mecanismo (a sessão do SQLAlchemy, o `DbContext` do .NET), não reimplemente: use o dele.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Tudo ou nada",
+              context: "O valor do padrão aparece quando algo falha no meio da operação.",
+              code: {
+                language: "javascript",
+                filename: "rollback.js",
+                code: [
+                  "const db = new FakeDb();",
+                  "const uow = new UnitOfWork(db);",
+                  "",
+                  "uow.registerNew({ id: 1, name: \"Ana\" });",
+                  "uow.registerNew({ id: 2, name: \"Bia\" });",
+                  "",
+                  "// Simula uma falha na gravação do segundo registro",
+                  "const originalTransaction = db.transaction.bind(db);",
+                  "db.transaction = (work) => originalTransaction(async (d) => {",
+                  "  await work(d);",
+                  "  throw new Error(\"falha ao confirmar\");",
+                  "});",
+                  "",
+                  "try { await uow.commit(); } catch {}",
+                  "db.data.size;   // 0 — a transação foi desfeita, nada ficou gravado",
+                ].join("\n"),
+              },
+              explanation:
+                "Mesmo com os dois registros já aplicados dentro da transação, a falha desfaz tudo. Sem o padrão, o " +
+                "primeiro poderia ter sido gravado e o segundo não.",
+            },
+            {
+              title: "Gravar de uma vez, e não a cada mudança",
+              context: "Acumular as mudanças evita várias idas ao banco.",
+              code: {
+                language: "javascript",
+                filename: "batching.js",
+                code: [
+                  "// Sem Unit of Work: uma gravação para cada alteração",
+                  "// for (const item of items) await db.insert(item);   // N idas ao banco",
+                  "",
+                  "// Com Unit of Work: registra e confirma uma vez",
+                  "const uow = new UnitOfWork(db);",
+                  "for (const item of items) uow.registerNew(item);",
+                  "await uow.commit();   // uma transação",
+                ].join("\n"),
+              },
+              explanation:
+                "Além da consistência, agrupar reduz o custo de comunicação. Em bancos reais, os ORMs ainda ordenam " +
+                "as operações para respeitar as dependências entre elas.",
+            },
+            {
+              title: "O mesmo padrão nos ORMs",
+              context: "Você raramente escreve o seu: as ferramentas de persistência já trazem um.",
+              code: {
+                language: "javascript",
+                filename: "orm-equivalents.js",
+                code: [
+                  "// Prisma: uma transação agrupa as operações",
+                  "await prisma.$transaction([",
+                  "  prisma.account.update({ where: { id: 1 }, data: { balance: { decrement: 100 } } }),",
+                  "  prisma.account.update({ where: { id: 2 }, data: { balance: { increment: 100 } } }),",
+                  "]);",
+                  "",
+                  "// Outros ORMs: Session (SQLAlchemy, Hibernate), DbContext (.NET), EntityManager (TypeORM)",
+                ].join("\n"),
+              },
+              explanation:
+                "Entender o padrão ajuda a usar bem essas ferramentas, sabendo o que elas rastreiam e quando " +
+                "confirmam, sem precisar reescrevê-las.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A transferência grava a conta de origem e a de destino em passos separados. Se o segundo falhar, o " +
+              "dinheiro sai de uma conta e não entra na outra.",
+            problemCode: {
+              language: "javascript",
+              filename: "transfer.js",
+              code: [
+                "async function transfer(accounts, fromId, toId, amount) {",
+                "  const from = await accounts.findById(fromId);",
+                "  const to = await accounts.findById(toId);",
+                "",
+                "  from.balance -= amount;",
+                "  await accounts.save(from);   // gravado imediatamente",
+                "",
+                "  to.balance += amount;",
+                "  await accounts.save(to);     // se falhar aqui, o dinheiro sumiu",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Use uma Unit of Work: registre as duas contas como alteradas e grave-as juntas no `commit`, de modo " +
+              "que uma falha desfaça as duas.",
+            hint: "Altere os saldos em memória, chame `registerDirty` para cada conta e só no final `commit()`.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "transfer.fixed.js",
+                code: [
+                  "async function transfer(accounts, uow, fromId, toId, amount) {",
+                  "  const from = await accounts.findById(fromId);",
+                  "  const to = await accounts.findById(toId);",
+                  "",
+                  "  if (from.balance < amount) throw new Error(\"saldo insuficiente\");",
+                  "",
+                  "  from.balance -= amount;",
+                  "  to.balance += amount;",
+                  "",
+                  "  uow.registerDirty(from);",
+                  "  uow.registerDirty(to);",
+                  "  await uow.commit();   // as duas contas, em uma transação",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Nada é gravado até o `commit`, e ele é atômico: ou as duas contas são atualizadas, ou nenhuma. A " +
+                "verificação de saldo acontece antes de qualquer mudança.",
+            },
+          },
+        }),
         concept({
           order: 50,
           title: "Service Layer",
           requires: ["Dependency Injection & IoC / Dependency Injection"],
           note: "orquestra casos de uso; depende de injeção de colaboradores",
           collision: "≠ Domain Service (Domain Modeling) — camada de orquestração × comportamento de domínio puro",
+          summary:
+            "Uma camada de serviços de aplicação que orquestra os casos de uso — coordena repositórios, objetos de " +
+            "domínio, transações e notificações — sem conter as regras de negócio em si.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Service Layer é a camada que define as operações que a aplicação oferece, os casos de uso " +
+                "(`placeOrder`, `cancelSubscription`), e as coordena: busca os objetos nos repositórios, chama o " +
+                "domínio, controla a transação e dispara efeitos como o envio de e-mail. Ela fica entre quem pede, o " +
+                "controlador HTTP, um comando de terminal, uma fila, e o domínio. Recebe os colaboradores por injeção " +
+                "(Dependency Injection). Não é o mesmo que um Domain Service (módulo Domain Modeling): aquele contém " +
+                "regra de negócio, e este apenas orquestra.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "A camada de serviço diz o que a aplicação faz e em que ordem, mas as regras de negócio ficam no " +
+                "domínio: ela coordena, e não decide.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "Cada caso de uso é um método (ou uma classe) que recebe dados simples, obtém o que precisa por meio " +
+                "dos repositórios, pede ao domínio que aplique as regras, persiste o resultado e aciona os efeitos.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "service-layer.js",
+              code: [
+                "class PlaceOrderService {",
+                "  constructor(customers, orders, payments, mailer) {",
+                "    Object.assign(this, { customers, orders, payments, mailer });",
+                "  }",
+                "",
+                "  async execute({ customerId, items }) {",
+                "    const customer = await this.customers.findById(customerId);   // 1. busca",
+                "    const order = customer.placeOrder(items);                     // 2. o domínio aplica as regras",
+                "    await this.payments.charge(customer, order.total);            // 3. efeito externo",
+                "    await this.orders.save(order);                                // 4. persiste",
+                "    await this.mailer.send(customer.email, `Pedido ${order.id} recebido`);   // 5. notifica",
+                "    return { orderId: order.id, total: order.total };",
+                "  }",
+                "}",
+                "",
+                "// O controlador só traduz HTTP para o caso de uso",
+                "async function postOrder(request, response, service) {",
+                "  const result = await service.execute({ customerId: request.userId, items: request.body.items });",
+                "  response.status(201).json(result);",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "`execute` só sequencia os passos. A regra \"cliente bloqueado não pode fazer pedido\" ou o cálculo do " +
+                "total ficam em `customer.placeOrder`, no domínio, e não aqui.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Quando o mesmo caso de uso é chamado por várias entradas, como HTTP, terminal e filas, e a orquestração não deve ser duplicada em cada uma.",
+                "Para manter os controladores finos e o domínio livre de preocupações de infraestrutura, como transações, e-mail e pagamentos.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Se as regras de negócio migram para os serviços e os objetos ficam só com dados, o resultado é o Anemic Domain Model.",
+                "Serviços que acumulam muitos casos de uso viram classes enormes; prefira um serviço por caso de uso ou por conceito.",
+                "Em um CRUD trivial, uma camada que só repassa a chamada ao repositório é cerimônia sem valor.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "O mesmo caso de uso em duas entradas",
+              context: "A camada de serviço evita duplicar a orquestração em cada porta de entrada.",
+              code: {
+                language: "javascript",
+                filename: "two-entries.js",
+                code: [
+                  "// Entrada 1: HTTP",
+                  "app.post(\"/orders\", async (request, response) => {",
+                  "  response.json(await placeOrder.execute({ customerId: request.userId, items: request.body.items }));",
+                  "});",
+                  "",
+                  "// Entrada 2: linha de comando, para importar pedidos em lote",
+                  "for (const line of readCsv(\"pedidos.csv\")) {",
+                  "  await placeOrder.execute({ customerId: line.customer, items: line.items });",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Os dois caminhos passam pelo mesmo `placeOrder`. A regra de que um pedido cobra, salva e notifica " +
+                "existe uma vez, e não em cada entrada.",
+            },
+            {
+              title: "Fina: as regras ficam no domínio",
+              context: "A linha entre orquestrar e decidir é o critério do padrão.",
+              code: {
+                language: "javascript",
+                filename: "thin-service.js",
+                code: [
+                  "// Errado: o serviço decide o preço e as regras de negócio",
+                  "async execute({ customerId, items }) {",
+                  "  const customer = await this.customers.findById(customerId);",
+                  "  let total = items.reduce((sum, i) => sum + i.price * i.qty, 0);",
+                  "  if (customer.level === \"gold\") total *= 0.9;   // regra de negócio no serviço",
+                  "  // ...",
+                  "}",
+                  "",
+                  "// Certo: o serviço pede ao domínio, que sabe as regras",
+                  "async execute({ customerId, items }) {",
+                  "  const customer = await this.customers.findById(customerId);",
+                  "  const order = customer.placeOrder(items);   // o desconto do cliente gold vive em Customer",
+                  "  // ...",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Se o desconto está no serviço, cada nova entrada precisa lembrar de aplicá-lo, ou o duplica. No " +
+                "domínio, ele vale sempre.",
+            },
+            {
+              title: "A armadilha do modelo anêmico",
+              context: "Uma camada de serviço gorda com objetos vazios é o sintoma clássico.",
+              code: {
+                language: "javascript",
+                filename: "anemic-trap.js",
+                code: [
+                  "// Objetos só com dados",
+                  "class Order { constructor() { this.items = []; this.status = \"pending\"; } }",
+                  "",
+                  "// E todas as regras no serviço",
+                  "class OrderService {",
+                  "  addItem(order, item) { if (order.status !== \"pending\") throw new Error(\"...\"); order.items.push(item); }",
+                  "  cancel(order) { if (order.status === \"shipped\") throw new Error(\"...\"); order.status = \"cancelled\"; }",
+                  "  total(order) { return order.items.reduce((s, i) => s + i.price, 0); }",
+                  "}",
+                  "// As regras de `Order` estão em `OrderService`: é o Anemic Domain Model.",
+                ].join("\n"),
+              },
+              explanation:
+                "Aqui o serviço virou o dono das regras, e qualquer outro código pode alterar `order.status` sem " +
+                "passar por elas. Mover a lógica para `Order` devolve ao domínio a proteção das suas regras.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O controlador HTTP contém o caso de uso inteiro: busca, cobrança, gravação e e-mail. Uma importação " +
+              "em lote precisaria copiar tudo.",
+            problemCode: {
+              language: "javascript",
+              filename: "controller.js",
+              code: [
+                "app.post(\"/subscriptions\", async (request, response) => {",
+                "  const user = await users.findById(request.userId);",
+                "  const subscription = user.subscribe(request.body.plan);",
+                "  await payments.charge(user, subscription.price);",
+                "  await subscriptions.save(subscription);",
+                "  await mailer.send(user.email, \"Assinatura ativa\");",
+                "  response.status(201).json({ id: subscription.id });",
+                "});",
+              ].join("\n"),
+            },
+            task:
+              "Extraia um `SubscribeService` com os colaboradores injetados no construtor, e deixe o controlador só " +
+              "traduzir a requisição.",
+            hint: "O serviço recebe `{ userId, plan }` e devolve dados simples. O controlador chama `execute` e monta a resposta.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "controller.fixed.js",
+                code: [
+                  "class SubscribeService {",
+                  "  constructor(users, subscriptions, payments, mailer) {",
+                  "    Object.assign(this, { users, subscriptions, payments, mailer });",
+                  "  }",
+                  "  async execute({ userId, plan }) {",
+                  "    const user = await this.users.findById(userId);",
+                  "    const subscription = user.subscribe(plan);",
+                  "    await this.payments.charge(user, subscription.price);",
+                  "    await this.subscriptions.save(subscription);",
+                  "    await this.mailer.send(user.email, \"Assinatura ativa\");",
+                  "    return { id: subscription.id };",
+                  "  }",
+                  "}",
+                  "",
+                  "app.post(\"/subscriptions\", async (request, response) => {",
+                  "  const result = await subscribe.execute({ userId: request.userId, plan: request.body.plan });",
+                  "  response.status(201).json(result);",
+                  "});",
+                ].join("\n"),
+              },
+              explanation:
+                "O caso de uso agora existe fora do HTTP e pode ser chamado por uma importação em lote ou testado " +
+                "com colaboradores falsos. O controlador só traduz a entrada e a saída.",
+            },
+          },
         }),
-        concept({ order: 60, title: "Specification Pattern", note: "encapsula regra de negócio/consulta reutilizável e combinável" }),
-        concept({ order: 70, title: "DTO", note: "objeto de transporte de dados entre camadas/fronteiras" }),
+        concept({
+          order: 60,
+          title: "Specification Pattern",
+          note: "encapsula regra de negócio/consulta reutilizável e combinável",
+          summary:
+            "Representa uma regra de negócio como um objeto que responde se um candidato a satisfaz, e que pode ser " +
+            "combinado com outros por E, OU e NÃO.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Specification transforma uma regra, \"o cliente é elegível\", \"o produto está em promoção\", em um " +
+                "objeto com um único método, `isSatisfiedBy(candidato)`. Como cada especificação é uma peça " +
+                "independente, elas são combinadas (`e`, `ou`, `não`) para formar regras maiores, e a mesma regra " +
+                "serve para validar um objeto ou para filtrar uma coleção. Dá um nome ao que antes era uma condição " +
+                "solta e repetida.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Dê nome a cada regra de negócio e faça-a combinável: regras maiores nascem de regras pequenas, e a " +
+                "mesma regra vale para validar e para filtrar.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "Cada especificação guarda um predicado e oferece `and`, `or` e `not`, que devolvem outra " +
+                "especificação. Em JavaScript, funções bastam como base; a classe ou o objeto acrescenta os " +
+                "combinadores.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "specification.js",
+              code: [
+                "const spec = (predicate) => ({",
+                "  isSatisfiedBy: predicate,",
+                "  and: (other) => spec((c) => predicate(c) && other.isSatisfiedBy(c)),",
+                "  or: (other) => spec((c) => predicate(c) || other.isSatisfiedBy(c)),",
+                "  not: () => spec((c) => !predicate(c)),",
+                "});",
+                "",
+                "// Regras pequenas, com nomes do negócio",
+                "const isActive = spec((customer) => customer.status === \"active\");",
+                "const isVerified = spec((customer) => customer.emailVerified);",
+                "const isBlocked = spec((customer) => customer.blocked);",
+                "",
+                "// Regra composta a partir das pequenas",
+                "const canBuyOnCredit = isActive.and(isVerified).and(isBlocked.not());",
+                "",
+                "canBuyOnCredit.isSatisfiedBy({ status: \"active\", emailVerified: true, blocked: false });   // true",
+                "canBuyOnCredit.isSatisfiedBy({ status: \"active\", emailVerified: false, blocked: false });  // false",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "`canBuyOnCredit` se lê como a regra de negócio. Cada condição tem um nome e pode ser reaproveitada " +
+                "em outra regra, sem copiar a expressão.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Quando uma regra de negócio é usada em vários lugares, como validação, filtros e relatórios, e não deve ser duplicada.",
+                "Quando as regras são combinadas de formas variadas, como elegibilidade, promoções e filtros de busca.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Para uma regra usada em um só lugar, uma função simples com um bom nome basta.",
+                "Especificações em memória obrigam a carregar todos os dados para filtrar; em bases grandes, a regra precisa ser traduzida para a consulta do banco.",
+                "Traduzir especificações para SQL ou para outra linguagem de consulta é trabalhoso, e sem isso o padrão fica limitado a objetos já carregados.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Validar e filtrar com a mesma regra",
+              context: "O mesmo objeto de especificação serve para checar um candidato e para selecionar de uma lista.",
+              code: {
+                language: "javascript",
+                filename: "validate-and-filter.js",
+                code: [
+                  "const customers = [",
+                  "  { name: \"Ana\", status: \"active\", emailVerified: true, blocked: false },",
+                  "  { name: \"Bia\", status: \"active\", emailVerified: false, blocked: false },",
+                  "  { name: \"Caio\", status: \"inactive\", emailVerified: true, blocked: false },",
+                  "];",
+                  "",
+                  "// Validar um candidato",
+                  "canBuyOnCredit.isSatisfiedBy(customers[0]);   // true",
+                  "",
+                  "// Filtrar uma coleção",
+                  "customers.filter((c) => canBuyOnCredit.isSatisfiedBy(c)).map((c) => c.name);   // [\"Ana\"]",
+                ].join("\n"),
+              },
+              explanation:
+                "A regra de elegibilidade existe uma vez. Se ela mudar, a validação e a lista mudam juntas.",
+            },
+            {
+              title: "Especificações com parâmetros",
+              context: "Uma função que cria a especificação permite regras configuráveis.",
+              code: {
+                language: "javascript",
+                filename: "parameterized.js",
+                code: [
+                  "const olderThan = (years) => spec((customer) => customer.ageInYears > years);",
+                  "const spentMoreThan = (amount) => spec((customer) => customer.totalSpent > amount);",
+                  "",
+                  "const vip = olderThan(2).and(spentMoreThan(5000));",
+                  "const seasonalOffer = olderThan(0).and(spentMoreThan(100));",
+                  "",
+                  "vip.isSatisfiedBy({ ageInYears: 3, totalSpent: 8000 });   // true",
+                ].join("\n"),
+              },
+              explanation:
+                "As mesmas peças geram regras diferentes conforme os parâmetros. Cada nova regra é uma combinação, " +
+                "e não código novo.",
+            },
+            {
+              title: "O limite: filtrar em memória",
+              context: "Aplicar a especificação depois de carregar tudo não escala.",
+              code: {
+                language: "javascript",
+                filename: "memory-limit.js",
+                code: [
+                  "// Carrega toda a tabela e filtra em memória: bom para poucos dados, caro para muitos",
+                  "const all = await customers.findAll();",
+                  "const eligible = all.filter((c) => canBuyOnCredit.isSatisfiedBy(c));",
+                  "",
+                  "// Para volumes grandes, a regra precisa virar uma consulta:",
+                  "// SELECT * FROM customers WHERE status = 'active' AND email_verified = 1 AND blocked = 0",
+                  "// — e isso exige uma segunda forma de expressar a mesma especificação",
+                ].join("\n"),
+              },
+              explanation:
+                "O padrão brilha na regra de negócio sobre objetos já carregados. Para consultar o banco, é preciso " +
+                "uma forma de traduzir a especificação, ou aceitar a duplicação da regra em SQL.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A condição de \"pedido elegível para frete grátis\" está copiada em três lugares, com pequenas " +
+              "diferenças. Um deles esqueceu a checagem de cancelado.",
+            problemCode: {
+              language: "javascript",
+              filename: "free-shipping.js",
+              code: [
+                "// Carrinho",
+                "if (order.total >= 200 && order.status !== \"cancelled\" && order.address.country === \"BR\") { /* ... */ }",
+                "",
+                "// Checkout",
+                "if (order.total >= 200 && order.address.country === \"BR\") { /* ... esqueceu o status */ }",
+                "",
+                "// Relatório",
+                "const eligible = orders.filter((o) => o.total >= 200 && o.status !== \"cancelled\" && o.address.country === \"BR\");",
+              ].join("\n"),
+            },
+            task:
+              "Crie as especificações `minimumTotal(200)`, `notCancelled` e `shipsToBrazil`, combine-as em " +
+              "`freeShipping` e use-a nos três pontos.",
+            hint: "`freeShipping = minimumTotal(200).and(notCancelled).and(shipsToBrazil)`. Cada uso chama `isSatisfiedBy`.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "free-shipping.fixed.js",
+                code: [
+                  "const spec = (predicate) => ({",
+                  "  isSatisfiedBy: predicate,",
+                  "  and: (other) => spec((c) => predicate(c) && other.isSatisfiedBy(c)),",
+                  "  or: (other) => spec((c) => predicate(c) || other.isSatisfiedBy(c)),",
+                  "  not: () => spec((c) => !predicate(c)),",
+                  "});",
+                  "",
+                  "const minimumTotal = (amount) => spec((order) => order.total >= amount);",
+                  "const notCancelled = spec((order) => order.status !== \"cancelled\");",
+                  "const shipsToBrazil = spec((order) => order.address.country === \"BR\");",
+                  "",
+                  "const freeShipping = minimumTotal(200).and(notCancelled).and(shipsToBrazil);",
+                  "",
+                  "// Carrinho e Checkout",
+                  "if (freeShipping.isSatisfiedBy(order)) { /* ... */ }",
+                  "",
+                  "// Relatório",
+                  "const eligible = orders.filter((o) => freeShipping.isSatisfiedBy(o));",
+                ].join("\n"),
+              },
+              explanation:
+                "A regra tem um só lugar e um nome. O esquecimento do `status` no Checkout deixa de ser possível, " +
+                "porque todos os pontos usam a mesma especificação.",
+            },
+          },
+        }),
+        concept({
+          order: 70,
+          title: "DTO",
+          note: "objeto de transporte de dados entre camadas/fronteiras",
+          summary:
+            "Um objeto simples, só com dados e sem regras, usado para transportar informação entre camadas ou " +
+            "sistemas — separando o que atravessa a fronteira do modelo interno.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "DTO (Data Transfer Object) é um objeto sem comportamento cuja função é carregar dados através de " +
+                "uma fronteira: da API para o cliente, do cliente para o caso de uso, entre serviços. Ele tem o " +
+                "formato que a fronteira precisa, e não o do domínio. Assim, o modelo interno pode mudar sem " +
+                "quebrar quem consome a API, e campos internos, como senhas e flags de controle, não vazam para fora.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "O que atravessa a fronteira tem um formato próprio, só de dados: o modelo interno fica livre para " +
+                "mudar, e nenhum detalhe interno vaza por acidente.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "Funções de conversão (ou mappers) transformam o objeto de domínio em DTO na saída, e o DTO recebido " +
+                "em dados válidos para o caso de uso na entrada. A validação da entrada acontece nessa fronteira.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "dto.js",
+              code: [
+                "// Domínio: tem campos internos que não devem sair",
+                "class User {",
+                "  constructor(id, name, email, passwordHash, role) {",
+                "    Object.assign(this, { id, name, email, passwordHash, role });",
+                "  }",
+                "}",
+                "",
+                "// DTO de saída: só o que o cliente da API precisa",
+                "function toUserDto(user) {",
+                "  return { id: user.id, name: user.name, email: user.email };",
+                "}",
+                "",
+                "// DTO de entrada: valida e normaliza o que chega de fora",
+                "function parseCreateUserDto(body) {",
+                "  if (typeof body.name !== \"string\" || body.name.trim() === \"\") throw new Error(\"name é obrigatório\");",
+                "  if (typeof body.email !== \"string\" || !body.email.includes(\"@\")) throw new Error(\"email inválido\");",
+                "  return { name: body.name.trim(), email: body.email.toLowerCase() };",
+                "}",
+                "",
+                "const user = new User(1, \"Ana\", \"ana@x.com\", \"$2b$10$abc...\", \"admin\");",
+                "toUserDto(user);   // { id: 1, name: \"Ana\", email: \"ana@x.com\" } — sem passwordHash nem role",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O cliente da API nunca recebe `passwordHash`, e o usuário não consegue definir `role` pelo corpo da " +
+                "requisição, porque o DTO de entrada só aceita `name` e `email`.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Nas fronteiras do sistema: respostas e requisições de API, mensagens entre serviços, e a comunicação com a interface.",
+                "Quando o formato externo deve ser estável e versionado, mesmo que o modelo interno evolua.",
+                "Para não expor campos internos ou sensíveis do domínio.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Entre chamadas dentro da mesma camada, um DTO só acrescenta uma conversão inútil.",
+                "Copiar todos os objetos de domínio em DTOs idênticos, sem nenhum ganho de isolamento, é só burocracia e código para manter.",
+                "Um DTO com lógica de negócio deixa de ser um DTO e vira mais um objeto de domínio, duplicado.",
+                "Só dados atravessam bem a serialização: `Date` vira texto, `Map` e `Set` viram `{}` e `[]`, e funções desaparecem.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Não vazar o que é interno",
+              context: "Devolver o objeto de domínio direto expõe tudo o que ele tem, inclusive o que ninguém pensou em expor.",
+              code: {
+                language: "javascript",
+                filename: "leak.js",
+                code: [
+                  "// Vaza: serializa o objeto inteiro",
+                  "app.get(\"/users/:id\", async (request, response) => {",
+                  "  const user = await users.findById(request.params.id);",
+                  "  response.json(user);   // inclui passwordHash e role",
+                  "});",
+                  "",
+                  "// Seguro: converte para o DTO",
+                  "app.get(\"/users/:id\", async (request, response) => {",
+                  "  const user = await users.findById(request.params.id);",
+                  "  response.json(toUserDto(user));",
+                  "});",
+                ].join("\n"),
+              },
+              explanation:
+                "Com o DTO, a lista de campos públicos é uma decisão explícita. Um campo novo no domínio não passa a " +
+                "aparecer na API sem que alguém o adicione ao DTO.",
+            },
+            {
+              title: "Validar na fronteira de entrada",
+              context: "O DTO de entrada é o lugar para rejeitar dados inválidos antes que cheguem ao domínio.",
+              code: {
+                language: "javascript",
+                filename: "input-validation.js",
+                code: [
+                  "app.post(\"/users\", async (request, response) => {",
+                  "  let input;",
+                  "  try { input = parseCreateUserDto(request.body); }",
+                  "  catch (error) { return response.status(400).json({ error: error.message }); }",
+                  "",
+                  "  const created = await createUser.execute(input);   // só recebe dados já válidos",
+                  "  response.status(201).json(toUserDto(created));",
+                  "});",
+                  "",
+                  "// Corpo com campos extras é limpo: { name, email, role: \"admin\" } → { name, email }",
+                ].join("\n"),
+              },
+              explanation:
+                "O caso de uso recebe apenas `name` e `email`, já validados. Campos extras, como `role`, são " +
+                "descartados na fronteira, e não chegam ao domínio.",
+            },
+            {
+              title: "O que a serialização faz com os dados",
+              context: "Só tipos simples sobrevivem a `JSON.stringify`; o DTO deve usar apenas eles.",
+              code: {
+                language: "javascript",
+                filename: "serialization.js",
+                code: [
+                  "const domain = {",
+                  "  createdAt: new Date(\"2026-01-01\"),",
+                  "  tags: new Set([\"a\", \"b\"]),",
+                  "  greet() { return \"oi\"; },",
+                  "};",
+                  "",
+                  "JSON.stringify(domain);",
+                  "// {\"createdAt\":\"2026-01-01T00:00:00.000Z\",\"tags\":{}}",
+                  "// Date virou texto, Set virou {} e a função sumiu",
+                  "",
+                  "// DTO explícito, só com tipos que atravessam a rede",
+                  "const dto = { createdAt: domain.createdAt.toISOString(), tags: [...domain.tags] };",
+                ].join("\n"),
+              },
+              explanation:
+                "Ao montar o DTO à mão, você decide como cada valor é representado, e evita surpresas como o `Set` " +
+                "virando um objeto vazio.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O endpoint devolve o pedido inteiro, inclusive `internalNotes` e `costPrice`, que o cliente não deve " +
+              "ver. Além disso, o `Date` e o `Set` chegam deformados.",
+            problemCode: {
+              language: "javascript",
+              filename: "order-endpoint.js",
+              code: [
+                "const order = {",
+                "  id: 10,",
+                "  placedAt: new Date(\"2026-03-01T10:00:00Z\"),",
+                "  items: new Set([\"caneta\", \"caderno\"]),",
+                "  total: 25,",
+                "  costPrice: 9,                          // interno",
+                "  internalNotes: \"cliente reclamou\",     // interno",
+                "};",
+                "",
+                "app.get(\"/orders/10\", (request, response) => response.json(order));",
+              ].join("\n"),
+            },
+            task:
+              "Escreva `toOrderDto(order)`, que devolve só `id`, `placedAt` (texto ISO), `items` (array) e `total`, e " +
+              "use-o no endpoint.",
+            hint: "Converta explicitamente `placedAt` com `toISOString()` e `items` com o spread de `Set`, e liste só os campos públicos.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "order-endpoint.fixed.js",
+                code: [
+                  "function toOrderDto(order) {",
+                  "  return {",
+                  "    id: order.id,",
+                  "    placedAt: order.placedAt.toISOString(),",
+                  "    items: [...order.items],",
+                  "    total: order.total,",
+                  "  };",
+                  "}",
+                  "",
+                  "app.get(\"/orders/10\", (request, response) => response.json(toOrderDto(order)));",
+                  "",
+                  "toOrderDto(order);",
+                  "// { id: 10, placedAt: \"2026-03-01T10:00:00.000Z\", items: [\"caneta\", \"caderno\"], total: 25 }",
+                ].join("\n"),
+              },
+              explanation:
+                "Só os campos públicos saem, e os tipos foram convertidos para formas que a serialização preserva. " +
+                "`costPrice` e `internalNotes` deixam de vazar, e um campo novo no pedido só aparece se alguém o " +
+                "acrescentar ao DTO.",
+            },
+          },
+        }),
       ],
     }),
     module({

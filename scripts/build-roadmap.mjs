@@ -1362,6 +1362,13 @@ for (const area of model.areas()) {
     "command",
     "state",
     "template-method",
+    "repository-pattern",
+    "data-mapper",
+    "active-record",
+    "unit-of-work",
+    "service-layer",
+    "specification-pattern",
+    "dto",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",
