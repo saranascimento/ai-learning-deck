@@ -7275,7 +7275,7 @@ export default area({
             "Uma ou mais pessoas examinam uma mudança de código antes de ela entrar na base principal — para " +
             "achar problemas cedo, compartilhar conhecimento e manter a qualidade e a consistência do código.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -7283,7 +7283,14 @@ export default area({
                 "(o autor) antes de ela ser integrada. Costuma acontecer em um pull request (ou merge request): " +
                 "o autor propõe a mudança, o revisor lê, comenta, pede ajustes ou aprova, e só então o código entra.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Revisão de código é um filtro barato e um meio de compartilhar conhecimento — automatize o mecânico " +
+                "e use o olhar humano no que só pessoas conseguem avaliar.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -7303,7 +7310,7 @@ export default area({
                 "lados: o autor entrega uma mudança pequena, revisada por ele mesmo primeiro e bem descrita; o " +
                 "revisor responde em tempo razoável e comenta com foco no código, não na pessoa.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "um trecho em revisão e o comentário que evita um bug antes do merge:" },
             {
               type: "code",
@@ -7334,11 +7341,22 @@ export default area({
                 "conhecendo o contexto (de onde vem a lista), encontrou o efeito colateral antes de chegar à " +
                 "produção — o tipo de bug que a revisão existe para pegar.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Revisão de código é um filtro barato e um meio de compartilhar conhecimento — automatize o mecânico " +
-                "e use o olhar humano no que só pessoas conseguem avaliar.",
+              type: "list",
+              items: [
+                "Antes de a mudança entrar na base principal, para achar problemas cedo e compartilhar conhecimento.",
+                "Quando o autor prepara a revisão com uma boa descrição e uma leitura prévia do próprio diff.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "O olhar humano não deve gastar tempo com o mecânico (espaços, ponto e vírgula): formatação e lint pertencem " +
+                "ao CI.",
+                "Sem descrição nem contexto, o revisor precisa deduzir a intenção lendo cada linha do diff.",
+              ],
             },
           ],
           examples: [
@@ -7463,7 +7481,7 @@ export default area({
             "manutenibilidade, testabilidade e segurança — para que a revisão seja sistemática em vez de " +
             "depender do que chama a atenção primeiro.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -7473,7 +7491,14 @@ export default area({
                 "para entender?), Maintainability (é fácil de mudar depois?), Testability (dá para verificar?) e " +
                 "Security (abre alguma brecha?).",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Percorra a mudança por lentes diferentes — correção, legibilidade, manutenibilidade, " +
+                "testabilidade, segurança — para não aprovar algo apenas porque uma dimensão parecia boa.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -7493,7 +7518,7 @@ export default area({
                 "uma lente de avaliação da mudança; a propriedade Testability em si é assunto do módulo Testing " +
                 "Strategy.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "uma função pequena e um problema encontrado em cada lente:" },
             {
               type: "code",
@@ -7523,11 +7548,16 @@ export default area({
                 "Cinco lentes, cinco tipos de achado em seis linhas. Uma leitura sem método provavelmente pararia nos " +
                 "nomes ruins e deixaria passar a injeção de SQL — o problema mais grave do trecho.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Percorra a mudança por lentes diferentes — correção, legibilidade, manutenibilidade, " +
-                "testabilidade, segurança — para não aprovar algo apenas porque uma dimensão parecia boa.",
+              type: "list",
+              items: [
+                "Aprovar porque uma dimensão parecia boa: um código legível e correto ainda pode expor dados de outros usuários.",
+                "Na lente de correção, diferenças como `>` e `>=` só aparecem ao comparar com o requisito e pensar nos " +
+                "limites e nos vazios.",
+                "Testabilidade tem duas perguntas: há testes para esta mudança, e o código permite testá-lo? Ambas são " +
+                "comentários legítimos.",
+              ],
             },
           ],
           examples: [
@@ -7642,7 +7672,7 @@ export default area({
             "Manter cada mudança submetida a revisão pequena e com um propósito único — porque revisões de mudanças " +
             "grandes ou misturadas são lentas, superficiais e deixam passar problemas.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -7651,7 +7681,14 @@ export default area({
                 "pequeno o bastante para ser lido com atenção em uma sessão — em geral, algumas centenas de linhas " +
                 "no máximo, e menos é melhor.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Um PR, um propósito, pequeno o bastante para ser lido com atenção — mudanças grandes não recebem " +
+                "revisões melhores, recebem revisões piores.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -7671,7 +7708,7 @@ export default area({
                 "feature flags para integrar código ainda incompleto sem ativá-lo e deixe mudanças automáticas " +
                 "de formatação para seu próprio PR.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "uma funcionalidade grande dividida em PRs pequenos, com o código novo protegido por uma flag:" },
             {
               type: "code",
@@ -7697,11 +7734,15 @@ export default area({
                 "comportamento novo só é ativado no final. Em vez de um PR de dois mil linhas, o revisor recebe " +
                 "quatro que consegue avaliar de verdade.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Um PR, um propósito, pequeno o bastante para ser lido com atenção — mudanças grandes não recebem " +
-                "revisões melhores, recebem revisões piores.",
+              type: "list",
+              items: [
+                "Misturar propósitos num mesmo PR impede o revisor de separar o que muda comportamento do que só reorganiza " +
+                "ou reformata.",
+                "Aproveitar \"de passagem\" para renomear ou arrumar o que não é relacionado esconde a mudança real.",
+                "Mudanças grandes recebem revisões mais lentas e superficiais; fatie em passos que funcionem por si só.",
+              ],
             },
           ],
           examples: [
@@ -7818,7 +7859,7 @@ export default area({
             "Como comentar e como responder em uma revisão: focar no código e não na pessoa, ser específico e " +
             "explicar o porquê, distinguir o essencial do opcional e assumir boa-fé dos dois lados.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -7826,7 +7867,14 @@ export default area({
                 "melhora o código e o time — ou gera atrito. Giving & Receiving Feedback é a camada de comunicação " +
                 "da revisão: o que dizer, como dizer, e como reagir ao que se ouve.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Critique o código, não a pessoa: seja específico, explique o porquê, marque a severidade — e " +
+                "quem recebe, responda com boa-fé e sem levar para o lado pessoal.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -7846,7 +7894,7 @@ export default area({
                 "esclarecimento), não trate crítica ao código como crítica pessoal e agradeça. Em impasses, " +
                 "uma conversa rápida resolve o que dez comentários não resolvem.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "o mesmo achado, comunicado de forma dura e de forma construtiva:" },
             {
               type: "code",
@@ -7877,11 +7925,15 @@ export default area({
                 "caminho, explica o motivo, marca que é uma sugestão e convida a uma conversa. É o que faz o autor " +
                 "querer corrigir, em vez de se defender.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Critique o código, não a pessoa: seja específico, explique o porquê, marque a severidade — e " +
-                "quem recebe, responda com boa-fé e sem levar para o lado pessoal.",
+              type: "list",
+              items: [
+                "Comentários sem severidade deixam o autor sem saber o que bloqueia o merge e o que é só opinião.",
+                "Uma ordem fecha a conversa; quando há mais de um caminho razoável, uma pergunta abre espaço para uma razão " +
+                "que o revisor não viu.",
+                "Como autor, responder com defesa em vez de dados e abertura transforma a revisão em confronto.",
+              ],
             },
           ],
           examples: [
