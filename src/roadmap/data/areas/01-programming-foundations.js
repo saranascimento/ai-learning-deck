@@ -7945,7 +7945,7 @@ export default area({
             "se pode disparar a operação e continuar fazendo outra coisa enquanto ela roda em segundo plano " +
             "(assíncrono) — um eixo que existe em qualquer linguagem, não só em JavaScript.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -7953,7 +7953,15 @@ export default area({
                 "espera a anterior terminar. Código assíncrono permite disparar uma operação e seguir " +
                 "executando outras linhas antes dela terminar; o resultado chega depois, quando estiver pronto.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Síncrono espera cada operação terminar antes de seguir; assíncrono dispara a operação e " +
+                "continua, recebendo o resultado depois — a distinção existe em qualquer linguagem que lida " +
+                "com operações lentas (I/O, timers, rede), não é específica de JavaScript.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -7962,7 +7970,7 @@ export default area({
                 "rodasse tudo de forma síncrona, ficaria travado esperando à toa. Async existe pra aproveitar " +
                 "esse tempo ocioso: dispara a operação lenta e segue fazendo outro trabalho enquanto ela roda.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -7983,12 +7991,16 @@ export default area({
                 "espera o timer, segue pra linha seguinte. Por isso \"3\" imprime antes de \"2\", mesmo o " +
                 "setTimeout aparecendo antes do console.log(\"3\") no código.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Síncrono espera cada operação terminar antes de seguir; assíncrono dispara a operação e " +
-                "continua, recebendo o resultado depois — a distinção existe em qualquer linguagem que lida " +
-                "com operações lentas (I/O, timers, rede), não é específica de JavaScript.",
+              type: "list",
+              items: [
+                "Operações assíncronas disparadas em sequência não terminam necessariamente na mesma ordem; a ordem de " +
+                "chegada não segue a de disparo.",
+                "Código depois de uma chamada assíncrona roda antes do resultado dela; usar o resultado ali, sem esperar, dá " +
+                "`undefined`.",
+                "Assíncrono não é paralelo: dispara e continua, mas não significa que duas coisas rodam ao mesmo tempo.",
+              ],
             },
           ],
           examples: [
@@ -8052,7 +8064,7 @@ export default area({
             "imediatamente, deixando a operação continuar em segundo plano (non-blocking) — um eixo sobre " +
             "COMO o runtime lida com espera, distinto (mas relacionado) de sync/async.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -8060,7 +8072,15 @@ export default area({
                 "enquanto ela espera. Non-blocking é quando a chamada devolve o controle imediatamente, e a " +
                 "operação continua em segundo plano, notificando quando terminar.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Blocking trava a thread até a operação terminar; non-blocking devolve o controle na hora e " +
+                "notifica depois — um eixo sobre COMO a espera é tratada, distinto de sync/async (que é sobre " +
+                "ORDEM de execução), mas os dois costumam aparecer juntos na prática.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -8070,7 +8090,7 @@ export default area({
                 "que não bloqueia (raro) ou uma API assíncrona construída sobre uma implementação bloqueante " +
                 "por baixo — a distinção existe pra nomear ONDE está o custo de esperar.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "text",
@@ -8088,12 +8108,15 @@ export default area({
                 "mais comuns (rede, timers, leitura de arquivo no Node) — é isso que permite uma página " +
                 "continuar responsiva enquanto espera uma resposta de rede.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Blocking trava a thread até a operação terminar; non-blocking devolve o controle na hora e " +
-                "notifica depois — um eixo sobre COMO a espera é tratada, distinto de sync/async (que é sobre " +
-                "ORDEM de execução), mas os dois costumam aparecer juntos na prática.",
+              type: "list",
+              items: [
+                "Não confunda com síncrono × assíncrono: um fala de como a espera é tratada, o outro da ordem de execução.",
+                "Uma operação bloqueante numa thread única, como um laço longo ou uma chamada síncrona de arquivo, congela " +
+                "todo o resto.",
+                "Non-blocking não faz a operação ser mais rápida: só deixa a thread livre enquanto ela espera.",
+              ],
             },
           ],
           examples: [
@@ -8174,7 +8197,7 @@ export default area({
             "quando um evento acontece ou uma operação assíncrona termina. O mecanismo mais básico pra " +
             "\"avisar\" o código de quem chamou quando algo está pronto.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -8182,7 +8205,15 @@ export default area({
                 "geralmente quando uma operação assíncrona termina, ou quando um evento acontece. Só é " +
                 "possível porque funções são First-Class: podem ser passadas como qualquer outro valor.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Callback é uma função entregue como argumento pra ser chamada mais tarde — o mecanismo básico " +
+                "pra lidar com \"o resultado ainda não existe agora\", possível porque funções são First-Class " +
+                "e frequentemente combinado com Closure pra acessar contexto do chamador original.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -8192,7 +8223,7 @@ export default area({
                 "quando o resultado existir. Frequentemente essa função fecha sobre variáveis do escopo onde " +
                 "foi criada (Closure), o que permite acessar contexto do chamador mesmo rodando mais tarde.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -8214,12 +8245,23 @@ export default area({
                 "fetchUser não retorna o usuário diretamente — não tem como, ele ainda não existe quando a " +
                 "função retorna. Em vez disso, guarda onDone e chama ela quando o dado está pronto.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Callback é uma função entregue como argumento pra ser chamada mais tarde — o mecanismo básico " +
-                "pra lidar com \"o resultado ainda não existe agora\", possível porque funções são First-Class " +
-                "e frequentemente combinado com Closure pra acessar contexto do chamador original.",
+              type: "list",
+              items: [
+                "Em eventos e em APIs simples, em que a função é chamada quando algo acontece ou termina.",
+                "Quando há um único passo assíncrono e o resultado é tratado ali mesmo.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Callbacks aninhados em vários passos formam a \"pirâmide da desgraça\", difícil de ler e de tratar erros; " +
+                "use Promises.",
+                "O padrão erro-primeiro, como no Node.js, exige checar o erro em cada callback; esquecer disso deixa a falha " +
+                "passar em silêncio.",
+              ],
             },
           ],
           examples: [
@@ -8279,7 +8321,7 @@ export default area({
             "A fila (FIFO) onde callbacks de operações assíncronas terminadas (timers, I/O, eventos) esperam " +
             "sua vez de rodar — eles só executam quando a Call Stack esvazia, na ordem em que entraram.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -8287,7 +8329,15 @@ export default area({
                 "prontos pra rodar — de setTimeout, eventos de I/O, cliques — esperam sua vez. É uma Queue " +
                 "clássica: primeiro a entrar, primeiro a sair (FIFO).",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Task Queue é a fila FIFO onde callbacks prontos esperam a vez de rodar — eles só saem da " +
+                "fila e entram na Call Stack quando ela está completamente vazia, o que explica por que " +
+                "código assíncrono nunca interrompe código síncrono em andamento.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -8296,7 +8346,7 @@ export default area({
                 "que já está rodando; ele entra numa fila e espera a Call Stack ficar vazia. Sem essa fila, " +
                 "callbacks concorreriam de forma imprevisível pela única thread disponível.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -8314,12 +8364,15 @@ export default area({
                 "setTimeout(fn, 0) não executa fn imediatamente — ele agenda fn pra entrar na Task Queue assim " +
                 "que o timer (0ms) expirar, e de lá ela só sai quando a Call Stack estiver vazia.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Task Queue é a fila FIFO onde callbacks prontos esperam a vez de rodar — eles só saem da " +
-                "fila e entram na Call Stack quando ela está completamente vazia, o que explica por que " +
-                "código assíncrono nunca interrompe código síncrono em andamento.",
+              type: "list",
+              items: [
+                "Nenhum callback roda enquanto a Call Stack não esvazia: um trecho síncrono longo atrasa todos os timers e " +
+                "eventos.",
+                "Um `setTimeout` de 0 ms não roda imediatamente: só entra em ação depois que o código síncrono termina.",
+                "Timers garantem um atraso mínimo, não exato.",
+              ],
             },
           ],
           examples: [
@@ -8371,7 +8424,7 @@ export default area({
             "move o próximo callback da Task Queue pra dentro dela. É o que conecta código síncrono e " +
             "assíncrono numa única thread.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -8379,7 +8432,15 @@ export default area({
                 "Stack está vazia?\". Se estiver, ele pega o próximo callback da Task Queue e empilha na Call " +
                 "Stack pra executar. Esse ciclo se repete indefinidamente, enquanto o programa roda.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Event Loop é o ciclo que fica checando se a Call Stack está vazia e, se estiver, move o " +
+                "próximo callback da Task Queue pra dentro dela — o mecanismo que faz JavaScript parecer " +
+                "concorrente rodando numa única thread.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -8389,7 +8450,7 @@ export default area({
                 "garante que callbacks só entrem na stack quando ela está livre, nunca interrompendo código " +
                 "síncrono no meio.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "text",
@@ -8409,12 +8470,14 @@ export default area({
                 "entra na Call Stack quando o Event Loop percebe que ela está vazia, o que só acontece depois " +
                 "de todo o código síncrono atual terminar.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Event Loop é o ciclo que fica checando se a Call Stack está vazia e, se estiver, move o " +
-                "próximo callback da Task Queue pra dentro dela — o mecanismo que faz JavaScript parecer " +
-                "concorrente rodando numa única thread.",
+              type: "list",
+              items: [
+                "Um laço síncrono longo trava o Event Loop: nada é atendido até ele terminar, inclusive a interface.",
+                "Ele dá a impressão de concorrência numa thread única, mas o seu código JavaScript nunca roda em paralelo.",
+                "Trabalho pesado de CPU não é ajudado pelo Event Loop; ele ajuda a esperar por I/O.",
+              ],
             },
           ],
           examples: [
@@ -8470,7 +8533,7 @@ export default area({
             "Uma segunda fila de callbacks (usada por Promises) com prioridade sobre a Task Queue: o Event " +
             "Loop esvazia a Microtask Queue INTEIRA antes de pegar o próximo item da Task Queue.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -8479,7 +8542,15 @@ export default area({
                 "Event Loop processa TODAS as microtasks pendentes antes de pegar sequer uma task da Task " +
                 "Queue normal.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Microtask Queue é a fila de prioridade mais alta do Event Loop, usada por Promises — ela é " +
+                "esvaziada COMPLETAMENTE toda vez que a Call Stack fica livre, antes de qualquer item da Task " +
+                "Queue (timers, eventos) ter a chance de rodar.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -8489,7 +8560,7 @@ export default area({
                 "sobre a Task Queue garante que uma cadeia de Promises termine antes que qualquer nova task " +
                 "(um novo setTimeout, por exemplo) comece a rodar.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -8511,12 +8582,15 @@ export default area({
                 "Mesmo o setTimeout tendo sido agendado ANTES do .then(), a Promise resolve antes — porque " +
                 "toda a Microtask Queue é drenada antes do Event Loop sequer olhar pra Task Queue.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Microtask Queue é a fila de prioridade mais alta do Event Loop, usada por Promises — ela é " +
-                "esvaziada COMPLETAMENTE toda vez que a Call Stack fica livre, antes de qualquer item da Task " +
-                "Queue (timers, eventos) ter a chance de rodar.",
+              type: "list",
+              items: [
+                "Como é esvaziada por inteiro antes da Task Queue, uma microtask que gera outra microtask sem parar impede " +
+                "timers e eventos de rodarem.",
+                "Callbacks de `.then()` rodam antes de um `setTimeout(…, 0)`, mesmo que este tenha sido agendado primeiro.",
+                "Ao raciocinar sobre a ordem, considere as duas filas: microtasks primeiro, depois a próxima tarefa.",
+              ],
             },
           ],
           examples: [
@@ -8573,7 +8647,7 @@ export default area({
             "ou rejeitada — permitindo encadear reações com .then()/.catch() em vez de aninhar callbacks " +
             "dentro de callbacks.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -8582,7 +8656,15 @@ export default area({
                 "com sucesso) ou rejected (falhou). Uma vez resolvida ou rejeitada, o estado nunca muda de " +
                 "novo — e qualquer .then()/.catch() registrado, mesmo depois, recebe o resultado já decidido.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Promise é um objeto que representa o resultado futuro de uma operação assíncrona — pending, " +
+                "fulfilled ou rejected, transição única e final — permitindo encadear .then()/.catch() de " +
+                "forma achatada em vez de aninhar callbacks, com tratamento de erro centralizado.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -8592,7 +8674,7 @@ export default area({
                 "objeto de primeira classe pra representar \"um valor que ainda vai existir\", permitindo " +
                 "encadear passos com .then() (achatado, não aninhado) e centralizar erros num único .catch().",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -8617,12 +8699,22 @@ export default area({
                 "fetchUser retorna a Promise IMEDIATAMENTE, ainda pending. O resultado (resolve ou reject) só " +
                 "chega depois, via .then()/.catch() — que rodam como microtasks quando a Promise resolve.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Promise é um objeto que representa o resultado futuro de uma operação assíncrona — pending, " +
-                "fulfilled ou rejected, transição única e final — permitindo encadear .then()/.catch() de " +
-                "forma achatada em vez de aninhar callbacks, com tratamento de erro centralizado.",
+              type: "list",
+              items: [
+                "Para encadear passos assíncronos sequenciais sem aninhar callbacks.",
+                "Para tratar erros em um único `.catch()` que cobre toda a cadeia.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Uma Promise rejeitada sem `.catch()` vira erro não tratado; sempre trate a rejeição.",
+                "Uma Promise já começou a executar quando criada e não pode ser cancelada por padrão.",
+                "Uma vez resolvida ou rejeitada, o estado não muda mais; para eventos repetidos, uma Promise não serve.",
+              ],
             },
           ],
           examples: [
@@ -8686,7 +8778,7 @@ export default area({
             "síncrono — await pausa a função (sem bloquear a thread) até a Promise resolver, sem precisar " +
             "encadear .then().",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -8694,7 +8786,15 @@ export default area({
                 "Promise, e dentro dela await pausa a execução daquela função (só dela, não da thread " +
                 "inteira) até a Promise à direita resolver, entregando o valor resolvido diretamente.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Async/Await é açúcar sintático sobre Promise — await pausa apenas a função atual (não a " +
+                "thread) até a Promise resolver, permitindo escrever lógica assíncrona com a estrutura visual " +
+                "de código síncrono, incluindo try/catch comum pra tratar rejeições.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -8703,7 +8803,7 @@ export default area({
                 "escrever a mesma lógica assíncrona com a estrutura visual de código síncrono — um if, um " +
                 "for, um try/catch comuns — sem mudar o comportamento por baixo, que continua sendo Promise.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -8723,12 +8823,23 @@ export default area({
                 "fosse uma atribuição síncrona comum. getUserName continua sendo assíncrona: ela ainda retorna " +
                 "uma Promise, que precisa de .then() ou outro await pra ser consumida.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Async/Await é açúcar sintático sobre Promise — await pausa apenas a função atual (não a " +
-                "thread) até a Promise resolver, permitindo escrever lógica assíncrona com a estrutura visual " +
-                "de código síncrono, incluindo try/catch comum pra tratar rejeições.",
+              type: "list",
+              items: [
+                "Para escrever lógica assíncrona com a estrutura de código síncrono, incluindo `try/catch` comum.",
+                "Quando vários passos dependem do resultado anterior e a leitura em sequência fica mais clara.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "`await` em sequência serializa: para operações independentes, dispare-as juntas com `Promise.all`.",
+                "Uma `async` function sempre devolve uma Promise; esquecer o `await` ao chamá-la devolve a Promise em vez do " +
+                "valor.",
+                "O `await` pausa só a função, não a thread, mas o código depois dele só roda quando a Promise resolve.",
+              ],
             },
           ],
           examples: [
