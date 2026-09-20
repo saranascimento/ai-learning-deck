@@ -42,7 +42,7 @@ export default area({
           // note: R3.5.11 passa a exibir como subtítulo sob o H1 (tradução curta
           // do termo em inglês) — deixa de ser só metadata editorial invisível.
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -51,7 +51,14 @@ export default area({
                 "simplificada — um nome, uma assinatura, um conjunto de operações — sem precisar carregar na " +
                 "cabeça a implementação inteira.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Abstraction esconde os detalhes de implementação atrás de uma interface simples — quem usa só " +
+                "precisa entender o que a interface promete, não como ela cumpre a promessa por dentro.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -69,7 +76,7 @@ export default area({
                 "traçar a fronteira entre o que é público (a interface) e o que é interno (a implementação), " +
                 "para que times inteiros consigam trabalhar em paralelo sem pisar uns nos outros.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "paragraph",
               text: "O exemplo abaixo usa fetch, uma abstração já embutida na plataforma web:",
@@ -93,11 +100,15 @@ export default area({
                 "precisa saber que existe uma Promise que resolve com uma resposta — nada sobre como os bytes " +
                 "chegam até ali.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Abstraction esconde os detalhes de implementação atrás de uma interface simples — quem usa só " +
-                "precisa entender o que a interface promete, não como ela cumpre a promessa por dentro.",
+              type: "list",
+              items: [
+                "Abstrair cedo demais, antes de ver o padrão se repetir, cria interfaces que não servem a nenhum caso real.",
+                "Toda abstração esconde algo: quando ela vaza e o detalhe escondido importa, fica mais difícil entender o " +
+                "que aconteceu.",
+                "Camadas de abstração demais deixam o código indireto e difícil de acompanhar.",
+              ],
             },
           ],
           examples: [
@@ -202,7 +213,7 @@ export default area({
             "Agrupar dados e o comportamento que opera sobre eles em uma única unidade, controlando quem pode " +
             "acessar ou modificar esse estado de fora.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -211,7 +222,14 @@ export default area({
                 "esse estado de fora dessa unidade. Quem está de fora só interage através de operações " +
                 "expostas propositalmente.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Encapsulation une dados e as operações que os protegem numa única unidade, e bloqueia acesso " +
+                "direto a esses dados — mudanças só acontecem através de métodos que mantêm o estado válido.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -228,7 +246,7 @@ export default area({
                 "escondendo seus detalhes, e Encapsulation é a ferramenta de linguagem que faz esse esconder " +
                 "acontecer de verdade — não por convenção, mas por restrição real de acesso.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "paragraph",
               text: "Um campo privado (`#`) só pode ser lido ou alterado através dos métodos da própria classe:",
@@ -260,11 +278,21 @@ export default area({
                 "estado. O invariante \"saldo nunca fica inconsistente\" está protegido estruturalmente, não só " +
                 "por boa vontade de quem chama.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Encapsulation une dados e as operações que os protegem numa única unidade, e bloqueia acesso " +
-                "direto a esses dados — mudanças só acontecem através de métodos que mantêm o estado válido.",
+              type: "list",
+              items: [
+                "Quando o estado tem regras, os invariantes, que precisam valer sempre e não podem depender de quem usa.",
+                "Para poder mudar a representação interna sem quebrar quem usa a classe ou o módulo.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Getters e setters para tudo não encapsulam nada: expõem o estado interno com outra sintaxe.",
+                "Para dados simples, sem regras, esconder o campo atrás de métodos só acrescenta cerimônia.",
+              ],
             },
           ],
           examples: [
@@ -366,7 +394,7 @@ export default area({
             "O princípio de projetar interfaces que escondem decisões de implementação com chance de mudar — " +
             "Encapsulation é a técnica de linguagem que ajuda a aplicá-lo, mas os dois não são a mesma coisa.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -375,7 +403,14 @@ export default area({
                 "especialmente aquelas com mais chance de mudar no futuro. Não é sobre usar private; é sobre " +
                 "escolher O QUE esconder.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Encapsulation esconde o acesso; Information Hiding esconde a decisão. Um bom design " +
+                "normalmente precisa dos dois, mas eles resolvem problemas diferentes.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -386,7 +421,7 @@ export default area({
                 "cujos getters/setters simplesmente espelham a estrutura interna, sem proteger decisão " +
                 "nenhuma de mudança.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "paragraph",
               text: "O código abaixo é encapsulado (campos privados), mas não esconde nenhuma informação de verdade:",
@@ -414,11 +449,15 @@ export default area({
                 "todo código que chama getWidth()/setWidth() quebra — nenhuma decisão de implementação foi " +
                 "escondida de fato.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Encapsulation esconde o acesso; Information Hiding esconde a decisão. Um bom design " +
-                "normalmente precisa dos dois, mas eles resolvem problemas diferentes.",
+              type: "list",
+              items: [
+                "Encapsulation não garante Information Hiding: um campo privado com getter que devolve a estrutura interna " +
+                "ainda expõe a decisão.",
+                "Esconder o que não tem chance de mudar não traz benefício; esconda as decisões que provavelmente vão mudar.",
+                "Esconder demais dificulta depurar e estender; a interface precisa oferecer o que quem usa realmente precisa.",
+              ],
             },
           ],
           examples: [
@@ -512,7 +551,7 @@ export default area({
             "O contrato público que separa o que algo faz do como isso é implementado — a fronteira que " +
             "Abstraction e Encapsulation ajudam a proteger.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -520,7 +559,14 @@ export default area({
                 "você pode fazer, sem revelar como isso é feito por dentro. É a fronteira entre \"por fora\" e " +
                 "\"por dentro\".",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Interface é o contrato — o que algo promete fazer. Duas implementações completamente " +
+                "diferentes podem cumprir a mesma interface, e quem depende dela nem percebe a diferença.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -529,7 +575,7 @@ export default area({
                 "quebra o outro lado, desde que a interface continue igual. A interface é justamente o que " +
                 "sobra depois que os detalhes foram abstraídos.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "paragraph",
               text: "Duas implementações completamente diferentes podem cumprir a mesma interface implícita:",
@@ -556,11 +602,21 @@ export default area({
                 "info(mensagem). Isso é a interface: o contrato mínimo que qualquer logger precisa cumprir " +
                 "para funcionar ali.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Interface é o contrato — o que algo promete fazer. Duas implementações completamente " +
-                "diferentes podem cumprir a mesma interface, e quem depende dela nem percebe a diferença.",
+              type: "list",
+              items: [
+                "Quando há, ou é certo que haverá, mais de uma implementação, como pagamento por cartão e por Pix.",
+                "Na fronteira entre partes do sistema, para que uma possa mudar sem afetar a outra.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Uma interface com uma única implementação e sem previsão de outra costuma ser indireção sem benefício.",
+                "A assinatura sozinha não diz tudo: comportamento esperado, erros e condições precisam estar em um Contract.",
+              ],
             },
           ],
           examples: [
@@ -642,7 +698,7 @@ export default area({
             "As regras que uma Interface promete cumprir: pré-condições que quem chama precisa garantir, " +
             "pós-condições que a implementação garante de volta, e invariantes que nunca podem ser violados.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -651,7 +707,15 @@ export default area({
                 "garantido depois que a chamada termina) e invariantes (o que permanece verdade sempre, antes " +
                 "e depois).",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Um Contract é o que uma Interface promete além da assinatura — pré-condições, pós-condições e " +
+                "invariantes tornam explícito sob quais condições o código funciona, em vez de deixar isso " +
+                "implícito na cabeça de quem escreveu.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -660,7 +724,7 @@ export default area({
                 "informais — comentários, convenção, tentativa e erro — e ficam fáceis de violar sem ninguém " +
                 "perceber até algo quebrar em produção.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "paragraph",
               text: "Uma função com pré-condição verificada no início e pós-condição verificada no fim:",
@@ -691,12 +755,16 @@ export default area({
                 "precisa garanti-las. O assert do fim documenta o contrato de saída (pós-condição): o efeito " +
                 "que a função promete produzir.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Um Contract é o que uma Interface promete além da assinatura — pré-condições, pós-condições e " +
-                "invariantes tornam explícito sob quais condições o código funciona, em vez de deixar isso " +
-                "implícito na cabeça de quem escreveu.",
+              type: "list",
+              items: [
+                "Um contrato não escrito existe de qualquer forma, só que na cabeça de quem escreveu o código; torne-o " +
+                "explícito.",
+                "Pré-condições fortes demais empurram o trabalho para quem chama; pós-condições fracas demais dão pouca " +
+                "garantia.",
+                "Contratos só valem se forem verificados, com validação, `assert` ou testes; comentários desatualizados enganam.",
+              ],
             },
           ],
           examples: [
@@ -809,7 +877,7 @@ export default area({
             "Um mecanismo pelo qual uma classe reaproveita e especializa o comportamento de outra — mas com " +
             "um contrato próprio que precisa ser respeitado para não quebrar quem depende da classe base.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -817,7 +885,15 @@ export default area({
                 "comportamento de outra classe (superclasse) e pode sobrescrever ou estender parte dele. É uma " +
                 "forma de dizer \"isso é um tipo daquilo\" (is-a).",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Inheritance reaproveita comportamento de uma classe base, mas junto com o reaproveitamento " +
+                "vem uma promessa: a subclasse deve continuar se comportando como a base esperava. Quebrar " +
+                "essa promessa é o problema mais comum de herança mal usada.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -827,7 +903,7 @@ export default area({
                 "Animal deveria funcionar corretamente com um Dog ou um Cat no lugar (o princípio por trás " +
                 "disso tem nome — Liskov Substitution — e volta com mais profundidade em SOLID).",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "Uma subclasse reaproveitando estrutura e sobrescrevendo comportamento:" },
             {
               type: "code",
@@ -857,12 +933,22 @@ export default area({
                 "Animal (ex.: animal.speak()) continua funcionando com um Dog — essa é a promessa que " +
                 "Inheritance está fazendo.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Inheritance reaproveita comportamento de uma classe base, mas junto com o reaproveitamento " +
-                "vem uma promessa: a subclasse deve continuar se comportando como a base esperava. Quebrar " +
-                "essa promessa é o problema mais comum de herança mal usada.",
+              type: "list",
+              items: [
+                "Quando a relação é de fato \"é um\" e a subclasse cumpre todo o contrato da classe base.",
+                "Para reaproveitar comportamento comum de um conjunto pequeno e estável de tipos.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Só para reaproveitar código: a subclasse que quebra a expectativa da base invalida quem depende dela.",
+                "Hierarquias em cadeia deixam o comportamento espalhado por vários níveis e prendem as classes umas às " +
+                "outras; prefira Composition.",
+              ],
             },
           ],
           examples: [
@@ -988,7 +1074,7 @@ export default area({
             "decidir como responder à mesma chamada — o motivo pelo qual Interface e Inheritance se tornam " +
             "úteis na prática.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -996,7 +1082,15 @@ export default area({
                 "interface) em objetos de tipos diferentes, e cada um responder do seu próprio jeito. Quem " +
                 "chama não precisa saber — nem checar — qual tipo concreto está recebendo.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Polymorphism deixa cada tipo responder à mesma chamada do seu próprio jeito — é o que " +
+                "transforma Interface (o contrato) e Inheritance (a hierarquia) em código que cresce sem " +
+                "acumular condicionais de tipo.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -1013,7 +1107,7 @@ export default area({
                 "tipo/subtipo, o caso mais comum em linguagens orientadas a objeto. Existem outras formas (ex.: " +
                 "polimorfismo paramétrico em genéricos), fora do escopo aqui.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -1037,12 +1131,22 @@ export default area({
                 "totalArea chama shape.area() sem saber (nem perguntar) se é um Circle ou um Square — cada " +
                 "tipo responde area() do seu jeito. Adicionar um Triangle amanhã não exige tocar em totalArea.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Polymorphism deixa cada tipo responder à mesma chamada do seu próprio jeito — é o que " +
-                "transforma Interface (o contrato) e Inheritance (a hierarquia) em código que cresce sem " +
-                "acumular condicionais de tipo.",
+              type: "list",
+              items: [
+                "Quando o código escolhe o comportamento pelo tipo com `if` ou `instanceof`, e novos tipos exigem editar " +
+                "esses condicionais.",
+                "Para tratar uma coleção de objetos de tipos diferentes pela mesma interface, como uma lista de handlers.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Para poucos casos estáveis, um condicional simples costuma ser mais claro que uma hierarquia.",
+                "Exige que todos os tipos cumpram o mesmo contrato; se um deles não consegue, a abstração está errada.",
+              ],
             },
           ],
           examples: [
@@ -1171,7 +1275,7 @@ export default area({
             "vez de herdar de uma superclasse (is-a) — a alternativa mais flexível à Inheritance na maioria " +
             "dos casos.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -1179,7 +1283,15 @@ export default area({
                 "trabalho (has-a), em vez de herdar comportamento de uma superclasse (is-a). Um Car não é um " +
                 "Engine — ele tem um Engine.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Composition monta comportamento juntando objetos que colaboram (has-a), em vez de herdar de " +
+                "uma superclasse (is-a) — geralmente mais flexível, porque cada peça pode ser trocada, testada " +
+                "e reutilizada de forma independente.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -1196,7 +1308,7 @@ export default area({
                 "funções — a saída de g vira entrada de f. Aqui, Composition é sobre objetos contendo outros " +
                 "objetos. Os nomes coincidem, os conceitos não têm relação direta.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -1221,12 +1333,21 @@ export default area({
                 "Car não estende Engine — ele tem um Engine e delega start() pra ele. Trocar o motor por um " +
                 "ElectricEngine só exige mudar o que Car instancia, não a hierarquia de classes inteira.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Composition monta comportamento juntando objetos que colaboram (has-a), em vez de herdar de " +
-                "uma superclasse (is-a) — geralmente mais flexível, porque cada peça pode ser trocada, testada " +
-                "e reutilizada de forma independente.",
+              type: "list",
+              items: [
+                "Quando o comportamento precisa variar ou ser combinado de formas independentes, e não numa hierarquia fixa.",
+                "Quando você quer trocar e testar cada peça separadamente.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Exige mais código de ligação: as peças precisam ser montadas e delegadas explicitamente.",
+                "Para uma relação genuína de \"é um\" e estável, a herança continua sendo a opção mais simples.",
+              ],
             },
           ],
           examples: [
@@ -1333,7 +1454,7 @@ export default area({
             "O quanto uma parte do sistema depende dos detalhes internos de outra — Interface, Composition e " +
             "Inheritance bem usados são justamente as ferramentas para manter esse grau de dependência baixo.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -1342,7 +1463,15 @@ export default area({
                 "frequentemente exige mudar a outra também. Baixo Coupling: as partes podem mudar de forma " +
                 "independente.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Coupling mede o quanto uma parte do sistema depende dos detalhes de outra. O objetivo não é " +
+                "coupling zero (impossível) — é manter as dependências no nível mais baixo que o problema " +
+                "permite.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -1352,7 +1481,7 @@ export default area({
                 "implementação, então quem depende dela não precisa mudar quando a implementação muda por " +
                 "dentro.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "Alto coupling acessando estrutura interna, contra baixo coupling via um método:" },
             {
               type: "code",
@@ -1376,12 +1505,15 @@ export default area({
                 "A primeira versão quebra se Customer mudar como guarda o endereço; a segunda não — " +
                 "printInvoiceLowCoupling só depende de um método, não da estrutura interna de Customer.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Coupling mede o quanto uma parte do sistema depende dos detalhes de outra. O objetivo não é " +
-                "coupling zero (impossível) — é manter as dependências no nível mais baixo que o problema " +
-                "permite.",
+              type: "list",
+              items: [
+                "Coupling zero é impossível: partes que não se conhecem não colaboram; o objetivo é o menor nível que o " +
+                "problema permite.",
+                "Há acoplamento além do código, como o temporal, quando duas chamadas só funcionam se feitas em certa ordem.",
+                "Reduzir acoplamento com camadas extras que só repassam chamadas troca um problema por outro.",
+              ],
             },
           ],
           examples: [
@@ -1468,7 +1600,7 @@ export default area({
             "verdade umas às outras — o par de Coupling: baixo Coupling entre unidades, alta Cohesion dentro " +
             "de cada uma.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -1477,7 +1609,15 @@ export default area({
                 "por um motivo relacionado. Baixa Cohesion: a unidade faz um monte de coisas sem relação " +
                 "nenhuma entre si, só porque ficaram juntas.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Cohesion mede o quanto as responsabilidades dentro de uma unidade pertencem de verdade umas " +
+                "às outras. Junto com Coupling baixo entre unidades, alta Cohesion dentro de cada uma é o par " +
+                "que sustenta a heurística \"baixo acoplamento, alta coesão\".",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -1487,7 +1627,7 @@ export default area({
                 "Cohesion tende a ter muitos motivos para mudar, um por responsabilidade não relacionada, o " +
                 "que a torna frágil e difícil de entender.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "Uma classe de baixa Cohesion, com responsabilidades sem relação real entre si:" },
             {
               type: "code",
@@ -1510,12 +1650,15 @@ export default area({
                 "de relatório não deveria arriscar quebrar validação de e-mail, mas numa classe assim, tudo " +
                 "está mais próximo do que deveria.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Cohesion mede o quanto as responsabilidades dentro de uma unidade pertencem de verdade umas " +
-                "às outras. Junto com Coupling baixo entre unidades, alta Cohesion dentro de cada uma é o par " +
-                "que sustenta a heurística \"baixo acoplamento, alta coesão\".",
+              type: "list",
+              items: [
+                "Um módulo \"utilidades\" que junta funções sem relação tem baixa coesão: o que as une é só estar no mesmo " +
+                "arquivo.",
+                "Coesão não é fazer pouco: dividir em partes minúsculas pode espalhar um assunto que pertence junto.",
+                "Baixa coesão costuma aparecer como mudanças que pedem alterar partes sem relação da mesma unidade.",
+              ],
             },
           ],
           examples: [
@@ -1622,7 +1765,7 @@ export default area({
             "O princípio de organizar um sistema para que cada parte trate de uma preocupação distinta — a " +
             "razão de ser por trás de baixo Coupling e alta Cohesion, não uma técnica nova.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -1631,7 +1774,15 @@ export default area({
                 "misturar com as outras. Não é uma técnica específica; é o objetivo que Coupling baixo e " +
                 "Cohesion alta existem para servir.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Separation of Concerns é o princípio; baixo Coupling e alta Cohesion são o resultado prático " +
+                "de aplicá-lo bem. Perguntar \"essa parte está misturando preocupações diferentes?\" é uma " +
+                "forma direta de aplicar o princípio no dia a dia.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -1641,7 +1792,7 @@ export default area({
                 "salvos sem tocar em como a regra de negócio funciona — exatamente o resultado prático de ter " +
                 "baixo Coupling entre as partes e alta Cohesion dentro de cada uma.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "Regra de negócio e formatação misturadas, depois separadas:" },
             {
               type: "code",
@@ -1670,12 +1821,15 @@ export default area({
                 "vice-versa — cada função trata de um concern só, o que naturalmente resulta em baixo Coupling " +
                 "entre elas e alta Cohesion dentro de cada uma.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Separation of Concerns é o princípio; baixo Coupling e alta Cohesion são o resultado prático " +
-                "de aplicá-lo bem. Perguntar \"essa parte está misturando preocupações diferentes?\" é uma " +
-                "forma direta de aplicar o princípio no dia a dia.",
+              type: "list",
+              items: [
+                "Separar em excesso, com uma camada para cada detalhe, aumenta o caminho que um pedido percorre sem melhorar " +
+                "nada.",
+                "Uma separação só existe de verdade se as partes deixam de depender dos detalhes umas das outras.",
+                "As preocupações não são fixas: o que precisa ficar separado depende do que muda por razões diferentes.",
+              ],
             },
           ],
           examples: [
