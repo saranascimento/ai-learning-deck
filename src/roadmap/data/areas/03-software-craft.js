@@ -2026,7 +2026,7 @@ export default area({
             "O sinal visível de que o mesmo conhecimento foi escrito mais de uma vez: trechos copiados ou quase " +
             "idênticos que precisam ser alterados juntos — a violação de DRY vista no código pronto.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -2035,7 +2035,14 @@ export default area({
                 "sintoma na estrutura que indica que vale investigar. DRY é o princípio (não repita conhecimento); " +
                 "Duplicate Code é como essa violação aparece quando você olha o código.",
             },
-            { type: "heading", text: "Por que é um problema?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Duplicate Code é o sintoma de DRY violado: quando dois trechos precisam mudar juntos, eles " +
+                "deveriam ser um só — mas só quando a semelhança é de conhecimento, não de coincidência.",
+            },
+            { type: "heading", text: "Por que é um problema" },
             {
               type: "paragraph",
               text:
@@ -2053,7 +2060,7 @@ export default area({
                 "diferença em parâmetro. Atenção: nem toda semelhança é duplicação de conhecimento — se os " +
                 "trechos vão evoluir por razões distintas, mantê-los separados pode ser a melhor escolha.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "duas funções que só diferem por um critério, e a versão sem duplicação:" },
             {
               type: "code",
@@ -2092,11 +2099,15 @@ export default area({
                 "A estrutura comum (percorrer, filtrar, extrair o nome) existe em um só lugar, e o que muda entre " +
                 "os casos — o critério — é passado de fora. Um terceiro critério passa a custar uma linha.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Duplicate Code é o sintoma de DRY violado: quando dois trechos precisam mudar juntos, eles " +
-                "deveriam ser um só — mas só quando a semelhança é de conhecimento, não de coincidência.",
+              type: "list",
+              items: [
+                "Só é duplicação de verdade quando os trechos precisam mudar juntos; semelhança por coincidência não deve " +
+                "ser unificada.",
+                "Um bloco repetido no início ou no fim de todos os ramos de um `if` não pertence a nenhum deles.",
+                "Duplicação estrutural (mesmo esqueleto, um passo diferente) se resolve passando o passo como função.",
+              ],
             },
           ],
           examples: [
@@ -2241,7 +2252,7 @@ export default area({
             "Uma função que cresceu tanto que não dá para entender de uma vez: faz várias coisas, exige rolar a " +
             "tela e costuma ter comentários separando \"seções\" — sinal de que precisa ser dividida.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -2250,7 +2261,14 @@ export default area({
                 "vários níveis de abstração e muitas variáveis locais que o leitor precisa manter na cabeça. É a " +
                 "violação, vista no código, do que Functions (módulo Clean Code) recomenda.",
             },
-            { type: "heading", text: "Por que é um problema?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Se você precisa de comentários para marcar seções dentro de uma função, cada seção provavelmente " +
+                "quer ser uma função com esse nome.",
+            },
+            { type: "heading", text: "Por que é um problema" },
             {
               type: "paragraph",
               text:
@@ -2268,7 +2286,7 @@ export default area({
                 "Refactoring): cada bloco com um propósito reconhecível vira uma função com um bom nome — e o " +
                 "comentário-título, que já dava o nome, deixa de ser necessário.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "uma função com \"seções\" marcadas por comentários, e a versão dividida:" },
             {
               type: "code",
@@ -2304,11 +2322,16 @@ export default area({
                 "Cada comentário-título virou o nome de uma função (validateCheckout, calculateTotal). Agora " +
                 "checkout se lê como um índice e cada parte pode ser testada e alterada sozinha.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Se você precisa de comentários para marcar seções dentro de uma função, cada seção provavelmente " +
-                "quer ser uma função com esse nome.",
+              type: "list",
+              items: [
+                "O critério é dificuldade de compreensão, não a contagem de linhas: uma função longa, mas linear e uniforme, " +
+                "pode estar bem.",
+                "Dividir só por causa do tamanho espalha o que hoje se lê de uma vez.",
+                "Comentários que marcam seções dentro da função são o sinal mais confiável: já são nomes de funções não " +
+                "extraídas.",
+              ],
             },
           ],
           examples: [
@@ -2456,7 +2479,7 @@ export default area({
             "Uma função com parâmetros demais: chamadas difíceis de ler, fáceis de errar na ordem e sinal de que " +
             "os dados deveriam viajar juntos ou a função faz mais do que deveria.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -2465,7 +2488,14 @@ export default area({
                 "Arguments (módulo Clean Code) recomenda escrever; os três Concepts formam uma sequência: escrever " +
                 "bem, reconhecer a violação e corrigir (com Introduce Parameter Object, no módulo Refactoring).",
             },
-            { type: "heading", text: "Por que é um problema?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Muitos parâmetros costumam esconder um conceito sem nome (dados que andam juntos) ou uma função que " +
+                "faz demais — ache qual dos dois é antes de simplesmente reordenar os argumentos.",
+            },
+            { type: "heading", text: "Por que é um problema" },
             {
               type: "paragraph",
               text:
@@ -2483,7 +2513,7 @@ export default area({
                 "(Introduce Parameter Object), passar o objeto inteiro em vez de seus campos, ou dividir a função " +
                 "em partes que precisam de menos dados.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "parâmetros que sempre viajam juntos, agrupados em um objeto:" },
             {
               type: "code",
@@ -2510,11 +2540,16 @@ export default area({
                 "x, y, width e height são as partes de uma coisa só. Ao agrupá-las, as assinaturas ficam mais curtas " +
                 "e mais claras, e o retângulo passa a existir como conceito no código.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Muitos parâmetros costumam esconder um conceito sem nome (dados que andam juntos) ou uma função que " +
-                "faz demais — ache qual dos dois é antes de simplesmente reordenar os argumentos.",
+              type: "list",
+              items: [
+                "Reordenar os argumentos não resolve: o problema costuma ser um conceito sem nome ou uma função que faz demais.",
+                "Agrupar tudo num objeto pode esconder uma função com responsabilidades demais; dividi-la reduz a lista como " +
+                "consequência.",
+                "Passar o objeto inteiro faz a função depender do formato dele; a troca só compensa quando ela é, de fato, " +
+                "sobre esse objeto.",
+              ],
             },
           ],
           examples: [
@@ -2636,7 +2671,7 @@ export default area({
             "Uma classe que acumulou responsabilidades demais — muitos campos e métodos sem relação entre si — " +
             "o sintoma concreto de baixa coesão, e o ponto de partida para dividi-la.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -2645,7 +2680,14 @@ export default area({
                 "classe pertencem juntas, uma classe grande normalmente é o sintoma de baixa coesão: vários " +
                 "assuntos diferentes acabaram morando no mesmo lugar.",
             },
-            { type: "heading", text: "Por que é um problema?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Se grupos diferentes de métodos usam grupos diferentes de campos, você tem mais de uma classe " +
+                "morando no mesmo arquivo — separe-as.",
+            },
+            { type: "heading", text: "Por que é um problema" },
             {
               type: "paragraph",
               text:
@@ -2662,7 +2704,7 @@ export default area({
                 "sua própria classe. A correção é Extract Class (módulo Refactoring): separar cada assunto na sua " +
                 "classe, mantendo cada uma coesa.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "uma classe com dois assuntos distintos, e a divisão:" },
             {
               type: "code",
@@ -2708,11 +2750,14 @@ export default area({
                 "greeting só usava name; fullAddress só usava o endereço. Essa divisão nítida dos métodos entre os " +
                 "campos é o sinal. Separadas, cada classe é pequena, coesa e pode mudar sem afetar a outra.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Se grupos diferentes de métodos usam grupos diferentes de campos, você tem mais de uma classe " +
-                "morando no mesmo arquivo — separe-as.",
+              type: "list",
+              items: [
+                "Se os grupos de métodos usam grupos diferentes de campos, são classes diferentes no mesmo arquivo.",
+                "Nomes como `Manager`, `Helper` e `Utils` indicam uma classe sem assunto claro, que aceita qualquer coisa.",
+                "Campos com o mesmo prefixo (`shipping...`) apontam para um conceito que ainda não virou classe.",
+              ],
             },
           ],
           examples: [
@@ -2859,7 +2904,7 @@ export default area({
             "Um método que usa mais os dados de outro objeto do que os do próprio — sinal de que o comportamento " +
             "está no lugar errado e de acoplamento excessivo entre as duas classes.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -2868,7 +2913,14 @@ export default area({
                 "nada do objeto onde mora. É o sintoma concreto de acoplamento excessivo (Coupling, módulo " +
                 "Programming Fundamentals): duas classes conhecem detalhes demais uma da outra.",
             },
-            { type: "heading", text: "Por que é um problema?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Se um método usa mais os dados de outra classe do que os da sua, ele provavelmente pertence a " +
+                "essa outra classe — leve o comportamento para perto dos dados.",
+            },
+            { type: "heading", text: "Por que é um problema" },
             {
               type: "paragraph",
               text:
@@ -2885,7 +2937,7 @@ export default area({
                 "ele usa. Há exceções deliberadas — separar dados de comportamento em padrões como Strategy ou " +
                 "em formatadores de apresentação —, mas então é uma escolha consciente, não um acidente.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "um método que só mexe nos dados de outro objeto, e a versão com o comportamento no lugar certo:" },
             {
               type: "code",
@@ -2915,11 +2967,16 @@ export default area({
                 "totalWithDiscount só usava items e discountRate, ambos de Order. No novo lugar, a regra do total " +
                 "passa a ser uma propriedade do pedido, e qualquer cliente (impressão, e-mail, API) usa a mesma regra.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Se um método usa mais os dados de outra classe do que os da sua, ele provavelmente pertence a " +
-                "essa outra classe — leve o comportamento para perto dos dados.",
+              type: "list",
+              items: [
+                "Um método que mais usa dados de outra classe provavelmente pertence a ela; mover o comportamento evita esse " +
+                "acoplamento.",
+                "Cadeias como `a.b.c.d` são a mesma inveja: quem chama conhece a estrutura interna de vários objetos.",
+                "Nem todo método que lê dados de fora é smell: separar dados e comportamento pode ser decisão de projeto, " +
+                "como manter a apresentação fora do domínio.",
+              ],
             },
           ],
           examples: [
@@ -3054,7 +3111,7 @@ export default area({
             "Usar strings e números soltos para representar conceitos do domínio (dinheiro, e-mail, CPF) em vez " +
             "de tipos próprios — o que espalha validação e permite misturar valores que não deveriam se misturar.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -3063,7 +3120,14 @@ export default area({
                 "intervalo de datas: todos viram simples strings ou números, e o significado e as regras ficam " +
                 "só na cabeça de quem programa.",
             },
-            { type: "heading", text: "Por que é um problema?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Se um valor tem regras, formato ou significado próprio, ele merece um tipo próprio — em vez de " +
+                "ser uma string ou um número que todo mundo precisa lembrar de validar.",
+            },
+            { type: "heading", text: "Por que é um problema" },
             {
               type: "paragraph",
               text:
@@ -3082,7 +3146,7 @@ export default area({
                 "do conceito (um value object): depois de construído, o valor é sempre válido, e o restante do " +
                 "código não precisa conferir de novo.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "um e-mail como string solta, e como um tipo que garante a própria validade:" },
             {
               type: "code",
@@ -3115,11 +3179,14 @@ export default area({
                 "A validação acontece uma vez, na criação. Toda função que recebe um Email pode confiar que ele é " +
                 "válido, e o próprio parâmetro documenta o que se espera — algo que a palavra string nunca dirá.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Se um valor tem regras, formato ou significado próprio, ele merece um tipo próprio — em vez de " +
-                "ser uma string ou um número que todo mundo precisa lembrar de validar.",
+              type: "list",
+              items: [
+                "Um `number` para dinheiro não sabe a moeda e sofre com arredondamento de ponto flutuante.",
+                "Argumentos do mesmo tipo primitivo podem ser trocados de posição sem nenhum aviso.",
+                "Números sem unidade obrigam a adivinhar se são metros, quilômetros, segundos ou milissegundos.",
+              ],
             },
           ],
           examples: [
