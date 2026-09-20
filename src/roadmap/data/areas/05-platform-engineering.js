@@ -6529,9 +6529,703 @@ export default area({
         "Arguments, Variables, Fragments, Interfaces, Unions, Persisted Queries, Error Handling — retirados no trimming",
       ],
       concepts: [
-        concept({ order: 10, title: "GraphQL Schema & Type System", subtopics: ["SDL", "scalars/object/enum/input types", "nullability", "schema como contrato"], note: "consolidada (A13) — absorve Nullability" }),
-        concept({ order: 20, title: "Query / Mutation / Subscription", requires: ["GraphQL Schema & Type System"], subtopics: ["query (leitura)", "mutation (escrita)", "subscription (tempo real — revisita WebSocket)"], note: "consolidada (A14)" }),
-        concept({ order: 30, title: "Resolver", requires: ["GraphQL Schema & Type System"], note: "função por campo; resolver chain" }),
+        concept({
+          order: 10,
+          title: "GraphQL Schema & Type System",
+          subtopics: ["SDL", "scalars/object/enum/input types", "nullability", "schema como contrato"],
+          note: "consolidada (A13) — absorve Nullability",
+          summary:
+            "O contrato de uma API GraphQL: um esquema tipado, escrito em SDL, que declara os tipos, os campos " +
+            "e o que pode ser nulo — e que cliente e servidor usam como fonte única de verdade.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "GraphQL é uma linguagem de consulta para APIs, e tudo nela parte do esquema (schema), escrito na " +
+                "SDL (Schema Definition Language). O esquema declara os tipos que existem, os campos de cada um e como " +
+                "eles se relacionam. Os tipos escalares (`Int`, `Float`, `String`, `Boolean`, `ID`) são as folhas, os " +
+                "tipos de objeto agrupam campos, os enums restringem valores, e os tipos de entrada (`input`) descrevem " +
+                "os argumentos complexos. O servidor só executa o que o esquema permite, e o cliente só pede o que " +
+                "ele declara: é a forma mais forte de API Contract.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "O esquema é o contrato tipado da API: define o que pode ser pedido, o formato de cada resposta e o " +
+                "que pode faltar — e ferramentas e validações nascem dele.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "list",
+              items: [
+                "Tipos de objeto (`type Order { ... }`) têm campos, e cada campo tem um tipo.",
+                "Nulidade explícita: por padrão todo campo pode ser `null`; o `!` (`String!`) declara que nunca é nulo. Em listas, `[Order!]!` significa uma lista que existe e cujos itens nunca são nulos.",
+                "`enum` restringe a um conjunto de valores; `input` descreve os argumentos estruturados (só serve para entrada); `ID` é um identificador opaco, serializado como texto.",
+                "O tipo `Query` é a raiz das leituras, e é o ponto de partida de toda consulta.",
+                "O esquema é introspectável: o cliente pode perguntar ao servidor quais tipos e campos existem, o que alimenta documentação, autocompletar e geração de código.",
+              ],
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "schema.js",
+              code: [
+                "import { buildSchema, graphql } from \"graphql\";",
+                "",
+                "const schema = buildSchema(`",
+                "  enum OrderStatus { PENDING PAID SHIPPED }",
+                "",
+                "  type Customer {",
+                "    id: ID!",
+                "    name: String!",
+                "    email: String        # pode ser null: nem todo cliente tem e-mail",
+                "  }",
+                "",
+                "  type OrderItem { product: String!, quantity: Int! }",
+                "",
+                "  type Order {",
+                "    id: ID!",
+                "    status: OrderStatus!",
+                "    total: Int!          # em centavos",
+                "    customer: Customer!",
+                "    items: [OrderItem!]!",
+                "  }",
+                "",
+                "  type Query {",
+                "    order(id: ID!): Order   # nulo se não existir",
+                "  }",
+                "`);",
+                "",
+                "const rootValue = {",
+                "  order: ({ id }) => ({",
+                "    id, status: \"PAID\", total: 1990,",
+                "    customer: { id: \"7\", name: \"Ana\", email: null },",
+                "    items: [{ product: \"caneta\", quantity: 2 }],",
+                "  }),",
+                "};",
+                "",
+                "const result = await graphql({",
+                "  schema,",
+                "  rootValue,",
+                "  source: `{ order(id: \"42\") { status customer { name email } items { product } } }`,",
+                "});",
+                "",
+                "result.data;",
+                "// { order: { status: \"PAID\", customer: { name: \"Ana\", email: null }, items: [{ product: \"caneta\" }] } }",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A consulta pediu só alguns campos, e só eles vieram. Pedir um campo que o esquema não declara falha " +
+                "na validação, antes de qualquer código do servidor rodar.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "Marcar tudo com `!` parece mais seguro, mas um erro em um campo não nulo faz o `null` subir até o pai nulável mais próximo: um campo secundário que falha pode anular a resposta inteira.",
+                "Tornar obrigatório (`!`) um campo que era opcional na saída é uma quebra de contrato para quem escreve, e retirar o `!` de um campo de saída quebra clientes que assumiam que ele existia.",
+                "Tipos de entrada e de saída são separados: não se usa um `type` como argumento, e é preciso declarar um `input` equivalente.",
+                "Remover ou renomear um campo quebra os clientes que o pedem; em vez de versionar, o caminho é deprecar (`@deprecated`) e remover depois.",
+                "O `ID` é sempre texto na resposta, mesmo que o valor guardado seja numérico.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Como um erro se propaga com campos não nulos",
+              context: "A nulidade decide o tamanho do estrago quando um campo falha.",
+              code: {
+                language: "javascript",
+                filename: "null-propagation.js",
+                code: [
+                  "// customer: Customer!  (não nulo)  →  o erro anula o pedido inteiro",
+                  "// customer: Customer   (nulável)   →  só o cliente fica null, e o resto da resposta sobrevive",
+                  "",
+                  "const rootValue = {",
+                  "  order: () => ({",
+                  "    id: \"42\",",
+                  "    customer() { throw new Error(\"serviço de clientes fora do ar\"); },",
+                  "  }),",
+                  "};",
+                  "",
+                  "// Com `customer: Customer!`",
+                  "// { data: { order: null }, errors: [{ message: \"serviço de clientes fora do ar\", path: [\"order\", \"customer\"] }] }",
+                  "",
+                  "// Com `customer: Customer`",
+                  "// { data: { order: { id: \"42\", customer: null } }, errors: [ ... ] }",
+                ].join("\n"),
+              },
+              explanation:
+                "Campos que dependem de outros serviços, e podem falhar, são bons candidatos a ser nuláveis: a resposta " +
+                "parcial ainda é útil. Reserve o `!` para o que o servidor consegue sempre garantir.",
+            },
+            {
+              title: "Enums e tipos de entrada",
+              context: "Restringem os valores aceitos e estruturam os argumentos das operações.",
+              code: {
+                language: "text",
+                filename: "input-types.graphql",
+                code: [
+                  "enum OrderStatus { PENDING PAID SHIPPED }",
+                  "",
+                  "input OrderItemInput { productId: ID!, quantity: Int! }",
+                  "",
+                  "input NewOrderInput {",
+                  "  customerId: ID!",
+                  "  items: [OrderItemInput!]!",
+                  "  note: String",
+                  "}",
+                  "",
+                  "type Mutation {",
+                  "  createOrder(input: NewOrderInput!): Order!",
+                  "}",
+                  "",
+                  "# Uma consulta com um status inexistente é recusada na validação:",
+                  "#   orders(status: CANCELLED)   → erro: valor não faz parte do enum OrderStatus",
+                ].join("\n"),
+              },
+              explanation:
+                "O servidor nem executa um pedido com um valor fora do enum ou com um campo obrigatório ausente. A " +
+                "validação vem do esquema, sem código escrito à mão.",
+            },
+            {
+              title: "Evoluir sem versionar: `@deprecated`",
+              context: "GraphQL prefere adicionar e deprecar campos a criar versões da API.",
+              code: {
+                language: "javascript",
+                filename: "deprecated.js",
+                code: [
+                  "import { buildSchema } from \"graphql\";",
+                  "",
+                  "const schema = buildSchema(`",
+                  "  type Order {",
+                  "    id: ID!",
+                  "    total: Int! @deprecated(reason: \"Use totalInCents\")",
+                  "    totalInCents: Int!",
+                  "  }",
+                  "  type Query { order(id: ID!): Order }",
+                  "`);",
+                  "",
+                  "schema.getType(\"Order\").getFields().total.deprecationReason;   // \"Use totalInCents\"",
+                  "// O campo continua funcionando; as ferramentas (GraphiQL, editores) o mostram como depreciado.",
+                ].join("\n"),
+              },
+              explanation:
+                "Os clientes antigos seguem funcionando, e os novos veem o aviso. Como o esquema mostra quem pede o quê, " +
+                "é possível saber quando o campo antigo já pode ser removido.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Uma livraria precisa expor livros. Cada livro tem título, subtítulo (nem todos têm), ISBN, preço em " +
+              "centavos, data de publicação (desconhecida para alguns), lista de tags (pode ser vazia, mas existe " +
+              "sempre) e um autor (sempre presente).",
+            problemCode: {
+              language: "javascript",
+              filename: "bookstore.js",
+              code: [
+                "import { buildSchema } from \"graphql\";",
+                "",
+                "const schema = buildSchema(`",
+                "  # TODO: type Author { ... }",
+                "  # TODO: type Book { ... }",
+                "  # TODO: type Query { book(isbn: ID!): Book, books: [Book!]! }",
+                "`);",
+              ].join("\n"),
+            },
+            task:
+              "Escreva a SDL com a nulidade correta para cada campo: o que é sempre garantido leva `!`, e o que pode " +
+              "faltar fica nulável.",
+            hint: "Subtítulo e data de publicação podem faltar. As tags são uma lista que sempre existe, e cujos itens nunca são nulos.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "bookstore.fixed.js",
+                code: [
+                  "import { buildSchema } from \"graphql\";",
+                  "",
+                  "const schema = buildSchema(`",
+                  "  type Author {",
+                  "    id: ID!",
+                  "    name: String!",
+                  "  }",
+                  "",
+                  "  type Book {",
+                  "    isbn: ID!",
+                  "    title: String!",
+                  "    subtitle: String            # nem todo livro tem",
+                  "    priceInCents: Int!",
+                  "    publishedAt: String         # desconhecida para alguns",
+                  "    tags: [String!]!            # a lista sempre existe (pode ser vazia); os itens nunca são nulos",
+                  "    author: Author!",
+                  "  }",
+                  "",
+                  "  type Query {",
+                  "    book(isbn: ID!): Book       # pode não existir: nulável",
+                  "    books: [Book!]!",
+                  "  }",
+                  "`);",
+                  "",
+                  "String(schema.getType(\"Book\").getFields().subtitle.type);   // \"String\"",
+                  "String(schema.getType(\"Book\").getFields().tags.type);       // \"[String!]!\"",
+                ].join("\n"),
+              },
+              explanation:
+                "O `!` só aparece onde o servidor consegue garantir o valor. `book` é nulável porque um ISBN pode não " +
+                "existir. Em `books: [Book!]!`, nem a lista nem os itens são nulos: se a resolução de um item falhar, o " +
+                "erro sobe e anula a lista inteira. Para tolerar falhas isoladas, `[Book]!` permitiria itens nulos.",
+            },
+          },
+        }),
+        concept({
+          order: 20,
+          title: "Query / Mutation / Subscription",
+          requires: ["GraphQL Schema & Type System"],
+          subtopics: ["query (leitura)", "mutation (escrita)", "subscription (tempo real — revisita WebSocket)"],
+          note: "consolidada (A14)",
+          summary:
+            "Os três tipos de operação do GraphQL: query para ler, mutation para escrever e subscription para " +
+            "receber eventos em tempo real — cada um começando em um tipo raiz do esquema.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Toda requisição GraphQL é uma operação de um de três tipos. Query lê dados, e não deveria ter efeitos " +
+                "colaterais. Mutation altera dados, e é a que muda o estado do sistema. Subscription abre um fluxo de " +
+                "longa duração em que o servidor envia resultados a cada evento, em geral sobre WebSocket (Web " +
+                "Fundamentals). É a mesma separação de Command-Query Separation, aplicada à API: leitura de um lado, " +
+                "escrita de outro. Uma operação pode receber variáveis, valores tipados enviados junto da consulta.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Ler, escrever e assistir são operações distintas com regras de execução diferentes: consultas podem " +
+                "rodar em paralelo, mutações rodam em série, e subscrições permanecem abertas.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "list",
+              items: [
+                "Query: campos resolvidos possivelmente em paralelo; o cliente escolhe exatamente o que quer receber.",
+                "Mutation: os campos de nível raiz são executados um de cada vez, na ordem em que aparecem, para que os efeitos sejam previsíveis; por convenção devolve o objeto alterado, para o cliente atualizar a sua visão.",
+                "Subscription: o cliente assina um evento, e o servidor envia um resultado a cada ocorrência, sobre uma conexão persistente (por exemplo, o protocolo `graphql-ws`).",
+                "Variáveis (`$id: ID!`) separam o valor da consulta: a consulta é fixa, e os valores vêm à parte, tipados e validados.",
+                "Uma única URL (em geral `/graphql`) atende as três, com o tipo de operação no documento.",
+              ],
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "operations.js",
+              code: [
+                "import { buildSchema, graphql } from \"graphql\";",
+                "",
+                "const schema = buildSchema(`",
+                "  type Order { id: ID!, status: String! }",
+                "  type Query { order(id: ID!): Order }",
+                "  type Mutation { cancelOrder(id: ID!): Order! }",
+                "`);",
+                "",
+                "const orders = new Map([[\"42\", { id: \"42\", status: \"PAID\" }]]);",
+                "const rootValue = {",
+                "  order: ({ id }) => orders.get(id) ?? null,",
+                "  cancelOrder: ({ id }) => { orders.get(id).status = \"CANCELLED\"; return orders.get(id); },",
+                "};",
+                "",
+                "// Query, com variável",
+                "await graphql({",
+                "  schema, rootValue,",
+                "  source: `query ($id: ID!) { order(id: $id) { status } }`,",
+                "  variableValues: { id: \"42\" },",
+                "});                                          // { data: { order: { status: \"PAID\" } } }",
+                "",
+                "// Mutation: devolve o objeto alterado",
+                "await graphql({",
+                "  schema, rootValue,",
+                "  source: `mutation { cancelOrder(id: \"42\") { id status } }`,",
+                "});                                          // { data: { cancelOrder: { id: \"42\", status: \"CANCELLED\" } } }",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A mutação devolve o pedido já alterado, então o cliente atualiza a tela sem uma segunda consulta.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "Uma consulta com erro geralmente responde HTTP 200, e o erro vai no campo `errors` do corpo: o cliente precisa checá-lo, e os monitores baseados em status HTTP não enxergam as falhas.",
+                "Montar a consulta concatenando valores em texto reabre o risco de injeção e impede o cache de consultas; use sempre variáveis.",
+                "Uma query que altera estado, por conveniência, quebra as garantias (caches, repetição segura); escrita pertence a uma mutation.",
+                "Vários campos de mutation em um mesmo documento rodam em série, e o segundo pode depender do primeiro; mas não formam uma transação: se o segundo falha, o primeiro já foi aplicado.",
+                "Subscriptions exigem conexões persistentes: têm custo de infraestrutura, e escalá-las pede um barramento de eventos entre as instâncias.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Variáveis em vez de concatenação",
+              context: "A consulta fica fixa, e os valores chegam tipados e separados.",
+              code: {
+                language: "javascript",
+                filename: "variables.js",
+                code: [
+                  "const userInput = 'x\") { id } evil: order(id: \"1';   // tentativa de alterar a consulta",
+                  "",
+                  "// Perigoso: o texto do usuário vira parte da consulta",
+                  "const unsafe = `{ order(id: \"${userInput}\") { status } }`;",
+                  "",
+                  "// Seguro: o valor viaja à parte, como dado",
+                  "const safe = {",
+                  "  query: \"query ($id: ID!) { order(id: $id) { status } }\",",
+                  "  variables: { id: userInput },   // é só um ID (inexistente), e nunca é interpretado como consulta",
+                  "};",
+                  "",
+                  "await fetch(\"/graphql\", { method: \"POST\", headers: { \"content-type\": \"application/json\" }, body: JSON.stringify(safe) });",
+                ].join("\n"),
+              },
+              explanation:
+                "Com variáveis, o servidor valida o valor contra o tipo declarado, e ele nunca é analisado como código. " +
+                "O mesmo documento também pode ser reaproveitado e guardado em cache.",
+            },
+            {
+              title: "Mutações em série",
+              context: "A ordem dos campos de mutation é a ordem de execução.",
+              code: {
+                language: "javascript",
+                filename: "serial-mutations.js",
+                code: [
+                  "const log = [];",
+                  "const rootValue = {",
+                  "  first: async () => { await new Promise((r) => setTimeout(r, 50)); log.push(\"first\"); return 1; },",
+                  "  second: () => { log.push(\"second\"); return 2; },",
+                  "};",
+                  "const schema = buildSchema(`type Query { x: Int }  type Mutation { first: Int, second: Int }`);",
+                  "",
+                  "await graphql({ schema, rootValue, source: `mutation { first second }` });",
+                  "log;   // [\"first\", \"second\"] — a segunda só começou depois de a primeira terminar",
+                  "",
+                  "// Em uma query, os dois campos seriam iniciados juntos, e o mais rápido terminaria antes.",
+                ].join("\n"),
+              },
+              explanation:
+                "A execução em série dá previsibilidade às escritas, mesmo que a primeira seja mais lenta. Cada mutação " +
+                "ainda assim é uma operação separada, sem garantia de transação entre elas.",
+            },
+            {
+              title: "Subscription: o servidor envia os eventos",
+              context: "O cliente assina uma vez e recebe um resultado a cada evento.",
+              code: {
+                language: "javascript",
+                filename: "subscription.js",
+                code: [
+                  "import { GraphQLObjectType, GraphQLSchema, GraphQLString, parse, subscribe } from \"graphql\";",
+                  "",
+                  "const schema = new GraphQLSchema({",
+                  "  query: new GraphQLObjectType({ name: \"Query\", fields: { ping: { type: GraphQLString } } }),",
+                  "  subscription: new GraphQLObjectType({",
+                  "    name: \"Subscription\",",
+                  "    fields: {",
+                  "      orderPaid: {",
+                  "        type: GraphQLString,",
+                  "        subscribe: async function* () { yield { orderPaid: \"pedido 1\" }; yield { orderPaid: \"pedido 2\" }; },",
+                  "      },",
+                  "    },",
+                  "  }),",
+                  "});",
+                  "",
+                  "const stream = await subscribe({ schema, document: parse(\"subscription { orderPaid }\") });",
+                  "",
+                  "for await (const result of stream) console.log(result.data.orderPaid);   // \"pedido 1\", depois \"pedido 2\"",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada evento vira uma resposta completa. Em produção, o iterador é alimentado por um barramento de " +
+                "eventos, e o transporte até o navegador é um WebSocket.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Uma tela de pedido faz três chamadas REST: o pedido, o cliente e os itens. Além disso, o botão " +
+              "\"cancelar\" precisa alterar o pedido e mostrar o novo status.",
+            problemCode: {
+              language: "javascript",
+              filename: "rest-calls.js",
+              code: [
+                "const order = await fetch(\"/orders/42\").then((r) => r.json());",
+                "const customer = await fetch(`/customers/${order.customerId}`).then((r) => r.json());",
+                "const items = await fetch(\"/orders/42/items\").then((r) => r.json());",
+                "",
+                "await fetch(\"/orders/42/cancellation\", { method: \"POST\" });",
+                "const updated = await fetch(\"/orders/42\").then((r) => r.json());   // outra chamada para saber o status",
+              ].join("\n"),
+            },
+            task:
+              "Escreva a query única (com variável `$id`) que traz o status, o nome do cliente e os produtos dos itens, e " +
+              "a mutation `cancelOrder` que devolve o pedido com o novo status.",
+            hint: "A query pede os campos aninhados de uma vez. A mutation deve selecionar `id` e `status` do resultado.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "rest-calls.fixed.js",
+                code: [
+                  "const orderQuery = `",
+                  "  query OrderScreen($id: ID!) {",
+                  "    order(id: $id) {",
+                  "      status",
+                  "      customer { name }",
+                  "      items { product quantity }",
+                  "    }",
+                  "  }",
+                  "`;",
+                  "",
+                  "const cancelMutation = `",
+                  "  mutation Cancel($id: ID!) {",
+                  "    cancelOrder(id: $id) { id status }",
+                  "  }",
+                  "`;",
+                  "",
+                  "const call = (query, variables) =>",
+                  "  fetch(\"/graphql\", {",
+                  "    method: \"POST\",",
+                  "    headers: { \"content-type\": \"application/json\" },",
+                  "    body: JSON.stringify({ query, variables }),",
+                  "  }).then((r) => r.json());",
+                  "",
+                  "const { data } = await call(orderQuery, { id: \"42\" });                       // uma chamada",
+                  "const { data: after } = await call(cancelMutation, { id: \"42\" });            // já traz o novo status",
+                ].join("\n"),
+              },
+              explanation:
+                "Uma ida ao servidor substitui as três chamadas, e a mutation devolve o estado novo, o que dispensa a " +
+                "consulta extra. As variáveis mantêm o texto das operações fixo.",
+            },
+          },
+        }),
+        concept({
+          order: 30,
+          title: "Resolver",
+          requires: ["GraphQL Schema & Type System"],
+          note: "função por campo; resolver chain",
+          summary:
+            "A função que devolve o valor de um campo do esquema: o servidor executa uma consulta chamando o " +
+            "resolver de cada campo pedido, do topo para as folhas, passando o resultado de um ao próximo.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "O esquema diz o que existe, e os resolvers dizem de onde vem cada valor. Cada campo tem um resolver: " +
+                "uma função `(parent, args, context, info)` que devolve o valor do campo. `parent` é o resultado do " +
+                "resolver do campo pai, `args` são os argumentos da consulta, `context` é um objeto compartilhado " +
+                "durante a requisição (usuário, conexões, loaders), e `info` descreve a consulta. Quando não há um " +
+                "resolver explícito, o padrão devolve `parent[nomeDoCampo]`. A execução percorre a consulta em " +
+                "cadeia: o resolver de `order` devolve o pedido, e o de `order.customer` recebe esse pedido.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Cada campo pedido é resolvido por uma função própria, e o resultado de um alimenta o resolver dos " +
+                "campos filhos: só o que a consulta pediu é executado.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "resolvers.js",
+              code: [
+                "import { GraphQLID, GraphQLInt, GraphQLNonNull, GraphQLObjectType, GraphQLSchema, GraphQLString, graphql } from \"graphql\";",
+                "",
+                "const db = {",
+                "  customers: { 7: { id: \"7\", name: \"Ana\" } },",
+                "  orders: { 42: { id: \"42\", customerId: \"7\", subtotal: 1800, shipping: 190 } },",
+                "};",
+                "",
+                "const Customer = new GraphQLObjectType({",
+                "  name: \"Customer\",",
+                "  fields: { name: { type: new GraphQLNonNull(GraphQLString) } },   // sem resolver: usa parent.name",
+                "});",
+                "",
+                "const Order = new GraphQLObjectType({",
+                "  name: \"Order\",",
+                "  fields: {",
+                "    id: { type: new GraphQLNonNull(GraphQLID) },",
+                "    // campo calculado: não existe no dado, e o resolver o produz",
+                "    total: { type: new GraphQLNonNull(GraphQLInt), resolve: (order) => order.subtotal + order.shipping },",
+                "    // campo relacionado: busca o cliente usando o `parent` (o pedido) e o `context`",
+                "    customer: {",
+                "      type: new GraphQLNonNull(Customer),",
+                "      resolve: (order, args, context) => context.db.customers[order.customerId],",
+                "    },",
+                "  },",
+                "});",
+                "",
+                "const schema = new GraphQLSchema({",
+                "  query: new GraphQLObjectType({",
+                "    name: \"Query\",",
+                "    fields: {",
+                "      order: {",
+                "        type: Order,",
+                "        args: { id: { type: new GraphQLNonNull(GraphQLID) } },",
+                "        resolve: (_parent, { id }, context) => context.db.orders[id] ?? null,",
+                "      },",
+                "    },",
+                "  }),",
+                "});",
+                "",
+                "await graphql({ schema, contextValue: { db }, source: `{ order(id: \"42\") { total customer { name } } }` });",
+                "// { data: { order: { total: 1990, customer: { name: \"Ana\" } } } }",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A cadeia foi `Query.order`, depois `Order.total` e `Order.customer`, e depois `Customer.name`. O " +
+                "campo `id`, que não foi pedido, não teve o seu resolver executado.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "Um resolver por campo, para uma lista de itens, é chamado uma vez por item: um resolver que consulta o banco vira uma consulta por item, o problema N+1 (visto em Database Performance).",
+                "Colocar regras de negócio e de autorização dentro dos resolvers as espalha pelo esquema; mantenha os resolvers finos, delegando a serviços do domínio, para que a mesma regra valha em qualquer entrada.",
+                "Um erro em um resolver não derruba a consulta toda: o campo vira `null` (se nulável) e o erro entra em `errors`, e a resposta chega parcial; o cliente precisa considerar isso.",
+                "O `context` deve ser criado por requisição: guardar dados de um usuário em um objeto global vaza informação entre requisições.",
+                "Se `parent` não tem a propriedade e não há resolver, o campo simplesmente vem `null`, sem erro, o que esconde erros de digitação nos nomes.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "O resolver padrão",
+              context: "Quando o dado já tem a propriedade certa, não é preciso escrever nada.",
+              code: {
+                language: "javascript",
+                filename: "default-resolver.js",
+                code: [
+                  "// O tipo Customer não declara resolvers. O padrão devolve parent[nomeDoCampo]:",
+                  "//   Customer.name  →  parent.name",
+                  "",
+                  "// Se o valor for uma função, o padrão a chama com (args, context, info):",
+                  "const rootValue = {",
+                  "  order: () => ({",
+                  "    id: \"42\",",
+                  "    greeting: ({ name }) => `Olá, ${name}!`,   // chamada com os argumentos do campo",
+                  "  }),",
+                  "};",
+                  "// { order { greeting(name: \"Ana\") } }  →  { order: { greeting: \"Olá, Ana!\" } }",
+                ].join("\n"),
+              },
+              explanation:
+                "Por isso um esquema construído por SDL funciona só com objetos comuns. Escrever resolvers é necessário " +
+                "quando o valor é calculado, vem de outra fonte ou precisa de argumentos.",
+            },
+            {
+              title: "O contexto por requisição",
+              context: "O `context` carrega o que pertence a uma requisição: usuário, conexões e loaders.",
+              code: {
+                language: "javascript",
+                filename: "context.js",
+                code: [
+                  "// Criado uma vez por requisição HTTP, e não uma vez para o processo",
+                  "async function buildContext(request) {",
+                  "  const user = await authenticate(request.headers.authorization);",
+                  "  return { user, db, loaders: createLoaders(db) };",
+                  "}",
+                  "",
+                  "// Um resolver usa o contexto para decidir o que devolver",
+                  "const resolveMyOrders = (_parent, _args, context) => {",
+                  "  if (!context.user) throw new Error(\"não autenticado\");",
+                  "  return context.db.ordersOf(context.user.id);",
+                  "};",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada requisição tem o seu contexto, e por isso o usuário de uma nunca aparece em outra. É também aqui " +
+                "que se pendura o que precisa viver só durante a requisição, como os loaders de batching.",
+            },
+            {
+              title: "Erros parciais",
+              context: "Um campo que falha não derruba os outros que foram pedidos.",
+              code: {
+                language: "javascript",
+                filename: "partial-errors.js",
+                code: [
+                  "// Query: { order(id: \"42\") { id shipmentStatus } }",
+                  "// shipmentStatus (nulável) depende de um serviço externo que está fora do ar",
+                  "",
+                  "// Resposta:",
+                  "// {",
+                  "//   data: { order: { id: \"42\", shipmentStatus: null } },",
+                  "//   errors: [{ message: \"serviço de entregas indisponível\", path: [\"order\", \"shipmentStatus\"] }]",
+                  "// }",
+                  "",
+                  "const { data, errors } = await response.json();",
+                  "if (errors) reportErrors(errors);            // o cliente decide o que fazer com o parcial",
+                  "renderOrder(data.order);                     // o resto da tela continua funcionando",
+                ].join("\n"),
+              },
+              explanation:
+                "A resposta parcial é uma característica do GraphQL: a tela mostra o que está disponível. Por isso o " +
+                "cliente precisa olhar `errors`, mesmo quando o status HTTP é 200.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O esquema de produtos declara `finalPrice` e `category`, mas os objetos do banco só têm `price`, " +
+              "`discountPercent` e `categoryId`. Os dois campos vêm sempre `null`.",
+            problemCode: {
+              language: "javascript",
+              filename: "product-resolvers.js",
+              code: [
+                "const db = {",
+                "  categories: { 3: { id: \"3\", name: \"Papelaria\" } },",
+                "  products: { 1: { id: \"1\", name: \"caneta\", price: 500, discountPercent: 10, categoryId: \"3\" } },",
+                "};",
+                "",
+                "// Esquema (SDL):",
+                "//   type Category { name: String! }",
+                "//   type Product { id: ID!  name: String!  finalPrice: Int!  category: Category! }",
+                "",
+                "const resolvers = {",
+                "  Product: {},   // sem resolvers: finalPrice e category vêm null",
+                "};",
+              ].join("\n"),
+            },
+            task:
+              "Escreva os resolvers de `Product.finalPrice` (preço com o desconto aplicado, em centavos inteiros) e de " +
+              "`Product.category` (buscada no `context.db` pelo `categoryId`).",
+            hint: "`parent` é o produto do banco. `finalPrice` = `price * (100 - discountPercent) / 100`, arredondado. A categoria vem de `context.db.categories`.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "product-resolvers.fixed.js",
+                code: [
+                  "const resolvers = {",
+                  "  Product: {",
+                  "    finalPrice: (product) => Math.round((product.price * (100 - product.discountPercent)) / 100),",
+                  "    category: (product, _args, context) => context.db.categories[product.categoryId],",
+                  "  },",
+                  "};",
+                  "",
+                  "resolvers.Product.finalPrice(db.products[1]);                    // 450",
+                  "resolvers.Product.category(db.products[1], {}, { db }).name;     // \"Papelaria\"",
+                ].join("\n"),
+              },
+              explanation:
+                "`finalPrice` é um campo calculado a partir do `parent`, e `category` é um campo relacionado, buscado no " +
+                "`context`. Nenhum dos dois existia no dado, e é exatamente para isso que servem os resolvers.",
+            },
+          },
+        }),
         concept({
           order: 40,
           title: "N+1 in Resolvers",
@@ -6540,9 +7234,664 @@ export default area({
           revisitOf: "Platform / Database Performance / N+1 Query Problem",
           note: "manifestação GraphQL (resolver dispara 1 query por item); GraphQL revisita, não cria 2ª canônica",
         }),
-        concept({ order: 50, title: "Batching & Per-Request Caching", requires: ["N+1 in Resolvers"], subtopics: ["DataLoader"], note: "estratégia vendor-agnostic de mitigação do N+1: batching + cache por request" }),
-        concept({ order: 60, title: "Query Complexity", requires: ["Resolver"], note: "custo/profundidade, limites, timeout — superfície de ataque DoS" }),
-        concept({ order: 70, title: "GraphQL vs REST", requires: ["API Fundamentals / REST", "GraphQL Schema & Type System"], note: "quando cada um; over/under-fetching; caching; tooling" }),
+        concept({
+          order: 50,
+          title: "Batching & Per-Request Caching",
+          requires: ["N+1 in Resolvers"],
+          subtopics: ["DataLoader"],
+          note: "estratégia vendor-agnostic de mitigação do N+1: batching + cache por request",
+          summary:
+            "Agrupar as buscas feitas durante uma mesma requisição em uma só (batching) e guardar os resultados só " +
+            "pela duração dela (cache por requisição) — o que o DataLoader faz para resolver o N+1 em GraphQL.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Em GraphQL, cada item de uma lista pode disparar o seu próprio resolver, e um resolver que busca o " +
+                "autor de um post faz uma consulta por post: o N+1 (Database Performance). A solução é o batching: em " +
+                "vez de buscar cada autor na hora, o resolver pede o autor a um carregador (DataLoader), que junta todos " +
+                "os pedidos feitos no mesmo ciclo do Event Loop e os executa em uma única consulta (`WHERE id IN (...)`). " +
+                "O mesmo carregador guarda os resultados pela duração da requisição, e uma chave pedida duas vezes é " +
+                "buscada uma só vez.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Não busque um por um: colete as chaves pedidas em um mesmo instante, busque todas de uma vez e " +
+                "distribua os resultados — dentro de uma única requisição.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "O DataLoader recebe uma função de lote que, dadas várias chaves, devolve os valores na mesma ordem e " +
+                "na mesma quantidade. Cada `load(chave)` devolve uma Promise; as chaves pedidas no mesmo turno do Event " +
+                "Loop são reunidas e enviadas juntas à função de lote. Cria-se um carregador novo por requisição, no " +
+                "`context`.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "dataloader.js",
+              code: [
+                "import DataLoader from \"dataloader\";",
+                "",
+                "let queries = 0;   // conta as idas ao banco, só para o exemplo",
+                "const authorsTable = { 1: { id: 1, name: \"Ana\" }, 2: { id: 2, name: \"Bia\" } };",
+                "",
+                "// A função de lote: recebe várias chaves e devolve os valores NA MESMA ORDEM",
+                "async function batchAuthors(ids) {",
+                "  queries++;   // SELECT * FROM authors WHERE id IN (...ids)",
+                "  return ids.map((id) => authorsTable[id] ?? new Error(`autor ${id} não encontrado`));",
+                "}",
+                "",
+                "// Um carregador por requisição",
+                "const authorLoader = new DataLoader(batchAuthors);",
+                "",
+                "// Dez posts, escritos por 2 autores: dez pedidos no mesmo turno",
+                "const posts = Array.from({ length: 10 }, (_, i) => ({ id: i, authorId: (i % 2) + 1 }));",
+                "const authors = await Promise.all(posts.map((post) => authorLoader.load(post.authorId)));",
+                "",
+                "queries;   // 1 — uma única consulta, com as chaves [1, 2] (as repetidas foram fundidas)",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Sem o carregador, seriam dez consultas. Com ele, foi uma, e as chaves repetidas foram buscadas só " +
+                "uma vez. Em um resolver, a linha equivalente é `context.loaders.author.load(post.authorId)`.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Quando os resolvers de campos relacionados buscam uma fonte que aceita busca em lote, como um `WHERE id IN (...)` ou uma API com endpoint de vários ids.",
+                "Quando as mesmas chaves são pedidas várias vezes na mesma requisição, e o cache por requisição evita repetir a busca.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "A função de lote precisa devolver exatamente um valor por chave e na mesma ordem: esquecer disso é o erro mais comum, e devolve dados trocados de um item para outro.",
+                "Um carregador compartilhado entre requisições, criado uma vez no processo, mistura o cache de usuários diferentes: pode vazar dados e servir valores desatualizados; crie um por requisição.",
+                "O cache vale só dentro da requisição: não substitui um cache entre requisições, e não invalida sozinho se o dado muda durante ela.",
+                "Só resolve o que é batchável: se a fonte só busca um item por vez, o loader não ajuda; e há o custo de esperar o fim do turno para agrupar.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Sem e com o carregador",
+              context: "O mesmo resolver, contando as idas ao banco.",
+              code: {
+                language: "javascript",
+                filename: "n-plus-one.js",
+                code: [
+                  "let queries = 0;",
+                  "const findAuthor = async (id) => { queries++; return authorsTable[id]; };",
+                  "",
+                  "// Ingênuo: uma consulta por post",
+                  "queries = 0;",
+                  "await Promise.all(posts.map((post) => findAuthor(post.authorId)));",
+                  "queries;   // 10",
+                  "",
+                  "// Com o carregador: uma consulta para todos",
+                  "queries = 0;",
+                  "const loader = new DataLoader(async (ids) => { queries++; return ids.map((id) => authorsTable[id]); });",
+                  "await Promise.all(posts.map((post) => loader.load(post.authorId)));",
+                  "queries;   // 1",
+                ].join("\n"),
+              },
+              explanation:
+                "O ganho cresce com o tamanho da lista: cem posts dariam cem consultas no modelo ingênuo, e continuam " +
+                "sendo uma com o carregador.",
+            },
+            {
+              title: "O contrato da função de lote",
+              context: "Um valor por chave, na mesma ordem, é o que mantém os resultados corretos.",
+              code: {
+                language: "javascript",
+                filename: "batch-contract.js",
+                code: [
+                  "// ERRADO: o banco devolve as linhas na ordem dele, e não na ordem das chaves",
+                  "async function wrongBatch(ids) {",
+                  "  return db.query(\"SELECT * FROM authors WHERE id IN (?)\", [ids]);   // ordem e quantidade imprevisíveis",
+                  "}",
+                  "",
+                  "// CERTO: reorganiza pelo id, e devolve um valor (ou um erro) para cada chave",
+                  "async function batchAuthors(ids) {",
+                  "  const rows = await db.query(\"SELECT * FROM authors WHERE id IN (?)\", [ids]);",
+                  "  const byId = new Map(rows.map((row) => [row.id, row]));",
+                  "  return ids.map((id) => byId.get(id) ?? new Error(`autor ${id} não encontrado`));",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "O DataLoader entrega o resultado da posição `i` à chave `i`. Se a ordem ou a quantidade divergir, o " +
+                "post de um autor recebe o nome de outro, ou a biblioteca acusa o erro.",
+            },
+            {
+              title: "Um carregador por requisição",
+              context: "A vida do carregador deve ser a da requisição, e não a do processo.",
+              code: {
+                language: "javascript",
+                filename: "per-request-loaders.js",
+                code: [
+                  "// ERRADO: uma instância global compartilha o cache entre usuários e no tempo",
+                  "const globalAuthorLoader = new DataLoader(batchAuthors);",
+                  "",
+                  "// CERTO: os carregadores são criados junto do contexto de cada requisição",
+                  "function createLoaders(db) {",
+                  "  return {",
+                  "    author: new DataLoader((ids) => batchAuthors(db, ids)),",
+                  "    product: new DataLoader((ids) => batchProducts(db, ids)),",
+                  "  };",
+                  "}",
+                  "",
+                  "const contextFor = (request) => ({ user: request.user, loaders: createLoaders(db) });",
+                ].join("\n"),
+              },
+              explanation:
+                "Com um carregador por requisição, o cache nasce e morre com ela: sem vazamento entre usuários, e " +
+                "sem dados envelhecidos.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O resolver `Post.author` busca o autor de cada post separadamente. Uma lista com 50 posts faz 50 " +
+              "consultas de autor, além da consulta dos posts.",
+            problemCode: {
+              language: "javascript",
+              filename: "post-author.js",
+              code: [
+                "let queries = 0;",
+                "const authors = { 1: { id: 1, name: \"Ana\" }, 2: { id: 2, name: \"Bia\" } };",
+                "const findAuthor = async (id) => { queries++; return authors[id]; };",
+                "",
+                "const resolvers = {",
+                "  Post: {",
+                "    author: (post) => findAuthor(post.authorId),   // uma consulta por post",
+                "  },",
+                "};",
+              ].join("\n"),
+            },
+            task:
+              "Use um `DataLoader` no contexto para agrupar as buscas, de modo que 50 posts façam uma só consulta de " +
+              "autores, sem misturar as respostas.",
+            hint: "A função de lote recebe as chaves e devolve os autores na mesma ordem. O resolver chama `context.authorLoader.load(post.authorId)`.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "post-author.fixed.js",
+                code: [
+                  "import DataLoader from \"dataloader\";",
+                  "",
+                  "let queries = 0;",
+                  "const authors = { 1: { id: 1, name: \"Ana\" }, 2: { id: 2, name: \"Bia\" } };",
+                  "",
+                  "const batchAuthors = async (ids) => {",
+                  "  queries++;   // uma consulta para todas as chaves do lote",
+                  "  return ids.map((id) => authors[id]);",
+                  "};",
+                  "",
+                  "const createContext = () => ({ authorLoader: new DataLoader(batchAuthors) });   // um por requisição",
+                  "",
+                  "const resolvers = {",
+                  "  Post: { author: (post, _args, context) => context.authorLoader.load(post.authorId) },",
+                  "};",
+                  "",
+                  "const context = createContext();",
+                  "const posts = Array.from({ length: 50 }, (_, i) => ({ id: i, authorId: (i % 2) + 1 }));",
+                  "const result = await Promise.all(posts.map((post) => resolvers.Post.author(post, {}, context)));",
+                  "",
+                  "queries;                       // 1",
+                  "result[0].name;                // \"Ana\"  (authorId 1)",
+                  "result[1].name;                // \"Bia\"  (authorId 2) — as respostas não se misturaram",
+                ].join("\n"),
+              },
+              explanation:
+                "As 50 buscas foram fundidas em uma, com as duas chaves distintas. Como a função de lote respeita a ordem " +
+                "das chaves, cada post recebe o seu próprio autor.",
+            },
+          },
+        }),
+        concept({
+          order: 60,
+          title: "Query Complexity",
+          requires: ["Resolver"],
+          note: "custo/profundidade, limites, timeout — superfície de ataque DoS",
+          summary:
+            "Como conter o custo das consultas GraphQL: como o cliente decide o formato da consulta, é preciso " +
+            "limitar profundidade, tamanho e custo estimado, antes que uma única requisição consuma o servidor.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Em REST, o servidor decide o que cada endpoint faz. Em GraphQL, é o cliente quem monta a consulta, e " +
+                "uma única requisição pode ser enormemente cara: relações circulares aninhadas (`autor { posts { autor " +
+                "{ posts ... } } }`), listas grandes, ou centenas de campos repetidos com aliases. Sem controle, uma " +
+                "requisição bem construída esgota o servidor, o que a torna uma superfície de negação de serviço. Os " +
+                "limites de complexidade recusam, antes de executar, as consultas caras demais. Difere do Rate " +
+                "Limiting, que controla quantas requisições chegam, e não o custo de cada uma.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "O cliente escolhe a forma da consulta, então o servidor precisa medir o custo dela antes de executar " +
+                "e recusar o que passar do limite.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "list",
+              items: [
+                "Limite de profundidade: recusa consultas com aninhamento acima de N níveis.",
+                "Análise de custo: cada campo tem um custo, multiplicado pelo tamanho esperado das listas (`first: 100`), e a soma precisa ficar abaixo de um teto.",
+                "Limites de paginação: todo campo de lista tem um máximo (`first ≤ 100`) e um padrão razoável.",
+                "Tempo limite de execução: interrompe o que passar de um prazo, como rede de segurança.",
+                "Consultas persistidas (allowlist): em APIs fechadas, só se executam as consultas conhecidas, identificadas por hash.",
+              ],
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "query-complexity.js",
+              code: [
+                "import { parse, visit } from \"graphql\";",
+                "",
+                "// Profundidade máxima de aninhamento de uma consulta",
+                "function depthOf(query) {",
+                "  let depth = 0;",
+                "  let max = 0;",
+                "  visit(parse(query), {",
+                "    Field: {",
+                "      enter(node) { if (node.selectionSet) { depth++; max = Math.max(max, depth); } },",
+                "      leave(node) { if (node.selectionSet) depth--; },",
+                "    },",
+                "  });",
+                "  return max;",
+                "}",
+                "",
+                "const MAX_DEPTH = 5;",
+                "",
+                "function assertAllowed(query) {",
+                "  if (depthOf(query) > MAX_DEPTH) throw new Error(`consulta profunda demais (máximo ${MAX_DEPTH})`);",
+                "}",
+                "",
+                "depthOf(\"{ post { author { name } } }\");   // 2",
+                "depthOf(\"{ a { b { c { d { e { f { g } } } } } } }\");   // 6  → recusada por assertAllowed",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A checagem lê apenas o texto da consulta, e por isso acontece antes de qualquer resolver rodar, quando " +
+                "o custo de recusar é praticamente zero.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Em toda API GraphQL exposta a clientes que você não controla totalmente, e sobretudo nas públicas.",
+                "Combinada com paginação obrigatória, tempo limite e, quando possível, consultas persistidas.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "A profundidade sozinha não basta: uma consulta rasa pode ser cara, com listas grandes, ou muito larga, com centenas de campos e aliases repetidos.",
+                "Estimativas de custo são heurísticas: subestimam o custo real de resolvers lentos e podem recusar consultas legítimas; ajuste com dados de produção.",
+                "Lotes de operações em uma só requisição, ou consultas por aliases, podem contornar limites que olham uma operação por vez; a análise precisa somar tudo.",
+                "Deixar a introspecção aberta em produção ajuda a descobrir o esquema; avalie desligá-la em APIs fechadas.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Uma consulta circular",
+              context: "Relações que apontam umas para as outras permitem um aninhamento sem fim.",
+              code: {
+                language: "text",
+                filename: "circular.graphql",
+                code: [
+                  "# Cada autor tem posts, e cada post tem um autor: a consulta pode aninhar até onde o cliente quiser",
+                  "{",
+                  "  author(id: 1) {",
+                  "    posts { author { posts { author { posts { author { posts { title } } } } } } }",
+                  "  }",
+                  "}",
+                  "",
+                  "# Com 100 posts por autor, cada nível multiplica o trabalho: 100 × 100 × 100 × ...",
+                  "# Sem limite de profundidade, uma consulta assim pode consumir o servidor.",
+                ].join("\n"),
+              },
+              explanation:
+                "O custo cresce exponencialmente com a profundidade. Um limite de profundidade barra o pior caso, e o " +
+                "de paginação impede a multiplicação por listas enormes.",
+            },
+            {
+              title: "Aliases para multiplicar o trabalho",
+              context: "A mesma operação cara pode ser repetida em uma só consulta, e a profundidade continua baixa.",
+              code: {
+                language: "javascript",
+                filename: "aliases.js",
+                code: [
+                  "// Profundidade 1, mas cada alias executa uma busca cara",
+                  "const attack = `{",
+                  "  a1: search(term: \"x\") { id }",
+                  "  a2: search(term: \"x\") { id }",
+                  "  a3: search(term: \"x\") { id }",
+                  "  # ... centenas de aliases",
+                  "}`;",
+                  "",
+                  "// Contar os campos selecionados no documento inteiro pega esse caso",
+                  "function fieldCount(query) {",
+                  "  let count = 0;",
+                  "  visit(parse(query), { Field() { count++; } });",
+                  "  return count;",
+                  "}",
+                  "",
+                  "fieldCount(attack);   // 6 aqui (3 aliases × 2 campos); com centenas de aliases passaria de qualquer limite",
+                ].join("\n"),
+              },
+              explanation:
+                "Por isso a profundidade é só uma das medidas. O número de campos, ou um custo total estimado, cobre o " +
+                "ataque pela largura da consulta.",
+            },
+            {
+              title: "Paginação com teto",
+              context: "Todo campo de lista precisa de um limite máximo, definido no servidor.",
+              code: {
+                language: "javascript",
+                filename: "pagination-cap.js",
+                code: [
+                  "const MAX_PAGE = 100;",
+                  "const DEFAULT_PAGE = 20;",
+                  "",
+                  "function pageSize(first) {",
+                  "  if (first === undefined) return DEFAULT_PAGE;",
+                  "  if (!Number.isInteger(first) || first < 1) throw new Error(\"first inválido\");",
+                  "  return Math.min(first, MAX_PAGE);   // o cliente pode pedir menos, e nunca mais que o teto",
+                  "}",
+                  "",
+                  "pageSize();        // 20",
+                  "pageSize(50);      // 50",
+                  "pageSize(100000);  // 100",
+                ].join("\n"),
+              },
+              explanation:
+                "Sem o teto, `posts(first: 1000000)` seria uma requisição válida. Com ele, o custo de cada lista tem um " +
+                "limite conhecido, que a análise de custo também usa.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A API GraphQL pública executa qualquer consulta. Um cliente enviou uma consulta com 12 níveis de " +
+              "aninhamento e o servidor passou minutos ocupado.",
+            problemCode: {
+              language: "javascript",
+              filename: "no-limit.js",
+              code: [
+                "import { graphql } from \"graphql\";",
+                "",
+                "async function handle(schema, query, variables) {",
+                "  return graphql({ schema, source: query, variableValues: variables });   // executa qualquer coisa",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Implemente `checkDepth(query, max)` e faça `handle` recusar, antes de executar, consultas com mais de 6 " +
+              "níveis, devolvendo um erro no formato GraphQL.",
+            hint: "Use `parse` e `visit` para percorrer os campos que têm sub-seleção, contando a profundidade máxima.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "no-limit.fixed.js",
+                code: [
+                  "import { graphql, parse, visit } from \"graphql\";",
+                  "",
+                  "function checkDepth(query, max) {",
+                  "  let depth = 0;",
+                  "  let deepest = 0;",
+                  "  visit(parse(query), {",
+                  "    Field: {",
+                  "      enter(node) { if (node.selectionSet) { depth++; deepest = Math.max(deepest, depth); } },",
+                  "      leave(node) { if (node.selectionSet) depth--; },",
+                  "    },",
+                  "  });",
+                  "  return { ok: deepest <= max, depth: deepest };",
+                  "}",
+                  "",
+                  "async function handle(schema, query, variables) {",
+                  "  const { ok, depth } = checkDepth(query, 6);",
+                  "  if (!ok) {",
+                  "    return { errors: [{ message: `Consulta com ${depth} níveis; o máximo permitido é 6.` }] };   // nada foi executado",
+                  "  }",
+                  "  return graphql({ schema, source: query, variableValues: variables });",
+                  "}",
+                  "",
+                  "checkDepth(\"{ a { b { c } } }\", 6);                               // { ok: true, depth: 2 }",
+                  "checkDepth(\"{ a { b { c { d { e { f { g { h } } } } } } } }\", 6);  // { ok: false, depth: 7 }",
+                ].join("\n"),
+              },
+              explanation:
+                "A consulta é analisada, sem ser executada, e recusada se passar do limite. O custo de recusar é uma " +
+                "leitura do texto, e nenhum resolver chega a ser chamado.",
+            },
+          },
+        }),
+        concept({
+          order: 70,
+          title: "GraphQL vs REST",
+          requires: ["API Fundamentals / REST", "GraphQL Schema & Type System"],
+          note: "quando cada um; over/under-fetching; caching; tooling",
+          summary:
+            "As trocas entre os dois estilos: GraphQL deixa o cliente pedir exatamente o que precisa em uma " +
+            "chamada, e REST aproveita melhor o cache e a simplicidade do HTTP — a escolha depende do caso.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "REST organiza a API em recursos, cada um com o seu endereço, e o servidor decide o formato de cada " +
+                "resposta. GraphQL expõe um esquema tipado em um único endpoint, e o cliente descreve a forma da " +
+                "resposta. Isso resolve dois problemas de REST: o over-fetching (o endpoint devolve mais campos do " +
+                "que a tela usa) e o under-fetching (uma tela precisa de várias chamadas para juntar os dados). Em " +
+                "troca, GraphQL perde parte do que o HTTP dá de graça, como o cache por URL, e traz novos cuidados, " +
+                "como a complexidade das consultas.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Nenhum é melhor em tudo: GraphQL compensa quando os clientes variam muito e os dados formam um grafo; " +
+                "REST compensa quando os recursos são simples e o cache HTTP é valioso.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "list",
+              items: [
+                "Formato da resposta: REST, definido pelo servidor por endpoint; GraphQL, definido pelo cliente por consulta.",
+                "Número de chamadas: REST costuma precisar de várias para montar uma tela; GraphQL, de uma.",
+                "Cache: REST usa o cache HTTP (URL, `ETag`, `Cache-Control`) de graça; GraphQL, com POST e um único endpoint, precisa de consultas persistidas ou de um cache no cliente.",
+                "Erros: REST usa os status HTTP; GraphQL costuma responder 200 e trazer os erros no corpo, com dados parciais.",
+                "Evolução: REST versiona (`/v2`) ou acrescenta campos; GraphQL adiciona e deprecia campos no esquema, sem versões.",
+                "Ferramentas: o esquema tipado e a introspecção do GraphQL alimentam documentação, autocompletar e geração de código; em REST, isso vem de OpenAPI.",
+              ],
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "graphql-vs-rest.js",
+              code: [
+                "// REST: três chamadas, e cada resposta traz campos que a tela não usa",
+                "const order = await fetch(\"/orders/42\").then((r) => r.json());",
+                "// { id, status, total, customerId, createdAt, updatedAt, internalNotes, shippingAddress, ... }",
+                "const customer = await fetch(`/customers/${order.customerId}`).then((r) => r.json());",
+                "// { id, name, email, phone, birthDate, address, preferences, ... }",
+                "const items = await fetch(\"/orders/42/items\").then((r) => r.json());",
+                "",
+                "// GraphQL: uma chamada, com exatamente os campos usados pela tela",
+                "const { data } = await fetch(\"/graphql\", {",
+                "  method: \"POST\",",
+                "  headers: { \"content-type\": \"application/json\" },",
+                "  body: JSON.stringify({ query: `{ order(id: \"42\") { status customer { name } items { product } } }` }),",
+                "}).then((r) => r.json());",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A tela mostra o status, o nome do cliente e os produtos. O GraphQL entrega só isso, em uma ida ao " +
+                "servidor. O REST exige três, e transporta o resto.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "GraphQL não é uma versão melhor de REST: para uma API de recursos simples, com poucos clientes, o custo do esquema, dos resolvers e da proteção contra consultas caras pode não compensar.",
+                "Trocar de REST para GraphQL não elimina o N+1: ele muda de lugar, para os resolvers, e exige batching.",
+                "Perder o cache HTTP é uma perda real: `GET /produtos/1` é guardado por CDNs e navegadores, e uma consulta POST não é sem trabalho extra.",
+                "Os erros com status 200 escondem falhas dos monitores e dos clientes que só olham o status; é preciso acompanhar a lista `errors`.",
+                "Um único endpoint concentra tudo: autorização, limitação de taxa e observabilidade precisam olhar dentro da consulta, e não só para a URL.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Cache: a URL como chave, ou não",
+              context: "A diferença mais prática para quem opera a API.",
+              code: {
+                language: "text",
+                filename: "caching.txt",
+                code: [
+                  "REST",
+                  "  GET /products/1            → a URL identifica o recurso",
+                  "  Cache-Control: public, max-age=300   → CDN e navegador guardam por 5 minutos, sem código extra",
+                  "",
+                  "GraphQL (POST /graphql com o corpo da consulta)",
+                  "  → o corpo é a identidade, e o cache HTTP não o usa por padrão",
+                  "",
+                  "Como recuperar o cache no GraphQL:",
+                  "  - consultas persistidas: o cliente envia um hash e usa GET /graphql?id=abc123 (cacheável)",
+                  "  - cache normalizado no cliente (Apollo Client, Relay): guarda os objetos por tipo e id",
+                  "  - cache no servidor, por resolver ou por consulta",
+                ].join("\n"),
+              },
+              explanation:
+                "Em REST, o cache é uma propriedade da URL e do HTTP. Em GraphQL, é uma decisão de arquitetura, com mais " +
+                "opções e mais trabalho.",
+            },
+            {
+              title: "Tratando os erros de cada estilo",
+              context: "Onde olhar para saber se deu certo muda entre os dois.",
+              code: {
+                language: "javascript",
+                filename: "error-handling.js",
+                code: [
+                  "// REST: o status diz o resultado",
+                  "const response = await fetch(\"/orders/999\");",
+                  "if (response.status === 404) return showNotFound();",
+                  "",
+                  "// GraphQL: o status é 200, e o resultado está no corpo",
+                  "const { data, errors } = await fetch(\"/graphql\", options).then((r) => r.json());",
+                  "if (errors) {",
+                  "  const notFound = errors.some((error) => error.extensions?.code === \"NOT_FOUND\");",
+                  "  if (notFound) return showNotFound();",
+                  "}",
+                  "renderOrder(data.order);   // pode ser parcial, mesmo quando há errors",
+                ].join("\n"),
+              },
+              explanation:
+                "Em GraphQL, o código de erro fica em `extensions`, e a resposta pode ser parcial. O cliente que só olha o " +
+                "status HTTP deixa passar as falhas.",
+            },
+            {
+              title: "Quando cada um faz mais sentido",
+              context: "A decisão depende do perfil dos clientes e dos dados.",
+              code: {
+                language: "text",
+                filename: "when-to-choose.txt",
+                code: [
+                  "GraphQL tende a compensar quando:",
+                  "  - há muitos clientes diferentes (web, iOS, Android, parceiros) com necessidades distintas",
+                  "  - as telas juntam dados de muitas entidades relacionadas (um grafo)",
+                  "  - o front-end evolui rápido, e o back-end não quer criar um endpoint por tela",
+                  "  - o tráfego móvel importa e reduzir chamadas e bytes faz diferença",
+                  "",
+                  "REST tende a compensar quando:",
+                  "  - os recursos são simples e as operações são majoritariamente CRUD",
+                  "  - o cache HTTP e as CDNs são importantes (conteúdo público e muito lido)",
+                  "  - a API é pública e precisa ser simples de consumir com qualquer ferramenta",
+                  "  - a equipe não quer assumir o custo do esquema, dos loaders e da proteção contra consultas caras",
+                ].join("\n"),
+              },
+              explanation:
+                "Nenhuma dessas condições é uma regra. Vários sistemas usam os dois: REST para o que é simples e público, " +
+                "e GraphQL como camada de agregação (BFF) para os aplicativos.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A tela de lista de pedidos mostra só o id e o status, mas o endpoint REST devolve cada pedido " +
+              "com 25 campos. A equipe de dados móveis quer saber quanto está sendo desperdiçado.",
+            problemCode: {
+              language: "javascript",
+              filename: "overfetch.js",
+              code: [
+                "const restResponse = [",
+                "  { id: 1, status: \"PAID\", total: 1990, customerId: 7, createdAt: \"2026-03-01\", internalNotes: \"...\", shippingAddress: \"...\" },",
+                "  { id: 2, status: \"PENDING\", total: 500, customerId: 8, createdAt: \"2026-03-02\", internalNotes: \"...\", shippingAddress: \"...\" },",
+                "];",
+                "",
+                "const usedByScreen = [\"id\", \"status\"];",
+                "",
+                "function overfetchRatio(items, usedFields) {",
+                "  // devolver a fração de campos recebidos que a tela não usa (0 a 1)",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Implemente `overfetchRatio`: a proporção de campos recebidos que não são usados, e mostre quais consultas " +
+              "GraphQL e REST devolveriam para a mesma tela.",
+            hint: "Some quantos campos cada item tem e quantos deles estão em `usedFields`. A razão é (recebidos − usados) / recebidos.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "overfetch.fixed.js",
+                code: [
+                  "function overfetchRatio(items, usedFields) {",
+                  "  const used = new Set(usedFields);",
+                  "  let received = 0;",
+                  "  let wasted = 0;",
+                  "",
+                  "  for (const item of items) {",
+                  "    for (const field of Object.keys(item)) {",
+                  "      received++;",
+                  "      if (!used.has(field)) wasted++;",
+                  "    }",
+                  "  }",
+                  "  return received === 0 ? 0 : wasted / received;",
+                  "}",
+                  "",
+                  "overfetchRatio(restResponse, usedByScreen);   // 5/7 ≈ 0.71 — 71% dos campos recebidos são descartados",
+                  "",
+                  "// A mesma tela em GraphQL: só os dois campos usados, e o desperdício cai a zero",
+                  "const query = `{ orders { id status } }`;",
+                ].join("\n"),
+              },
+              explanation:
+                "Aqui, cerca de 71% dos campos recebidos não são usados. Em GraphQL, a tela pede só `id` e `status`. Em " +
+                "REST, a mesma economia é possível com campos selecionáveis (`?fields=id,status`) ou com um endpoint " +
+                "dedicado, ao custo de mais superfície de API.",
+            },
+          },
+        }),
       ],
     }),
     module({

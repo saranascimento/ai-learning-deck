@@ -1409,6 +1409,12 @@ for (const area of model.areas()) {
     "api-deprecation",
     "openapi",
     "middleware-request-pipeline",
+    "graphql-schema-and-type-system",
+    "query-mutation-subscription",
+    "resolver",
+    "batching-and-per-request-caching",
+    "query-complexity",
+    "graphql-vs-rest",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",
