@@ -1487,6 +1487,56 @@ for (const area of model.areas()) {
   record(g, `PRÁTICO == dataset (${dsPrac})`, count(/chip--practical/g) === dsPrac);
 }
 
+// ---- 17b. estrutura de conteúdo (migração para o formato de seções) -----
+{
+  const g = "Estrutura de conteúdo (migração)";
+  // Em migração: só Concepts já convertidos (1º heading = «Conceito») são auditados e o legado é apenas contado.
+  // No fechamento da migração troque para true: qualquer Concept com conteúdo ainda legado passa a falhar.
+  const STRICT = false;
+  const LIMIT_END = new Set(["Armadilhas", "Quando não usar / Limitações"]);
+  const isLegacyTitle = (t) => /^Por que existe/.test(t) || t === "O que é?" || t === "Exemplo mínimo" || t === "Por que é um problema?";
+  let withContent = 0;
+  const convertedSlugs = [];
+  const legacySlugs = [];
+  const bad = { callout: [], limit: [], legacyTitle: [], takeaway: [] };
+  for (const a of model.areas())
+    for (const m of model.modules(a))
+      for (const c of model.concepts(m)) {
+        const content = c.content || [];
+        if (!content.length) continue;
+        withContent++;
+        const headings = content.filter((b) => b.type === "heading").map((b) => b.text);
+        if (headings[0] !== "Conceito") {
+          legacySlugs.push(c.slug);
+          continue;
+        }
+        convertedSlugs.push(c.slug);
+        if (!content.some((b) => b.type === "callout")) bad.callout.push(c.slug);
+        if (content.some((b) => b.type === "takeaway")) bad.takeaway.push(c.slug);
+        const last = headings[headings.length - 1];
+        const lastIdx = content.map((b) => b.type === "heading" && b.text === last).lastIndexOf(true);
+        const limitOk =
+          LIMIT_END.has(last) &&
+          content[lastIdx + 1]?.type === "list" &&
+          lastIdx + 2 === content.length &&
+          (last !== "Quando não usar / Limitações" || headings.slice(0, -1).includes("Quando usar"));
+        if (!limitOk) bad.limit.push(c.slug);
+        if (headings.some(isLegacyTitle)) bad.legacyTitle.push(c.slug);
+      }
+  const list = (arr) => (arr.length ? arr.join(", ") : "");
+  record(g, "Concepts convertidos abrem com «Conceito» e têm um destaque (callout)", bad.callout.length === 0, list(bad.callout));
+  record(g, "Concepts convertidos não têm mais bloco «Em resumo» (takeaway virou callout)", bad.takeaway.length === 0, list(bad.takeaway));
+  record(
+    g,
+    "Concepts convertidos terminam em lista de limites (Armadilhas | Quando não usar / Limitações, este precedido de Quando usar)",
+    bad.limit.length === 0,
+    list(bad.limit)
+  );
+  record(g, "Concepts convertidos: nenhum título legado (O que é? · Por que existe? · Exemplo mínimo)", bad.legacyTitle.length === 0, list(bad.legacyTitle));
+  record(g, `progresso: convertidos ${convertedSlugs.length}/${withContent} (legado: ${legacySlugs.length})`, true);
+  record(g, "modo estrito: nenhum Concept com conteúdo legado", !STRICT || legacySlugs.length === 0, STRICT ? list(legacySlugs) : "desligado durante a migração");
+}
+
 // ---- 18. relações R2 — geradas nas Concept Pages ↔ dataset -----
 {
   const g = "Relações R2 (Concept ↔ dataset ↔ físico)";
