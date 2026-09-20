@@ -5559,7 +5559,7 @@ export default area({
             "Uma coleção de elementos armazenados em posições contíguas de memória, acessíveis por índice " +
             "numérico em tempo O(1) — a estrutura de dados mais fundamental, direto sobre o que Memory já ensinou.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -5568,7 +5568,15 @@ export default area({
                 "é conhecido e fixo, o endereço de qualquer posição pode ser calculado diretamente, sem " +
                 "precisar percorrer nada.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Array armazena elementos contíguos na memória, com acesso por índice em O(1) — a vantagem " +
+                "que a contiguidade compra é acesso direto e rápido; o custo é que inserir/remover no meio ou " +
+                "no início exige deslocar elementos.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -5577,7 +5585,7 @@ export default area({
                 "vantagem central: arr[500000] custa exatamente o mesmo que arr[0], porque é só aritmética de " +
                 "endereço, nenhuma busca envolvida.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -5595,12 +5603,21 @@ export default area({
                 "Acesso por índice é sempre O(1). Mas inserir no início exige deslocar todos os elementos " +
                 "seguintes uma posição adiante — o custo de manter contiguidade.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Array armazena elementos contíguos na memória, com acesso por índice em O(1) — a vantagem " +
-                "que a contiguidade compra é acesso direto e rápido; o custo é que inserir/remover no meio ou " +
-                "no início exige deslocar elementos.",
+              type: "list",
+              items: [
+                "Quando o acesso por índice é frequente e o tamanho muda pouco ou só no fim.",
+                "Para percorrer os elementos em ordem, com boa localidade de memória.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Inserir ou remover no início ou no meio é O(n), porque os elementos seguintes precisam ser deslocados.",
+                "A busca por valor é linear, O(n), a menos que o array esteja ordenado.",
+              ],
             },
           ],
           examples: [
@@ -5651,7 +5668,7 @@ export default area({
             "Uma sequência de nós, cada um apontando pro próximo, sem exigir memória contígua — o contraste " +
             "direto com Array: troca acesso O(1) por índice por inserção/remoção O(1) nas pontas.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -5659,7 +5676,14 @@ export default area({
                 "pro próximo nó. Diferente de Array, os nós não precisam estar em posições contíguas de " +
                 "memória — podem estar espalhados em qualquer lugar do heap, conectados só pelos ponteiros.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Linked List troca acesso O(1) por índice (que Array tem) por inserção/remoção O(1) nas pontas " +
+                "(que Array não tem) — a estrutura certa depende de qual operação seu caso de uso faz mais.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -5668,7 +5692,7 @@ export default area({
                 "O preço é perder o acesso O(1) por índice: pra chegar no elemento N, é preciso percorrer os " +
                 "N-1 anteriores, um por um.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -5681,11 +5705,21 @@ export default area({
                 "Não existe \"índice 2\" diretamente acessível — pra chegar no valor 3, é preciso ir de head " +
                 "até head.next até head.next.next. Os nós não precisam estar contíguos na memória.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Linked List troca acesso O(1) por índice (que Array tem) por inserção/remoção O(1) nas pontas " +
-                "(que Array não tem) — a estrutura certa depende de qual operação seu caso de uso faz mais.",
+              type: "list",
+              items: [
+                "Quando inserir e remover nas pontas é o mais comum e o acesso por índice é raro.",
+                "Quando o tamanho varia muito e mover elementos de um array seria caro.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Chegar a um índice exige percorrer os nós, O(n); não há acesso direto como no array.",
+                "Cada nó guarda um ponteiro extra e os nós ficam espalhados na memória, o que costuma ser mais lento na prática.",
+              ],
             },
           ],
           examples: [
@@ -5758,7 +5792,7 @@ export default area({
             "implementável tanto sobre Array quanto sobre Linked List, e a inspiração de nome (mas não a mesma " +
             "coisa) da Call Stack do runtime.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -5766,7 +5800,15 @@ export default area({
                 "e pop (remove do topo) — sempre respeitando LIFO (Last In, First Out): o último elemento que " +
                 "entrou é sempre o primeiro que sai.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Stack é LIFO — o último elemento inserido é o primeiro a sair. Pode ser implementado sobre " +
+                "Array ou Linked List; não confundir com a Call Stack do runtime, que segue a mesma disciplina " +
+                "mas é uma coisa diferente.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -5782,7 +5824,7 @@ export default area({
                 "linguagem. Os nomes coincidem — a Call Stack também segue LIFO — mas um é uma ferramenta que " +
                 "você usa deliberadamente, o outro é infraestrutura da linguagem.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "paragraph",
               text: "Implementado sobre Array, a forma mais comum em JavaScript:",
@@ -5801,12 +5843,21 @@ export default area({
                 "push/pop no fim de um Array já são O(1) — usar o próprio Array como armazenamento interno é " +
                 "a implementação mais direta de Stack em JavaScript.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Stack é LIFO — o último elemento inserido é o primeiro a sair. Pode ser implementado sobre " +
-                "Array ou Linked List; não confundir com a Call Stack do runtime, que segue a mesma disciplina " +
-                "mas é uma coisa diferente.",
+              type: "list",
+              items: [
+                "Quando o último a entrar deve ser o primeiro a sair, como no histórico de desfazer.",
+                "Para problemas de aninhamento, como validar parênteses balanceados.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Só o topo é acessível; para ler ou remover um elemento do meio, outra estrutura é mais adequada.",
+                "Não é a Call Stack do runtime: segue a mesma disciplina, mas é uma estrutura do seu programa.",
+              ],
             },
           ],
           examples: [
@@ -5866,7 +5917,7 @@ export default area({
             "Uma estrutura de dados onde o primeiro elemento inserido é o primeiro a ser removido (FIFO) — o " +
             "par natural de Stack, ensinado junto por serem opostos na mesma pergunta: qual elemento sai primeiro?",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -5874,7 +5925,15 @@ export default area({
                 "dequeue (remove do início) — sempre respeitando FIFO (First In, First Out): o primeiro " +
                 "elemento que entrou é o primeiro que sai.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Queue é FIFO — o primeiro elemento inserido é o primeiro a sair. É o par de Stack: as duas " +
+                "respondem à mesma pergunta de forma oposta, e cada uma serve a um tipo diferente de problema " +
+                "de ordenação de processamento.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -5882,7 +5941,7 @@ export default area({
                 "primeiro?\") de formas opostas. Fila é o modelo natural pra processar coisas na ordem de " +
                 "chegada: pedidos, tarefas, mensagens — a estrutura por trás de Task Queue e Message Queue.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -5895,12 +5954,22 @@ export default area({
                 "Diferente de Stack (que tira do mesmo lado que insere), Queue insere de um lado (fim) e " +
                 "remove do outro (início) — daí FIFO em vez de LIFO.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Queue é FIFO — o primeiro elemento inserido é o primeiro a sair. É o par de Stack: as duas " +
-                "respondem à mesma pergunta de forma oposta, e cada uma serve a um tipo diferente de problema " +
-                "de ordenação de processamento.",
+              type: "list",
+              items: [
+                "Quando a ordem de chegada define a ordem de processamento, como em filas de tarefas.",
+                "Na busca em largura (BFS), que visita os nós na ordem em que os descobre.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Implementada com `.shift()` em um array, remover do início é O(n); use uma estrutura com remoção O(1) nas " +
+                "duas pontas.",
+                "Se alguns itens precisam passar na frente, o que você quer é uma Priority Queue.",
+              ],
             },
           ],
           examples: [
@@ -5988,7 +6057,7 @@ export default area({
             "deveria estar num array por trás — busca, inserção e remoção em O(1) na média, ao custo de perder " +
             "qualquer noção de ordem.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -5996,7 +6065,14 @@ export default area({
                 "índice de um Array interno — o \"endereço\" onde aquele par deveria estar. Buscar um valor não " +
                 "exige percorrer nada: a função hash calcula direto onde procurar.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Hash Table mapeia chaves a valores usando uma função hash pra calcular a posição, dando " +
+                "busca/inserção/remoção O(1) na média — o preço é perder qualquer noção de ordem entre os elementos.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -6005,7 +6081,7 @@ export default area({
                 "índice via hash, e reaproveita o acesso O(1) de Array por baixo. O preço é que a ordem dos " +
                 "elementos deixa de ter qualquer significado.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -6018,11 +6094,21 @@ export default area({
                 ".get(\"Ana\") não procura \"Ana\" percorrendo os pares um por um — a função hash de Map calcula " +
                 "diretamente onde esse valor está guardado.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Hash Table mapeia chaves a valores usando uma função hash pra calcular a posição, dando " +
-                "busca/inserção/remoção O(1) na média — o preço é perder qualquer noção de ordem entre os elementos.",
+              type: "list",
+              items: [
+                "Para buscar, inserir e remover por chave em O(1) na média, como em um cache ou uma contagem de frequência.",
+                "Para indexar dados por uma chave, inclusive composta.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Não guarda ordem significativa entre os elementos; para dados ordenados, uma árvore é mais adequada.",
+                "Colisões degradam o desempenho, e no pior caso a busca cai para O(n).",
+              ],
             },
           ],
           examples: [
@@ -6082,7 +6168,7 @@ export default area({
             "Uma coleção que garante que cada elemento aparece no máximo uma vez — normalmente implementada " +
             "por cima de uma Hash Table, aproveitando o mesmo acesso O(1) que ela oferece.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -6090,7 +6176,15 @@ export default area({
                 "já presente não tem efeito nenhum. As operações principais são add, has (verificar presença) " +
                 "e delete.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Set garante que cada elemento aparece no máximo uma vez, e oferece teste de pertencimento " +
+                "O(1) na média — normalmente implementado por cima de uma Hash Table, herdando as mesmas " +
+                "vantagens e o mesmo trade-off (sem ordem significativa).",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -6099,7 +6193,7 @@ export default area({
                 "O(n). Set normalmente é implementado por cima de uma Hash Table, então has vira O(1) na " +
                 "média, o mesmo motivo pelo qual Hash Table existe.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -6110,12 +6204,21 @@ export default area({
               type: "paragraph",
               text: "Adicionar \"javascript\" duas vezes só resulta numa entrada — o Set garante unicidade automaticamente.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Set garante que cada elemento aparece no máximo uma vez, e oferece teste de pertencimento " +
-                "O(1) na média — normalmente implementado por cima de uma Hash Table, herdando as mesmas " +
-                "vantagens e o mesmo trade-off (sem ordem significativa).",
+              type: "list",
+              items: [
+                "Para remover duplicatas ou testar pertencimento em O(1) na média.",
+                "Para operações de conjuntos, como interseção e diferença, e para marcar nós visitados numa busca.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Não tem índice nem ordem significativa; se a posição importa, use um array.",
+                "Elementos objetos são comparados por referência, então dois objetos com os mesmos dados contam como diferentes.",
+              ],
             },
           ],
           examples: [
@@ -6171,7 +6274,7 @@ export default area({
             "generalização de Linked List (cada nó tem só um \"próximo\") pra representar relações de " +
             "hierarquia, não só sequência.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -6179,7 +6282,15 @@ export default area({
                 "nó pode ter zero ou mais nós filhos. Diferente de Linked List, um nó de Tree pode apontar pra " +
                 "vários filhos — a estrutura generaliza de sequência linear pra hierarquia ramificada.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Tree generaliza Linked List de sequência linear pra hierarquia ramificada — cada nó pode ter " +
+                "múltiplos filhos, em vez de um único \"próximo\". A estrutura natural pra representar qualquer " +
+                "relação de hierarquia.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -6187,7 +6298,7 @@ export default area({
                 "um HTML/DOM, decisões aninhadas. Tree modela essa forma de organização diretamente, com " +
                 "operações que respeitam a hierarquia.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -6215,12 +6326,22 @@ export default area({
                 "root tem dois filhos diretos — cada TreeNode guarda um array de filhos, em vez de um único " +
                 "ponteiro next como em Linked List.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Tree generaliza Linked List de sequência linear pra hierarquia ramificada — cada nó pode ter " +
-                "múltiplos filhos, em vez de um único \"próximo\". A estrutura natural pra representar qualquer " +
-                "relação de hierarquia.",
+              type: "list",
+              items: [
+                "Para representar hierarquias, como sistemas de arquivos, menus e estruturas aninhadas.",
+                "Quando é preciso percorrer os dados em profundidade ou por níveis.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Só serve para relações hierárquicas: sem ciclos e com um único caminho até cada nó; para outras relações, " +
+                "use um grafo.",
+                "Uma árvore desbalanceada tem altura grande e faz as operações se aproximarem de O(n).",
+              ],
             },
           ],
           examples: [
@@ -6277,7 +6398,7 @@ export default area({
             "direita é maior — essa invariante de ordenação permite busca, inserção e remoção em O(log n), " +
             "quando a árvore está balanceada.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -6285,7 +6406,14 @@ export default area({
                 "filhos (esquerdo e direito), e existe um invariante de ordenação — pra qualquer nó, todos os " +
                 "valores na sub-árvore esquerda são menores, e todos na sub-árvore direita são maiores.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Binary Search Tree é uma Tree com invariante de ordenação — isso permite busca O(log n) " +
+                "quando balanceada, o mesmo princípio de busca binária aplicado a uma estrutura de nós.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -6294,7 +6422,7 @@ export default area({
                 "estrutura de nós em vez de um array. Quando a árvore está balanceada, isso dá O(log n) pra " +
                 "busca/inserção/remoção.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -6327,11 +6455,22 @@ export default area({
                 "insert decide o lado com base no invariante de ordenação — cada comparação elimina metade " +
                 "das possibilidades restantes.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Binary Search Tree é uma Tree com invariante de ordenação — isso permite busca O(log n) " +
-                "quando balanceada, o mesmo princípio de busca binária aplicado a uma estrutura de nós.",
+              type: "list",
+              items: [
+                "Quando é preciso buscar, inserir e remover mantendo os dados ordenados.",
+                "Para obter os valores em ordem, com o percurso in-order.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Desbalanceada, como ao inserir valores já ordenados, vira uma lista e as operações passam a O(n); use uma " +
+                "árvore auto-balanceada.",
+                "Se a ordem não importa, uma Hash Table oferece busca O(1) na média, com menos complexidade.",
+              ],
             },
           ],
           examples: [
@@ -6386,7 +6525,7 @@ export default area({
             "Uma Tree binária completa, guardada de forma compacta dentro de um Array (sem ponteiros), que " +
             "garante acesso O(1) ao maior (ou menor) elemento — a estrutura por trás de Priority Queue.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -6395,7 +6534,15 @@ export default area({
                 "nó é maior ou igual aos seus filhos. Por ser completa, um Heap pode ser guardado de forma " +
                 "compacta dentro de um Array, usando aritmética de índice pra navegar entre pai e filhos.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Heap é uma Tree completa guardada de forma compacta num Array, garantindo acesso O(1) ao " +
+                "maior (ou menor) elemento e inserção/remoção O(log n) — ideal quando você só precisa do " +
+                "\"topo\" de uma coleção que muda com frequência.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -6403,7 +6550,7 @@ export default area({
                 "que muda com frequência — sem manter tudo ordenado o tempo todo. Heap garante acesso O(1) ao " +
                 "topo, e inserção/remoção em O(log n). É a estrutura por trás de Priority Queue.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "paragraph",
               text: "Max-Heap representado em array — pai no índice i, filhos em 2i+1 e 2i+2:",
@@ -6436,12 +6583,21 @@ export default area({
                 "peek() é O(1) — o maior elemento está sempre no índice 0. insert adiciona no fim e " +
                 "\"borbulha\" pra cima, sem precisar reordenar a coleção inteira.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Heap é uma Tree completa guardada de forma compacta num Array, garantindo acesso O(1) ao " +
-                "maior (ou menor) elemento e inserção/remoção O(log n) — ideal quando você só precisa do " +
-                "\"topo\" de uma coleção que muda com frequência.",
+              type: "list",
+              items: [
+                "Quando só interessa o maior ou o menor elemento de uma coleção que muda, como numa Priority Queue.",
+                "Para o Heap Sort e para selecionar os k maiores itens.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Não mantém os demais elementos ordenados: só o topo é garantido; achar um valor qualquer é O(n).",
+                "Para acesso ordenado a todos os elementos, uma árvore de busca é mais adequada.",
+              ],
             },
           ],
           examples: [
@@ -6501,7 +6657,7 @@ export default area({
             "A estrutura de dados mais geral de todas: nós conectados por arestas, sem as restrições de " +
             "hierarquia de Tree — qualquer nó pode se conectar a qualquer outro, inclusive formando ciclos.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -6509,7 +6665,15 @@ export default area({
                 "de Tree (que exige uma raiz e proíbe ciclos). Num Graph, qualquer nó pode se conectar a " +
                 "qualquer outro, inclusive formando ciclos.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Graph é a estrutura mais geral de todas — nós conectados por arestas, sem restrição de " +
+                "hierarquia ou proibição de ciclos. Tree e Linked List são casos particulares e mais " +
+                "restritos de Graph.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -6518,7 +6682,7 @@ export default area({
                 "dependências entre módulos, o próprio grafo de conhecimento deste roadmap — tudo isso é " +
                 "naturalmente um Graph.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "paragraph",
               text: "Representado como lista de adjacência — cada nó guarda seus vizinhos:",
@@ -6535,12 +6699,21 @@ export default area({
                 "A e B se conectam mutuamente — um ciclo. Numa Tree, isso seria proibido; num Graph, é " +
                 "perfeitamente normal.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Graph é a estrutura mais geral de todas — nós conectados por arestas, sem restrição de " +
-                "hierarquia ou proibição de ciclos. Tree e Linked List são casos particulares e mais " +
-                "restritos de Graph.",
+              type: "list",
+              items: [
+                "Para modelar relações arbitrárias, como redes, rotas e grafos de dependências.",
+                "Para detectar ciclos e encontrar caminhos, com DFS ou BFS.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Se os dados formam uma hierarquia simples, uma árvore basta e as operações são mais fáceis.",
+                "Com ciclos, é preciso marcar os nós visitados; sem isso, o percurso não termina.",
+              ],
             },
           ],
           examples: [
