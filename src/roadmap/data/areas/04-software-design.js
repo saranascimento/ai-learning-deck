@@ -9747,9 +9747,585 @@ export default area({
         "revisitados → Aggregate → Aggregate Root → Domain Service → Domain Event) → fronteiras (Bounded " +
         "Context → Context Mapping). Capstone e ponte para Architecture.",
       concepts: [
-        concept({ order: 10, title: "Domain", note: "framing da Story — o problema/negócio que o software modela" }),
-        concept({ order: 20, title: "Domain Model", requires: ["Domain"] }),
-        concept({ order: 30, title: "Ubiquitous Language", requires: ["Domain Model"], note: "vocabulário compartilhado entre dev e negócio" }),
+        concept({
+          order: 10,
+          title: "Domain",
+          note: "framing da Story — o problema/negócio que o software modela",
+          summary:
+            "A área de negócio, ou o problema do mundo real, que o software resolve — com as suas regras, o seu " +
+            "vocabulário e as pessoas que a conhecem a fundo. É o assunto, e não a tecnologia.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "O domínio é o campo de atividade sobre o qual o software trabalha: logística, saúde, seguros, uma " +
+                "biblioteca, um e-commerce. Ele existe antes do código e independe dele, com as suas regras (\"um " +
+                "pedido enviado não pode ser cancelado\"), os seus conceitos e os seus especialistas. O domínio é o " +
+                "espaço do problema; o software é uma das soluções possíveis. Um domínio grande costuma se dividir em " +
+                "subdomínios: o principal (core), que diferencia o negócio, os de apoio e os genéricos, que servem a " +
+                "qualquer empresa.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Antes de modelar o software, entenda o negócio: o domínio é o problema a resolver, e o código é " +
+                "apenas a forma de resolvê-lo.",
+            },
+            { type: "heading", text: "Por que importa" },
+            {
+              type: "paragraph",
+              text:
+                "A maior parte dos projetos falha por não entender o problema, e não por falta de técnica. Conhecer o " +
+                "domínio permite decidir onde investir: o subdomínio principal merece o melhor design e os melhores " +
+                "desenvolvedores, enquanto os genéricos, como autenticação e pagamentos, costumam ser comprados ou " +
+                "reaproveitados. Também dá ao código um vocabulário correto, o que ajuda a manter a conversa entre a " +
+                "equipe técnica e os especialistas.",
+            },
+            { type: "heading", text: "Na prática" },
+            { type: "paragraph", text: "uma regra do negócio dita por um especialista, e a mesma regra expressa em código:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "domain.js",
+              code: [
+                "// Especialista de logística: \"Um pedido só pode ser cancelado enquanto não foi despachado,",
+                "// e pedidos com entrega expressa não podem ser cancelados depois de pagos.\"",
+                "function canCancel(order) {",
+                "  if (order.status === \"dispatched\") return false;",
+                "  if (order.shipping === \"express\" && order.status === \"paid\") return false;",
+                "  return true;",
+                "}",
+                "",
+                "// Subdomínios de uma loja online: onde investir e onde reaproveitar",
+                "const subdomains = {",
+                "  core: [\"precificação dinâmica\", \"recomendação de produtos\"],   // diferencia o negócio: construir",
+                "  supporting: [\"gestão de estoque\", \"atendimento\"],             // necessário, mas não diferencia",
+                "  generic: [\"autenticação\", \"pagamentos\", \"envio de e-mail\"],   // servem a qualquer empresa: comprar",
+                "};",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A regra de `canCancel` veio da conversa com quem conhece a logística, e não de uma decisão técnica. A " +
+                "classificação em subdomínios orienta onde vale o esforço de um design cuidadoso.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "Confundir domínio com tecnologia: \"banco de dados de usuários\" é solução; o domínio é o que o negócio faz com os usuários.",
+                "Modelar sem falar com quem conhece o negócio faz o código expressar suposições da equipe, e não as regras reais.",
+                "Tratar todos os subdomínios com o mesmo esforço desperdiça tempo nos genéricos e subinveste no que diferencia o negócio.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Da fala do especialista para o código",
+              context: "As regras do domínio nascem da conversa com quem faz o trabalho, e devem ficar reconhecíveis no código.",
+              code: {
+                language: "javascript",
+                filename: "expert-rule.js",
+                code: [
+                  "// \"Um sócio pode retirar até três livros por vez, e só se não tiver multas em aberto.\"",
+                  "class Member {",
+                  "  constructor(name) { this.name = name; this.loans = []; this.openFines = 0; }",
+                  "",
+                  "  canBorrow() { return this.loans.length < 3 && this.openFines === 0; }",
+                  "",
+                  "  borrow(book) {",
+                  "    if (!this.canBorrow()) throw new Error(\"o sócio não pode retirar mais livros\");",
+                  "    this.loans.push(book);",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "A frase do bibliotecário e o método `canBorrow` dizem a mesma coisa, e se a regra mudar, a mudança " +
+                "aponta para um lugar claro do código.",
+            },
+            {
+              title: "Subdomínios e a decisão de construir ou comprar",
+              context: "Nem tudo merece ser construído: a classificação orienta o investimento.",
+              code: {
+                language: "javascript",
+                filename: "build-or-buy.js",
+                code: [
+                  "const decisions = [",
+                  "  { subdomain: \"precificação dinâmica\", type: \"core\", decision: \"construir, com a melhor equipe\" },",
+                  "  { subdomain: \"gestão de estoque\", type: \"supporting\", decision: \"construir simples, ou adaptar\" },",
+                  "  { subdomain: \"pagamentos\", type: \"generic\", decision: \"comprar, e integrar um provedor\" },",
+                  "];",
+                  "",
+                  "decisions.filter((d) => d.type === \"core\").map((d) => d.subdomain);   // [\"precificação dinâmica\"]",
+                ].join("\n"),
+              },
+              explanation:
+                "O subdomínio principal é aquele em que o negócio compete, e por isso recebe o esforço de modelagem. " +
+                "Os genéricos são problemas já resolvidos, e reinventá-los raramente traz vantagem.",
+            },
+            {
+              title: "Quando o nome vem da tecnologia, e não do negócio",
+              context: "Nomes técnicos escondem o que o negócio de fato faz.",
+              code: {
+                language: "javascript",
+                filename: "technical-names.js",
+                code: [
+                  "// Vocabulário da tecnologia: o que isso significa para o negócio?",
+                  "userTable.update(row.id, { flag: 2 });",
+                  "",
+                  "// Vocabulário do domínio: a intenção é clara",
+                  "customer.markAsVip();",
+                ].join("\n"),
+              },
+              explanation:
+                "A primeira linha só faz sentido para quem conhece o esquema do banco. A segunda pode ser lida por " +
+                "qualquer pessoa do negócio, e é o vocabulário que o domínio pede.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Sua equipe vai construir uma plataforma de entrega de comida e listou as capacidades abaixo. Não há " +
+              "critério do que construir e do que comprar, e todas estão no mesmo backlog.",
+            problemCode: {
+              language: "javascript",
+              filename: "capabilities.js",
+              code: [
+                "const capabilities = [",
+                "  \"algoritmo de despacho que escolhe o melhor entregador\",   // é o que nos diferencia dos concorrentes",
+                "  \"login e recuperação de senha\",",
+                "  \"cobrança no cartão\",",
+                "  \"cadastro de restaurantes e cardápios\",",
+                "  \"envio de notificações por SMS\",",
+                "];",
+              ].join("\n"),
+            },
+            task:
+              "Classifique cada capacidade como `core`, `supporting` ou `generic` e diga, para cada tipo, se a " +
+              "equipe deve construir ou comprar.",
+            hint: "O que diferencia o negócio dos concorrentes é o `core`. O que qualquer empresa precisa igual é `generic`.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "capabilities.fixed.js",
+                code: [
+                  "const classification = {",
+                  "  core: {",
+                  "    items: [\"algoritmo de despacho que escolhe o melhor entregador\"],",
+                  "    decision: \"construir, com modelagem cuidadosa\",",
+                  "  },",
+                  "  supporting: {",
+                  "    items: [\"cadastro de restaurantes e cardápios\"],",
+                  "    decision: \"construir de forma simples\",",
+                  "  },",
+                  "  generic: {",
+                  "    items: [\"login e recuperação de senha\", \"cobrança no cartão\", \"envio de notificações por SMS\"],",
+                  "    decision: \"comprar ou reaproveitar um serviço pronto\",",
+                  "  },",
+                  "};",
+                ].join("\n"),
+              },
+              explanation:
+                "O despacho é o que diferencia a plataforma e recebe o melhor design. O cadastro é necessário, mas " +
+                "qualquer concorrente tem algo parecido. Login, cobrança e SMS são problemas resolvidos, e a decisão " +
+                "econômica é reaproveitá-los.",
+            },
+          },
+        }),
+        concept({
+          order: 20,
+          title: "Domain Model",
+          requires: ["Domain"],
+          note: "o modelo de objetos que captura os conceitos e as regras do negócio",
+          summary:
+            "Uma representação, feita de objetos com dados e comportamento, dos conceitos e das regras do domínio — " +
+            "não o esquema do banco nem uma tela, mas o próprio entendimento do negócio expresso em código.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "O modelo de domínio é a versão simplificada do domínio que o software carrega: os conceitos que " +
+                "importam (empréstimo, sócio, exemplar), as relações entre eles e as regras que valem. Ele é " +
+                "selecionado, e não completo: inclui só o que ajuda a resolver o problema. Em DDD, o modelo vive no " +
+                "código, com objetos que juntam dados e regras (Rich Domain Model), e não em um diagrama separado, " +
+                "nem no esquema do banco.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "O modelo é o entendimento do negócio expresso em código: objetos com dados e regras que falam a " +
+                "língua do domínio, e não uma cópia das tabelas.",
+            },
+            { type: "heading", text: "Por que importa" },
+            {
+              type: "paragraph",
+              text:
+                "Um modelo fiel ao domínio faz o código dizer o que o negócio faz, o que o torna legível pelos " +
+                "especialistas e fácil de mudar quando as regras mudam. Sem ele, o conhecimento fica espalhado em " +
+                "condicionais, serviços e consultas, e as mesmas regras são reescritas em vários lugares. O modelo " +
+                "também não nasce pronto: ele é refinado à medida que a equipe entende melhor o negócio.",
+            },
+            { type: "heading", text: "Na prática" },
+            { type: "paragraph", text: "um modelo de biblioteca em que as regras vivem nos objetos:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "domain-model.js",
+              code: [
+                "class Loan {",
+                "  constructor(copy, member, borrowedOn) {",
+                "    this.copy = copy;",
+                "    this.member = member;",
+                "    this.borrowedOn = borrowedOn;",
+                "    this.returnedOn = null;",
+                "  }",
+                "",
+                "  get dueOn() {",
+                "    const due = new Date(this.borrowedOn);",
+                "    due.setDate(due.getDate() + 14);          // regra: prazo de 14 dias",
+                "    return due;",
+                "  }",
+                "",
+                "  isOverdue(today) { return !this.returnedOn && today > this.dueOn; }",
+                "",
+                "  giveBack(today) {",
+                "    if (this.returnedOn) throw new Error(\"o exemplar já foi devolvido\");",
+                "    this.returnedOn = today;",
+                "  }",
+                "}",
+                "",
+                "const loan = new Loan({ id: 7 }, { name: \"Ana\" }, new Date(\"2026-03-01\"));",
+                "loan.isOverdue(new Date(\"2026-03-20\"));   // true",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O prazo, o atraso e a devolução são conceitos do negócio, e ficam em `Loan`. Nenhuma tabela ou tela " +
+                "aparece no modelo.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "Confundir modelo de domínio com o esquema do banco: as tabelas servem à persistência, e o modelo, às regras do negócio; os dois podem ser bem diferentes.",
+                "Um modelo só de dados, com todas as regras em serviços, é o Anemic Domain Model, e perde a maior parte do benefício.",
+                "Tentar modelar tudo: um modelo que inclui o que o problema não pede fica grande, confuso e caro de manter.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "O modelo usa a língua do negócio",
+              context: "Os nomes de classes e métodos devem ser os que o especialista usaria.",
+              code: {
+                language: "javascript",
+                filename: "business-names.js",
+                code: [
+                  "// Nomes de infraestrutura",
+                  "// record.setState(3); record.save();",
+                  "",
+                  "// Nomes do domínio",
+                  "loan.giveBack(new Date());",
+                  "member.payFine(fine);",
+                ].join("\n"),
+              },
+              explanation:
+                "Um bibliotecário reconhece \"devolver\" e \"pagar multa\". `setState(3)` não diz nada sobre o negócio.",
+            },
+            {
+              title: "O modelo não é o banco de dados",
+              context: "A forma como algo é guardado pode diferir da forma como é modelado.",
+              code: {
+                language: "javascript",
+                filename: "model-vs-schema.js",
+                code: [
+                  "// No banco, tudo em uma linha, com flags",
+                  "const row = { id: 1, member_id: 5, copy_id: 7, borrowed_on: \"2026-03-01\", returned_on: null };",
+                  "",
+                  "// No modelo, um objeto com comportamento, reconstruído por um mapper",
+                  "const loan = new Loan({ id: row.copy_id }, { id: row.member_id }, new Date(row.borrowed_on));",
+                  "loan.isOverdue(new Date());",
+                ].join("\n"),
+              },
+              explanation:
+                "O banco guarda o dado, e o modelo carrega as regras. O Data Mapper faz a ponte, e nenhum dos dois " +
+                "precisa ter o formato do outro.",
+            },
+            {
+              title: "O modelo é refinado com o entendimento",
+              context: "A primeira versão raramente é a certa; o diálogo com o especialista revela distinções novas.",
+              code: {
+                language: "javascript",
+                filename: "refinement.js",
+                code: [
+                  "// Versão 1: um livro está disponível ou não",
+                  "class Book { constructor(title) { this.title = title; this.available = true; } }",
+                  "",
+                  "// O bibliotecário explica: há várias cópias físicas do mesmo título",
+                  "// Versão 2: o título e o exemplar físico são conceitos distintos",
+                  "class Title { constructor(name) { this.name = name; } }",
+                  "class Copy {",
+                  "  constructor(title, id) { this.title = title; this.id = id; this.onLoan = false; }",
+                  "  isAvailable() { return !this.onLoan; }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "A distinção entre título e exemplar só apareceu ao conversar com o negócio. O modelo melhorou porque " +
+                "o entendimento melhorou, e não por uma decisão técnica.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A reserva de salas de reunião guarda os dados em objetos simples, e as regras estão espalhadas em " +
+              "funções. Já houve reserva dupla porque uma tela esqueceu de checar o conflito.",
+            problemCode: {
+              language: "javascript",
+              filename: "rooms.js",
+              code: [
+                "const room = { name: \"Sala 1\", bookings: [] };",
+                "",
+                "function overlaps(a, b) { return a.start < b.end && b.start < a.end; }",
+                "",
+                "// Tela A: checa o conflito",
+                "if (!room.bookings.some((b) => overlaps(b, slot))) room.bookings.push(slot);",
+                "",
+                "// Tela B: esqueceu",
+                "room.bookings.push(slot);",
+              ].join("\n"),
+            },
+            task:
+              "Crie um `Room` que guarde as reservas e tenha um método `book(slot)`, que recuse horários em conflito, " +
+              "de forma que nenhuma tela consiga esquecer a regra.",
+            hint: "A lista de reservas deve ser privada, e `book` deve ser o único caminho para adicionar uma reserva.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "rooms.fixed.js",
+                code: [
+                  "class Room {",
+                  "  #bookings = [];",
+                  "  constructor(name) { this.name = name; }",
+                  "",
+                  "  book(slot) {",
+                  "    if (this.#bookings.some((b) => slot.start < b.end && b.start < slot.end)) {",
+                  "      throw new Error(\"horário em conflito\");",
+                  "    }",
+                  "    this.#bookings.push(slot);",
+                  "  }",
+                  "",
+                  "  get bookings() { return [...this.#bookings]; }   // cópia: não permite alterar por fora",
+                  "}",
+                  "",
+                  "const room = new Room(\"Sala 1\");",
+                  "room.book({ start: 9, end: 10 });",
+                  "room.book({ start: 9, end: 11 });   // Error: horário em conflito",
+                ].join("\n"),
+              },
+              explanation:
+                "A regra de conflito passou a viver em `Room`, e não há como adicionar uma reserva sem passar por ela. " +
+                "O modelo agora protege a própria regra.",
+            },
+          },
+        }),
+        concept({
+          order: 30,
+          title: "Ubiquitous Language",
+          requires: ["Domain Model"],
+          note: "vocabulário compartilhado entre dev e negócio",
+          summary:
+            "Um vocabulário único, construído em conjunto por desenvolvedores e especialistas do negócio, usado nas " +
+            "conversas, na documentação e nos nomes do código, sem tradução entre eles.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Ubiquitous Language (linguagem onipresente) é o conjunto de termos que a equipe inteira, técnica e de " +
+                "negócio, usa para falar do domínio, e que aparece exatamente igual nas reuniões, nos requisitos, nos " +
+                "testes e nos nomes de classes e métodos. Quando o especialista diz \"aprovar o empréstimo\", o código " +
+                "tem `approveLoan()`, e não `updateStatus(3)`. A linguagem é construída em conjunto, refinada com o " +
+                "tempo, e é a base do Domain Model.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Uma só língua para conversar e para programar: os mesmos termos do negócio aparecem no código, e " +
+                "nenhuma tradução fica entre as duas coisas.",
+            },
+            { type: "heading", text: "Como fazer" },
+            {
+              type: "paragraph",
+              text:
+                "Ouça como os especialistas falam e use as mesmas palavras. Quando um termo for ambíguo ou o código e " +
+                "o negócio divergirem, resolva a ambiguidade em conjunto e renomeie no código. Mantenha um glossário " +
+                "curto e revise-o quando o entendimento mudar.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "ubiquitous-language.js",
+              code: [
+                "// Antes: vocabulário técnico, que só a equipe de desenvolvimento entende",
+                "function process(record, action) {",
+                "  if (action === 1) record.status = 3;",
+                "  if (action === 2) record.status = 4;",
+                "}",
+                "",
+                "// Depois: os termos que o negócio usa",
+                "class LoanRequest {",
+                "  status = \"pending\";",
+                "  approve() { this.status = \"approved\"; }",
+                "  reject(reason) { this.status = \"rejected\"; this.reason = reason; }",
+                "}",
+                "",
+                "const request = new LoanRequest();",
+                "request.approve();   // o analista de crédito reconhece esta frase",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Quem lê `request.approve()` entende a operação sem consultar uma tabela de códigos. A conversa com o " +
+                "negócio e o código passam a usar as mesmas palavras.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Em qualquer projeto com um domínio de regras não triviais e especialistas com quem conversar.",
+                "Sempre que houver ruído na comunicação, quando o negócio e a equipe falam de coisas iguais com palavras diferentes, ou de coisas diferentes com a mesma palavra.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Em domínios triviais e sem especialistas, o esforço de construir um vocabulário compartilhado pode não compensar.",
+                "Não existe uma linguagem única para a empresa toda: cada Bounded Context tem a sua, e o mesmo termo pode significar coisas diferentes em contextos distintos.",
+                "Se o negócio fala em português e o código está em inglês, é preciso decidir a convenção e manter um glossário que faça a ponte, ou a tradução volta pela porta dos fundos.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Renomear até o código falar como o negócio",
+              context: "A linguagem é aplicada com renomeações, e não apenas com reuniões.",
+              code: {
+                language: "javascript",
+                filename: "rename.js",
+                code: [
+                  "// Antes",
+                  "order.setFlag(\"X\");",
+                  "user.doAction(order, 2);",
+                  "",
+                  "// Depois: verbos e substantivos do negócio",
+                  "order.placeOnHold();",
+                  "customer.cancel(order);",
+                ].join("\n"),
+              },
+              explanation:
+                "Depois das renomeações, uma frase como \"o cliente cancelou o pedido\" corresponde quase palavra por " +
+                "palavra ao código.",
+            },
+            {
+              title: "A mesma palavra, significados diferentes",
+              context: "Um termo pode ter outro sentido em outra parte do negócio, o que revela uma fronteira.",
+              code: {
+                language: "javascript",
+                filename: "same-word.js",
+                code: [
+                  "// Vendas: \"Cliente\" é quem pode comprar, com limite de crédito e tabela de preços",
+                  "class SalesCustomer { constructor(creditLimit, priceList) { /* ... */ } }",
+                  "",
+                  "// Suporte: \"Cliente\" é quem abriu um chamado, com histórico de atendimentos",
+                  "class SupportCustomer { constructor(tickets, plan) { /* ... */ } }",
+                ].join("\n"),
+              },
+              explanation:
+                "\"Cliente\" não significa o mesmo nas duas áreas. Forçar uma única classe tornaria uma das linguagens " +
+                "falsa. Esse é o ponto em que entra o Bounded Context.",
+            },
+            {
+              title: "A linguagem nos nomes dos testes",
+              context: "Os testes são uma documentação viva: escritos na língua do negócio, eles a validam.",
+              code: {
+                language: "javascript",
+                filename: "tests-in-domain-language.js",
+                code: [
+                  "test(\"um sócio com multa em aberto não pode retirar um livro\", () => {",
+                  "  const member = new Member(\"Ana\");",
+                  "  member.openFines = 1;",
+                  "  expect(member.canBorrow()).toBe(false);",
+                  "});",
+                  "",
+                  "test(\"um exemplar devolvido fica disponível para novo empréstimo\", () => {",
+                  "  // ...",
+                  "});",
+                ].join("\n"),
+              },
+              explanation:
+                "Um especialista consegue ler os nomes dos testes e confirmar se a regra está correta, sem ler o " +
+                "código de teste.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O código do aluguel de carros usa nomes genéricos que ninguém do negócio reconhece. O gerente da " +
+              "locadora diz \"reservar\", \"retirar\", \"devolver\" e \"cobrar diária extra\".",
+            problemCode: {
+              language: "javascript",
+              filename: "rental.js",
+              code: [
+                "class Item {",
+                "  state = 0;",
+                "  doA() { this.state = 1; }",
+                "  doB() { this.state = 2; }",
+                "  doC() { this.state = 3; }",
+                "  calc(days) { return days > this.limit ? (days - this.limit) * this.rate : 0; }",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Renomeie a classe, os estados e os métodos com a linguagem do gerente, de modo que o código possa ser " +
+              "lido em voz alta como uma frase do negócio.",
+            hint: "`doA`, `doB` e `doC` correspondem a reservar, retirar e devolver, e `calc` é a cobrança de diária extra.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "rental.fixed.js",
+                code: [
+                  "class Rental {",
+                  "  status = \"available\";",
+                  "",
+                  "  reserve() { this.status = \"reserved\"; }",
+                  "  pickUp() { this.status = \"in-use\"; }",
+                  "  giveBack() { this.status = \"returned\"; }",
+                  "",
+                  "  extraDailyFee(days) {",
+                  "    return days > this.includedDays ? (days - this.includedDays) * this.dailyRate : 0;",
+                  "  }",
+                  "}",
+                  "",
+                  "const rental = new Rental();",
+                  "rental.reserve();",
+                  "rental.pickUp();",
+                  "rental.giveBack();",
+                ].join("\n"),
+              },
+              explanation:
+                "O código agora tem a mesma sequência que o gerente descreve: reservar, retirar, devolver. Nenhuma " +
+                "tabela de códigos é preciso para entender o que `state = 2` significava.",
+            },
+          },
+        }),
         concept({
           order: 40,
           title: "Entity",
@@ -9774,21 +10350,1261 @@ export default area({
             "Software Design / Object-Oriented Design / Value Object",
           ],
           note: "cluster de objetos tratado como uma unidade de consistência",
+          summary:
+            "Um grupo de entidades e objetos de valor tratado como uma unidade: as regras que envolvem o conjunto " +
+            "valem sempre dentro dessa fronteira, e ele é gravado inteiro, em uma única transação.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Um Aggregate é um agrupamento de objetos, entidades e objetos de valor, que precisa ser consistente " +
+                "como um todo: um pedido e as suas linhas, por exemplo. As regras que atravessam vários desses objetos " +
+                "(\"o total do pedido não pode passar do limite\") são garantidas dentro da fronteira do agregado. " +
+                "Cada agregado é carregado e gravado por inteiro em uma única transação, e o que está fora dele é " +
+                "alcançado apenas por referência (o `customerId`), e não pelo objeto.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Um agregado é a fronteira de consistência: o que precisa estar coerente ao mesmo tempo fica dentro " +
+                "dele, e o resto do sistema fala com ele como uma unidade.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "Escolha o que precisa ser verdade a cada instante (as invariantes) e agrupe apenas os objetos " +
+                "necessários para garanti-las. As mudanças passam por operações do agregado, que validam a invariante " +
+                "antes de aceitá-las.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "aggregate.js",
+              code: [
+                "class Order {",
+                "  #lines = [];",
+                "",
+                "  constructor(id, customerId, creditLimit) {",
+                "    this.id = id;",
+                "    this.customerId = customerId;   // referência a outro agregado, pelo id",
+                "    this.creditLimit = creditLimit;",
+                "  }",
+                "",
+                "  get total() { return this.#lines.reduce((sum, l) => sum + l.price * l.quantity, 0); }",
+                "",
+                "  addLine(product, quantity) {",
+                "    const newTotal = this.total + product.price * quantity;",
+                "    if (newTotal > this.creditLimit) throw new Error(\"o pedido excede o limite de crédito\");   // invariante",
+                "    this.#lines.push({ productId: product.id, price: product.price, quantity });",
+                "  }",
+                "}",
+                "",
+                "const order = new Order(1, 42, 500);",
+                "order.addLine({ id: 1, price: 200 }, 2);   // total 400",
+                "order.addLine({ id: 2, price: 200 }, 1);   // Error: excede o limite de crédito",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A regra do limite envolve todas as linhas, por isso elas pertencem ao mesmo agregado. O cliente, " +
+                "porém, é outro agregado: `Order` só guarda o seu `customerId`.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Quando existe uma regra que envolve vários objetos e precisa valer a cada mudança, como um limite, um total ou uma quantidade máxima.",
+                "Para definir a fronteira de transação: cada operação de negócio altera um agregado e o grava inteiro.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Agregados grandes demais, que tentam garantir tudo, ficam lentos de carregar e geram conflito entre usuários que alteram partes diferentes; prefira agregados pequenos.",
+                "Regras que envolvem mais de um agregado não têm consistência imediata: use eventos de domínio e aceite consistência eventual.",
+                "Nem toda relação é uma contenção: modelar cada associação como parte do agregado o infla e mistura conceitos que mudam por razões diferentes.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Referenciar outro agregado pelo identificador",
+              context: "Guardar o objeto inteiro de outro agregado o traz para dentro da fronteira sem querer.",
+              code: {
+                language: "javascript",
+                filename: "reference-by-id.js",
+                code: [
+                  "// Contém o cliente inteiro: alterar o pedido pode acabar alterando o cliente",
+                  "class OrderWithCustomerObject {",
+                  "  constructor(customer) { this.customer = customer; }",
+                  "}",
+                  "",
+                  "// Referencia pelo id: o cliente é outro agregado, com o seu próprio ciclo de vida",
+                  "class Order {",
+                  "  constructor(customerId) { this.customerId = customerId; }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Com o `customerId`, o pedido e o cliente são carregados, gravados e alterados de forma " +
+                "independente, cada um respeitando a sua fronteira.",
+            },
+            {
+              title: "Uma invariante que atravessa vários objetos",
+              context: "A invariante é o que justifica agrupar os objetos.",
+              code: {
+                language: "javascript",
+                filename: "invariant.js",
+                code: [
+                  "class Playlist {",
+                  "  #tracks = [];",
+                  "  constructor(maxMinutes) { this.maxMinutes = maxMinutes; }",
+                  "",
+                  "  get minutes() { return this.#tracks.reduce((sum, t) => sum + t.minutes, 0); }",
+                  "",
+                  "  add(track) {",
+                  "    if (this.minutes + track.minutes > this.maxMinutes) throw new Error(\"a playlist excederia a duração máxima\");",
+                  "    this.#tracks.push(track);",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "A duração total depende de todas as faixas, por isso a playlist e as suas faixas formam um agregado. " +
+                "Se as faixas fossem alteradas por fora, a regra poderia ser violada.",
+            },
+            {
+              title: "O agregado grande demais",
+              context: "Incluir tudo que se relaciona torna o agregado lento e cheio de conflitos.",
+              code: {
+                language: "javascript",
+                filename: "too-big.js",
+                code: [
+                  "// Grande demais: cada alteração carrega e trava tudo isso",
+                  "class Store {",
+                  "  constructor() { this.products = []; this.orders = []; this.customers = []; this.employees = []; }",
+                  "}",
+                  "",
+                  "// Melhor: agregados pequenos, ligados por identificador",
+                  "class Product { constructor(id, name, price) { /* ... */ } }",
+                  "class Order { constructor(id, customerId) { /* ... */ } }",
+                ].join("\n"),
+              },
+              explanation:
+                "Dois clientes fazendo pedidos ao mesmo tempo não deveriam disputar o mesmo objeto. Agregados " +
+                "pequenos permitem que operações independentes ocorram sem conflito.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O carrinho expõe a lista de itens, e qualquer parte do código pode adicionar produtos diretamente. A " +
+              "regra \"no máximo 10 itens\" já foi violada.",
+            problemCode: {
+              language: "javascript",
+              filename: "cart.js",
+              code: [
+                "class Cart {",
+                "  constructor() { this.items = []; }",
+                "}",
+                "",
+                "const cart = new Cart();",
+                "for (let i = 0; i < 15; i++) cart.items.push({ productId: i });   // ninguém impede",
+                "cart.items.length;   // 15",
+              ].join("\n"),
+            },
+            task:
+              "Faça de `Cart` um agregado que proteja a regra: a lista de itens fica privada, e `add` recusa o " +
+              "décimo primeiro item.",
+            hint: "Torne a lista privada, exponha uma cópia para leitura e concentre a regra no método `add`.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "cart.fixed.js",
+                code: [
+                  "class Cart {",
+                  "  static MAX_ITEMS = 10;",
+                  "  #items = [];",
+                  "",
+                  "  add(productId) {",
+                  "    if (this.#items.length >= Cart.MAX_ITEMS) throw new Error(\"o carrinho aceita no máximo 10 itens\");",
+                  "    this.#items.push({ productId });",
+                  "  }",
+                  "",
+                  "  get items() { return [...this.#items]; }",
+                  "}",
+                  "",
+                  "const cart = new Cart();",
+                  "for (let i = 0; i < 10; i++) cart.add(i);",
+                  "cart.add(10);   // Error: o carrinho aceita no máximo 10 itens",
+                ].join("\n"),
+              },
+              explanation:
+                "A regra só pode ser burlada pelo método `add`, que a aplica. O carrinho e os seus itens formam uma " +
+                "unidade de consistência, e o resto do sistema só a altera pela sua interface.",
+            },
+          },
         }),
-        concept({ order: 70, title: "Aggregate Root", requires: ["Aggregate"], note: "a única porta de entrada do Aggregate" }),
-        concept({ order: 80, title: "Domain Service", requires: ["Domain Model"], note: "comportamento de domínio que não pertence a nenhuma Entity/Value Object" }),
-        concept({ order: 90, title: "Domain Event", requires: ["Domain Model"], note: "algo relevante que aconteceu no domínio" }),
+        concept({
+          order: 70,
+          title: "Aggregate Root",
+          requires: ["Aggregate"],
+          note: "a única porta de entrada do Aggregate",
+          summary:
+            "A entidade principal de um agregado, e a única que o resto do sistema pode referenciar: todo acesso " +
+            "aos objetos internos passa por ela, que garante as regras do conjunto.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Em cada agregado, uma entidade é a raiz (Aggregate Root). O código externo só guarda referências à " +
+                "raiz e só pede coisas a ela; os objetos internos, como as linhas de um pedido, não são acessados " +
+                "diretamente. A raiz aplica as regras a cada mudança e devolve, quando necessário, cópias ou visões " +
+                "somente leitura do que está dentro. É também a unidade que o repositório carrega e grava (Repository " +
+                "Pattern): um repositório por raiz.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "O agregado tem uma única porta de entrada: a raiz. Quem quiser alterar algo dentro dele fala com a " +
+                "raiz, que protege as regras.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "A raiz tem os objetos internos como campos privados e oferece operações do negócio, sem expor as " +
+                "coleções nem os objetos filhos para alteração. O repositório trabalha com a raiz, e nunca com uma " +
+                "linha ou item isolado.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "aggregate-root.js",
+              code: [
+                "class OrderLine {                       // objeto interno: ninguém de fora o referencia",
+                "  constructor(productId, price, quantity) { Object.assign(this, { productId, price, quantity }); }",
+                "}",
+                "",
+                "class Order {                           // a raiz do agregado",
+                "  #lines = [];",
+                "  #status = \"open\";",
+                "",
+                "  constructor(id) { this.id = id; }",
+                "",
+                "  addLine(productId, price, quantity) {",
+                "    if (this.#status !== \"open\") throw new Error(\"o pedido não aceita mais alterações\");",
+                "    this.#lines.push(new OrderLine(productId, price, quantity));",
+                "  }",
+                "",
+                "  removeLine(productId) {",
+                "    if (this.#status !== \"open\") throw new Error(\"o pedido não aceita mais alterações\");",
+                "    this.#lines = this.#lines.filter((l) => l.productId !== productId);",
+                "  }",
+                "",
+                "  confirm() {",
+                "    if (this.#lines.length === 0) throw new Error(\"um pedido vazio não pode ser confirmado\");",
+                "    this.#status = \"confirmed\";",
+                "  }",
+                "",
+                "  get lines() { return this.#lines.map((l) => ({ ...l })); }   // cópias, para leitura",
+                "}",
+                "",
+                "const order = new Order(1);",
+                "order.addLine(10, 25, 2);",
+                "order.confirm();",
+                "order.addLine(11, 5, 1);   // Error: o pedido não aceita mais alterações",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "As regras de estado do pedido (\"não altera depois de confirmado\", \"não confirma vazio\") ficam na " +
+                "raiz, e as linhas não podem ser alteradas por fora.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Em todo agregado: definir a raiz é o que faz a fronteira de consistência ser respeitada.",
+                "Para dar ao repositório uma unidade clara de carregar e gravar, e ao restante do sistema um único ponto de contato.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Devolver as coleções internas, mutáveis, anula a proteção: qualquer código pode alterá-las sem passar pela raiz.",
+                "A raiz pode virar uma classe enorme, se acumular comportamento que pertence a objetos internos; delegue a eles o que for deles.",
+                "Se há um único objeto e nenhuma invariante entre partes, não há um agregado de verdade, e a distinção é só cerimônia.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "A coleção interna exposta",
+              context: "Devolver o array real permite alterar o agregado por fora.",
+              code: {
+                language: "javascript",
+                filename: "leaked-collection.js",
+                code: [
+                  "// Vaza: quem recebe o array o altera sem passar pela raiz",
+                  "class LeakyOrder {",
+                  "  #lines = [];",
+                  "  get lines() { return this.#lines; }",
+                  "}",
+                  "const leaky = new LeakyOrder();",
+                  "leaky.lines.push({ productId: 1, price: -100, quantity: 1 });   // burla qualquer regra",
+                  "",
+                  "// Protegido: devolve uma cópia",
+                  "class Order {",
+                  "  #lines = [];",
+                  "  get lines() { return [...this.#lines]; }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Com o array real exposto, a raiz deixa de ser a única porta de entrada. A cópia mantém quem lê " +
+                "informado, mas sem poder alterar.",
+            },
+            {
+              title: "Um repositório por raiz",
+              context: "O repositório carrega e grava o agregado inteiro, e não as suas partes.",
+              code: {
+                language: "javascript",
+                filename: "repository-per-root.js",
+                code: [
+                  "class OrderRepository {",
+                  "  findById(id) { /* carrega o pedido e as suas linhas, e devolve a raiz */ }",
+                  "  save(order) { /* grava o pedido e as linhas na mesma transação */ }",
+                  "}",
+                  "",
+                  "// Não existe um OrderLineRepository: as linhas só existem através do pedido",
+                ].join("\n"),
+              },
+              explanation:
+                "As linhas não têm sentido sozinhas, e por isso não têm um repositório próprio. A raiz é a unidade " +
+                "que entra e sai do armazenamento.",
+            },
+            {
+              title: "A raiz aplicando uma regra do conjunto",
+              context: "Uma regra que depende do estado geral do agregado pertence à raiz.",
+              code: {
+                language: "javascript",
+                filename: "root-rule.js",
+                code: [
+                  "class Invoice {",
+                  "  #items = [];",
+                  "  #paid = false;",
+                  "",
+                  "  addItem(description, amount) {",
+                  "    if (this.#paid) throw new Error(\"fatura já paga não pode ser alterada\");",
+                  "    if (amount <= 0) throw new Error(\"o valor deve ser positivo\");",
+                  "    this.#items.push({ description, amount });",
+                  "  }",
+                  "",
+                  "  pay() {",
+                  "    if (this.#items.length === 0) throw new Error(\"fatura vazia\");",
+                  "    this.#paid = true;",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada operação verifica o estado do conjunto antes de agir. Como só a raiz altera os itens, essas " +
+                "verificações não podem ser contornadas.",
+            },
+          ],
+          exercise: {
+            problem:
+              "`Invoice` devolve diretamente os itens internos. Um trecho do código altera o preço de um item depois " +
+              "que a fatura foi paga.",
+            problemCode: {
+              language: "javascript",
+              filename: "invoice.js",
+              code: [
+                "class Invoice {",
+                "  #items = [{ id: 1, price: 100 }];",
+                "  #paid = false;",
+                "  get items() { return this.#items; }",
+                "  pay() { this.#paid = true; }",
+                "}",
+                "",
+                "const invoice = new Invoice();",
+                "invoice.pay();",
+                "invoice.items[0].price = 1;   // adulterou uma fatura paga",
+              ].join("\n"),
+            },
+            task:
+              "Faça `Invoice` a raiz de fato: devolva cópias dos itens e ofereça `changePrice(id, price)`, que recuse a " +
+              "alteração depois de paga.",
+            hint: "Devolva cópias em `items` e concentre a alteração em um método que verifica o estado da fatura.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "invoice.fixed.js",
+                code: [
+                  "class Invoice {",
+                  "  #items = [{ id: 1, price: 100 }];",
+                  "  #paid = false;",
+                  "",
+                  "  get items() { return this.#items.map((item) => ({ ...item })); }",
+                  "",
+                  "  changePrice(id, price) {",
+                  "    if (this.#paid) throw new Error(\"fatura paga não pode ser alterada\");",
+                  "    const item = this.#items.find((i) => i.id === id);",
+                  "    if (!item) throw new Error(\"item não encontrado\");",
+                  "    item.price = price;",
+                  "  }",
+                  "",
+                  "  pay() { this.#paid = true; }",
+                  "}",
+                  "",
+                  "const invoice = new Invoice();",
+                  "invoice.pay();",
+                  "invoice.items[0].price = 1;    // altera só a cópia; a fatura não muda",
+                  "invoice.changePrice(1, 1);     // Error: fatura paga não pode ser alterada",
+                ].join("\n"),
+              },
+              explanation:
+                "Agora a única forma de mudar um preço é por `changePrice`, que verifica se a fatura já foi paga. As " +
+                "cópias devolvidas por `items` permitem ler, mas não alterar o agregado.",
+            },
+          },
+        }),
+        concept({
+          order: 80,
+          title: "Domain Service",
+          requires: ["Domain Model"],
+          note: "comportamento de domínio que não pertence a nenhuma Entity/Value Object",
+          summary:
+            "Uma operação do domínio que não pertence naturalmente a nenhuma entidade ou objeto de valor, " +
+            "geralmente porque envolve vários deles — sem estado próprio e nomeada na linguagem do negócio.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Nem todo comportamento de domínio cabe em uma entidade. Transferir dinheiro entre duas contas, ou " +
+                "calcular um preço com regras de várias origens, não é responsabilidade de uma conta nem de um produto " +
+                "isolado. Para esses casos, DDD propõe o Domain Service: um objeto sem estado, com um nome do domínio " +
+                "(`FundsTransfer`, `PricingPolicy`), que contém a regra de negócio da operação. Não é o mesmo que o " +
+                "Service Layer: aquele orquestra o caso de uso (repositórios, transações, e-mail), e este contém " +
+                "regra de negócio.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Quando uma regra do negócio não pertence a um único objeto, ela vira um serviço de domínio: sem " +
+                "estado, com nome do negócio e só regra, sem infraestrutura.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "O serviço recebe os objetos de domínio envolvidos, aplica a regra e os altera por meio das suas " +
+                "próprias operações. Não acessa repositórios nem controla transações: quem o chama, em geral um " +
+                "serviço de aplicação, cuida disso.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "domain-service.js",
+              code: [
+                "class Account {",
+                "  constructor(id, balance, currency) { Object.assign(this, { id, balance, currency }); }",
+                "  withdraw(amount) {",
+                "    if (amount > this.balance) throw new Error(\"saldo insuficiente\");",
+                "    this.balance -= amount;",
+                "  }",
+                "  deposit(amount) { this.balance += amount; }",
+                "}",
+                "",
+                "// A regra de transferência envolve duas contas: não é de nenhuma delas",
+                "class FundsTransfer {",
+                "  transfer(from, to, amount) {",
+                "    if (from.currency !== to.currency) throw new Error(\"as contas devem ter a mesma moeda\");",
+                "    if (from.id === to.id) throw new Error(\"origem e destino devem ser diferentes\");",
+                "    from.withdraw(amount);",
+                "    to.deposit(amount);",
+                "  }",
+                "}",
+                "",
+                "const a = new Account(1, 100, \"BRL\");",
+                "const b = new Account(2, 0, \"BRL\");",
+                "new FundsTransfer().transfer(a, b, 40);   // a: 60, b: 40",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "`FundsTransfer` não guarda estado e não sabe de banco: só aplica a regra da transferência sobre dois " +
+                "objetos de domínio. Cada conta continua protegendo o próprio saldo.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Quando uma regra de negócio envolve vários agregados ou entidades e não faz sentido em nenhum deles.",
+                "Para conceitos do domínio que são operações e não coisas, como uma política de preços ou uma verificação de elegibilidade, sem estado próprio.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Se a regra cabe em uma entidade ou em um objeto de valor, ponha-a lá: serviços demais esvaziam os objetos e levam ao Anemic Domain Model.",
+                "Não confunda com o Service Layer: se o serviço usa repositórios, transações ou envia e-mails, ele é de aplicação, e não de domínio.",
+                "Um serviço com nome genérico, como `OrderManager` ou `Utils`, é sinal de que a regra ainda não foi entendida; nomeie pelo que o negócio faz.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Uma política de preços",
+              context: "Uma regra que consulta várias informações, sem pertencer a nenhuma delas.",
+              code: {
+                language: "javascript",
+                filename: "pricing-policy.js",
+                code: [
+                  "class PricingPolicy {",
+                  "  priceFor(product, customer, quantity) {",
+                  "    let price = product.basePrice * quantity;",
+                  "    if (customer.isVip) price *= 0.9;              // desconto do cliente",
+                  "    if (quantity >= 10) price *= 0.95;             // desconto por volume",
+                  "    return Math.round(price * 100) / 100;",
+                  "  }",
+                  "}",
+                  "",
+                  "new PricingPolicy().priceFor({ basePrice: 20 }, { isVip: true }, 10);   // 171",
+                ].join("\n"),
+              },
+              explanation:
+                "O preço depende do produto, do cliente e da quantidade, e nenhum deles é o dono da regra. Um serviço " +
+                "de domínio, sem estado, é o lugar natural.",
+            },
+            {
+              title: "Um serviço que deveria ser um método",
+              context: "O sinal de alerta é um serviço que só manipula os dados de um único objeto.",
+              code: {
+                language: "javascript",
+                filename: "should-be-method.js",
+                code: [
+                  "// Sinal de alerta: a regra é toda sobre um Order, e o serviço só mexe nele",
+                  "class OrderService {",
+                  "  addItem(order, item) { if (order.confirmed) throw new Error(\"...\"); order.items.push(item); }",
+                  "}",
+                  "",
+                  "// Melhor: a regra pertence a Order",
+                  "class Order {",
+                  "  #items = []; confirmed = false;",
+                  "  addItem(item) { if (this.confirmed) throw new Error(\"pedido já confirmado\"); this.#items.push(item); }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Se toda a regra gira em torno de um objeto, ela é dele. Reservar o serviço de domínio para o que não " +
+                "cabe em nenhum objeto mantém o modelo rico.",
+            },
+            {
+              title: "Serviço de domínio e serviço de aplicação, lado a lado",
+              context: "Cada um tem o seu papel, e o de aplicação chama o de domínio.",
+              code: {
+                language: "javascript",
+                filename: "domain-vs-application.js",
+                code: [
+                  "// Serviço de aplicação: orquestra o caso de uso",
+                  "class TransferFundsUseCase {",
+                  "  constructor(accounts, transfer) { this.accounts = accounts; this.transfer = transfer; }",
+                  "",
+                  "  async execute({ fromId, toId, amount }) {",
+                  "    const from = await this.accounts.findById(fromId);   // infraestrutura",
+                  "    const to = await this.accounts.findById(toId);",
+                  "    this.transfer.transfer(from, to, amount);            // a regra, no serviço de domínio",
+                  "    await this.accounts.save(from);",
+                  "    await this.accounts.save(to);",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "O caso de uso busca e salva; a regra da transferência fica em `FundsTransfer`. Assim a regra é " +
+                "testada sem repositórios, e o caso de uso, sem repetir a regra.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A regra de \"cobrar taxa de saque entre bancos diferentes\" está copiada no controlador e em um script. " +
+              "Ela envolve duas contas e não é de nenhuma delas.",
+            problemCode: {
+              language: "javascript",
+              filename: "fee.js",
+              code: [
+                "// No controlador",
+                "const fee = from.bank !== to.bank ? amount * 0.01 : 0;",
+                "from.withdraw(amount + fee);",
+                "to.deposit(amount);",
+                "",
+                "// No script de importação: cópia, com um bug (esqueceu a taxa)",
+                "from.withdraw(amount);",
+                "to.deposit(amount);",
+              ].join("\n"),
+            },
+            task:
+              "Extraia um serviço de domínio `TransferPolicy` com `transfer(from, to, amount)` que aplique a taxa entre " +
+              "bancos diferentes, e use-o nos dois lugares.",
+            hint: "O serviço não guarda estado: recebe as duas contas, calcula a taxa e chama `withdraw` e `deposit`.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "fee.fixed.js",
+                code: [
+                  "class TransferPolicy {",
+                  "  feeFor(from, to, amount) { return from.bank !== to.bank ? amount * 0.01 : 0; }",
+                  "",
+                  "  transfer(from, to, amount) {",
+                  "    const fee = this.feeFor(from, to, amount);",
+                  "    from.withdraw(amount + fee);",
+                  "    to.deposit(amount);",
+                  "    return { fee };",
+                  "  }",
+                  "}",
+                  "",
+                  "// Controlador e script usam a mesma regra",
+                  "new TransferPolicy().transfer(from, to, amount);",
+                ].join("\n"),
+              },
+              explanation:
+                "A taxa existe em um só lugar, e o script de importação deixa de esquecê-la. O serviço não tem estado " +
+                "nem infraestrutura: só a regra que envolve as duas contas.",
+            },
+          },
+        }),
+        concept({
+          order: 90,
+          title: "Domain Event",
+          requires: ["Domain Model"],
+          note: "algo relevante que aconteceu no domínio",
+          summary:
+            "O registro imutável de algo relevante que aconteceu no domínio, nomeado no passado — como `PedidoConfirmado` " +
+            "— que permite a outras partes do sistema reagirem sem acoplamento com quem o gerou.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Um Domain Event descreve um fato do negócio que já ocorreu: `OrderPlaced`, `PaymentReceived`, " +
+                "`MemberSuspended`. Como é um fato, é imutável e nomeado no passado, com os dados necessários para " +
+                "entender o que aconteceu. O agregado o registra quando o fato ocorre, e outras partes do sistema, " +
+                "de outros agregados ou contextos, reagem a ele. É o Observer em escala de domínio, e o caminho para " +
+                "manter a consistência entre agregados sem acoplá-los.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Quando algo relevante acontece, registre um fato, no passado, com a linguagem do negócio: quem se " +
+                "interessa reage a ele, sem que quem o gerou precise conhecê-lo.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "O agregado acumula os eventos que ocorreram durante a operação. Depois de salvar, quem coordena os " +
+                "publica, e os manipuladores interessados reagem, cada um no seu tempo.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "domain-event.js",
+              code: [
+                "// O evento é um fato imutável, nomeado no passado",
+                "const orderPlaced = (orderId, customerId, total) =>",
+                "  Object.freeze({ type: \"OrderPlaced\", orderId, customerId, total, occurredAt: new Date() });",
+                "",
+                "class Order {",
+                "  #events = [];",
+                "  status = \"draft\";",
+                "  constructor(id, customerId, total) { Object.assign(this, { id, customerId, total }); }",
+                "",
+                "  place() {",
+                "    if (this.status !== \"draft\") throw new Error(\"o pedido já foi feito\");",
+                "    this.status = \"placed\";",
+                "    this.#events.push(orderPlaced(this.id, this.customerId, this.total));   // registra o fato",
+                "  }",
+                "",
+                "  pullEvents() { const events = this.#events; this.#events = []; return events; }",
+                "}",
+                "",
+                "// Quem coordena publica os eventos depois de salvar; os interessados reagem",
+                "const handlers = {",
+                "  OrderPlaced: [",
+                "    (e) => console.log(`enviar confirmação do pedido ${e.orderId}`),",
+                "    (e) => console.log(`reservar estoque do pedido ${e.orderId}`),",
+                "  ],",
+                "};",
+                "",
+                "const order = new Order(1, 42, 300);",
+                "order.place();",
+                "for (const event of order.pullEvents()) handlers[event.type]?.forEach((handle) => handle(event));",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "`Order` não menciona e-mail nem estoque: só registra `OrderPlaced`. Adicionar uma reação nova é " +
+                "registrar mais um manipulador, sem alterar o pedido.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Quando outras partes do sistema precisam reagir a algo que aconteceu no domínio, e o agregado não deve conhecê-las.",
+                "Para manter a consistência entre agregados, ou entre contextos, de forma eventual, em vez de uma transação que atravesse todos.",
+                "Para manter um histórico ou uma auditoria do que aconteceu.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Regras dentro do mesmo agregado devem ser resolvidas ali, e não por eventos: o evento complica o que uma chamada resolveria.",
+                "O fluxo fica implícito e difícil de seguir: é preciso descobrir quem reage a cada evento.",
+                "Com entrega assíncrona, os manipuladores podem receber o evento mais de uma vez ou fora de ordem, e precisam ser idempotentes.",
+                "Eventos de granularidade fina demais, um para cada atribuição de campo, poluem o sistema sem expressar nada do negócio.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Nomes no passado, com dados do fato",
+              context: "O evento conta o que aconteceu, e não o que se quer que aconteça.",
+              code: {
+                language: "javascript",
+                filename: "naming.js",
+                code: [
+                  "// Comando (imperativo, algo que se pede): PlaceOrder, ChargeCustomer",
+                  "// Evento (passado, algo que aconteceu):    OrderPlaced, CustomerCharged",
+                  "",
+                  "const customerCharged = Object.freeze({",
+                  "  type: \"CustomerCharged\",",
+                  "  customerId: 42,",
+                  "  amount: 300,",
+                  "  occurredAt: new Date(),",
+                  "});",
+                ].join("\n"),
+              },
+              explanation:
+                "Um comando pode ser recusado, e um evento já aconteceu e não pode ser desfeito. Ser imutável é " +
+                "consequência de ser um fato.",
+            },
+            {
+              title: "Manipuladores idempotentes",
+              context: "Sem garantias fortes de entrega, o mesmo evento pode chegar duas vezes.",
+              code: {
+                language: "javascript",
+                filename: "idempotent.js",
+                code: [
+                  "const processed = new Set();",
+                  "",
+                  "function sendConfirmation(event) {",
+                  "  if (processed.has(event.orderId)) return;   // já tratado: ignora a duplicata",
+                  "  processed.add(event.orderId);",
+                  "  console.log(`e-mail do pedido ${event.orderId}`);",
+                  "}",
+                  "",
+                  "const event = { type: \"OrderPlaced\", orderId: 1 };",
+                  "sendConfirmation(event);",
+                  "sendConfirmation(event);   // o cliente não recebe dois e-mails",
+                ].join("\n"),
+              },
+              explanation:
+                "Guardar o que já foi tratado torna o manipulador seguro contra duplicatas, uma preocupação real " +
+                "assim que os eventos deixam de ser chamadas diretas.",
+            },
+            {
+              title: "Consistência entre agregados por evento",
+              context: "Uma regra que atravessa dois agregados é dividida em duas operações, ligadas por um evento.",
+              code: {
+                language: "javascript",
+                filename: "cross-aggregate.js",
+                code: [
+                  "// 1. O pedido é confirmado e registra o fato",
+                  "order.confirm();   // registra OrderConfirmed",
+                  "",
+                  "// 2. Em outra transação, o estoque reage ao evento",
+                  "function onOrderConfirmed(event, inventory) {",
+                  "  for (const line of event.lines) inventory.reserve(line.productId, line.quantity);",
+                  "}",
+                  "",
+                  "// Entre 1 e 2 há um intervalo em que os dois estão momentaneamente diferentes:",
+                  "// é a consistência eventual",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada agregado continua consistente dentro da sua fronteira. Entre agregados, o sistema converge com " +
+                "um pequeno atraso, o preço de não os travar em uma única transação.",
+            },
+          ],
+          exercise: {
+            problem:
+              "`Order.place()` chama diretamente o e-mail e o estoque. O pedido conhece tudo o que acontece depois " +
+              "que ele é feito, e testá-lo exige dublês para os dois.",
+            problemCode: {
+              language: "javascript",
+              filename: "order.js",
+              code: [
+                "class Order {",
+                "  constructor(id, mailer, inventory) { Object.assign(this, { id, mailer, inventory }); }",
+                "  place() {",
+                "    this.status = \"placed\";",
+                "    this.mailer.send(`Pedido ${this.id} feito`);",
+                "    this.inventory.reserve(this.id);",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Faça `place()` só registrar um evento `OrderPlaced`, e mostre os manipuladores de e-mail e de estoque " +
+              "reagindo a ele.",
+            hint: "`Order` deixa de receber `mailer` e `inventory`. Ele guarda os eventos, e quem coordena os publica.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "order.fixed.js",
+                code: [
+                  "class Order {",
+                  "  #events = [];",
+                  "  constructor(id) { this.id = id; }",
+                  "",
+                  "  place() {",
+                  "    this.status = \"placed\";",
+                  "    this.#events.push(Object.freeze({ type: \"OrderPlaced\", orderId: this.id }));",
+                  "  }",
+                  "",
+                  "  pullEvents() { const events = this.#events; this.#events = []; return events; }",
+                  "}",
+                  "",
+                  "const handlers = {",
+                  "  OrderPlaced: [",
+                  "    (e) => mailer.send(`Pedido ${e.orderId} feito`),",
+                  "    (e) => inventory.reserve(e.orderId),",
+                  "  ],",
+                  "};",
+                  "",
+                  "const order = new Order(1);",
+                  "order.place();",
+                  "for (const event of order.pullEvents()) handlers[event.type].forEach((handle) => handle(event));",
+                ].join("\n"),
+              },
+              explanation:
+                "O pedido só declara o que aconteceu, e não conhece e-mail nem estoque. Uma nova reação é mais um " +
+                "manipulador, e o teste do pedido verifica apenas o evento registrado.",
+            },
+          },
+        }),
         concept({
           order: 100,
           title: "Bounded Context",
           requires: ["Ubiquitous Language"],
           note: "capstone — a fronteira dentro da qual o modelo (e a linguagem) é consistente",
+          summary:
+            "A fronteira explícita dentro da qual um modelo de domínio, e a sua linguagem, é consistente e tem um " +
+            "só significado — fora dela, os mesmos termos podem significar outra coisa.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Em um negócio grande, um único modelo para tudo não funciona: \"cliente\" significa coisas diferentes " +
+                "para vendas, para suporte e para o financeiro. Um Bounded Context é a fronteira dentro da qual um " +
+                "modelo é único e coerente: cada termo tem um só significado, e a Ubiquitous Language é consistente. " +
+                "Cada contexto tem o seu próprio modelo, e muitas vezes o seu próprio time, código e banco. As " +
+                "fronteiras seguem o negócio e a linguagem, e não as camadas técnicas.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Não busque um modelo único para a empresa toda: divida o domínio em contextos, cada um com um modelo " +
+                "e uma linguagem coerentes dentro da sua fronteira.",
+            },
+            { type: "heading", text: "Por que importa" },
+            {
+              type: "paragraph",
+              text:
+                "Um modelo compartilhado por todas as áreas acaba com uma classe gigante, com campos que só interessam " +
+                "a uma delas e regras que se contradizem. Dividir em contextos permite que cada equipe evolua o seu " +
+                "modelo de forma independente e com termos precisos. Também é a base para dividir um sistema em " +
+                "módulos ou serviços com fronteiras que fazem sentido para o negócio, o tema dos estilos arquiteturais.",
+            },
+            { type: "heading", text: "Na prática" },
+            { type: "paragraph", text: "o conceito de produto em dois contextos, cada um com o modelo de que precisa:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "bounded-context.js",
+              code: [
+                "// Contexto: Catálogo — o que o cliente vê e compra",
+                "class CatalogProduct {",
+                "  constructor(sku, name, description, price, images) {",
+                "    Object.assign(this, { sku, name, description, price, images });",
+                "  }",
+                "  isOnSale() { return this.price.promotional !== null; }",
+                "}",
+                "",
+                "// Contexto: Expedição — o que é preciso para enviar",
+                "class ShippingItem {",
+                "  constructor(sku, weightKg, dimensions, fragile) {",
+                "    Object.assign(this, { sku, weightKg, dimensions, fragile });",
+                "  }",
+                "  requiresSpecialPackaging() { return this.fragile || this.weightKg > 30; }",
+                "}",
+                "",
+                "// O sku é o vínculo entre os contextos; cada um modela só o que lhe interessa",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O catálogo não precisa saber de peso, e a expedição não precisa de descrição nem de imagens. Cada " +
+                "modelo é pequeno e coerente, e o `sku` os liga sem que um conheça o outro por dentro.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "Um modelo único para todas as áreas cresce sem parar, mistura conceitos que mudam por motivos diferentes e faz todas as equipes dependerem umas das outras.",
+                "Traçar as fronteiras por camadas técnicas, como \"o contexto da API\" ou \"o do banco\", ignora o negócio; as fronteiras devem seguir a linguagem.",
+                "Contextos que se conhecem por dentro, compartilhando classes ou tabelas, deixam de ser contextos de verdade; a integração deve passar por um contrato explícito.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "A mesma palavra em dois contextos",
+              context: "O termo é o mesmo, mas o modelo por trás é diferente em cada fronteira.",
+              code: {
+                language: "javascript",
+                filename: "two-customers.js",
+                code: [
+                  "// Vendas: importa o crédito e as condições comerciais",
+                  "const salesCustomer = { id: 42, creditLimit: 5000, priceList: \"atacado\" };",
+                  "",
+                  "// Suporte: importa o histórico de atendimento",
+                  "const supportCustomer = { id: 42, openTickets: 2, plan: \"premium\" };",
+                  "",
+                  "// Mesmo id, dois modelos: cada contexto guarda só o que faz sentido para ele",
+                ].join("\n"),
+              },
+              explanation:
+                "Tentar unir os dois em um único `Customer` traria campos irrelevantes para cada lado e regras que se " +
+                "atropelam. Separados, cada modelo permanece simples.",
+            },
+            {
+              title: "Contextos como módulos separados",
+              context: "A fronteira aparece na organização do código, com uma interface pública pequena.",
+              code: {
+                language: "javascript",
+                filename: "structure.js",
+                code: [
+                  "// src/",
+                  "//   catalog/      → modelo e regras do catálogo",
+                  "//     index.js      (a única interface pública do contexto)",
+                  "//   shipping/     → modelo e regras da expedição",
+                  "//     index.js",
+                  "",
+                  "// shipping/ importa só o que catalog/index.js exporta, e nunca os arquivos internos",
+                  "import { getProductSummary } from \"../catalog/index.js\";",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada contexto expõe uma porta pública e esconde o resto. Assim, o modelo interno pode mudar sem " +
+                "afetar os outros contextos.",
+            },
+            {
+              title: "O modelo único que engorda",
+              context: "O sintoma clássico da ausência de fronteiras.",
+              code: {
+                language: "javascript",
+                filename: "god-model.js",
+                code: [
+                  "// Um único Product, usado por catálogo, expedição, financeiro e estoque",
+                  "class Product {",
+                  "  // catálogo",
+                  "  name; description; images; promotionalPrice;",
+                  "  // expedição",
+                  "  weightKg; dimensions; fragile;",
+                  "  // financeiro",
+                  "  taxCode; costPrice; margin;",
+                  "  // estoque",
+                  "  warehouseLocation; reorderLevel;",
+                  "}",
+                  "// Toda mudança em qualquer área mexe na mesma classe, e todas as equipes dependem dela.",
+                ].join("\n"),
+              },
+              explanation:
+                "Quanto mais áreas usam a mesma classe, mais ela cresce e mais difícil é mudá-la sem afetar alguém. A " +
+                "separação em contextos devolve a autonomia a cada equipe.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A classe `Product` é usada pelo catálogo e pela expedição, e cada mudança em uma das áreas exige a " +
+              "revisão da outra. Ela já tem campos que só uma das equipes entende.",
+            problemCode: {
+              language: "javascript",
+              filename: "product.js",
+              code: [
+                "class Product {",
+                "  constructor(sku, name, description, price, weightKg, dimensions, fragile) {",
+                "    Object.assign(this, { sku, name, description, price, weightKg, dimensions, fragile });",
+                "  }",
+                "  isOnSale() { return this.price.promotional !== null; }",
+                "  requiresSpecialPackaging() { return this.fragile || this.weightKg > 30; }",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Divida em dois modelos, um do contexto de Catálogo e outro do de Expedição, cada um só com os campos e " +
+              "regras que lhe pertencem, ligados pelo `sku`.",
+            hint: "O catálogo fica com nome, descrição, preço e `isOnSale`. A expedição, com peso, dimensões, fragilidade e a regra de embalagem.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "product.fixed.js",
+                code: [
+                  "// Contexto Catálogo",
+                  "class CatalogProduct {",
+                  "  constructor(sku, name, description, price) {",
+                  "    Object.assign(this, { sku, name, description, price });",
+                  "  }",
+                  "  isOnSale() { return this.price.promotional !== null; }",
+                  "}",
+                  "",
+                  "// Contexto Expedição",
+                  "class ShippingItem {",
+                  "  constructor(sku, weightKg, dimensions, fragile) {",
+                  "    Object.assign(this, { sku, weightKg, dimensions, fragile });",
+                  "  }",
+                  "  requiresSpecialPackaging() { return this.fragile || this.weightKg > 30; }",
+                  "}",
+                  "",
+                  "// O sku liga os dois; nenhuma equipe depende dos campos da outra",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada contexto tem um modelo pequeno e coerente. Mudar o peso de um produto afeta só a expedição, e " +
+                "mudar a descrição afeta só o catálogo.",
+            },
+          },
         }),
         concept({
           order: 110,
           title: "Context Mapping",
           requires: ["Bounded Context"],
           note: "capstone final — relação entre Bounded Contexts; ponte para Architecture / Architectural Styles",
+          summary:
+            "O mapa das relações entre os Bounded Contexts — quem depende de quem, e de que forma —, com padrões " +
+            "como Anti-Corruption Layer, Customer/Supplier e Shared Kernel para organizar cada integração.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Os contextos delimitados não vivem isolados: um consome dados do outro, e as equipes precisam se " +
+                "coordenar. O Context Mapping descreve essas relações de forma explícita e escolhe um padrão para cada " +
+                "uma. Entre os mais usados: Customer/Supplier (o contexto a montante atende às necessidades do a " +
+                "jusante), Conformist (o a jusante adota o modelo do outro como está), Anti-Corruption Layer (uma " +
+                "camada tradutora protege o modelo próprio), Shared Kernel (um pedaço pequeno do modelo é " +
+                "compartilhado) e Separate Ways (não há integração).",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Cada integração entre contextos é uma decisão de design: torne a relação explícita e escolha o " +
+                "quanto o seu modelo aceita ser influenciado pelo do outro.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "Liste os contextos e, para cada par que se integra, registre quem está a montante (fornece), quem " +
+                "está a jusante (consome) e qual é o padrão de relação. Quando o modelo do outro lado é ruim ou " +
+                "instável, uma Anti-Corruption Layer traduz o que chega para o seu próprio modelo, no espírito do Adapter.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "context-mapping.js",
+              code: [
+                "// O mapa como dados: explícito, e fácil de revisar em equipe",
+                "const contextMap = [",
+                "  { upstream: \"Billing\",  downstream: \"Sales\",    pattern: \"anticorruption-layer\" },",
+                "  { upstream: \"Catalog\",  downstream: \"Shipping\", pattern: \"customer-supplier\" },",
+                "  { upstream: \"Identity\", downstream: \"Sales\",    pattern: \"conformist\" },",
+                "];",
+                "",
+                "// Anti-Corruption Layer: traduz o modelo legado do Billing para o modelo de Vendas",
+                "// Legado: { cust_nm: \"Ana\", cust_st: \"A\", cr_lim: \"5000.00\" }",
+                "class BillingCustomerTranslator {",
+                "  toSalesCustomer(legacy) {",
+                "    return {",
+                "      name: legacy.cust_nm,",
+                "      active: legacy.cust_st === \"A\",",
+                "      creditLimit: Number(legacy.cr_lim),",
+                "    };",
+                "  }",
+                "}",
+                "",
+                "new BillingCustomerTranslator().toSalesCustomer({ cust_nm: \"Ana\", cust_st: \"A\", cr_lim: \"5000.00\" });",
+                "// { name: \"Ana\", active: true, creditLimit: 5000 }",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O modelo de Vendas nunca vê `cust_st` nem `cr_lim`: a camada tradutora absorve as esquisitices do " +
+                "sistema legado, e se ele mudar, só o tradutor precisa ser ajustado.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Quando há mais de um contexto ou equipe integrados, para tornar explícitas as dependências e as expectativas de cada lado.",
+                "Antes de desenhar integrações e limites de serviços, para decidir o quanto cada contexto precisa se proteger dos outros.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Em um único contexto, ou em um sistema pequeno com uma só equipe, o mapa é formalidade sem efeito.",
+                "Um mapa que não é atualizado envelhece e passa a enganar; ele precisa acompanhar a realidade das equipes e dos sistemas.",
+                "Uma Anti-Corruption Layer tem custo, com código de tradução para manter; se o modelo do outro lado é bom e estável, ser conformista pode ser mais barato.",
+                "Compartilhar um Shared Kernel amarra as equipes: qualquer mudança nele exige a concordância de todas.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Customer/Supplier com um contrato publicado",
+              context: "O contexto a montante se compromete com um formato estável para quem depende dele.",
+              code: {
+                language: "javascript",
+                filename: "customer-supplier.js",
+                code: [
+                  "// Catálogo (a montante) publica um contrato estável, com versão",
+                  "const productPublishedV1 = {",
+                  "  type: \"ProductPublished\",",
+                  "  version: 1,",
+                  "  sku: \"ABC-1\",",
+                  "  name: \"Caneta\",",
+                  "  weightKg: 0.02,",
+                  "};",
+                  "",
+                  "// Expedição (a jusante) consome o contrato e o transforma no seu modelo",
+                  "function onProductPublished(event) {",
+                  "  if (event.version !== 1) throw new Error(`versão não suportada: ${event.version}`);",
+                  "  return new ShippingItem(event.sku, event.weightKg, null, false);",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Quem consome sabe o que esperar, e quem fornece sabe que não pode quebrar o contrato sem versionar. " +
+                "Essa combinação é o que o padrão Customer/Supplier organiza.",
+            },
+            {
+              title: "Conformista: adotar o modelo do outro como está",
+              context: "Às vezes o custo de traduzir é maior que o de simplesmente aceitar o modelo de quem fornece.",
+              code: {
+                language: "javascript",
+                filename: "conformist.js",
+                code: [
+                  "// O serviço de identidade é externo e estável; Vendas adota o seu modelo diretamente",
+                  "function greet(identityUser) {",
+                  "  return `Olá, ${identityUser.displayName}`;   // usa o campo do modelo do outro contexto",
+                  "}",
+                  "",
+                  "// Sem camada de tradução: menos código, mas Vendas acompanha as mudanças do outro modelo",
+                ].join("\n"),
+              },
+              explanation:
+                "Ser conformista é uma escolha consciente, adequada quando o modelo do outro é bom e estável. O " +
+                "risco é acompanhar toda mudança dele, sem poder de negociação.",
+            },
+            {
+              title: "Separate Ways: a integração que não vale o custo",
+              context: "Nem todo par de contextos precisa conversar.",
+              code: {
+                language: "javascript",
+                filename: "separate-ways.js",
+                code: [
+                  "// O contexto de Recursos Humanos e o de Catálogo não têm o que trocar.",
+                  "// Decisão registrada no mapa, e sem integração para manter:",
+                  "const decision = { between: [\"HR\", \"Catalog\"], pattern: \"separate-ways\" };",
+                ].join("\n"),
+              },
+              explanation:
+                "Registrar que dois contextos seguem caminhos separados evita integrações desnecessárias e deixa a " +
+                "decisão explícita para quem chegar depois.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O contexto de Vendas lê diretamente as colunas do sistema legado de estoque, e o modelo esquisito " +
+              "do legado já vazou por todo o código de Vendas.",
+            problemCode: {
+              language: "javascript",
+              filename: "legacy-leak.js",
+              code: [
+                "// Legado: { itm_cd: \"A1\", qty_av: \"12\", loc_flg: \"W\" }",
+                "function canSell(legacyRow, quantity) {",
+                "  return Number(legacyRow.qty_av) >= quantity && legacyRow.loc_flg === \"W\";   // usa o vocabulário do legado",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Crie uma Anti-Corruption Layer, um `StockTranslator` que converta a linha legada para um modelo de " +
+              "Vendas (`sku`, `available`, `inWarehouse`), e reescreva `canSell` sobre esse modelo.",
+            hint: "O tradutor converte `qty_av` (texto) em número e `loc_flg === \"W\"` em um booleano. `canSell` só conhece o novo modelo.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "legacy-leak.fixed.js",
+                code: [
+                  "class StockTranslator {",
+                  "  toSalesStock(legacyRow) {",
+                  "    return {",
+                  "      sku: legacyRow.itm_cd,",
+                  "      available: Number(legacyRow.qty_av),",
+                  "      inWarehouse: legacyRow.loc_flg === \"W\",",
+                  "    };",
+                  "  }",
+                  "}",
+                  "",
+                  "// Vendas só conhece o próprio modelo",
+                  "function canSell(stock, quantity) {",
+                  "  return stock.available >= quantity && stock.inWarehouse;",
+                  "}",
+                  "",
+                  "const stock = new StockTranslator().toSalesStock({ itm_cd: \"A1\", qty_av: \"12\", loc_flg: \"W\" });",
+                  "canSell(stock, 10);   // true",
+                ].join("\n"),
+              },
+              explanation:
+                "O vocabulário do legado ficou preso ao tradutor. Se o sistema de estoque mudar, ou for substituído, " +
+                "só o `StockTranslator` é alterado, e o código de Vendas permanece igual.",
+            },
+          },
         }),
       ],
     }),

@@ -1369,6 +1369,15 @@ for (const area of model.areas()) {
     "service-layer",
     "specification-pattern",
     "dto",
+    "domain",
+    "domain-model",
+    "ubiquitous-language",
+    "aggregate",
+    "aggregate-root",
+    "domain-service",
+    "domain-event",
+    "bounded-context",
+    "context-mapping",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",
