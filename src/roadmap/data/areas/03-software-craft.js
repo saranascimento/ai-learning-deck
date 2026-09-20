@@ -28,7 +28,7 @@ export default area({
             "Escolher nomes que revelam a intenção — o que a coisa é ou faz, no vocabulário do problema — para que " +
             "o código possa ser lido sem precisar de uma explicação à parte.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -36,7 +36,14 @@ export default area({
                 "comuniquem o que aquilo representa ou faz. Um bom nome revela a intenção, usa o vocabulário do " +
                 "problema (não o da implementação) e é consistente com os outros nomes do código.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Um bom nome responde \"o que é isto e por que existe\" sem obrigar ninguém a ler a implementação — " +
+                "é a documentação que sempre está junto do código.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -54,7 +61,7 @@ export default area({
                 "verbos e booleanos como perguntas (isActive, hasPermission); e deixe o nome mais descritivo " +
                 "quanto maior for o escopo em que ele vive.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "a mesma função, antes e depois de nomes que revelam a intenção:" },
             {
               type: "code",
@@ -86,11 +93,15 @@ export default area({
                 "A lógica é idêntica nas duas versões — só os nomes mudaram. Na segunda, dá para entender o que a " +
                 "função faz (buscar faturas vencidas) e o que cada variável guarda sem ler o corpo linha por linha.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Um bom nome responde \"o que é isto e por que existe\" sem obrigar ninguém a ler a implementação — " +
-                "é a documentação que sempre está junto do código.",
+              type: "list",
+              items: [
+                "Nomes que descrevem só o tipo (`list`, `data`, `arr`) não dizem o que o valor significa para o problema.",
+                "Alternar sinônimos (`get`, `fetch`, `retrieve`) para a mesma operação faz quem lê achar que são coisas " +
+                "diferentes.",
+                "Abreviações que só o autor entende obrigam a reconstruir o significado lendo a implementação.",
+              ],
             },
           ],
           examples: [
@@ -202,7 +213,7 @@ export default area({
             "Escrever funções pequenas que fazem uma coisa só, num único nível de abstração — para que cada uma " +
             "possa ser entendida, testada e reaproveitada sem precisar ler o resto.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -210,7 +221,14 @@ export default area({
                 "propósito, operar em um único nível de abstração e ter um nome que descreva exatamente o que faz. " +
                 "É a aplicação da responsabilidade única na menor escala em que ela faz sentido.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Uma boa função tem um propósito só, um nível de abstração e um nome que o descreve — se a descrição " +
+                "precisa de \"e\", provavelmente são duas funções.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -227,7 +245,7 @@ export default area({
                 "critério de verdade é propósito único. Também vale o equilíbrio: extrair funções triviais demais " +
                 "fragmenta o código e obriga a pular entre arquivos sem ganho de clareza.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "uma função que faz três coisas, dividida em funções com um propósito cada:" },
             {
               type: "code",
@@ -268,11 +286,15 @@ export default area({
                 "Agora calculateTotal pode ser testada sozinha, sem banco, e uma mudança na regra de validação não " +
                 "toca no cálculo. processOrder virou um resumo legível do fluxo, sem detalhes de implementação.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Uma boa função tem um propósito só, um nível de abstração e um nome que o descreve — se a descrição " +
-                "precisa de \"e\", provavelmente são duas funções.",
+              type: "list",
+              items: [
+                "Um nome que precisa de \"e\" para descrever a função indica duas responsabilidades misturadas.",
+                "Misturar decisões de alto nível com detalhes de baixo nível obriga quem lê a alternar de contexto.",
+                "Extrair demais gera indireção sem valor: uma função só se justifica quando o nome explica algo que a " +
+                "expressão não explica.",
+              ],
             },
           ],
           examples: [
@@ -413,7 +435,7 @@ export default area({
             "Manter poucos parâmetros, em ordem previsível e sem flags booleanas — cada argumento a mais é algo " +
             "que quem chama precisa lembrar e acertar.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -421,7 +443,14 @@ export default area({
                 "que ordem, e de que tipo. A regra geral é preferir poucos, previsíveis e autoexplicativos — 0 a 2 " +
                 "são o ideal, e 3 já pede atenção.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Poucos argumentos, nomeados quando forem vários e sem flags booleanas — cada parâmetro extra é " +
+                "custo de leitura e chance de erro em todo ponto de chamada.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -439,7 +468,7 @@ export default area({
                 "que modificam o que receberam em vez de devolver um resultado, o que esconde o efeito da chamada. " +
                 "Reconhecer quando isso já virou um problema é o assunto de Long Parameter List, no módulo Code Smells.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "a mesma chamada, sem e com um objeto nomeado:" },
             {
               type: "code",
@@ -463,11 +492,14 @@ export default area({
                 "A chamada agora se explica sozinha, a ordem deixou de importar e os valores padrão (isAdmin e " +
                 "sendWelcome) permitem omitir o que não muda.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Poucos argumentos, nomeados quando forem vários e sem flags booleanas — cada parâmetro extra é " +
-                "custo de leitura e chance de erro em todo ponto de chamada.",
+              type: "list",
+              items: [
+                "Uma flag booleana costuma esconder duas funções com propósitos diferentes dentro de uma só.",
+                "Vários parâmetros do mesmo tipo tornam a ordem uma fonte de erros silenciosos.",
+                "Modificar o argumento recebido esconde o efeito: quem chama não vê, na chamada, que algo mudou.",
+              ],
             },
           ],
           examples: [
@@ -593,7 +625,7 @@ export default area({
             "Tratar os casos inválidos ou excepcionais logo no início da função, com retorno antecipado, para que " +
             "o caminho normal fique plano, sem aninhamento.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -601,7 +633,14 @@ export default area({
                 "caso vazio, permissão negada — e retorna (ou lança um erro) imediatamente. O que sobra depois dela " +
                 "é o caminho principal, escrito sem estar dentro de nenhum bloco de condição.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Resolva os casos excepcionais primeiro e saia cedo — assim o caminho principal fica no nível base " +
+                "da função, sem pirâmide de aninhamento.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -619,7 +658,7 @@ export default area({
                 "Vale para condições excepcionais — quando os dois ramos são igualmente normais, um if/else claro " +
                 "continua sendo a melhor opção, e ter vários returns numa função não é um problema em si.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "a mesma função com condições aninhadas e com guard clauses:" },
             {
               type: "code",
@@ -654,11 +693,21 @@ export default area({
                 "O comportamento é o mesmo, mas na segunda versão dá para ler as três regras de saída em sequência e " +
                 "a última linha mostra o que a função de fato faz, sem estar dentro de nenhum bloco.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Resolva os casos excepcionais primeiro e saia cedo — assim o caminho principal fica no nível base " +
-                "da função, sem pirâmide de aninhamento.",
+              type: "list",
+              items: [
+                "Para rejeitar entradas inválidas no topo da função, antes de qualquer lógica.",
+                "Dentro de laços, com `continue`, para descartar cedo o item que não interessa.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Quando os dois caminhos são comportamento normal e esperado, `if/else` comunica melhor que um retorno " +
+                "antecipado.",
+              ],
             },
           ],
           examples: [
@@ -781,7 +830,7 @@ export default area({
             "Usar comentários para explicar o porquê — decisões, restrições e armadilhas que o código não consegue " +
             "dizer — e não para repetir o que o código já diz nem para compensar nomes ruins.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -789,7 +838,14 @@ export default area({
                 "prática é tratá-los como último recurso: primeiro tente expressar a ideia no próprio código (com um " +
                 "bom nome ou uma função extraída) e comente apenas o que o código sozinho não consegue dizer.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Se o código pode dizer, deixe o código dizer; use comentários para o porquê — a informação que só " +
+                "existe na cabeça de quem escreveu.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -806,7 +862,7 @@ export default area({
                 "atrapalham: os redundantes, os que compensam nomes ruins, o código comentado (o controle de versão " +
                 "já guarda o histórico) e os diários de mudanças no meio do arquivo.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "um comentário que compensa um nome ruim, e outro que registra uma decisão que o código não mostra:" },
             {
               type: "code",
@@ -829,11 +885,14 @@ export default area({
                 "diz algo que nenhum nome expressaria — a razão do valor —, e é o tipo de informação que quem mexer " +
                 "aqui no futuro vai precisar.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Se o código pode dizer, deixe o código dizer; use comentários para o porquê — a informação que só " +
-                "existe na cabeça de quem escreveu.",
+              type: "list",
+              items: [
+                "Comentário que repete o que a linha já diz vira mais uma coisa a manter em sincronia com o código.",
+                "Código comentado deixa dúvida sobre se volta a valer; o histórico do Git já guarda as versões antigas.",
+                "Comentar para compensar um nome ruim esconde o problema em vez de resolvê-lo.",
+              ],
             },
           ],
           examples: [
@@ -951,7 +1010,7 @@ export default area({
             "Substituir números (e textos) soltos no código por constantes nomeadas que dizem o que o valor " +
             "significa e permitem mudá-lo em um único lugar.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -959,7 +1018,14 @@ export default area({
                 "contexto — 86400000, 0.07, 3. A prática é substituí-lo por uma constante com um nome que diga o " +
                 "que o valor representa (ONE_DAY_MS, LOYALTY_DISCOUNT_RATE, MAX_RETRIES).",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Um número solto esconde o significado e se espalha; uma constante nomeada explica o valor e o " +
+                "concentra em um único lugar — mas só vale nomear o que realmente não é óbvio.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -977,7 +1043,7 @@ export default area({
                 "estão, e extrair tudo produz constantes que só atrapalham. A técnica mecânica de fazer essa " +
                 "substituição com segurança é vista no módulo Refactoring; aqui o foco é o princípio.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "os mesmos números, soltos e nomeados:" },
             {
               type: "code",
@@ -1004,11 +1070,22 @@ export default area({
                 "A regra de negócio agora se lê em voz alta (\"maior de idade e total acima do mínimo de fidelidade\"), " +
                 "e ONE_DAY_MS mostra a conta em vez de um número que ninguém consegue conferir de cabeça.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Um número solto esconde o significado e se espalha; uma constante nomeada explica o valor e o " +
-                "concentra em um único lugar — mas só vale nomear o que realmente não é óbvio.",
+              type: "list",
+              items: [
+                "Quando o mesmo valor aparece em mais de um lugar e uma mudança precisa acontecer em um só ponto.",
+                "Quando o número ou texto carrega uma regra que não é óbvia, como limites, prazos e códigos de status.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Nem todo valor pede constante: o que já é óbvio no contexto (como `0` ou `1` num índice) só ganha ruído ao " +
+                "ser nomeado.",
+                "Mesmo valor com significados diferentes pede constantes diferentes; reaproveitar uma só cria acoplamento falso.",
+              ],
             },
           ],
           examples: [
