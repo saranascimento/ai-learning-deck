@@ -1490,9 +1490,7 @@ for (const area of model.areas()) {
 // ---- 17b. estrutura de conteúdo (migração para o formato de seções) -----
 {
   const g = "Estrutura de conteúdo (migração)";
-  // Em migração: só Concepts já convertidos (1º heading = «Conceito») são auditados e o legado é apenas contado.
-  // No fechamento da migração troque para true: qualquer Concept com conteúdo ainda legado passa a falhar.
-  const STRICT = false;
+  // Migração concluída (183/183), auditoria estrita: qualquer Concept com conteúdo ainda no formato legado (1º heading ≠ «Conceito») falha.
   const LIMIT_END = new Set(["Armadilhas", "Quando não usar / Limitações"]);
   const isLegacyTitle = (t) => /^Por que existe/.test(t) || t === "O que é?" || t === "Exemplo mínimo" || t === "Por que é um problema?";
   let withContent = 0;
@@ -1534,7 +1532,7 @@ for (const area of model.areas()) {
   );
   record(g, "Concepts convertidos: nenhum título legado (O que é? · Por que existe? · Exemplo mínimo)", bad.legacyTitle.length === 0, list(bad.legacyTitle));
   record(g, `progresso: convertidos ${convertedSlugs.length}/${withContent} (legado: ${legacySlugs.length})`, true);
-  record(g, "modo estrito: nenhum Concept com conteúdo legado", !STRICT || legacySlugs.length === 0, STRICT ? list(legacySlugs) : "desligado durante a migração");
+  record(g, "modo estrito: nenhum Concept com conteúdo legado", legacySlugs.length === 0, list(legacySlugs));
 }
 
 // ---- 18. relações R2 — geradas nas Concept Pages ↔ dataset -----
