@@ -4063,7 +4063,7 @@ export default area({
             "Duas formas de descrever o que um programa faz: dizer passo a passo como chegar no resultado " +
             "(imperativo), ou dizer o que se quer e deixar a implementação decidir o como (declarativo).",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -4072,7 +4072,15 @@ export default area({
                 "descreve o resultado desejado, sem especificar os passos — \"eu quero isto\", deixando pra " +
                 "implementação decidir como chegar lá.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Imperativo descreve os passos; Declarativo descreve o resultado desejado. Boa parte de " +
+                "Functional Programming é sobre escrever mais no estilo declarativo — os próximos Concepts " +
+                "são ferramentas concretas pra isso.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -4081,7 +4089,7 @@ export default area({
                 "\"porquê\" por trás de cada um desses Concepts. Código declarativo tende a ser mais curto e " +
                 "mais fácil de ler, mas depende de confiar na implementação por trás.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -4104,12 +4112,17 @@ export default area({
                 "acumular e inserir; a declarativa só diz \"eu quero cada número dobrado\" — o .map() decide " +
                 "como iterar por baixo.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Imperativo descreve os passos; Declarativo descreve o resultado desejado. Boa parte de " +
-                "Functional Programming é sobre escrever mais no estilo declarativo — os próximos Concepts " +
-                "são ferramentas concretas pra isso.",
+              type: "list",
+              items: [
+                "Nenhum estilo é melhor em tudo: um laço imperativo simples pode ser mais claro que uma cadeia declarativa " +
+                "complicada.",
+                "O declarativo esconde o \"como\", e isso pode esconder também o custo, como várias passagens sobre a mesma " +
+                "coleção.",
+                "Não é tudo ou nada: a maioria dos programas mistura os dois, e o objetivo é usar cada um onde deixa o " +
+                "código mais claro.",
+              ],
             },
           ],
           examples: [
@@ -4165,7 +4178,7 @@ export default area({
             "argumento, devolvidas por outra função. O recurso de linguagem que torna todo o resto de " +
             "Functional Programming possível.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -4174,7 +4187,15 @@ export default area({
                 "devolvida como resultado, guardada dentro de um array ou objeto. Não existe uma categoria " +
                 "especial de \"função\" separada dos outros valores.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "First-Class Functions trata função como qualquer outro valor — guardável, passável, " +
+                "retornável. É o alicerce que torna Closures, Higher-Order Functions e todo o resto de " +
+                "Functional Programming possível.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -4183,7 +4204,7 @@ export default area({
                 "Map/Filter/Reduce receberem uma função como argumento, nem como Closures ou Higher-Order " +
                 "Functions existirem. Este Concept é a base sobre a qual os outros são construídos.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -4203,12 +4224,16 @@ export default area({
                 "greet é um valor comum — pode ser guardado, passado adiante, chamado de dentro de outra " +
                 "função. Nada disso exige sintaxe especial.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "First-Class Functions trata função como qualquer outro valor — guardável, passável, " +
-                "retornável. É o alicerce que torna Closures, Higher-Order Functions e todo o resto de " +
-                "Functional Programming possível.",
+              type: "list",
+              items: [
+                "Passar uma função adiante leva junto o contexto: `this` e as variáveis capturadas podem se comportar " +
+                "diferente de onde ela foi escrita.",
+                "Funções anônimas demais dificultam a leitura e o stack trace; dê nome às que fazem algo não trivial.",
+                "Ter funções como valores é só o recurso da linguagem; usá-lo bem depende de outros conceitos, como pureza e " +
+                "composição.",
+              ],
             },
           ],
           examples: [
@@ -4267,7 +4292,7 @@ export default area({
             "deveria ter deixado de existir — a técnica por trás de estado privado, callbacks com contexto, e " +
             "Encapsulation fora de classes.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -4276,7 +4301,15 @@ export default area({
                 "interna continua tendo acesso a essas variáveis. Já vimos isso em Stack vs Heap: um closure é " +
                 "o que força uma variável local a sobreviver no heap além do frame que a criou.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Closure é uma função que carrega consigo o ambiente léxico onde foi criada — permite estado " +
+                "privado e contexto persistente sem precisar de uma classe, e é a base de como callbacks " +
+                "lembram de dados relevantes.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -4285,7 +4318,7 @@ export default area({
                 "lembrar de dados relevantes no momento em que foram registrados, e é uma forma alternativa de " +
                 "Encapsulation: estado privado, sem classe nenhuma envolvida.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "paragraph",
               text: "O mesmo makeCounter de Stack vs Heap, revisitado sob a lente de Closure:",
@@ -4305,12 +4338,24 @@ export default area({
                 "\"prende\" count ao lado de increment, mesmo que nada mais no programa consiga acessar count " +
                 "diretamente.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Closure é uma função que carrega consigo o ambiente léxico onde foi criada — permite estado " +
-                "privado e contexto persistente sem precisar de uma classe, e é a base de como callbacks " +
-                "lembram de dados relevantes.",
+              type: "list",
+              items: [
+                "Para estado privado sem classe, como um contador ou um cache escondido dentro de uma função.",
+                "Em callbacks que precisam lembrar de um contexto, como configuração ou dados de uma requisição.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "A closure mantém vivas as variáveis capturadas, e isso pode causar vazamento de memória se ela segurar " +
+                "dados grandes.",
+                "Com `var` num laço, todas as closures compartilham a mesma variável; use `let`, que cria uma por iteração.",
+                "Muito estado escondido em closures dificulta depurar e testar; para estado complexo, uma classe pode ser " +
+                "mais clara.",
+              ],
             },
           ],
           examples: [
@@ -4396,7 +4441,7 @@ export default area({
             "arquivo, fazer uma requisição de rede. Entender o que é um efeito colateral é o pré-requisito pra " +
             "entender o que uma Pure Function evita.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -4405,7 +4450,15 @@ export default area({
                 "num arquivo, fazer uma chamada de rede, imprimir no console, ler a hora atual. Se a função " +
                 "\"toca\" o mundo fora dela, ou depende de algo fora dela que pode mudar, isso é um efeito colateral.",
             },
-            { type: "heading", text: "Por que existe (como conceito a nomear)?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Side Effect é qualquer interação de uma função com algo fora dela — variável externa, objeto " +
+                "mutado, I/O. Nomear isso explicitamente é o primeiro passo pra decidir onde, no seu programa, " +
+                "isso deveria (ou não) acontecer.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -4414,7 +4467,7 @@ export default area({
                 "colateral seria inútil (nunca mostraria nada na tela) — o objetivo não é eliminar efeitos " +
                 "colaterais, é isolá-los da lógica de cálculo pura, exatamente o que Pure Functions descreve.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -4427,12 +4480,15 @@ export default area({
                 "addToTotal não devolve nada de útil — o que ela faz é mudar total, uma variável que existe " +
                 "fora dela. O \"trabalho de verdade\" acontece por fora do valor de retorno.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Side Effect é qualquer interação de uma função com algo fora dela — variável externa, objeto " +
-                "mutado, I/O. Nomear isso explicitamente é o primeiro passo pra decidir onde, no seu programa, " +
-                "isso deveria (ou não) acontecer.",
+              type: "list",
+              items: [
+                "Não dá para eliminar todo efeito colateral: gravar, ler e chamar a rede são o ponto do programa; o objetivo " +
+                "é isolá-los.",
+                "Mutar um parâmetro recebido por referência é efeito colateral que quem chamou não espera.",
+                "Depender de algo externo mutável, como uma variável global, é efeito colateral escondido na entrada da função.",
+              ],
             },
           ],
           examples: [
@@ -4503,7 +4559,7 @@ export default area({
             "Uma função que, pro mesmo input, sempre devolve o mesmo output, e não produz nenhum efeito " +
             "colateral — previsível, testável isoladamente, e segura de chamar quantas vezes for preciso.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -4511,7 +4567,15 @@ export default area({
                 "nunca depende de nada externo que possa variar; e não produz nenhum Side Effect — não muta " +
                 "nada fora dela, não faz I/O, não depende de estado externo mutável.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Pure Function devolve sempre o mesmo output pro mesmo input, e não produz efeito colateral " +
+                "nenhum. Isso as torna previsíveis, fáceis de testar isoladamente, e seguras de otimizar " +
+                "(cache, memoization) sem medo de resultado errado.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -4520,7 +4584,7 @@ export default area({
                 "É também o que torna otimizações como memoization seguras: se o resultado é sempre o mesmo " +
                 "pro mesmo input, dá pra guardar em cache sem medo.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -4543,12 +4607,21 @@ export default area({
                 "add(2, 3) sempre devolve 5, não importa quando ou quantas vezes for chamada. " +
                 "addWithTimestamp(2, 3) devolve algo diferente a cada chamada, mesmo com os mesmos argumentos.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Pure Function devolve sempre o mesmo output pro mesmo input, e não produz efeito colateral " +
-                "nenhum. Isso as torna previsíveis, fáceis de testar isoladamente, e seguras de otimizar " +
-                "(cache, memoization) sem medo de resultado errado.",
+              type: "list",
+              items: [
+                "Para regras de negócio e transformações de dados, que ficam previsíveis e testáveis sem dublês.",
+                "Quando o resultado pode ser reaproveitado, com cache ou memoization, sem risco de valor errado.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Um programa útil precisa de efeitos, como I/O; a ideia é manter o núcleo puro e os efeitos nas bordas.",
+                "Aleatoriedade, hora atual e leitura de estado externo não são puras; passe esses valores como argumento.",
+              ],
             },
           ],
           examples: [
@@ -4609,7 +4682,7 @@ export default area({
             "A propriedade de uma expressão poder ser substituída pelo seu valor resultante sem mudar o " +
             "comportamento do programa — uma consequência direta de trabalhar só com Pure Functions.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -4618,7 +4691,14 @@ export default area({
                 "referencial porque você pode trocar cada ocorrência dela por 5 em qualquer lugar, e o " +
                 "programa continua funcionando exatamente igual.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Referential Transparency significa que uma chamada de função pode ser trocada pelo valor que " +
+                "ela produz, sem mudar o comportamento do programa. É o que Pure Functions garantem.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -4627,7 +4707,7 @@ export default area({
                 "Isso permite raciocinar sobre código \"substituindo mentalmente\" chamadas por valores — o " +
                 "tipo de raciocínio que fica impossível quando funções têm efeitos colaterais.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -4653,11 +4733,16 @@ export default area({
                 "substituir a chamada pelo valor eliminaria os efeitos colaterais — a substituição deixa de " +
                 "ser \"transparente\".",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Referential Transparency significa que uma chamada de função pode ser trocada pelo valor que " +
-                "ela produz, sem mudar o comportamento do programa. É o que Pure Functions garantem.",
+              type: "list",
+              items: [
+                "Basta um estado mutável ou um efeito colateral para quebrá-la, e a expressão deixa de poder ser trocada " +
+                "pelo seu valor.",
+                "Ela vale para expressões, não para a linguagem inteira: parte do código pode ser transparente e outra parte " +
+                "não.",
+                "É o que permite memoization com segurança; sem ela, o cache pode devolver um valor que já não é o certo.",
+              ],
             },
           ],
           examples: [
@@ -4732,7 +4817,7 @@ export default area({
             "Dados que, uma vez criados, nunca mudam — em vez de alterar um valor existente, qualquer " +
             "\"mudança\" cria um valor novo. Elimina uma categoria inteira de bug de estado compartilhado inesperado.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -4741,7 +4826,14 @@ export default area({
                 "original intocado. Em Value vs Reference vimos o problema que isso resolve: mudar um objeto " +
                 "compartilhado através de uma referência afeta todo mundo que também a tem.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Immutability significa nunca alterar um dado existente — qualquer \"mudança\" cria um valor " +
+                "novo. Elimina o bug de estado compartilhado inesperado pela raiz, ao custo de criar mais objetos.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -4750,7 +4842,7 @@ export default area({
                 "muito raciocinar sobre estado compartilhado, especialmente em código concorrente ou em UIs " +
                 "que precisam saber exatamente quando algo mudou.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -4775,11 +4867,14 @@ export default area({
                 "mudança também. addItemImmutable devolve um objeto completamente novo; o cart original " +
                 "permanece exatamente como estava.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Immutability significa nunca alterar um dado existente — qualquer \"mudança\" cria um valor " +
-                "novo. Elimina o bug de estado compartilhado inesperado pela raiz, ao custo de criar mais objetos.",
+              type: "list",
+              items: [
+                "`Object.freeze` é raso: objetos aninhados continuam mutáveis, e ele só protege em tempo de execução.",
+                "Criar valores novos a cada mudança tem custo, que pode pesar com estruturas grandes ou em laços quentes.",
+                "Métodos de array como `push` e `sort` mudam o original; conheça quais mutam e quais devolvem uma cópia.",
+              ],
             },
           ],
           examples: [
@@ -4848,7 +4943,7 @@ export default area({
             "Uma função que recebe outra função como argumento, devolve uma função como resultado, ou as duas " +
             "coisas — a categoria que engloba Map, Filter, Reduce e Function Composition.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -4856,7 +4951,14 @@ export default area({
                 "recebe outra função como argumento, ou devolve uma função como resultado. Só é possível " +
                 "porque funções são First-Class.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Higher-Order Function é qualquer função que recebe função como argumento, devolve função como " +
+                "resultado, ou as duas — a categoria que engloba Map/Filter/Reduce e Function Composition.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -4865,7 +4967,7 @@ export default area({
                 "transformação a cada item\" e deixa você fornecer só a transformação específica — o padrão de " +
                 "iteração fica reutilizado, só a lógica de cada caso muda.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -4889,11 +4991,21 @@ export default area({
                 "applyTwice recebe uma função como argumento; makeAdder devolve uma função — as duas são " +
                 "Higher-Order Functions, cada uma satisfazendo um dos dois critérios.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Higher-Order Function é qualquer função que recebe função como argumento, devolve função como " +
-                "resultado, ou as duas — a categoria que engloba Map/Filter/Reduce e Function Composition.",
+              type: "list",
+              items: [
+                "Para separar o que varia do que se repete, como uma função de retry que recebe a operação a tentar.",
+                "Para transformar coleções de forma declarativa, com `map`, `filter` e `reduce`.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Funções que devolvem funções que devolvem funções ficam difíceis de ler; limite os níveis.",
+                "Para um caso único e simples, uma função direta é mais clara que uma generalização.",
+              ],
             },
           ],
           examples: [
@@ -4951,7 +5063,7 @@ export default area({
             "Combinar funções menores em uma maior, encadeando a saída de uma como entrada da próxima (f∘g) — " +
             "o mesmo espírito de Composition (objetos), aplicado a comportamento em vez de estado.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -4959,7 +5071,15 @@ export default area({
                 "vira a entrada da próxima — matematicamente notado f∘g, que significa \"primeiro g, depois f " +
                 "com o resultado\". O resultado é uma função nova, feita a partir de peças menores.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Function Composition combina funções pequenas e puras numa transformação maior, encadeando " +
+                "saída→entrada. Mesmo espírito de Composition: montar o complexo a partir de peças simples e " +
+                "testáveis isoladamente.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -4975,7 +5095,7 @@ export default area({
                 "sobre objetos contendo outros objetos, e este é sobre encadear funções. Espírito parecido " +
                 "(montar o maior a partir de peças menores), conceitos diferentes.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -4997,12 +5117,21 @@ export default area({
                 "compose(addOne, double) cria uma função nova que aplica double primeiro, depois addOne no " +
                 "resultado — nenhuma das duas funções originais precisou saber da existência da outra.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Function Composition combina funções pequenas e puras numa transformação maior, encadeando " +
-                "saída→entrada. Mesmo espírito de Composition: montar o complexo a partir de peças simples e " +
-                "testáveis isoladamente.",
+              type: "list",
+              items: [
+                "Para montar uma transformação maior a partir de passos pequenos, puros e testáveis isoladamente.",
+                "Com `pipe`, quando a ordem natural de leitura, da esquerda para a direita, deixa o fluxo mais claro.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Uma peça impura contamina toda a composição: o resultado deixa de ser previsível.",
+                "Cada função precisa receber o que a anterior devolve, o que costuma pedir funções de um só argumento.",
+              ],
             },
           ],
           examples: [
@@ -5077,7 +5206,7 @@ export default area({
             "Uma Higher-Order Function que aplica uma transformação a cada item de uma coleção, devolvendo " +
             "uma coleção nova do mesmo tamanho — o padrão declarativo mais comum pra \"fazer algo com cada elemento\".",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -5085,7 +5214,14 @@ export default area({
                 "uma coleção nova — imutável, o original não é tocado — com o mesmo número de elementos, cada " +
                 "um transformado.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                ".map() transforma cada item de uma coleção numa coleção nova do mesmo tamanho — a expressão " +
+                "declarativa mais direta de \"aplique isso a cada elemento\", sem mutar o original.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -5094,7 +5230,7 @@ export default area({
                 "intenção diretamente, e é uma Higher-Order Function pura por construção quando a função de " +
                 "transformação também é pura.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -5105,11 +5241,22 @@ export default area({
               type: "paragraph",
               text: ".map() devolve um array novo, do mesmo tamanho, com cada item transformado — prices original permanece intacto.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                ".map() transforma cada item de uma coleção numa coleção nova do mesmo tamanho — a expressão " +
-                "declarativa mais direta de \"aplique isso a cada elemento\", sem mutar o original.",
+              type: "list",
+              items: [
+                "Quando cada item da coleção vira exatamente um novo item, como extrair um campo de uma lista de objetos.",
+                "Para gerar dados derivados sem alterar a coleção original.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Não use só pelo efeito colateral, como imprimir cada item: ele devolve uma coleção que ninguém usa; use " +
+                "`forEach` ou um laço.",
+                "Se o resultado tem tamanho diferente do original, como descartar itens, use `filter` ou `reduce`.",
+              ],
             },
           ],
           examples: [
@@ -5157,7 +5304,7 @@ export default area({
             "devolvendo uma coleção nova (possivelmente menor) — o complemento natural de Map para selecionar, " +
             "em vez de transformar.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -5166,7 +5313,14 @@ export default area({
                 "true. Diferente de .map() (que transforma cada item, mantendo o tamanho), .filter() seleciona " +
                 "um subconjunto.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                ".filter() seleciona um subconjunto de uma coleção com base numa condição, devolvendo uma " +
+                "coleção nova (possivelmente menor). É o complemento de .map(): filter seleciona, map transforma.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -5174,7 +5328,7 @@ export default area({
                 "substitui um loop imperativo com if + push condicional por uma única chamada que nomeia " +
                 "exatamente a condição de seleção.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -5185,11 +5339,21 @@ export default area({
               type: "paragraph",
               text: ".filter() percorre numbers e mantém só os itens onde n % 2 === 0 é true — o predicado nomeia a condição diretamente.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                ".filter() seleciona um subconjunto de uma coleção com base numa condição, devolvendo uma " +
-                "coleção nova (possivelmente menor). É o complemento de .map(): filter seleciona, map transforma.",
+              type: "list",
+              items: [
+                "Para selecionar os itens que satisfazem uma condição, como objetos por uma propriedade.",
+                "Para descartar valores inválidos ou vazios antes de continuar a cadeia.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Só seleciona: ele não transforma os itens; para transformar, encadeie com `map`.",
+                "Para achar um único item, `find` para na primeira ocorrência, enquanto `filter` percorre a coleção toda.",
+              ],
             },
           ],
           examples: [
@@ -5244,7 +5408,7 @@ export default area({
             "A Higher-Order Function mais geral de todas: acumula os itens de uma coleção num único resultado " +
             "— Map e Filter podem, inclusive, ser implementados em cima de Reduce.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -5252,7 +5416,14 @@ export default area({
                 "recebe o valor acumulado até agora e o item atual, e devolve o novo valor acumulado. No fim, " +
                 "sobra um único resultado — um número, um objeto, um array, qualquer coisa.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Reduce acumula os itens de uma coleção num único resultado — é o caso mais geral de todos, e " +
+                "a ferramenta certa sempre que o objetivo é \"resumir\" uma coleção inteira.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -5261,7 +5432,7 @@ export default area({
                 "entender Map/Filter primeiro ajuda a apreciar o quanto Reduce generaliza os dois). Sempre que " +
                 "o objetivo é \"resumir\" uma coleção inteira num valor só, Reduce é a ferramenta.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             {
               type: "code",
               language: "javascript",
@@ -5274,11 +5445,21 @@ export default area({
                 "reduce começa com accumulated = 0 (o segundo argumento); a cada item, soma ao acumulado — " +
                 "0+10=10, 10+20=30, 30+30=60. O resultado final é um único número.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Reduce acumula os itens de uma coleção num único resultado — é o caso mais geral de todos, e " +
-                "a ferramenta certa sempre que o objetivo é \"resumir\" uma coleção inteira.",
+              type: "list",
+              items: [
+                "Para resumir uma coleção em um único resultado, como uma soma, um objeto agrupado ou um contador.",
+                "Quando a lógica de acumular é o próprio ponto, e nem `map` nem `filter` a expressam.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Para transformar ou selecionar, `map` e `filter` dizem a intenção mais claramente que um `reduce` genérico.",
+                "Sem valor inicial, o `reduce` falha numa coleção vazia; passe sempre o valor inicial.",
+              ],
             },
           ],
           examples: [
