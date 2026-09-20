@@ -3069,7 +3069,7 @@ export default area({
             "Um modelo que orienta a proporção entre os tipos de teste de um sistema: muitos unit tests rápidos " +
             "e baratos na base, menos integration tests no meio, e poucos E2E tests caros no topo.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -3079,7 +3079,15 @@ export default area({
                 "topo estreito de E2E tests (poucos, os mais lentos e caros de todos). A forma de pirâmide " +
                 "comunica a proporção esperada, não um número exato.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "O Test Pyramid orienta a proporção entre tipos de teste — muitos unit tests na base, menos " +
+                "integration no meio, poucos E2E no topo — porque cada camada abaixo é mais rápida, mais barata " +
+                "e mais precisa que a de cima.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -3097,7 +3105,7 @@ export default area({
                 "completa do usuário funciona. A pirâmide não diz \"não faça E2E\" — diz \"faça pouco E2E, o " +
                 "suficiente para os fluxos mais críticos\".",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "uma suíte de testes representada como contagem por camada, ilustrando a proporção esperada:" },
             {
               type: "code",
@@ -3122,12 +3130,14 @@ export default area({
                 "tests são a maioria, integration tests vêm em seguida, E2E tests são os mais raros. Uma suíte " +
                 "com 5 unit tests e 50 E2E tests teria a pirâmide invertida, mesmo tendo o mesmo total de 55 testes.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "O Test Pyramid orienta a proporção entre tipos de teste — muitos unit tests na base, menos " +
-                "integration no meio, poucos E2E no topo — porque cada camada abaixo é mais rápida, mais barata " +
-                "e mais precisa que a de cima.",
+              type: "list",
+              items: [
+                "A pirâmide invertida, com muitos E2E e poucos testes de unidade, dá uma suíte lenta, frágil e cara de manter.",
+                "É um modelo de proporção, não uma regra exata: o formato ideal depende do sistema.",
+                "Testar a mesma regra de negócio em várias camadas gera duplicação; escolha a camada mais barata que a verifica.",
+              ],
             },
           ],
           examples: [
@@ -3223,7 +3233,7 @@ export default area({
             "A porcentagem do código-fonte que é de fato executada quando a suíte de testes roda — uma métrica " +
             "útil para achar código não testado, perigosa quando vira meta em si mesma.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -3233,7 +3243,15 @@ export default area({
                 "um if/else exercitado) e path coverage (cada caminho possível através do código) — cada uma " +
                 "mais rigorosa que a anterior.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Code Coverage mede que fração do código roda durante os testes — útil para achar pontos cegos, " +
+                "mas mede execução, não correção; perseguir um número alto sem cuidar da qualidade das " +
+                "assertions é otimizar a métrica errada.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -3250,7 +3268,7 @@ export default area({
                 "um teste sem que nenhuma assertion relevante verifique o resultado. Coverage mede execução, " +
                 "não verificação; um número alto pode esconder testes fracos, não ausentes.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "uma função com um ramo não coberto, e o que o relatório de coverage revelaria:" },
             {
               type: "code",
@@ -3281,12 +3299,15 @@ export default area({
                 "não — coverage é exatamente o tipo de sinal que aponta esse ponto cego, sem alguém precisar " +
                 "revisar o código linha por linha.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Code Coverage mede que fração do código roda durante os testes — útil para achar pontos cegos, " +
-                "mas mede execução, não correção; perseguir um número alto sem cuidar da qualidade das " +
-                "assertions é otimizar a métrica errada.",
+              type: "list",
+              items: [
+                "Coverage mede execução, não correção: uma linha executada sem assertion conta como coberta.",
+                "Virar meta obrigatória, como num PR, leva a testes escritos só para subir o número; quando uma medida vira " +
+                "meta, deixa de ser boa medida.",
+                "Use coverage para achar pontos cegos, como um caminho de erro nunca exercitado, e não para provar qualidade.",
+              ],
             },
           ],
           examples: [
@@ -3389,7 +3410,7 @@ export default area({
             "As propriedades de um código que determinam quão fácil (ou difícil) é escrever testes para ele — " +
             "poucos colaboradores, dependências injetáveis, pontos de costura onde um dublê pode entrar.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -3399,7 +3420,15 @@ export default area({
                 "instanciar colaboradores internamente. Código testável permite escrever um teste de unidade " +
                 "rápido; código não testável exige contorcer o teste (ou desistir de testar aquele trecho).",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Testability é a propriedade de um código permitir a entrada de dublês e o controle de suas " +
+                "dependências — resultado de decisões de design (seams, injeção de dependência, poucos " +
+                "colaboradores), não uma característica dos testes em si.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -3418,7 +3447,7 @@ export default area({
                 "código, portanto, costuma melhorar seu design de forma mais geral, não só a experiência de " +
                 "escrever testes.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "a mesma responsabilidade, antes e depois de ganhar um seam para injeção de dependência:" },
             {
               type: "code",
@@ -3452,12 +3481,14 @@ export default area({
                 "construtor é o seam: um teste passa um fakeDatabase no lugar da conexão real, sem precisar de " +
                 "um banco de verdade rodando.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Testability é a propriedade de um código permitir a entrada de dublês e o controle de suas " +
-                "dependências — resultado de decisões de design (seams, injeção de dependência, poucos " +
-                "colaboradores), não uma característica dos testes em si.",
+              type: "list",
+              items: [
+                "Código difícil de testar costuma ser sinal de design: muitos colaboradores e dependências criadas por dentro.",
+                "Não distorça o código de produção só para testá-lo, como expor internos; melhore o design em vez disso.",
+                "Funções puras são o caso ideal: entram valores, saem valores, sem dublês.",
+              ],
             },
           ],
           examples: [
@@ -3531,7 +3562,7 @@ export default area({
             "A propriedade de um teste não depender de nenhum outro teste, nem de estado deixado para trás — " +
             "cada teste passa (ou falha) da mesma forma, não importa em que ordem a suíte roda.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -3541,7 +3572,15 @@ export default area({
                 "aparece quando um teste só passa se rodar depois de outro específico, ou quando rodar a suíte " +
                 "inteira duas vezes seguidas dá resultados diferentes.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Test Isolation garante que um teste não depende de nenhum outro nem de estado deixado para " +
+                "trás — o mesmo resultado, em qualquer ordem, sozinho ou junto de toda a suíte, o que também é " +
+                "o que torna a paralelização segura.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -3560,7 +3599,7 @@ export default area({
                 "produção (múltiplas partes mexendo no mesmo estado) causa testes não isolados quando esse " +
                 "estado é global aos testes.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "um par de testes que quebra sem isolamento, e a correção com fixture nova por teste:" },
             {
               type: "code",
@@ -3594,12 +3633,15 @@ export default area({
                 "escondida. testCartStartsEmptyIsolated cria seu próprio array a cada execução, então o " +
                 "resultado é sempre o mesmo, não importa quando (ou se) outros testes rodaram antes.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Test Isolation garante que um teste não depende de nenhum outro nem de estado deixado para " +
-                "trás — o mesmo resultado, em qualquer ordem, sozinho ou junto de toda a suíte, o que também é " +
-                "o que torna a paralelização segura.",
+              type: "list",
+              items: [
+                "Estado compartilhado, como variável de módulo mutável ou registros no banco, faz um teste afetar o seguinte.",
+                "Testes que só passam em uma certa ordem quebram ao serem paralelizados ou rodados sozinhos.",
+                "Limpar o estado depois de cada teste não basta se um teste que falha pula a limpeza; prefira criar o estado " +
+                "a cada teste.",
+              ],
             },
           ],
           examples: [
@@ -3710,7 +3752,7 @@ export default area({
             "Um teste que às vezes passa e às vezes falha, sem que o código sob teste tenha mudado — um " +
             "sintoma de não determinismo escondido em corrida, tempo, ordem ou rede.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -3720,7 +3762,15 @@ export default area({
                 "confiança na suíte inteira — ninguém sabe se uma falha é um bug de verdade ou \"só aquele " +
                 "teste de novo\".",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Um flaky test passa ou falha de forma inconsistente porque depende de algo não controlado — " +
+                "corrida assíncrona, tempo, ordem ou rede — e corrigi-lo significa eliminar essa fonte de não " +
+                "determinismo, não só re-rodar até passar.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -3738,7 +3788,7 @@ export default area({
                 "isolar) testes flaky é necessário para que uma falha vermelha continue significando \"algo " +
                 "quebrou\", não \"tente de novo\".",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "um teste flaky causado por uma corrida entre duas operações assíncronas, e a correção esperando o resultado certo:" },
             {
               type: "code",
@@ -3768,12 +3818,15 @@ export default area({
                 "(teste falha), dependendo de fatores como carga da máquina naquele momento. Adicionar await " +
                 "elimina a corrida: o teste só verifica depois que a gravação de fato terminou.",
             },
+            { type: "heading", text: "Armadilhas" },
             {
-              type: "takeaway",
-              text:
-                "Um flaky test passa ou falha de forma inconsistente porque depende de algo não controlado — " +
-                "corrida assíncrona, tempo, ordem ou rede — e corrigi-lo significa eliminar essa fonte de não " +
-                "determinismo, não só re-rodar até passar.",
+              type: "list",
+              items: [
+                "Re-rodar até passar esconde o problema e faz a equipe perder a confiança na suíte; elimine a fonte de não " +
+                "determinismo.",
+                "Aumentar o timeout costuma apenas empurrar a falha; espere pela condição e não por um tempo fixo.",
+                "Dependência de ordem e de rede real são causas comuns: isole os testes e use dublês para a rede.",
+              ],
             },
           ],
           examples: [
@@ -3861,7 +3914,7 @@ export default area({
             "Re-executar a suíte de testes existente depois de uma mudança, para confirmar que nenhum " +
             "comportamento que já funcionava — incluindo bugs já corrigidos — voltou a quebrar.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -3871,7 +3924,15 @@ export default area({
                 "antes. Não é um tipo novo de teste — é o reuso disciplinado de unit, integration e E2E tests " +
                 "já escritos, rodados de novo a cada mudança.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Regression Testing é reexecutar a suíte existente a cada mudança para garantir que nada que já " +
+                "funcionava quebrou — e, quando nasce de um bug real corrigido, garante especificamente que " +
+                "aquele problema não volta a acontecer.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -3888,7 +3949,7 @@ export default area({
                 "(inclusive a própria pessoa que corrigiu) reintroduzir o mesmo problema no futuro, a suíte " +
                 "aponta imediatamente — sem depender de o bug ser notado de novo em produção.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "um teste de regressão escrito depois de corrigir um bug real de divisão por zero:" },
             {
               type: "code",
@@ -3918,12 +3979,21 @@ export default area({
                 "exato continua funcionando. Se uma refatoração futura remover acidentalmente o if " +
                 "(numbers.length === 0), esse teste falha imediatamente.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Regression Testing é reexecutar a suíte existente a cada mudança para garantir que nada que já " +
-                "funcionava quebrou — e, quando nasce de um bug real corrigido, garante especificamente que " +
-                "aquele problema não volta a acontecer.",
+              type: "list",
+              items: [
+                "A cada mudança, rodando a suíte existente para confirmar que nada que funcionava quebrou.",
+                "Ao corrigir um bug, escrevendo antes um teste que o reproduz, para que ele não volte.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Só protege o que já está coberto: comportamento sem teste pode regredir sem aviso.",
+                "Uma suíte de regressão lenta deixa de ser rodada a cada mudança; mantenha-a rápida ou divida-a por camadas.",
+              ],
             },
           ],
           examples: [
@@ -4022,7 +4092,7 @@ export default area({
             "valer para qualquer entrada — e deixar a ferramenta gerar centenas de entradas aleatórias tentando " +
             "quebrá-la.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -4032,7 +4102,15 @@ export default area({
                 "lista duas vezes deveria devolver a lista original\") — e uma ferramenta gera automaticamente " +
                 "centenas ou milhares de entradas aleatórias, tentando encontrar uma que quebre essa propriedade.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Property-based testing descreve uma propriedade que deve valer para qualquer entrada e deixa a " +
+                "ferramenta gerar muitas entradas tentando quebrá-la — encontrando casos extremos que testes " +
+                "baseados em exemplos específicos tendem a deixar passar.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -4051,7 +4129,7 @@ export default area({
                 "facilitar a depuração. Property-based testing funciona melhor sobre funções puras e com " +
                 "contratos claros (pré/pós-condições) — é por isso que se conecta tão naturalmente a Pure Functions.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "uma propriedade sobre reverter uma lista, verificada com entradas geradas aleatoriamente:" },
             {
               type: "code",
@@ -4082,12 +4160,22 @@ export default area({
                 "testing (como fast-check em JavaScript) fazem essa geração de forma mais sofisticada, incluindo " +
                 "casos extremos deliberados.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Property-based testing descreve uma propriedade que deve valer para qualquer entrada e deixa a " +
-                "ferramenta gerar muitas entradas tentando quebrá-la — encontrando casos extremos que testes " +
-                "baseados em exemplos específicos tendem a deixar passar.",
+              type: "list",
+              items: [
+                "Quando é possível enunciar uma propriedade geral, como idempotência ou uma invariante estrutural.",
+                "Para achar casos extremos que os exemplos escritos à mão deixam passar.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Nem toda regra tem uma propriedade simples de enunciar; nesses casos, exemplos concretos são mais claros.",
+                "Uma propriedade que reimplementa o código testado só repete o mesmo erro; a propriedade deve ser mais " +
+                "simples que a implementação.",
+              ],
             },
           ],
           examples: [
@@ -4217,7 +4305,7 @@ export default area({
             "Verificar que um provedor de uma API e seus consumidores concordam sobre o formato da interface " +
             "entre eles — sem precisar rodar os dois sistemas inteiros juntos para descobrir uma incompatibilidade.",
           content: [
-            { type: "heading", text: "O que é?" },
+            { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
@@ -4228,7 +4316,15 @@ export default area({
                 "\"contrato\" compartilhado — um documento (geralmente gerado automaticamente) que descreve " +
                 "exatamente o que é esperado.",
             },
-            { type: "heading", text: "Por que existe?" },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Contract Testing verifica que provedor e consumidor concordam sobre a interface entre eles, " +
+                "cada lado testado isoladamente contra um contrato compartilhado — pegando incompatibilidades " +
+                "de formato sem o custo de subir o sistema inteiro.",
+            },
+            { type: "heading", text: "Por que importa" },
             {
               type: "paragraph",
               text:
@@ -4247,7 +4343,7 @@ export default area({
                 "Isso evita que o provedor quebre consumidores por mudar um campo que nenhum consumidor sequer " +
                 "usava, e detecta cedo quando o provedor muda algo que um consumidor específico realmente depende.",
             },
-            { type: "heading", text: "Exemplo mínimo" },
+            { type: "heading", text: "Na prática" },
             { type: "paragraph", text: "um contrato simples e os dois lados verificados contra ele, separadamente:" },
             {
               type: "code",
@@ -4280,12 +4376,22 @@ export default area({
                 "consumidor de verdade rodando; um teste espelhado do lado do consumidor verificaria que ele " +
                 "consegue processar uma resposta nesse mesmo formato, sem precisar do provedor real no ar.",
             },
+            { type: "heading", text: "Quando usar" },
             {
-              type: "takeaway",
-              text:
-                "Contract Testing verifica que provedor e consumidor concordam sobre a interface entre eles, " +
-                "cada lado testado isoladamente contra um contrato compartilhado — pegando incompatibilidades " +
-                "de formato sem o custo de subir o sistema inteiro.",
+              type: "list",
+              items: [
+                "Entre serviços mantidos por times diferentes, para detectar uma quebra de formato antes da integração real.",
+                "Quando subir os dois sistemas juntos é caro ou lento demais.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Verifica o formato da interface, não o comportamento do negócio; não substitui os testes de integração.",
+                "Exige manter o contrato compartilhado e um processo entre provedor e consumidor; com um só time e um só " +
+                "repositório, pode ser exagero.",
+              ],
             },
           ],
           examples: [
