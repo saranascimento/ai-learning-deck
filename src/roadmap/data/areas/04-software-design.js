@@ -4955,11 +4955,1059 @@ export default area({
         "Factory Method → Abstract Factory (único Requires interno) → Builder, Prototype, Singleton como " +
         "padrões independentes. Catálogo GoF sem cadeia entre famílias.",
       concepts: [
-        concept({ order: 10, title: "Factory Method" }),
-        concept({ order: 20, title: "Abstract Factory", requires: ["Factory Method"], note: "uma fábrica de factory methods relacionados — não dá para entender sem o anterior" }),
-        concept({ order: 30, title: "Builder" }),
-        concept({ order: 40, title: "Prototype" }),
-        concept({ order: 50, title: "Singleton" }),
+        concept({
+          order: 10,
+          title: "Factory Method",
+          note: "delega a decisão de qual classe instanciar",
+          summary:
+            "Define um método responsável por criar um objeto e deixa que subclasses (ou a configuração) decidam qual " +
+            "classe concreta instanciar, de modo que o código que o usa dependa só do contrato do produto.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Factory Method é um padrão de criação em que uma classe declara um método para criar objetos, o " +
+                "\"método fábrica\", mas deixa que as subclasses decidam qual classe concreta ele instancia. O código " +
+                "que precisa do objeto chama o método e trabalha com o resultado através do contrato (Program to an " +
+                "Interface), sem usar `new` com uma classe específica. É uma aplicação direta de Encapsulate What " +
+                "Varies: o que varia, qual tipo criar, fica isolado em um único ponto.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Quem usa o objeto não decide qual classe criar: chama um método fábrica, e é ele que escolhe — e " +
+                "pode ser trocado sem alterar quem usa.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "A classe base tem uma operação que precisa de um produto e chama o método fábrica para obtê-lo. Cada " +
+                "subclasse sobrescreve esse método e devolve o produto adequado; a operação, que é a parte estável, " +
+                "não muda.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "factory-method.js",
+              code: [
+                "// Produtos: todos cumprem o contrato send(message)",
+                "class EmailNotification { send(message) { return `email: ${message}`; } }",
+                "class SmsNotification { send(message) { return `sms: ${message}`; } }",
+                "",
+                "// Criador: a operação é estável; o método fábrica é o ponto de variação",
+                "class NotificationService {",
+                "  createNotification() { throw new Error(\"a subclasse define o produto\"); }   // factory method",
+                "  notify(message) {",
+                "    const notification = this.createNotification();",
+                "    return notification.send(message);",
+                "  }",
+                "}",
+                "",
+                "class EmailService extends NotificationService {",
+                "  createNotification() { return new EmailNotification(); }",
+                "}",
+                "class SmsService extends NotificationService {",
+                "  createNotification() { return new SmsNotification(); }",
+                "}",
+                "",
+                "new EmailService().notify(\"pedido enviado\");   // \"email: pedido enviado\"",
+                "new SmsService().notify(\"pedido enviado\");     // \"sms: pedido enviado\"",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "`notify` não sabe qual notificação está usando. Adicionar um canal novo é criar uma subclasse e um " +
+                "produto, sem editar `NotificationService`.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Quando uma classe não pode saber de antemão qual objeto vai criar, e essa escolha pertence a uma subclasse ou à configuração.",
+                "Quando o código que usa o produto deve depender só do contrato, para que novos tipos entrem sem alterá-lo.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Com um único tipo de produto e sem previsão de outro, o método fábrica é indireção sem benefício.",
+                "Uma hierarquia de criadores só para variar o produto é um acoplamento forte; em JavaScript, uma função fábrica simples costuma bastar (Composition over Inheritance).",
+                "Cada produto novo pede uma subclasse nova do criador, e o número de classes cresce.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "A versão idiomática: uma função fábrica",
+              context: "Em JavaScript, muitas vezes não é preciso uma hierarquia de criadores: uma função que escolhe o tipo já cumpre o papel.",
+              code: {
+                language: "javascript",
+                filename: "simple-factory.js",
+                code: [
+                  "const parsers = {",
+                  "  json: (text) => JSON.parse(text),",
+                  "  csv: (text) => text.split(\"\\n\").map((line) => line.split(\",\")),",
+                  "};",
+                  "",
+                  "function createParser(format) {",
+                  "  const parser = parsers[format];",
+                  "  if (!parser) throw new Error(`formato desconhecido: ${format}`);",
+                  "  return parser;",
+                  "}",
+                  "",
+                  "createParser(\"csv\")(\"a,b\\nc,d\");   // [[\"a\", \"b\"], [\"c\", \"d\"]]",
+                ].join("\n"),
+              },
+              explanation:
+                "Quem chama `createParser` recebe algo que sabe processar um texto, sem saber qual. É a mesma ideia " +
+                "do Factory Method com menos cerimônia: o ponto de variação está isolado em uma função.",
+            },
+            {
+              title: "Trocar o produto em um teste",
+              context: "Como a criação está em um método, uma subclasse de teste devolve um produto falso sem alterar a lógica.",
+              code: {
+                language: "javascript",
+                filename: "test-subclass.js",
+                code: [
+                  "class FakeNotification {",
+                  "  constructor() { this.sent = []; }",
+                  "  send(message) { this.sent.push(message); return \"ok\"; }",
+                  "}",
+                  "",
+                  "class TestService extends NotificationService {",
+                  "  fake = new FakeNotification();",
+                  "  createNotification() { return this.fake; }",
+                  "}",
+                  "",
+                  "const service = new TestService();",
+                  "service.notify(\"olá\");",
+                  "service.fake.sent;   // [\"olá\"]",
+                ].join("\n"),
+              },
+              explanation:
+                "O teste executa `notify` de verdade, e só o produto foi substituído. Sem o método fábrica, seria " +
+                "preciso um `new` dentro de `notify`, sem ponto de troca.",
+            },
+            {
+              title: "O método fábrica pode ter parâmetros",
+              context: "Quando a escolha depende de dados, o método recebe o que precisa e devolve o produto certo.",
+              code: {
+                language: "javascript",
+                filename: "parametrized.js",
+                code: [
+                  "class ShapeFactory {",
+                  "  create(spec) {",
+                  "    switch (spec.type) {",
+                  "      case \"circle\": return new Circle(spec.radius);",
+                  "      case \"square\": return new Square(spec.side);",
+                  "      default: throw new Error(`forma desconhecida: ${spec.type}`);",
+                  "    }",
+                  "  }",
+                  "}",
+                  "",
+                  "const shapes = specs.map((spec) => new ShapeFactory().create(spec));",
+                  "shapes.map((shape) => shape.area());   // quem usa só conhece area()",
+                ].join("\n"),
+              },
+              explanation:
+                "O `switch` fica dentro da fábrica, em um só lugar. Quem consome as formas conhece só o contrato " +
+                "(`area`), e uma forma nova altera apenas a fábrica.",
+            },
+          ],
+          exercise: {
+            problem:
+              "`Checkout` escolhe e cria o gateway de pagamento dentro de `pay`, com um `if` por método de pagamento. " +
+              "Não há como testar `pay` sem o gateway real, e cada novo método exige editar a operação.",
+            problemCode: {
+              language: "javascript",
+              filename: "checkout.js",
+              code: [
+                "class Checkout {",
+                "  pay(order) {",
+                "    let gateway;",
+                "    if (order.method === \"card\") gateway = new CardGateway();",
+                "    else if (order.method === \"pix\") gateway = new PixGateway();",
+                "    else throw new Error(`método desconhecido: ${order.method}`);",
+                "    return gateway.charge(order.total);",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Extraia um método fábrica `createGateway(order)` para a escolha do gateway, e mostre uma subclasse de " +
+              "teste que devolve um gateway falso.",
+            hint: "A operação `pay` deve só chamar o método fábrica e usar o resultado por meio de `charge`.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "checkout.fixed.js",
+                code: [
+                  "class Checkout {",
+                  "  createGateway(order) {                                  // factory method",
+                  "    if (order.method === \"card\") return new CardGateway();",
+                  "    if (order.method === \"pix\") return new PixGateway();",
+                  "    throw new Error(`método desconhecido: ${order.method}`);",
+                  "  }",
+                  "",
+                  "  pay(order) {                                            // operação estável",
+                  "    return this.createGateway(order).charge(order.total);",
+                  "  }",
+                  "}",
+                  "",
+                  "// Teste: só a criação é substituída",
+                  "class TestCheckout extends Checkout {",
+                  "  createGateway() { return { charge: (total) => `cobrado ${total}` }; }",
+                  "}",
+                  "new TestCheckout().pay({ method: \"card\", total: 50 });   // \"cobrado 50\"",
+                ].join("\n"),
+              },
+              explanation:
+                "A escolha do gateway ficou em `createGateway`, e `pay` deixou de conhecer as classes concretas. A " +
+                "subclasse de teste troca só a criação e executa a operação real.",
+            },
+          },
+        }),
+        concept({
+          order: 20,
+          title: "Abstract Factory",
+          requires: ["Factory Method"],
+          note: "uma fábrica de factory methods relacionados — não dá para entender sem o anterior",
+          summary:
+            "Uma interface para criar famílias inteiras de objetos relacionados, sem especificar as classes " +
+            "concretas — e que garante que os produtos de uma mesma família sejam usados juntos.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Abstract Factory estende o Factory Method: em vez de um método que cria um produto, é uma fábrica com " +
+                "vários métodos que criam produtos de uma mesma família (o botão e o campo de texto de um tema, o " +
+                "banco e a fila de um mesmo provedor). Cada família tem a sua fábrica concreta, e o código cliente " +
+                "recebe uma fábrica qualquer e usa só os contratos. Assim os produtos combinam entre si: não há como " +
+                "misturar um botão de um tema com um campo de outro.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Uma fábrica por família: quem usa recebe uma fábrica e obtém produtos que foram feitos para " +
+                "funcionar juntos, sem saber a qual família pertencem.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "A fábrica abstrata define um método de criação por tipo de produto. Cada fábrica concreta implementa " +
+                "todos eles para a sua família. O cliente escolhe a fábrica uma única vez, no ponto de composição, e " +
+                "a passa adiante.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "abstract-factory.js",
+              code: [
+                "// Família clara",
+                "class LightButton { render() { return \"[ botão claro ]\"; } }",
+                "class LightInput { render() { return \"( campo claro )\"; } }",
+                "class LightFactory {",
+                "  createButton() { return new LightButton(); }",
+                "  createInput() { return new LightInput(); }",
+                "}",
+                "",
+                "// Família escura",
+                "class DarkButton { render() { return \"[ botão escuro ]\"; } }",
+                "class DarkInput { render() { return \"( campo escuro )\"; } }",
+                "class DarkFactory {",
+                "  createButton() { return new DarkButton(); }",
+                "  createInput() { return new DarkInput(); }",
+                "}",
+                "",
+                "// O cliente só conhece os contratos, e nunca as classes concretas",
+                "function renderForm(factory) {",
+                "  return `${factory.createInput().render()} ${factory.createButton().render()}`;",
+                "}",
+                "",
+                "renderForm(new LightFactory());   // \"( campo claro ) [ botão claro ]\"",
+                "renderForm(new DarkFactory());    // \"( campo escuro ) [ botão escuro ]\"",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Trocar de tema é passar outra fábrica. `renderForm` não muda, e os dois produtos sempre pertencem " +
+                "à mesma família.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Quando o sistema precisa funcionar com várias famílias de produtos, como temas, plataformas ou provedores, e os produtos de uma família devem ser usados juntos.",
+                "Quando você quer garantir essa consistência e trocar a família inteira em um único ponto.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Com uma só família, ou com produtos sem relação entre si, um Factory Method ou uma função fábrica basta.",
+                "Acrescentar um novo tipo de produto exige alterar a fábrica abstrata e todas as concretas.",
+                "O número de classes cresce rápido (produtos × famílias), o que só compensa quando a consistência da família é um requisito real.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Famílias por ambiente: produção e memória",
+              context: "Um mesmo conjunto de peças, banco e fila, tem uma versão real e uma versão local que precisam combinar.",
+              code: {
+                language: "javascript",
+                filename: "environments.js",
+                code: [
+                  "const cloudFactory = {",
+                  "  createStorage: () => new S3Storage(),",
+                  "  createQueue: () => new SqsQueue(),",
+                  "};",
+                  "",
+                  "const localFactory = {",
+                  "  createStorage: () => new MemoryStorage(),",
+                  "  createQueue: () => new InMemoryQueue(),",
+                  "};",
+                  "",
+                  "function createApp(factory) {",
+                  "  return new App(factory.createStorage(), factory.createQueue());",
+                  "}",
+                  "",
+                  "const app = createApp(process.env.CI ? localFactory : cloudFactory);",
+                ].join("\n"),
+              },
+              explanation:
+                "A aplicação nunca recebe o S3 com uma fila em memória, por exemplo. A escolha da família acontece " +
+                "uma vez, e o resto do código a recebe pronta.",
+            },
+            {
+              title: "A inconsistência que a fábrica evita",
+              context: "Sem uma fábrica por família, é fácil misturar produtos que não foram feitos para o mesmo conjunto.",
+              code: {
+                language: "javascript",
+                filename: "mixing.js",
+                code: [
+                  "// Sem fábrica: cada ponto escolhe o seu produto",
+                  "const button = new LightButton();",
+                  "const input = new DarkInput();   // um botão claro com um campo escuro",
+                  "",
+                  "// Com fábrica: os dois vêm do mesmo lugar",
+                  "const factory = new DarkFactory();",
+                  "const button2 = factory.createButton();",
+                  "const input2 = factory.createInput();   // sempre da mesma família",
+                ].join("\n"),
+              },
+              explanation:
+                "A garantia não vem de uma regra que alguém precisa lembrar, e sim da estrutura: os dois produtos " +
+                "saem da mesma fábrica.",
+            },
+            {
+              title: "Quando o Abstract Factory é exagero",
+              context: "Uma única família não justifica uma fábrica por família.",
+              code: {
+                language: "javascript",
+                filename: "overkill.js",
+                code: [
+                  "// Exagero: só existe um tema, e ninguém pediu outro",
+                  "class OnlyThemeFactory {",
+                  "  createButton() { return new Button(); }",
+                  "  createInput() { return new Input(); }",
+                  "}",
+                  "",
+                  "// Suficiente: criar direto até que uma segunda família apareça",
+                  "const button = new Button();",
+                  "const input = new Input();",
+                ].join("\n"),
+              },
+              explanation:
+                "Se não há segunda família, a fábrica só acrescenta classes. Quando ela surgir, extrair a fábrica é " +
+                "uma refatoração pequena.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O formulário escolhe o tema widget por widget, com um `if` para cada um. Nada impede que um botão " +
+              "claro apareça ao lado de um campo escuro.",
+            problemCode: {
+              language: "javascript",
+              filename: "form.js",
+              code: [
+                "function buildForm(theme) {",
+                "  const button = theme === \"dark\" ? new DarkButton() : new LightButton();",
+                "  const input = theme === \"dark\" ? new DarkInput() : new LightInput();",
+                "  return `${input.render()} ${button.render()}`;",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Aplique Abstract Factory: crie uma fábrica por tema e faça `buildForm` receber a fábrica, sem conhecer " +
+              "nenhuma classe concreta.",
+            hint: "Cada fábrica tem `createButton()` e `createInput()`. A decisão de tema passa a ser a escolha da fábrica.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "form.fixed.js",
+                code: [
+                  "const lightFactory = {",
+                  "  createButton: () => new LightButton(),",
+                  "  createInput: () => new LightInput(),",
+                  "};",
+                  "const darkFactory = {",
+                  "  createButton: () => new DarkButton(),",
+                  "  createInput: () => new DarkInput(),",
+                  "};",
+                  "",
+                  "function buildForm(factory) {",
+                  "  return `${factory.createInput().render()} ${factory.createButton().render()}`;",
+                  "}",
+                  "",
+                  "buildForm(darkFactory);",
+                ].join("\n"),
+              },
+              explanation:
+                "`buildForm` não tem mais nenhum `if` de tema, e os dois widgets vêm sempre da mesma fábrica. Um novo " +
+                "tema é uma nova fábrica, sem editar o formulário.",
+            },
+          },
+        }),
+        concept({
+          order: 30,
+          title: "Builder",
+          note: "construção passo a passo de objetos com muitas opções",
+          summary:
+            "Separa a construção de um objeto complexo da sua representação final, montando-o passo a passo e " +
+            "validando o resultado antes de entregá-lo.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Builder é um padrão de criação para objetos com muitas partes ou opções. Em vez de um construtor " +
+                "com uma lista longa de parâmetros (a maioria opcionais), um objeto auxiliar, o builder, recebe as " +
+                "escolhas em passos com nomes claros e, ao final, produz o objeto pronto com `build()`. O código de " +
+                "quem constrói fica legível, e o objeto final pode ser imutável e validado uma única vez.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Monte o objeto complexo em passos com nomes claros e só entregue o resultado no fim, já validado, " +
+                "em vez de um construtor com uma lista longa de parâmetros.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "Cada método do builder registra uma escolha e devolve o próprio builder (interface fluente). O " +
+                "método `build()` confere as regras e cria o objeto final, sem que o builder precise expor o estado " +
+                "parcial.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "builder.js",
+              code: [
+                "class RequestBuilder {",
+                "  #url;",
+                "  #method = \"GET\";",
+                "  #headers = {};",
+                "  #body = null;",
+                "",
+                "  constructor(url) { this.#url = url; }",
+                "  method(value) { this.#method = value; return this; }",
+                "  header(name, value) { this.#headers[name] = value; return this; }",
+                "  body(value) { this.#body = value; return this; }",
+                "",
+                "  build() {",
+                "    if (this.#method === \"GET\" && this.#body) throw new Error(\"GET não tem corpo\");",
+                "    return Object.freeze({",
+                "      url: this.#url,",
+                "      method: this.#method,",
+                "      headers: { ...this.#headers },",
+                "      body: this.#body,",
+                "    });",
+                "  }",
+                "}",
+                "",
+                "const request = new RequestBuilder(\"/orders\")",
+                "  .method(\"POST\")",
+                "  .header(\"content-type\", \"application/json\")",
+                "  .body(JSON.stringify({ item: 1 }))",
+                "  .build();",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A chamada se lê como uma frase e só informa o que difere do padrão. A regra \"GET não tem corpo\" é " +
+                "verificada em um só lugar, no `build()`, e o objeto entregue é imutável.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Quando o objeto tem muitos parâmetros, sobretudo opcionais, e um construtor comprido ficaria ilegível (\"construtor telescópico\").",
+                "Quando o objeto final deve ser imutável e ter as regras validadas antes de existir.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Para objetos simples, com poucos campos, um construtor comum já é suficiente.",
+                "Em JavaScript, um objeto de opções com valores padrão, `create({ method: \"POST\" })`, costuma dar o mesmo resultado com menos código.",
+                "É uma classe a mais para manter; e se o builder for reutilizado depois do `build()`, o estado anterior pode vazar para o próximo objeto.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "O construtor telescópico",
+              context: "Parâmetros posicionais demais deixam a chamada ilegível e propensa a erros de ordem.",
+              code: {
+                language: "javascript",
+                filename: "telescoping.js",
+                code: [
+                  "// Antes: o que significam esses valores?",
+                  "const user = new User(\"Ana\", \"ana@x.com\", null, null, true, false, \"pt-BR\");",
+                  "",
+                  "// Depois: cada escolha tem nome",
+                  "const user2 = new UserBuilder(\"Ana\", \"ana@x.com\")",
+                  "  .newsletter(true)",
+                  "  .locale(\"pt-BR\")",
+                  "  .build();",
+                ].join("\n"),
+              },
+              explanation:
+                "Na primeira chamada, é preciso abrir a classe para saber o que cada `null` e `true` quer dizer. Na " +
+                "segunda, a chamada é autoexplicativa, e o que não foi informado assume o padrão.",
+            },
+            {
+              title: "A alternativa idiomática: objeto de opções",
+              context: "Em JavaScript, muitas vezes o padrão se resolve sem uma classe builder.",
+              code: {
+                language: "javascript",
+                filename: "options-object.js",
+                code: [
+                  "function createRequest(url, { method = \"GET\", headers = {}, body = null } = {}) {",
+                  "  if (method === \"GET\" && body) throw new Error(\"GET não tem corpo\");",
+                  "  return Object.freeze({ url, method, headers: { ...headers }, body });",
+                  "}",
+                  "",
+                  "createRequest(\"/orders\");",
+                  "createRequest(\"/orders\", { method: \"POST\", body: \"{}\" });",
+                ].join("\n"),
+              },
+              explanation:
+                "Com parâmetros nomeados por desestruturação e valores padrão, o problema do construtor telescópico " +
+                "some. O builder passa a valer quando a construção tem passos condicionais ou dependentes.",
+            },
+            {
+              title: "Construir em passos condicionais",
+              context: "Quando as partes dependem de decisões ao longo do caminho, o builder acompanha o fluxo.",
+              code: {
+                language: "javascript",
+                filename: "conditional.js",
+                code: [
+                  "function buildQuery(filters) {",
+                  "  const query = new QueryBuilder(\"users\");",
+                  "  if (filters.name) query.where(\"name\", filters.name);",
+                  "  if (filters.active !== undefined) query.where(\"active\", filters.active);",
+                  "  if (filters.sortBy) query.orderBy(filters.sortBy);",
+                  "  return query.build();",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada filtro só é aplicado se existir. Montar o objeto em passos é mais natural aqui do que compor um " +
+                "único construtor com todas as combinações possíveis.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Criar uma pizza exige um construtor com sete parâmetros, quase todos opcionais. A chamada é ilegível, e " +
+              "uma pizza com borda recheada e sem molho passa despercebida.",
+            problemCode: {
+              language: "javascript",
+              filename: "pizza.js",
+              code: [
+                "class Pizza {",
+                "  constructor(size, cheese, pepperoni, mushrooms, onions, stuffedCrust, sauce) {",
+                "    Object.assign(this, { size, cheese, pepperoni, mushrooms, onions, stuffedCrust, sauce });",
+                "  }",
+                "}",
+                "",
+                "new Pizza(\"grande\", true, false, true, false, true, null);   // que pizza é essa?",
+              ].join("\n"),
+            },
+            task:
+              "Crie um `PizzaBuilder` com métodos fluentes e um `build()` que recuse pizza sem molho e devolva um " +
+              "objeto imutável.",
+            hint: "O tamanho é obrigatório (construtor do builder); os demais são métodos que devolvem `this`. A regra do molho vai no `build()`.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "pizza.fixed.js",
+                code: [
+                  "class PizzaBuilder {",
+                  "  #pizza = { toppings: [], stuffedCrust: false, sauce: null };",
+                  "",
+                  "  constructor(size) { this.#pizza.size = size; }",
+                  "  sauce(value) { this.#pizza.sauce = value; return this; }",
+                  "  topping(name) { this.#pizza.toppings.push(name); return this; }",
+                  "  stuffedCrust() { this.#pizza.stuffedCrust = true; return this; }",
+                  "",
+                  "  build() {",
+                  "    if (!this.#pizza.sauce) throw new Error(\"toda pizza precisa de molho\");",
+                  "    return Object.freeze({ ...this.#pizza, toppings: [...this.#pizza.toppings] });",
+                  "  }",
+                  "}",
+                  "",
+                  "const pizza = new PizzaBuilder(\"grande\")",
+                  "  .sauce(\"tomate\")",
+                  "  .topping(\"queijo\")",
+                  "  .topping(\"cogumelos\")",
+                  "  .stuffedCrust()",
+                  "  .build();",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada escolha tem nome, e o que não foi pedido assume o padrão. A regra do molho vive em `build()`, e " +
+                "não há como obter uma pizza inválida.",
+            },
+          },
+        }),
+        concept({
+          order: 40,
+          title: "Prototype",
+          note: "criar novos objetos copiando um objeto existente",
+          summary:
+            "Cria novos objetos copiando um objeto existente (o protótipo), em vez de instanciá-los do zero — útil " +
+            "quando a criação é cara ou o objeto já vem configurado.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Prototype é um padrão de criação em que um novo objeto nasce da cópia de outro, o protótipo, que já " +
+                "está configurado. Quem precisa de um objeto novo pede uma cópia ao modelo e ajusta o que for " +
+                "diferente, sem repetir a configuração e sem conhecer a classe concreta. Não é o mesmo que a cadeia de " +
+                "protótipos do JavaScript, embora a linguagem tenha esse nome por um motivo parecido: objetos criados a " +
+                "partir de outros objetos.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Para criar um objeto parecido com outro, copie-o e ajuste o que muda — desde que a cópia não " +
+                "compartilhe, por engano, o estado interno do original.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "O objeto expõe uma operação `clone()`. Ela devolve uma cópia independente: os valores simples são " +
+                "copiados, e as referências (arrays, objetos) precisam ser copiadas também, ou original e cópia " +
+                "passam a compartilhar o mesmo dado (Value vs Reference).",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "prototype.js",
+              code: [
+                "class Enemy {",
+                "  constructor(type, hp, loot) {",
+                "    this.type = type;",
+                "    this.hp = hp;",
+                "    this.loot = loot;",
+                "  }",
+                "  clone() { return new Enemy(this.type, this.hp, [...this.loot]); }   // copia o array também",
+                "}",
+                "",
+                "// Modelo já configurado",
+                "const orcTemplate = new Enemy(\"orc\", 100, [\"espada\"]);",
+                "",
+                "// Cópias independentes, ajustadas onde diferem",
+                "const orc1 = orcTemplate.clone();",
+                "const orc2 = orcTemplate.clone();",
+                "orc2.loot.push(\"escudo\");",
+                "",
+                "orcTemplate.loot;   // [\"espada\"] — o modelo não foi afetado",
+                "orc2.loot;          // [\"espada\", \"escudo\"]",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O `loot` foi copiado com o spread. Se `clone()` reutilizasse o mesmo array, `orc2.loot.push` " +
+                "alteraria também o modelo e todos os outros orcs.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Quando criar um objeto do zero é caro ou trabalhoso, e já existe um parecido, um modelo pré-configurado.",
+                "Quando o código precisa duplicar um objeto sem conhecer a sua classe concreta, apenas chamando `clone()`.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Cópia rasa compartilha o estado aninhado com o original; copiar em profundidade é mais trabalhoso e, em estruturas grandes, custa caro.",
+                "Objetos com recursos externos, como conexões e arquivos abertos, ou com referências circulares, são difíceis de clonar de forma correta.",
+                "`structuredClone` não copia funções nem métodos e devolve objetos simples, sem a classe original.",
+                "Para objetos simples, o spread `{ ...original }` já resolve.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Cópia rasa e cópia profunda",
+              context: "A diferença entre as duas é a causa mais comum de bugs ao clonar.",
+              code: {
+                language: "javascript",
+                filename: "shallow-deep.js",
+                code: [
+                  "const base = { retries: 3, headers: { accept: \"json\" } };",
+                  "",
+                  "// Rasa: o objeto interno continua compartilhado",
+                  "const shallow = { ...base };",
+                  "shallow.headers.accept = \"xml\";",
+                  "base.headers.accept;   // \"xml\" — o original mudou também",
+                  "",
+                  "// Profunda: nada é compartilhado",
+                  "const deep = structuredClone({ retries: 3, headers: { accept: \"json\" } });",
+                  "deep.headers.accept = \"xml\";",
+                ].join("\n"),
+              },
+              explanation:
+                "O spread copia só o primeiro nível, e `headers` continua sendo o mesmo objeto nas duas variáveis. " +
+                "`structuredClone` copia toda a estrutura aninhada.",
+            },
+            {
+              title: "O que o structuredClone não copia",
+              context: "Ele serve para dados, e não para objetos com comportamento.",
+              code: {
+                language: "javascript",
+                filename: "clone-limits.js",
+                code: [
+                  "class Counter {",
+                  "  constructor() { this.count = 0; }",
+                  "  increment() { this.count += 1; }",
+                  "}",
+                  "",
+                  "const copy = structuredClone(new Counter());",
+                  "copy.count;        // 0",
+                  "copy.increment;    // undefined — virou um objeto simples, sem os métodos",
+                  "",
+                  "try { structuredClone({ handler() {} }); }",
+                  "catch (error) { error.name; }   // \"DataCloneError\" — funções não são clonáveis",
+                ].join("\n"),
+              },
+              explanation:
+                "Para objetos com métodos, escreva um `clone()` próprio (como em `Enemy`). `structuredClone` é a " +
+                "ferramenta certa para copiar dados puros, como configurações.",
+            },
+            {
+              title: "Um catálogo de modelos",
+              context: "Manter alguns protótipos prontos e copiar o que se precisa evita repetir a configuração.",
+              code: {
+                language: "javascript",
+                filename: "catalog.js",
+                code: [
+                  "const templates = {",
+                  "  orc: new Enemy(\"orc\", 100, [\"espada\"]),",
+                  "  goblin: new Enemy(\"goblin\", 40, [\"adaga\"]),",
+                  "};",
+                  "",
+                  "function spawn(type) {",
+                  "  const template = templates[type];",
+                  "  if (!template) throw new Error(`tipo desconhecido: ${type}`);",
+                  "  return template.clone();",
+                  "}",
+                  "",
+                  "const wave = [\"orc\", \"goblin\", \"orc\"].map(spawn);",
+                ].join("\n"),
+              },
+              explanation:
+                "`spawn` não conhece a construção de cada tipo, apenas chama `clone()` no modelo certo. Um novo tipo é " +
+                "um novo modelo no catálogo.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O `clone()` do documento abaixo faz uma cópia rasa: clonar e depois marcar uma tag no clone altera " +
+              "também o documento original.",
+            problemCode: {
+              language: "javascript",
+              filename: "document.js",
+              code: [
+                "class Document {",
+                "  constructor(title, tags, meta) {",
+                "    this.title = title;",
+                "    this.tags = tags;",
+                "    this.meta = meta;",
+                "  }",
+                "  clone() { return Object.assign(new Document(), this); }   // cópia rasa",
+                "}",
+                "",
+                "const original = new Document(\"Contrato\", [\"jurídico\"], { author: \"Ana\" });",
+                "const copy = original.clone();",
+                "copy.tags.push(\"rascunho\");",
+                "original.tags;   // [\"jurídico\", \"rascunho\"] — o original foi alterado",
+              ].join("\n"),
+            },
+            task: "Corrija `clone()` para que a cópia seja independente do original, sem compartilhar `tags` nem `meta`.",
+            hint: "Crie o novo `Document` passando cópias do array e do objeto, e não as mesmas referências.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "document.fixed.js",
+                code: [
+                  "class Document {",
+                  "  constructor(title, tags, meta) {",
+                  "    this.title = title;",
+                  "    this.tags = tags;",
+                  "    this.meta = meta;",
+                  "  }",
+                  "  clone() { return new Document(this.title, [...this.tags], { ...this.meta }); }",
+                  "}",
+                  "",
+                  "const original = new Document(\"Contrato\", [\"jurídico\"], { author: \"Ana\" });",
+                  "const copy = original.clone();",
+                  "copy.tags.push(\"rascunho\");",
+                  "original.tags;   // [\"jurídico\"] — intacto",
+                ].join("\n"),
+              },
+              explanation:
+                "A cópia agora tem o seu próprio array e o seu próprio objeto. Como `meta` só tem valores simples, a " +
+                "cópia em um nível basta; se ele tivesse objetos aninhados, seria preciso copiar mais fundo.",
+            },
+          },
+        }),
+        concept({
+          order: 50,
+          title: "Singleton",
+          note: "uma única instância — e por que ele costuma ser evitado",
+          summary:
+            "Garante que uma classe tenha uma única instância e oferece um ponto de acesso global a ela — um padrão " +
+            "simples, mas que costuma esconder dependências e dificultar testes.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Singleton restringe a criação de uma classe a uma única instância e fornece um acesso global a ela. " +
+                "Serve para recursos que fazem sentido uma vez só por programa, como a configuração carregada, um " +
+                "logger ou um pool de conexões. É o mais conhecido dos padrões de criação e também o mais criticado, " +
+                "porque o acesso global é, na prática, estado global compartilhado.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Precisar de uma só instância é uma coisa; forçar um acesso global a ela é outra. Muitas vezes o " +
+                "que se quer é uma instância única, criada no ponto de composição e injetada, e não um Singleton.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "A classe guarda a sua única instância e a cria só no primeiro acesso. Em JavaScript, um módulo já " +
+                "se comporta como um singleton, porque é executado uma única vez e o seu resultado é compartilhado, o " +
+                "que costuma dispensar a classe especial.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "singleton.js",
+              code: [
+                "// Forma clássica: a classe controla a única instância",
+                "class Config {",
+                "  static #instance;",
+                "  #values = new Map();",
+                "",
+                "  static get instance() {",
+                "    Config.#instance ??= new Config();",
+                "    return Config.#instance;",
+                "  }",
+                "",
+                "  set(key, value) { this.#values.set(key, value); }",
+                "  get(key) { return this.#values.get(key); }",
+                "}",
+                "",
+                "Config.instance.set(\"env\", \"production\");",
+                "Config.instance.get(\"env\");                    // \"production\"",
+                "Config.instance === Config.instance;            // true",
+                "",
+                "// Forma idiomática: o módulo é o singleton",
+                "// config.js",
+                "// export const config = new Map();",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Qualquer parte do programa alcança a mesma instância, sem que ela seja passada por parâmetro. É " +
+                "exatamente essa comodidade que esconde as dependências.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Para um recurso que realmente só pode existir uma vez por processo e que é acessado de muitos lugares, como um pool de conexões.",
+                "Quando o acesso global é aceitável e o estado guardado é somente leitura ou muito estável, como uma configuração carregada na inicialização.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "É estado global: quem o usa fica acoplado a ele e as dependências ficam escondidas, como em um Service Locator.",
+                "Dificulta os testes: o estado vaza de um teste para o outro (Test Isolation) e é difícil substituí-lo por um dublê.",
+                "\"Uma instância por programa\" nem sempre vale: com vários processos, workers ou testes em paralelo, cada um tem a sua.",
+                "Quase sempre é melhor criar uma única instância no ponto de composição e injetá-la (Dependency Injection), com o mesmo efeito e sem o acesso global.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "O módulo como singleton",
+              context: "Em JavaScript, o próprio sistema de módulos entrega a instância única, sem código especial.",
+              code: {
+                language: "javascript",
+                filename: "module-singleton.js",
+                code: [
+                  "// logger.js",
+                  "const entries = [];",
+                  "export const logger = {",
+                  "  log(message) { entries.push({ message, at: Date.now() }); },",
+                  "  all() { return [...entries]; },",
+                  "};",
+                  "",
+                  "// a.js e b.js: importam o mesmo objeto, porque o módulo executa uma vez",
+                  "// import { logger } from \"./logger.js\";",
+                  "// logger.log(\"olá\");",
+                ].join("\n"),
+              },
+              explanation:
+                "Todos os que importam `logger.js` recebem o mesmo objeto. Não é preciso `static`, `getInstance` nem " +
+                "construtor privado, e é a forma mais simples de ter uma instância única.",
+            },
+            {
+              title: "O estado que vaza entre os testes",
+              context: "Uma instância global sobrevive de um teste para o seguinte.",
+              code: {
+                language: "javascript",
+                filename: "test-leak.js",
+                code: [
+                  "// Teste 1",
+                  "Config.instance.set(\"env\", \"test\");",
+                  "",
+                  "// Teste 2, em outro arquivo, presume a configuração inicial",
+                  "Config.instance.get(\"env\");   // \"test\" — herdou o valor do teste 1",
+                  "",
+                  "// Com injeção, cada teste cria a sua própria instância",
+                  "const config = new Config();",
+                  "config.get(\"env\");            // undefined — começa limpo",
+                ].join("\n"),
+              },
+              explanation:
+                "O resultado do segundo teste depende da ordem em que os testes rodam. Com a instância injetada, " +
+                "cada teste começa do zero.",
+            },
+            {
+              title: "Uma instância só, sem acesso global",
+              context: "Quando basta ter uma instância, ela pode ser criada na montagem e passada para quem precisa.",
+              code: {
+                language: "javascript",
+                filename: "single-instance.js",
+                code: [
+                  "class Logger {",
+                  "  log(message) { console.log(message); }",
+                  "}",
+                  "",
+                  "class OrderService {",
+                  "  constructor(logger) { this.logger = logger; }",
+                  "  place(order) { this.logger.log(`pedido ${order.id}`); }",
+                  "}",
+                  "",
+                  "// Ponto de composição: uma única instância, entregue a todos que a usam",
+                  "const logger = new Logger();",
+                  "const orders = new OrderService(logger);",
+                  "const invoices = new InvoiceService(logger);   // a mesma instância",
+                ].join("\n"),
+              },
+              explanation:
+                "Existe uma só instância de `Logger`, mas nada é global: `OrderService` mostra, no construtor, que " +
+                "depende de um logger, e nos testes basta passar outro.",
+            },
+          ],
+          exercise: {
+            problem:
+              "`OrderService` chama `Logger.getInstance()` por dentro. Não dá para saber, pela assinatura, que ele " +
+              "depende de um logger, e os testes não conseguem trocá-lo por um falso.",
+            problemCode: {
+              language: "javascript",
+              filename: "order-service.js",
+              code: [
+                "class Logger {",
+                "  static #instance;",
+                "  static getInstance() { return (Logger.#instance ??= new Logger()); }",
+                "  log(message) { console.log(message); }",
+                "}",
+                "",
+                "class OrderService {",
+                "  place(order) {",
+                "    Logger.getInstance().log(`pedido ${order.id}`);",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Mantenha uma única instância de `Logger` no programa, mas sem acesso global: `OrderService` deve " +
+              "receber o logger, e o teste deve usar um logger falso.",
+            hint: "Remova o `getInstance`, crie o logger uma vez no ponto de composição e passe-o para o construtor.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "order-service.fixed.js",
+                code: [
+                  "class Logger {",
+                  "  log(message) { console.log(message); }",
+                  "}",
+                  "",
+                  "class OrderService {",
+                  "  constructor(logger) { this.logger = logger; }",
+                  "  place(order) { this.logger.log(`pedido ${order.id}`); }",
+                  "}",
+                  "",
+                  "// Ponto de composição: uma única instância, criada aqui",
+                  "const logger = new Logger();",
+                  "const orders = new OrderService(logger);",
+                  "",
+                  "// Teste: um logger falso, sem estado global",
+                  "const lines = [];",
+                  "new OrderService({ log: (message) => lines.push(message) }).place({ id: 1 });",
+                  "lines;   // [\"pedido 1\"]",
+                ].join("\n"),
+              },
+              explanation:
+                "Continua existindo um único logger em produção, mas ele deixou de ser global. O construtor revela a " +
+                "dependência e o teste entrega um logger de uma linha.",
+            },
+          },
+        }),
       ],
     }),
     module({

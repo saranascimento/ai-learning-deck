@@ -1347,6 +1347,11 @@ for (const area of model.areas()) {
     "constructor-injection",
     "dependency-injection-container",
     "service-locator",
+    "factory-method",
+    "abstract-factory",
+    "builder",
+    "prototype",
+    "singleton",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",
