@@ -1333,6 +1333,11 @@ for (const area of model.areas()) {
     "law-of-demeter-principle-of-least-knowledge",
     "anemic-domain-model",
     "rich-domain-model",
+    "single-responsibility-principle-srp",
+    "open-closed-principle-ocp",
+    "liskov-substitution-principle-lsp",
+    "interface-segregation-principle-isp",
+    "dependency-inversion-principle-dip",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",

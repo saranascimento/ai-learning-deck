@@ -1827,8 +1827,419 @@ export default area({
           order: 10,
           title: "Single Responsibility Principle (SRP)",
           note: "uma razão para mudar. Aplica informalmente Cohesion (Epic 01) — sem Requires estrito, é heurística própria",
+          summary:
+            "Cada módulo ou classe deve ter uma única razão para mudar — ou seja, responder a um único assunto ou " +
+            "grupo de interessados, para que uma mudança em um não arraste (nem quebre) o outro.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "O Princípio da Responsabilidade Única diz que uma classe (ou módulo, ou função) deve ter uma, e só " +
+                "uma, razão para mudar. Não significa \"faz uma coisa só\" no sentido de ter poucas linhas: " +
+                "significa que tudo o que está ali muda pelo mesmo motivo — geralmente porque atende ao mesmo " +
+                "assunto de negócio ou ao mesmo grupo de pessoas que pedem mudanças.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Quando uma classe reúne responsabilidades diferentes (regras de negócio, formatação, gravação no " +
+                "banco), cada uma dessas coisas pode mudar por um motivo próprio — e toda mudança arrisca quebrar as " +
+                "outras que compartilham o mesmo arquivo e o mesmo estado. Também dificulta testar: para verificar uma " +
+                "regra de cálculo, é preciso montar um banco de dados. É a mesma ideia de coesão (módulo Programming " +
+                "Fundamentals), aplicada como critério de projeto: o que muda junto fica junto, o que muda por " +
+                "razões diferentes fica separado.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Como reconhecer: para descrever a classe você precisa de um \"e\" (\"calcula o total E imprime a " +
+                "fatura E grava no banco\"); ela importa dependências sem relação entre si; e pessoas de áreas " +
+                "diferentes (finanças, design, infraestrutura) pedem mudanças no mesmo arquivo. O cuidado oposto " +
+                "também vale: dividir demais gera dezenas de classes minúsculas e difíceis de seguir. A pergunta útil " +
+                "é \"quem poderia pedir uma mudança aqui?\" — se são grupos diferentes, são responsabilidades diferentes.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "uma classe com três razões para mudar, e a divisão em três:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "srp.js",
+              code: [
+                "// Antes: muda se a regra de cálculo, o formato de impressão OU o banco mudarem",
+                "class Invoice {",
+                "  constructor(items) { this.items = items; }",
+                "  total() { return this.items.reduce((sum, i) => sum + i.price * i.quantity, 0); }",
+                "  print() { console.log(`Fatura — total: R$ ${this.total().toFixed(2)}`); }",
+                "  save() { db.insert(\"invoices\", { items: this.items, total: this.total() }); }",
+                "}",
+                "",
+                "// Depois: cada classe muda por um único motivo",
+                "class Invoice {",
+                "  constructor(items) { this.items = items; }",
+                "  total() { return this.items.reduce((sum, i) => sum + i.price * i.quantity, 0); }",
+                "}",
+                "class InvoicePrinter {",
+                "  print(invoice) { console.log(`Fatura — total: R$ ${invoice.total().toFixed(2)}`); }",
+                "}",
+                "class InvoiceRepository {",
+                "  save(invoice) { db.insert(\"invoices\", { items: invoice.items, total: invoice.total() }); }",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Agora o layout da impressão pode mudar sem tocar no cálculo, e trocar o banco não afeta nenhuma regra " +
+                "de negócio. Invoice pode ser testada sem imprimir nada e sem banco de dados.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Uma classe, uma razão para mudar: agrupe o que muda junto e separe o que muda por motivos diferentes — " +
+                "sem dividir a ponto de espalhar um assunto único.",
+            },
+          ],
+          examples: [
+            {
+              title: "Responsabilidades misturadas em um serviço",
+              context: "Um serviço que valida, grava e notifica muda por três motivos diferentes.",
+              code: {
+                language: "javascript",
+                filename: "mixed-service.js",
+                code: [
+                  "// Antes",
+                  "class UserService {",
+                  "  register(data) {",
+                  "    if (!data.email.includes(\"@\")) throw new Error(\"e-mail inválido\");   // regra de validação",
+                  "    const user = db.users.insert(data);                                   // persistência",
+                  "    mailer.send(user.email, \"Bem-vindo!\");                                // comunicação",
+                  "    return user;",
+                  "  }",
+                  "}",
+                  "",
+                  "// Depois: cada peça tem um motivo para mudar; o serviço apenas coordena",
+                  "class UserService {",
+                  "  constructor(validator, users, welcomeMailer) {",
+                  "    this.validator = validator; this.users = users; this.welcomeMailer = welcomeMailer;",
+                  "  }",
+                  "  register(data) {",
+                  "    this.validator.validate(data);",
+                  "    const user = this.users.save(data);",
+                  "    this.welcomeMailer.send(user);",
+                  "    return user;",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Mudar o texto do e-mail, a regra de validação ou o banco passa a ser uma edição em uma classe só, " +
+                "sem risco de afetar as outras duas.",
+            },
+            {
+              title: "Razões para mudar = quem pede a mudança",
+              context: "Uma pista prática: se pessoas de áreas diferentes pedem mudanças na mesma classe, ela tem mais de uma responsabilidade.",
+              code: {
+                language: "javascript",
+                filename: "two-actors.js",
+                code: [
+                  "class Employee {",
+                  "  // Usado pelo RH (contabilidade de horas para folha de pagamento)",
+                  "  calculatePay() { return this.regularHours() * this.rate; }",
+                  "  // Usado pela área de Operações (relatório de produtividade)",
+                  "  reportHours() { return this.regularHours(); }",
+                  "  // Ambos dependem deste método compartilhado:",
+                  "  regularHours() { /* ...regra de horas... */ }",
+                  "}",
+                  "// O RH pede uma mudança na regra de horas para a folha → reportHours de Operações muda junto,",
+                  "// sem que ninguém tenha pedido. Duas razões para mudar, uma só classe.",
+                ].join("\n"),
+              },
+              explanation:
+                "O acoplamento oculto entre duas áreas gera bugs que ninguém previu. Separar em duas classes (cada " +
+                "uma com sua regra de horas, ou uma regra compartilhada explícita) torna as dependências visíveis.",
+            },
+            {
+              title: "Dividir demais também é um problema",
+              context: "SRP não pede uma classe por método; o critério é a razão para mudar, não o tamanho.",
+              code: {
+                language: "javascript",
+                filename: "over-splitting.js",
+                code: [
+                  "// Exagero: cinco classes para uma única razão para mudar (o formato de um endereço)",
+                  "class StreetFormatter {}  class CityFormatter {}  class ZipFormatter {}",
+                  "class AddressJoiner {}    class AddressFormatterFacade {}",
+                  "",
+                  "// Suficiente: uma classe coesa, com uma razão para mudar (como o endereço é exibido)",
+                  "class AddressFormatter {",
+                  "  format(address) { return `${address.street}, ${address.city} - ${address.zip}`; }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Todas as peças do exagero mudam juntas, pelo mesmo motivo, logo pertencem juntas. Dividir só aumentaria " +
+                "o número de arquivos a abrir para entender uma regra simples.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A classe abaixo gera um relatório de vendas, mas mistura o cálculo dos dados, a formatação em CSV e o " +
+              "envio por e-mail.",
+            problemCode: {
+              language: "javascript",
+              filename: "sales-report.js",
+              code: [
+                "class SalesReport {",
+                "  constructor(sales) { this.sales = sales; }",
+                "",
+                "  totalByRegion() {",
+                "    const totals = {};",
+                "    for (const sale of this.sales) totals[sale.region] = (totals[sale.region] ?? 0) + sale.amount;",
+                "    return totals;",
+                "  }",
+                "",
+                "  toCsv() {",
+                "    return Object.entries(this.totalByRegion()).map(([region, total]) => `${region},${total}`).join(\"\\n\");",
+                "  }",
+                "",
+                "  sendByEmail(to) {",
+                "    mailer.send(to, \"Relatório de vendas\", this.toCsv());",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Aplique SRP: separe a classe de acordo com as razões para mudar, e diga que mudanças futuras cada " +
+              "parte isola.",
+            hint: "Três razões distintas: a regra de negócio (como calcular), o formato de saída e o canal de entrega.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "sales-report.fixed.js",
+                code: [
+                  "class SalesReport {                                   // muda quando a regra de cálculo muda",
+                  "  constructor(sales) { this.sales = sales; }",
+                  "  totalByRegion() {",
+                  "    const totals = {};",
+                  "    for (const sale of this.sales) totals[sale.region] = (totals[sale.region] ?? 0) + sale.amount;",
+                  "    return totals;",
+                  "  }",
+                  "}",
+                  "",
+                  "class CsvFormatter {                                  // muda quando o formato de saída muda",
+                  "  format(report) {",
+                  "    return Object.entries(report.totalByRegion()).map(([region, total]) => `${region},${total}`).join(\"\\n\");",
+                  "  }",
+                  "}",
+                  "",
+                  "class ReportMailer {                                  // muda quando o canal de entrega muda",
+                  "  send(to, content) { mailer.send(to, \"Relatório de vendas\", content); }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Agora trocar CSV por PDF só toca em um formatador; enviar por chat em vez de e-mail só toca no " +
+                "entregador; e mudar como os totais são calculados só toca no relatório. Cada peça é testável sem " +
+                "as outras.",
+            },
+          },
         }),
-        concept({ order: 20, title: "Open/Closed Principle (OCP)", note: "aberto para extensão, fechado para modificação" }),
+        concept({
+          order: 20,
+          title: "Open/Closed Principle (OCP)",
+          note: "aberto para extensão, fechado para modificação",
+          summary:
+            "Um módulo deve permitir novos comportamentos por meio de código novo (extensão), sem exigir que o " +
+            "código existente e já testado seja editado (modificação).",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "O Princípio Aberto/Fechado diz que o código deve ser aberto para extensão e fechado para modificação: " +
+                "quando surge um novo requisito do mesmo tipo (mais uma forma de pagamento, mais uma regra de " +
+                "desconto), você o atende adicionando código novo, e não abrindo e alterando o que já funciona. " +
+                "O mecanismo habitual é o polimorfismo: o código estável depende de um contrato, e cada novo " +
+                "comportamento é uma nova implementação desse contrato.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Todo código alterado é código que pode quebrar. Um switch (ou uma cadeia de ifs) que decide o " +
+                "comportamento por tipo obriga a editar a função central a cada tipo novo — e, se o mesmo switch " +
+                "está em vários lugares, a editar todos. Cada edição reabre código já testado e arrisca regressões. " +
+                "Com extensão por código novo, o que já funciona permanece intocado, e o risco fica restrito ao que é " +
+                "novo.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "O cuidado essencial: não se deve antecipar variações que ainda não existem. Aplicar OCP em todo lugar " +
+                "\"por precaução\" gera abstrações desnecessárias (contra YAGNI e KISS). A abordagem prática: escreva o " +
+                "código simples na primeira vez; quando aparecer a segunda variação do mesmo tipo, reorganize para que a " +
+                "terceira seja uma extensão. O ponto de variação — onde as novidades tendem a aparecer — é o único que " +
+                "vale a pena \"abrir\".",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "um switch que exige edição a cada novo tipo, e a versão extensível:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "ocp.js",
+              code: [
+                "// Antes: cada novo desconto exige EDITAR esta função",
+                "function applyDiscount(order) {",
+                "  switch (order.customerType) {",
+                "    case \"regular\": return order.total;",
+                "    case \"vip\":     return order.total * 0.9;",
+                "    case \"student\": return order.total * 0.8;",
+                "  }",
+                "}",
+                "",
+                "// Depois: cada regra é uma extensão; applyDiscount não muda mais",
+                "const discountRules = {",
+                "  regular: (total) => total,",
+                "  vip:     (total) => total * 0.9,",
+                "  student: (total) => total * 0.8,",
+                "};",
+                "",
+                "function applyDiscount(order) {",
+                "  return discountRules[order.customerType](order.total);",
+                "}",
+                "",
+                "// Novo tipo: só ADICIONA código, sem tocar em applyDiscount",
+                "discountRules.senior = (total) => total * 0.85;",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Acrescentar o desconto \"senior\" é uma linha nova; a função já testada não foi reaberta. O ponto de " +
+                "variação (as regras de desconto) ficou explícito e isolado.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Projete o ponto de variação para que o novo comportamento seja código adicionado, não editado — mas " +
+                "só depois que a variação for real, não por antecipação.",
+            },
+          ],
+          examples: [
+            {
+              title: "Polimorfismo em vez de switch",
+              context: "Cada tipo carrega o seu comportamento; o código que os usa não precisa conhecer os tipos.",
+              code: {
+                language: "javascript",
+                filename: "polymorphism-ocp.js",
+                code: [
+                  "class CardPayment   { pay(amount) { return `cartão: ${amount}`; } }",
+                  "class PixPayment    { pay(amount) { return `pix: ${amount}`; } }",
+                  "class BoletoPayment { pay(amount) { return `boleto: ${amount}`; } }   // novo: só uma classe nova",
+                  "",
+                  "function checkout(paymentMethod, amount) {",
+                  "  return paymentMethod.pay(amount);   // nunca muda, não importa quantos métodos existam",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "checkout está fechado para modificação e aberto para extensão: um novo meio de pagamento é uma classe " +
+                "nova com o método pay(). Essa é a aplicação direta do polimorfismo (Área 1).",
+            },
+            {
+              title: "Um ponto de extensão explícito (plugins)",
+              context: "Quando as variações chegam de fora, uma lista registrável evita editar o núcleo.",
+              code: {
+                language: "javascript",
+                filename: "plugin-list.js",
+                code: [
+                  "const validators = [];",
+                  "const registerValidator = (fn) => validators.push(fn);",
+                  "",
+                  "function validate(user) {",
+                  "  return validators.map((check) => check(user)).filter(Boolean);   // núcleo estável",
+                  "}",
+                  "",
+                  "registerValidator((u) => (!u.email ? \"e-mail obrigatório\" : null));",
+                  "registerValidator((u) => (u.age < 18 ? \"menor de idade\" : null));   // extensão, sem editar validate",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada novo requisito de validação é registrado, sem alterar validate(). É o modelo de muitos sistemas " +
+                "de plugins e middlewares.",
+            },
+            {
+              title: "OCP prematuro: abstrair o que nunca varia",
+              context: "Abrir pontos de extensão que ninguém usa é complexidade sem retorno.",
+              code: {
+                language: "javascript",
+                filename: "premature-ocp.js",
+                code: [
+                  "// Exagero: há apenas UM formato de exportação, e nunca houve pedido de outro",
+                  "class ExporterFactory { create(type) { return new ExporterRegistry().resolve(type); } }",
+                  "class ExporterRegistry { resolve(type) { /* ... */ } }",
+                  "",
+                  "// Suficiente por enquanto:",
+                  "function exportCsv(rows) { return rows.map((r) => r.join(\",\")).join(\"\\n\"); }",
+                  "// Quando surgir o segundo formato, refatore — o custo será baixo e o desenho, informado.",
+                ].join("\n"),
+              },
+              explanation:
+                "OCP responde a uma necessidade real de variação. Antecipá-la constrói infraestrutura que provavelmente " +
+                "não terá a forma certa quando o requisito chegar.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Esta função de notificações tem um if para cada canal. A cada canal novo, é preciso alterá-la — e " +
+              "já causou uma regressão no canal de e-mail.",
+            problemCode: {
+              language: "javascript",
+              filename: "notify.js",
+              code: [
+                "function notify(user, message, channel) {",
+                "  if (channel === \"email\") {",
+                "    mailer.send(user.email, message);",
+                "  } else if (channel === \"sms\") {",
+                "    sms.send(user.phone, message);",
+                "  } else if (channel === \"push\") {",
+                "    push.send(user.deviceId, message);",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Refatore para respeitar o OCP: adicionar um canal novo (por exemplo, WhatsApp) deve ser só código " +
+              "novo, sem editar notify.",
+            hint: "Cada canal vira um objeto ou função com a mesma assinatura, e notify apenas escolhe pelo nome (ou recebe o canal pronto).",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "notify.fixed.js",
+                code: [
+                  "const channels = {",
+                  "  email: (user, message) => mailer.send(user.email, message),",
+                  "  sms:   (user, message) => sms.send(user.phone, message),",
+                  "  push:  (user, message) => push.send(user.deviceId, message),",
+                  "};",
+                  "",
+                  "function notify(user, message, channel) {",
+                  "  const send = channels[channel];",
+                  "  if (!send) throw new Error(`canal desconhecido: ${channel}`);",
+                  "  send(user, message);",
+                  "}",
+                  "",
+                  "// Novo canal: só adiciona, sem tocar em notify",
+                  "channels.whatsapp = (user, message) => whatsapp.send(user.phone, message);",
+                ].join("\n"),
+              },
+              explanation:
+                "notify ficou estável, e cada canal vive isolado: um erro no WhatsApp não pode quebrar o e-mail, pois o " +
+                "código do e-mail nunca é reaberto. Esse é o benefício concreto do princípio.",
+            },
+          },
+        }),
         concept({
           order: 30,
           title: "Liskov Substitution Principle (LSP)",
@@ -1837,18 +2248,619 @@ export default area({
             "Programming Foundations / Programming Fundamentals / Polymorphism",
           ],
           note: "substitutabilidade de subtipos — definida sobre esses dois mecanismos, não dá para entender sem eles",
+          summary:
+            "Um subtipo deve poder ser usado no lugar do tipo base sem que o código que o usa quebre ou precise " +
+            "saber qual é o subtipo — herdar exige respeitar o contrato, não só reaproveitar código.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "O Princípio da Substituição de Liskov afirma que, onde um objeto do tipo base é esperado, qualquer " +
+                "subtipo deve poder ser colocado sem que o programa se comporte de forma incorreta. Em outras palavras: " +
+                "uma subclasse não pode apenas ter os mesmos métodos — precisa manter as mesmas promessas. Ele dá " +
+                "um critério para usar Inheritance e Polymorphism (módulo Programming Fundamentals) sem armadilhas.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "O polimorfismo só é útil se quem usa o tipo base puder ignorar qual subtipo tem em mãos. Se uma " +
+                "subclasse se comporta de modo inesperado (lança um erro onde a base não lançava, ignora uma operação, " +
+                "exige mais do que a base exigia), o código cliente passa a precisar de verificações do tipo " +
+                "\"if (x instanceof ...)\" — e o polimorfismo perde o sentido. O LSP diz que o problema está na " +
+                "herança mal modelada, não no cliente.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Regras de contrato: um subtipo não pode exigir pré-condições mais fortes (aceitar menos entradas que a " +
+                "base), nem oferecer pós-condições mais fracas (prometer menos), e deve preservar as invariantes da " +
+                "base. Sinais de violação: métodos sobrescritos que lançam \"não suportado\" ou ficam vazios; " +
+                "instanceof espalhado; uma subclasse que só faz sentido \"desligando\" parte da base. A saída " +
+                "costuma ser rever a hierarquia — usar composição, ou separar em tipos diferentes — em vez de forçar a " +
+                "herança.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "o exemplo clássico: um quadrado que \"é um\" retângulo, mas quebra o contrato:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "lsp.js",
+              code: [
+                "class Rectangle {",
+                "  constructor(width, height) { this.width = width; this.height = height; }",
+                "  setWidth(w)  { this.width = w; }",
+                "  setHeight(h) { this.height = h; }",
+                "  area() { return this.width * this.height; }",
+                "}",
+                "",
+                "class Square extends Rectangle {   // matematicamente, todo quadrado é um retângulo...",
+                "  setWidth(w)  { this.width = w; this.height = w; }    // ...mas o contrato foi quebrado",
+                "  setHeight(h) { this.width = h; this.height = h; }",
+                "}",
+                "",
+                "// Código que funciona para qualquer Rectangle:",
+                "function stretch(rect) {",
+                "  rect.setWidth(5);",
+                "  rect.setHeight(2);",
+                "  return rect.area();   // esperado: 10",
+                "}",
+                "",
+                "stretch(new Rectangle(1, 1));   // 10 ✔",
+                "stretch(new Square(1));         // 4  ✘ — o quadrado quebrou a expectativa",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A relação \"é um\" do mundo real não basta: no código, o contrato de Rectangle promete que largura e " +
+                "altura mudam de forma independente, e Square não consegue cumprir isso. Substituí-lo produz um " +
+                "resultado errado.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Só herde se o subtipo cumprir todas as promessas do tipo base — se substituir quebra o código que o " +
+                "usa, a hierarquia está errada, por mais que \"faça sentido\" no mundo real.",
+            },
+          ],
+          examples: [
+            {
+              title: "A subclasse que lança \"não suportado\"",
+              context: "Herdar um método e recusá-lo é um sinal claro de que a hierarquia não modela o contrato certo.",
+              code: {
+                language: "javascript",
+                filename: "unsupported-operation.js",
+                code: [
+                  "class Bird {",
+                  "  fly() { return \"voando\"; }",
+                  "}",
+                  "class Penguin extends Bird {",
+                  "  fly() { throw new Error(\"pinguins não voam\"); }   // quebra o contrato de Bird",
+                  "}",
+                  "",
+                  "function makeAllFly(birds) {",
+                  "  return birds.map((bird) => bird.fly());   // explode se houver um Penguin",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Quem recebe uma lista de Bird não deveria precisar saber que alguns não voam. O erro está em " +
+                "colocar fly() na base: nem toda ave voa, então o contrato estava errado desde o início.",
+            },
+            {
+              title: "Pré-condição mais forte no subtipo",
+              context: "Uma subclasse que aceita menos entradas que a base surpreende quem usava a base.",
+              code: {
+                language: "javascript",
+                filename: "stronger-precondition.js",
+                code: [
+                  "class Account {",
+                  "  withdraw(amount) {                       // aceita qualquer valor positivo",
+                  "    if (amount <= 0) throw new Error(\"valor inválido\");",
+                  "    this.balance -= amount;",
+                  "  }",
+                  "}",
+                  "class LimitedAccount extends Account {",
+                  "  withdraw(amount) {",
+                  "    if (amount > 500) throw new Error(\"limite de 500\");   // exige MAIS do que a base",
+                  "    super.withdraw(amount);",
+                  "  }",
+                  "}",
+                  "// Código que sacava 800 de uma Account passa a falhar ao receber uma LimitedAccount.",
+                ].join("\n"),
+              },
+              explanation:
+                "O subtipo restringiu o que a base aceitava. Um limite é uma regra legítima, mas então ela deve fazer parte do " +
+                "contrato de todos (ex.: um método canWithdraw) ou ser modelada de outra forma, não escondida em uma subclasse.",
+            },
+            {
+              title: "Corrigir com hierarquias mais precisas",
+              context: "A solução geralmente é separar os contratos, para que cada tipo prometa só o que cumpre.",
+              code: {
+                language: "javascript",
+                filename: "fixed-hierarchy.js",
+                code: [
+                  "class Bird {",
+                  "  eat() { return \"comendo\"; }",
+                  "}",
+                  "class FlyingBird extends Bird {",
+                  "  fly() { return \"voando\"; }",
+                  "}",
+                  "class Penguin extends Bird {",
+                  "  swim() { return \"nadando\"; }",
+                  "}",
+                  "",
+                  "const makeAllFly = (birds) => birds.map((bird) => bird.fly());   // só recebe FlyingBird",
+                ].join("\n"),
+              },
+              explanation:
+                "Agora quem espera aves que voam pede FlyingBird, e o Penguin não é forçado a fingir. Cada tipo faz apenas " +
+                "as promessas que consegue cumprir — e a substituição é segura.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Um sistema de arquivos tem uma classe base para documentos editáveis, e alguém criou um subtipo para " +
+              "documentos somente leitura.",
+            problemCode: {
+              language: "javascript",
+              filename: "documents.js",
+              code: [
+                "class Document {",
+                "  constructor(text) { this.text = text; }",
+                "  read() { return this.text; }",
+                "  write(newText) { this.text = newText; }",
+                "}",
+                "",
+                "class ReadOnlyDocument extends Document {",
+                "  write(newText) { throw new Error(\"documento somente leitura\"); }",
+                "}",
+                "",
+                "function fixTypo(doc) {",
+                "  doc.write(doc.read().replace(\"teh\", \"the\"));   // quebra se doc for ReadOnlyDocument",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Explique por que isso viola o LSP e redesenhe os tipos para que a substituição seja segura.",
+            hint: "Há duas capacidades — ler e escrever. Quem só lê não deveria herdar a promessa de escrever.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "documents.fixed.js",
+                code: [
+                  "// Contrato mínimo: todo documento pode ser lido",
+                  "class ReadableDocument {",
+                  "  constructor(text) { this.text = text; }",
+                  "  read() { return this.text; }",
+                  "}",
+                  "",
+                  "// Só quem é editável promete escrever",
+                  "class EditableDocument extends ReadableDocument {",
+                  "  write(newText) { this.text = newText; }",
+                  "}",
+                  "",
+                  "function fixTypo(doc) {   // exige EditableDocument: o contrato diz claramente o que precisa",
+                  "  doc.write(doc.read().replace(\"teh\", \"the\"));",
+                  "}",
+                  "",
+                  "function printDocument(doc) { console.log(doc.read()); }   // aceita qualquer ReadableDocument",
+                ].join("\n"),
+              },
+              explanation:
+                "ReadOnlyDocument violava o LSP porque lançava onde a base prometia escrever. Separando as capacidades, " +
+                "cada função declara o que precisa, e nenhum subtipo é forçado a quebrar uma promessa herdada.",
+            },
+          },
         }),
         concept({
           order: 40,
           title: "Interface Segregation Principle (ISP)",
           requires: ["Programming Foundations / Programming Fundamentals / Interface"],
           note: "interfaces enxutas e coesas",
+          summary:
+            "Nenhum cliente deve ser forçado a depender de métodos que não usa — prefira várias interfaces pequenas e " +
+            "coesas a uma interface grande que serve a todos.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "O Princípio da Segregação de Interfaces diz que quem usa um contrato não deve depender de operações " +
+                "que não precisa. Uma interface (Interface, módulo Programming Fundamentals) grande, que reúne " +
+                "responsabilidades variadas, obriga cada implementação e cada cliente a lidar com o conjunto inteiro. " +
+                "A alternativa são interfaces pequenas, cada uma descrevendo um papel coeso.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "Uma interface inchada causa dois problemas. Implementações são forçadas a fornecer métodos que não fazem " +
+                "sentido para elas (o clássico \"lança não suportado\", que também viola o LSP). E os clientes ficam " +
+                "acoplados a mais do que precisam: se um método que eles nem usam mudar, eles são afetados, recompilados, " +
+                "ou testados de novo. Interfaces enxutas reduzem o acoplamento e deixam claro o que cada peça de " +
+                "código realmente exige do outro lado.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Em JavaScript, onde não existem interfaces declaradas, o princípio se aplica ao contrato implícito: " +
+                "uma função deve receber e usar apenas o que precisa (uma função que só grava recebe algo com write(), " +
+                "não um repositório completo). O cuidado inverso: segregar demais (uma interface por método) fragmenta o " +
+                "design sem benefício. O critério é o papel: métodos usados juntos pelos mesmos clientes ficam " +
+                "juntos.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "uma interface \"gorda\" que força uma implementação a fingir, e a versão segregada:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "isp.js",
+              code: [
+                "// Antes: um contrato só para \"multifuncional\"",
+                "// MultiFunctionDevice: print(), scan(), fax()",
+                "class OldPrinter {",
+                "  print(doc) { /* ... */ }",
+                "  scan(doc)  { throw new Error(\"não suportado\"); }   // forçada a implementar o que não faz",
+                "  fax(doc)   { throw new Error(\"não suportado\"); }",
+                "}",
+                "",
+                "// Depois: papéis pequenos; cada dispositivo implementa só o que faz",
+                "// Printer: print()   Scanner: scan()   FaxMachine: fax()",
+                "class SimplePrinter { print(doc) { /* ... */ } }",
+                "class AllInOne {",
+                "  print(doc) { /* ... */ }",
+                "  scan(doc)  { /* ... */ }",
+                "  fax(doc)   { /* ... */ }",
+                "}",
+                "",
+                "function printReport(printer) { printer.print(\"relatório\"); }   // só exige print()",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "OldPrinter tinha de mentir sobre o que faz. Com papéis separados, SimplePrinter é só uma impressora, " +
+                "e printReport aceita qualquer coisa que imprima, sem se importar se também digitaliza.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Contratos pequenos e coesos: cada cliente depende só do que usa, e cada implementação promete só o " +
+                "que consegue cumprir.",
+            },
+          ],
+          examples: [
+            {
+              title: "O cliente que só precisa de uma parte",
+              context: "Passar um objeto \"completo\" a quem usa uma operação só acopla o cliente a tudo o mais.",
+              code: {
+                language: "javascript",
+                filename: "narrow-dependency.js",
+                code: [
+                  "// Antes: recebe o repositório inteiro, mas só lê",
+                  "function exportUsers(userRepository) {",
+                  "  return userRepository.findAll().map((u) => u.name);",
+                  "}",
+                  "// userRepository tem: findAll, findById, save, delete, count, ...",
+                  "",
+                  "// Depois: depende só do papel de leitura",
+                  "function exportUsers(reader) {   // reader: { findAll() }",
+                  "  return reader.findAll().map((u) => u.name);",
+                  "}",
+                  "",
+                  "exportUsers({ findAll: () => [{ name: \"Ana\" }] });   // teste trivial, sem montar um repositório",
+                ].join("\n"),
+              },
+              explanation:
+                "A função declara exatamente o que precisa (findAll). Isso reduz o acoplamento e torna o teste trivial: " +
+                "basta um objeto com um único método.",
+            },
+            {
+              title: "Segregar por papéis de quem usa",
+              context: "A divisão certa acompanha quem consome, não quem implementa.",
+              code: {
+                language: "javascript",
+                filename: "role-interfaces.js",
+                code: [
+                  "// Papéis distintos de uso de um mesmo repositório:",
+                  "//   UserReader : { findById, findAll }          → telas e relatórios",
+                  "//   UserWriter : { save, delete }               → cadastro e administração",
+                  "",
+                  "class PostgresUserRepository {",
+                  "  findById(id) { /* ... */ }",
+                  "  findAll()    { /* ... */ }",
+                  "  save(user)   { /* ... */ }",
+                  "  delete(id)   { /* ... */ }",
+                  "}",
+                  "",
+                  "// Uma mesma classe pode cumprir os dois papéis; cada cliente enxerga só o seu.",
+                  "const registerUser = (writer, data) => writer.save(data);",
+                  "const showProfile  = (reader, id)   => reader.findById(id);",
+                ].join("\n"),
+              },
+              explanation:
+                "A implementação pode ser uma só, mas os clientes dependem de papéis. Assim, um cliente de leitura não " +
+                "acidentalmente apaga dados, e restringir permissões passa a ser natural.",
+            },
+            {
+              title: "Segregar demais também atrapalha",
+              context: "Uma interface por método fragmenta o design e multiplica os tipos sem trazer clareza.",
+              code: {
+                language: "javascript",
+                filename: "too-granular.js",
+                code: [
+                  "// Exagero: cada método vira um contrato separado",
+                  "// FindByIdable, FindAllable, Saveable, Deletable, Countable, ...",
+                  "",
+                  "// Suficiente: papéis que refletem como os clientes realmente usam",
+                  "// UserReader { findById, findAll }   UserWriter { save, delete }",
+                ].join("\n"),
+              },
+              explanation:
+                "Métodos usados juntos, pelos mesmos clientes, pertencem ao mesmo contrato. A meta é coesão, não o " +
+                "menor número possível de métodos por interface.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O contrato de \"Worker\" abaixo é usado por trabalhadores humanos e por robôs, e os robôs são forçados a " +
+              "implementar operações que não fazem sentido para eles.",
+            problemCode: {
+              language: "javascript",
+              filename: "worker.js",
+              code: [
+                "// Contrato: work(), eat(), sleep()",
+                "class HumanWorker {",
+                "  work()  { return \"trabalhando\"; }",
+                "  eat()   { return \"almoçando\"; }",
+                "  sleep() { return \"dormindo\"; }",
+                "}",
+                "",
+                "class RobotWorker {",
+                "  work()  { return \"trabalhando\"; }",
+                "  eat()   { throw new Error(\"robôs não comem\"); }",
+                "  sleep() { throw new Error(\"robôs não dormem\"); }",
+                "}",
+                "",
+                "function runShift(workers) { workers.forEach((w) => w.work()); }",
+                "function lunchBreak(workers) { workers.forEach((w) => w.eat()); }   // quebra com robôs",
+              ].join("\n"),
+            },
+            task:
+              "Aplique ISP: separe o contrato em papéis coesos e ajuste as funções para dependerem só do que usam.",
+            hint: "Há três capacidades independentes. Cada função só precisa de uma delas — e cada classe implementa só as que tem.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "worker.fixed.js",
+                code: [
+                  "// Papéis: Workable { work() }   Feedable { eat() }   Restable { sleep() }",
+                  "",
+                  "class HumanWorker {",
+                  "  work()  { return \"trabalhando\"; }",
+                  "  eat()   { return \"almoçando\"; }",
+                  "  sleep() { return \"dormindo\"; }",
+                  "}",
+                  "",
+                  "class RobotWorker {",
+                  "  work() { return \"trabalhando\"; }   // só o que faz sentido para um robô",
+                  "}",
+                  "",
+                  "function runShift(workables) { workables.forEach((w) => w.work()); }     // qualquer um que trabalhe",
+                  "function lunchBreak(feedables) { feedables.forEach((f) => f.eat()); }    // só quem come",
+                  "",
+                  "runShift([new HumanWorker(), new RobotWorker()]);",
+                  "lunchBreak([new HumanWorker()]);      // robôs nem entram nesta lista",
+                ].join("\n"),
+              },
+              explanation:
+                "RobotWorker deixou de implementar métodos falsos, e lunchBreak nunca recebe algo que não come. Cada função " +
+                "depende só do papel de que precisa, o que elimina os erros de \"não suportado\" em tempo de execução.",
+            },
+          },
         }),
         concept({
           order: 50,
           title: "Dependency Inversion Principle (DIP)",
           requires: ["Programming Foundations / Programming Fundamentals / Interface"],
           note: "depender de abstrações, não de implementações concretas — fecha a Story e abre Dependency Injection & IoC",
+          summary:
+            "Os módulos de alto nível (regras de negócio) não devem depender dos de baixo nível (banco, rede, " +
+            "bibliotecas): ambos devem depender de abstrações — e é o alto nível que define o contrato.",
+          content: [
+            { type: "heading", text: "O que é?" },
+            {
+              type: "paragraph",
+              text:
+                "O Princípio da Inversão de Dependência tem duas partes: módulos de alto nível não devem depender de " +
+                "módulos de baixo nível — ambos devem depender de abstrações; e abstrações não devem depender de " +
+                "detalhes, os detalhes é que dependem das abstrações. Em termos práticos: sua regra de negócio não " +
+                "deve importar diretamente o cliente do Stripe ou o driver do MySQL; ela declara o que precisa " +
+                "(\"algo que cobra um valor\") e a infraestrutura se adapta a esse contrato.",
+            },
+            { type: "heading", text: "Por que existe?" },
+            {
+              type: "paragraph",
+              text:
+                "No desenho tradicional, a regra de negócio chama o banco, que chama o driver: a dependência de código " +
+                "aponta para baixo, e as regras mais valiosas ficam presas aos detalhes que mais mudam. Trocar de " +
+                "provedor de pagamento obriga a mexer no núcleo do sistema, e testar a regra exige o serviço real. Ao " +
+                "\"inverter\" a dependência — a regra define uma interface e a infraestrutura a implementa — o núcleo " +
+                "fica estável, testável com um substituto simples e independente de fornecedores.",
+            },
+            {
+              type: "paragraph",
+              text:
+                "Duas confusões comuns. DIP é um princípio de projeto (para onde as dependências apontam); Dependency " +
+                "Injection é uma técnica para fornecer a implementação a quem precisa dela, assunto do próximo " +
+                "módulo — uma forma de aplicar o DIP, mas não a única. E o dono do contrato é o módulo de alto " +
+                "nível: a interface é escrita em termos do que o negócio precisa, não copiando a API da biblioteca " +
+                "de baixo nível.",
+            },
+            { type: "heading", text: "Exemplo mínimo" },
+            { type: "paragraph", text: "a regra dependendo diretamente de um fornecedor, e depois de um contrato:" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "dip.js",
+              code: [
+                "// Antes: o serviço de negócio depende do detalhe (a biblioteca concreta)",
+                "class OrderService {",
+                "  checkout(order) {",
+                "    const stripe = new StripeClient(process.env.STRIPE_KEY);   // amarrado ao Stripe",
+                "    return stripe.createCharge({ amount: order.total, currency: \"brl\" });",
+                "  }",
+                "}",
+                "",
+                "// Depois: o serviço depende de um contrato que ELE define (charge(amount))",
+                "class OrderService {",
+                "  constructor(paymentGateway) { this.paymentGateway = paymentGateway; }",
+                "  checkout(order) {",
+                "    return this.paymentGateway.charge(order.total);",
+                "  }",
+                "}",
+                "",
+                "// O detalhe se adapta ao contrato:",
+                "class StripeGateway {",
+                "  charge(amount) { return new StripeClient(process.env.STRIPE_KEY).createCharge({ amount, currency: \"brl\" }); }",
+                "}",
+                "const service = new OrderService(new StripeGateway());",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "OrderService agora não sabe que o Stripe existe: conhece apenas \"algo que cobra\". Trocar de provedor é " +
+                "escrever outro gateway com o mesmo método, sem tocar na regra de negócio.",
+            },
+            {
+              type: "takeaway",
+              text:
+                "Faça as regras de negócio definirem o contrato de que precisam e a infraestrutura se adaptar a ele — " +
+                "assim o que é estável não fica preso ao que muda.",
+            },
+          ],
+          examples: [
+            {
+              title: "Testar sem o serviço real",
+              context: "Com o contrato no meio, dá para substituir a infraestrutura por um objeto simples nos testes.",
+              code: {
+                language: "javascript",
+                filename: "test-with-fake.js",
+                code: [
+                  "class FakeGateway {",
+                  "  charged = [];",
+                  "  charge(amount) { this.charged.push(amount); return { ok: true }; }",
+                  "}",
+                  "",
+                  "const gateway = new FakeGateway();",
+                  "const service = new OrderService(gateway);",
+                  "",
+                  "service.checkout({ total: 150 });",
+                  "console.log(gateway.charged);   // [150] — sem rede, sem chave, sem cobrar de verdade",
+                ].join("\n"),
+              },
+              explanation:
+                "O teste verifica a regra de negócio (cobrou o total do pedido) sem depender do Stripe. É uma das " +
+                "recompensas práticas mais imediatas do DIP.",
+            },
+            {
+              title: "Quem é dono do contrato",
+              context: "A abstração pertence ao módulo de alto nível, e o de baixo nível é quem se conforma a ela.",
+              code: {
+                language: "text",
+                filename: "dependency-direction.txt",
+                code: [
+                  "Sem DIP (a dependência aponta para baixo):",
+                  "  Regras de negócio  ──depende de──▶  Cliente do Stripe / Driver do MySQL",
+                  "",
+                  "Com DIP (a dependência foi invertida):",
+                  "  Regras de negócio  ──define──▶  PaymentGateway (contrato)  ◀──implementa──  StripeGateway",
+                  "",
+                  "O código-fonte de StripeGateway depende do contrato; o núcleo não depende de mais ninguém.",
+                ].join("\n"),
+              },
+              explanation:
+                "Foi a seta que se inverteu: antes, o núcleo apontava para o detalhe; agora o detalhe aponta para o núcleo. " +
+                "Por isso o contrato é escrito em termos do que o negócio precisa, e não do que a biblioteca oferece.",
+            },
+            {
+              title: "DIP não é Dependency Injection",
+              context: "Uma confusão frequente: o princípio diz para onde apontam as dependências; a injeção é uma técnica de fornecê-las.",
+              code: {
+                language: "javascript",
+                filename: "dip-vs-di.js",
+                code: [
+                  "// Segue o DIP, sem nenhum \"container\" ou framework de injeção:",
+                  "const service = new OrderService(new StripeGateway());",
+                  "",
+                  "// Também é possível respeitar o DIP com uma função de fábrica em vez de injetar via construtor:",
+                  "function createOrderService(gateway = new StripeGateway()) {",
+                  "  return new OrderService(gateway);",
+                  "}",
+                  "// O importante é OrderService depender do contrato, não da classe concreta.",
+                ].join("\n"),
+              },
+              explanation:
+                "O DIP é satisfeito quando o núcleo depende de uma abstração. Como essa implementação chega até ele " +
+                "(construtor, fábrica, um container) é o tema de Dependency Injection & IoC.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A classe de relatórios abaixo cria diretamente uma conexão com o MySQL, o que a torna impossível de " +
+              "testar sem um banco e amarrada a esse fornecedor.",
+            problemCode: {
+              language: "javascript",
+              filename: "report-service.js",
+              code: [
+                "class ReportService {",
+                "  monthlyRevenue(month) {",
+                "    const db = new MySqlConnection(\"prod-db.internal\", 3306);",
+                "    const rows = db.query(\"SELECT total FROM orders WHERE month = ?\", [month]);",
+                "    return rows.reduce((sum, row) => sum + row.total, 0);",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Aplique o DIP: defina um contrato em termos do negócio (o que o relatório precisa), faça ReportService " +
+              "depender dele e mostre a implementação com MySQL e um substituto para teste.",
+            hint: "O relatório não precisa de \"uma conexão SQL\", precisa dos totais dos pedidos de um mês. Esse é o contrato.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "report-service.fixed.js",
+                code: [
+                  "// Contrato definido pelo alto nível, em termos do negócio: orderTotalsForMonth(month) → number[]",
+                  "class ReportService {",
+                  "  constructor(orderStore) { this.orderStore = orderStore; }",
+                  "  monthlyRevenue(month) {",
+                  "    return this.orderStore.orderTotalsForMonth(month).reduce((sum, total) => sum + total, 0);",
+                  "  }",
+                  "}",
+                  "",
+                  "// Detalhe: a implementação com MySQL se adapta ao contrato",
+                  "class MySqlOrderStore {",
+                  "  orderTotalsForMonth(month) {",
+                  "    const db = new MySqlConnection(\"prod-db.internal\", 3306);",
+                  "    return db.query(\"SELECT total FROM orders WHERE month = ?\", [month]).map((row) => row.total);",
+                  "  }",
+                  "}",
+                  "",
+                  "// Teste: um substituto simples, sem banco",
+                  "const fakeStore = { orderTotalsForMonth: () => [100, 250, 50] };",
+                  "new ReportService(fakeStore).monthlyRevenue(\"2026-03\");   // 400",
+                ].join("\n"),
+              },
+              explanation:
+                "ReportService só conhece \"os totais dos pedidos do mês\" e não sabe de MySQL. Trocar de banco é escrever outra " +
+                "implementação do contrato, e o teste da regra de soma é trivial, com um objeto de uma linha.",
+            },
+          },
         }),
       ],
     }),
