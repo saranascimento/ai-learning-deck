@@ -7570,7 +7570,9 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text: "Vinte linhas recebem comentários detalhados, e duas mil recebem um \"parece ok\".",
+              text:
+                "Com uma feature flag, dá para integrar uma funcionalidade grande em PRs pequenos sem ativar nada antes " +
+                "da hora.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -7752,7 +7754,7 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text: "Um comentário certo, mas que humilha, faz o autor se defender em vez de corrigir.",
+              text: "Um bom comentário diz o que incomoda, por que incomoda e qual caminho você sugere.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -8128,9 +8130,7 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Todo código bem-sucedido vira legado um dia, porque continua sendo usado depois que o contexto dele se " +
-                "perde.",
+              text: "Antes de mexer em código legado, registre com testes o que ele faz hoje, mesmo o que parece errado.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -8901,7 +8901,7 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text: "Uma vulnerabilidade na dependência da sua dependência é uma vulnerabilidade sua.",
+              text: "Versione o lockfile, ou cada máquina pode acabar instalando uma versão diferente do mesmo pacote.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -9091,9 +9091,7 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Uma troca de uma vez concentra todo o risco num único momento, e migrar aos poucos o divide em passos " +
-                "que se desfazem.",
+              text: "Remova o antigo quando ninguém mais o usar, e não quando o novo ficar pronto.",
             },
             { type: "heading", text: "Por que importa" },
             {
