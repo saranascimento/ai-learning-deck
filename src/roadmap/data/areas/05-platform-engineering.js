@@ -9956,18 +9956,17 @@ export default area({
           note: "conceitual → lógico → físico. Revisita Software Design / Domain Modeling / Entity (Entity de domínio vira tabela)",
           revisit: ["Software Design / Domain Modeling / Entity"],
           summary:
-            "O trabalho de decidir quais dados o sistema guarda e como eles se organizam — das coisas e relações do " +
-            "negócio (modelo conceitual) às tabelas e chaves (lógico) e aos tipos e índices de um banco concreto " +
-            "(físico).",
+            "Data Modeling é decidir quais dados o sistema guarda e como eles se organizam, do negócio até as tabelas " +
+            "de um banco concreto.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Modelar dados é traduzir o que o negócio precisa lembrar em uma estrutura que o banco consiga guardar e " +
-                "proteger. O trabalho costuma passar por três níveis. O modelo conceitual fala a língua do negócio: quais " +
-                "são as coisas importantes (cliente, pedido, produto), o que se sabe sobre cada uma e como se relacionam. " +
-                "O modelo lógico transforma isso em tabelas, colunas, chaves e cardinalidades, ainda sem depender de um " +
+                "É traduzir o que o negócio precisa lembrar em uma estrutura que o banco consiga guardar e proteger, e o " +
+                "trabalho costuma passar por três níveis. O modelo conceitual fala a língua do negócio: quais são as " +
+                "coisas importantes (cliente, pedido, produto), o que se sabe sobre cada uma e como se relacionam. O " +
+                "modelo lógico transforma isso em tabelas, colunas, chaves e cardinalidades, ainda sem depender de um " +
                 "banco específico. O modelo físico escolhe os tipos, os índices e os detalhes do banco real, como " +
                 "PostgreSQL, MySQL ou SQLite.",
             },
@@ -9975,8 +9974,8 @@ export default area({
               type: "callout",
               title: "Ideia principal",
               text:
-                "O modelo de dados nasce das perguntas que o sistema precisa responder e das regras que precisa garantir, " +
-                "e não da tela ou do formato do JSON: as telas mudam, e os dados ficam.",
+                "Modele os dados a partir das perguntas que o sistema precisa responder, e não da tela, porque as telas " +
+                "mudam e os dados ficam.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -10251,25 +10250,23 @@ export default area({
           subtopics: ["1:1 (quando faz sentido)", "1:N (FK no lado 'muitos')", "N:M (tabela de junção, atributos na junção)"],
           note: "consolidada (A4)",
           summary:
-            "Quantas linhas de uma tabela podem se ligar a quantas de outra — um para um, um para muitos ou muitos " +
-            "para muitos — e onde fica, em cada caso, a chave estrangeira que registra a relação.",
+            "Relationship Cardinality é quantas linhas de uma tabela podem se ligar a quantas de outra: um para um, " +
+            "um para muitos ou muitos para muitos.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "A cardinalidade descreve a quantidade em uma relação entre duas entidades. Em um para muitos (1:N), um " +
-                "cliente tem vários pedidos, e cada pedido é de um só cliente. Em muitos para muitos (N:M), um aluno " +
-                "cursa várias disciplinas, e cada disciplina tem vários alunos. Em um para um (1:1), cada usuário tem no " +
-                "máximo um perfil, e cada perfil é de um só usuário. Junto da quantidade vem a obrigatoriedade: um pedido " +
-                "precisa ter um cliente, mas um cliente pode ainda não ter pedidos.",
+                "Em um para muitos (1:N), um cliente tem vários pedidos, e cada pedido é de um só cliente. Em muitos para " +
+                "muitos (N:M), um aluno cursa várias disciplinas, e cada disciplina tem vários alunos. Em um para um " +
+                "(1:1), cada usuário tem no máximo um perfil, e cada perfil é de um só usuário. Junto da quantidade vem a " +
+                "obrigatoriedade: um pedido precisa ter um cliente, mas um cliente pode ainda não ter pedidos.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "A cardinalidade decide onde fica a chave estrangeira: no lado \"muitos\" em 1:N, em uma tabela de junção " +
-                "em N:M, e com um `UNIQUE` em 1:1.",
+                "A cardinalidade decide onde mora a chave estrangeira, então descubra-a antes de desenhar as tabelas.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -10524,27 +10521,22 @@ export default area({
           title: "Normalization",
           requires: ["Relationship Cardinality (1:1 / 1:N / N:M)"],
           note: "anomalias de inserção/atualização/remoção",
-          summary:
-            "O processo de organizar as tabelas para que cada fato seja guardado em um só lugar — separando o que " +
-            "depende de coisas diferentes —, e assim evitar as anomalias de inserção, de atualização e de remoção.",
+          summary: "Normalization é organizar as tabelas para que cada fato fique registrado num único lugar.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Normalizar é reorganizar as tabelas até que cada fato fique registrado uma única vez. A ferramenta de " +
-                "análise é a dependência funcional: dizer que o professor depende da disciplina (`course_id → professor`) " +
-                "significa que, conhecida a disciplina, o professor está determinado. Quando uma tabela guarda fatos que " +
-                "dependem de coisas diferentes, ela os repete, e a normalização a divide em tabelas em que cada coluna " +
-                "depende só da chave. As formas normais (1NF, 2NF, 3NF) são as regras que tornam esse processo " +
-                "sistemático.",
+                "A ferramenta de análise é a dependência funcional: dizer que o professor depende da disciplina " +
+                "(`course_id → professor`) significa que, conhecida a disciplina, o professor está determinado. Quando " +
+                "uma tabela guarda fatos que dependem de coisas diferentes, ela os repete, e a normalização a divide em " +
+                "tabelas em que cada coluna depende só da chave. As formas normais (1NF, 2NF, 3NF) são as regras que " +
+                "tornam esse processo sistemático.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Cada fato em um só lugar: se a mesma informação aparece em várias linhas, uma mudança precisa acertar " +
-                "todas, e o banco não tem como garantir que isso aconteça.",
+              text: "Um fato repetido em várias linhas é uma atualização esperando para esquecer uma delas.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -10801,24 +10793,21 @@ export default area({
           subtopics: ["1NF: valores atômicos", "2NF: sem dependência parcial da PK", "3NF: sem dependência transitiva", "BCNF (menção)"],
           note: "consolidada (A5)",
           summary:
-            "As regras que tornam a normalização verificável: valores atômicos (1NF), nenhuma coluna dependendo de só " +
-            "uma parte da chave (2NF) e nenhuma coluna dependendo de outra coluna que não é chave (3NF).",
+            "Normal Forms são as regras que tornam a normalização verificável: valores atômicos (1NF), dependência da " +
+            "chave inteira (2NF) e de nada além da chave (3NF).",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "As formas normais são critérios cumulativos: uma tabela na 3NF também está na 2NF e na 1NF. Cada forma " +
-                "elimina um tipo de dependência que causa repetição. Na prática, chegar à terceira forma normal resolve a " +
-                "grande maioria dos problemas de um esquema transacional; as formas seguintes, como a BCNF, tratam de " +
-                "casos mais raros.",
+                "Os critérios são cumulativos: uma tabela na 3NF também está na 2NF e na 1NF. Cada forma elimina um tipo " +
+                "de dependência que causa repetição. Na prática, chegar à terceira forma normal resolve a grande maioria " +
+                "dos problemas de um esquema transacional; as formas seguintes, como a BCNF, tratam de casos mais raros.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Toda coluna deve depender da chave, da chave inteira e de nada além da chave: essa frase resume a 1NF, a " +
-                "2NF e a 3NF.",
+              text: "Toda coluna deve depender da chave, da chave inteira e de nada além da chave.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -11048,25 +11037,24 @@ export default area({
           note: "trade-off leitura × escrita/consistência — mesma tensão de Caching",
           revisit: ["Platform / Caching"],
           summary:
-            "Repetir de propósito um dado que poderia ser calculado ou buscado por `JOIN`, para tornar certas " +
-            "leituras mais rápidas, assumindo o custo de manter as cópias consistentes a cada escrita.",
+            "Denormalization é guardar de propósito, em mais de um lugar, um dado que o modelo normalizado guardaria " +
+            "uma vez só.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Denormalizar é guardar de propósito, em mais de um lugar, um dado que o modelo normalizado guardaria uma " +
-                "vez só: o número de comentários em cada post, o nome do autor ao lado do título, o total de um pedido. A " +
-                "leitura fica mais barata, sem `JOIN` nem agregação, e a escrita fica mais cara, porque cada mudança " +
-                "precisa atualizar também as cópias. É a mesma troca de um cache: ganhar velocidade na leitura em troca " +
-                "de ter de manter uma cópia em dia.",
+                "Exemplos são o número de comentários em cada post, o nome do autor ao lado do título, o total de um " +
+                "pedido. A leitura fica mais barata, sem `JOIN` nem agregação, e a escrita fica mais cara, porque cada " +
+                "mudança precisa atualizar também as cópias. É a mesma troca de um cache: ganhar velocidade na leitura em " +
+                "troca de ter de manter uma cópia em dia.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Denormalização é uma otimização, e não um ponto de partida: comece normalizado, meça, e só repita um " +
-                "dado quando uma leitura importante precisar, com um plano para manter a cópia correta.",
+                "Comece normalizado e só repita um dado quando uma leitura medida precisar, já com o plano para manter a " +
+                "cópia certa.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -11322,26 +11310,25 @@ export default area({
           requires: ["Database Fundamentals / Primary Key"],
           note: "UUID vs auto-incremento; implicações de índice",
           summary:
-            "A escolha da chave primária entre um dado do próprio negócio que já identifica a linha (chave natural, " +
-            "como um código ISO) e um identificador sem significado, criado só para isso (chave substituta, como um " +
-            "número sequencial ou um UUID).",
+            "Natural vs Surrogate Key é a escolha da chave primária entre um dado do negócio que já identifica a " +
+            "linha e um identificador sem significado.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
                 "Uma chave natural é um dado que o mundo já usa para identificar a coisa: o código de uma moeda (`BRL`), " +
-                "a sigla de um estado, o ISBN de um livro. Uma chave substituta (surrogate) é um identificador sem " +
-                "significado, gerado pelo sistema: um inteiro que o banco incrementa (auto-incremento ou `IDENTITY`) ou " +
-                "um UUID. A escolha importa porque a chave primária é copiada para todas as chaves estrangeiras que " +
-                "apontam para a tabela, e o que for escolhido se espalha pelo esquema.",
+                "a sigla de um estado, o ISBN de um livro. Uma chave substituta (surrogate) é gerada pelo sistema: um " +
+                "inteiro que o banco incrementa (auto-incremento ou `IDENTITY`) ou um UUID. A escolha importa porque a " +
+                "chave primária é copiada para todas as chaves estrangeiras que apontam para a tabela, e o que for " +
+                "escolhido se espalha pelo esquema.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Na maioria das tabelas do negócio, use uma chave substituta como chave primária e proteja a chave " +
-                "natural com `UNIQUE`: a primeira dá estabilidade às referências, e a segunda impede duplicatas.",
+                "Escolha a chave primária pensando no que ela vai arrastar, porque ela é copiada para cada tabela que " +
+                "aponta para esta.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -11573,26 +11560,24 @@ export default area({
           requires: ["Database Fundamentals / Database Schema"],
           note: "migrations versionadas, forward-only, expand/contract — revisita Software Craft / Incremental Migration",
           revisit: ["Software Craft / Dependency & Version Management / Incremental Migration"],
-          summary:
-            "Mudar o esquema e os dados de um banco que já está em uso por meio de passos versionados, pequenos e " +
-            "compatíveis com a aplicação no ar — incluindo a cópia de dados em lotes e o padrão expandir e contrair.",
+          summary: "Database Migration é uma mudança versionada no esquema ou nos dados de um banco que já está em uso.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Uma migração de banco é uma mudança versionada no esquema (criar uma tabela, acrescentar uma coluna, " +
-                "criar um índice) ou nos dados (preencher uma coluna nova, converter um formato). A mecânica de scripts " +
-                "numerados, aplicados uma vez e registrados, é a do esquema. O problema difícil é outro: mudar um banco " +
-                "com dados reais enquanto a aplicação continua atendendo, sem parada e sem perder nada. É a migração " +
-                "incremental aplicada ao banco: o antigo e o novo convivem durante a transição.",
+                "Pode ser criar uma tabela, acrescentar uma coluna, criar um índice, preencher uma coluna nova ou " +
+                "converter um formato. A mecânica de scripts numerados, aplicados uma vez e registrados, é a do esquema. " +
+                "O problema difícil é outro: mudar um banco com dados reais enquanto a aplicação continua atendendo, sem " +
+                "parada e sem perder nada. É a migração incremental aplicada ao banco: o antigo e o novo convivem durante " +
+                "a transição.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Em produção, toda migração precisa funcionar com a versão da aplicação que está no ar e com a próxima: " +
-                "uma mudança incompatível vira vários passos compatíveis, separados por implantações.",
+                "Toda migração precisa funcionar com a versão da aplicação no ar e com a próxima, então uma mudança " +
+                "incompatível vira vários passos.",
             },
             { type: "heading", text: "Como fazer" },
             {
