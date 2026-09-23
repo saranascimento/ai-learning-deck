@@ -1184,23 +1184,22 @@ export default area({
           title: "DRY",
           note: "Don't Repeat Yourself",
           summary:
-            "Cada pedaço de conhecimento — uma regra, uma constante, uma decisão — deve ter uma única " +
-            "representação no sistema, para que mudá-lo exija mexer em um lugar só.",
+            "DRY (Don't Repeat Yourself) é o princípio de que cada conhecimento do sistema deve ter uma única " +
+            "representação.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "DRY (Don't Repeat Yourself) diz que todo conhecimento do sistema deve ter uma representação única e " +
-                "autoritativa. Repare na palavra: conhecimento, não texto. O alvo não é código que \"parece igual\", " +
-                "e sim a mesma regra ou decisão escrita em mais de um lugar.",
+                "Repare na palavra: conhecimento, não texto. O alvo não é código que \"parece igual\", e sim a mesma regra " +
+                "ou decisão escrita em mais de um lugar.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "DRY é sobre não duplicar conhecimento, não sobre não repetir texto — centralize a regra que precisa " +
-                "mudar junto, e deixe separado o que só parece igual.",
+                "Antes de unir dois trechos iguais, pergunte se eles mudariam sempre juntos, porque só nesse caso são o " +
+                "mesmo conhecimento.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -1402,23 +1401,22 @@ export default area({
           title: "KISS",
           note: "Keep It Simple",
           summary:
-            "Preferir a solução mais simples que resolve o problema — complexidade tem custo de leitura, de teste " +
-            "e de manutenção, e só se justifica quando compra algo que a versão simples não compra.",
+            "KISS (Keep It Simple) é a heurística de escolher, entre as soluções que resolvem o problema, a mais " +
+            "simples de entender e de mudar.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "KISS (Keep It Simple) é a heurística de escolher, entre as soluções que resolvem o problema, a mais " +
-                "simples de entender e de mudar. Simples aqui não quer dizer \"curta\" nem \"fácil de escrever\": " +
-                "quer dizer com poucas partes móveis e com um caminho de leitura direto.",
+                "Simples aqui não quer dizer \"curta\" nem \"fácil de escrever\": quer dizer com poucas partes móveis e com " +
+                "um caminho de leitura direto.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Simples é o que se entende rápido e se muda com segurança — não o que tem menos linhas. Só aceite " +
-                "complexidade que esteja comprando algo real.",
+                "Cada camada ou truque a mais precisa ser entendido por alguém antes de qualquer mudança, então só aceite " +
+                "os que compram algo real.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -1586,23 +1584,21 @@ export default area({
           title: "YAGNI",
           note: "You Aren't Gonna Need It — ver colisão conceitual com Speculative Generality (Code Smells, não incluída como Task)",
           summary:
-            "Não construir funcionalidade nem flexibilidade antes de existir uma necessidade real — o que se " +
-            "prevê que vai ser preciso quase sempre custa mais do que rende.",
+            "YAGNI (You Aren't Gonna Need It) é a regra de não implementar algo só porque talvez seja útil no futuro.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "YAGNI (You Aren't Gonna Need It) é a regra de não implementar algo só porque \"talvez seja útil no " +
-                "futuro\". Ela vale para funcionalidades, opções, parâmetros e camadas de abstração: só entram no " +
-                "código quando há uma necessidade concreta e presente.",
+                "Ela vale para funcionalidades, opções, parâmetros e camadas de abstração: só entram no código quando há " +
+                "uma necessidade concreta e presente.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Construa para o que é preciso agora e mantenha o código fácil de mudar — o futuro imaginado quase " +
-                "nunca chega do jeito previsto.",
+                "Quando a necessidade real chegar, ela quase nunca será igual à que você imaginou, então deixe o código " +
+                "fácil de mudar.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -1779,24 +1775,20 @@ export default area({
           title: "Principle of Least Astonishment",
           note: "o código não deve surpreender quem lê",
           summary:
-            "O código deve se comportar do jeito que quem lê ou usa espera — nomes, convenções e efeitos que " +
-            "surpreendem são fonte de bugs, mesmo quando \"funcionam\".",
+            "O Principle of Least Astonishment diz que um código deve fazer o que o nome e o contexto levam alguém a " +
+            "esperar.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "O Princípio da Menor Surpresa diz que uma função, uma API ou um módulo deve fazer o que o nome e o " +
-                "contexto levam alguém a esperar. Se o comportamento real diverge da expectativa razoável — um " +
-                "getter que altera estado, um retorno de tipo diferente conforme o caso — o código está " +
-                "surpreendendo quem o usa.",
+                "Quando o comportamento real diverge da expectativa razoável — um getter que altera estado, um retorno de " +
+                "tipo diferente conforme o caso —, o código está surpreendendo quem o usa, mesmo que \"funcione\".",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Se quem lê o nome espera uma coisa e a função faz outra, o problema é do código, não de quem " +
-                "chamou — faça o comportamento coincidir com a expectativa razoável.",
+              text: "Todo efeito que o nome de uma função não anuncia é um bug esperando alguém que confiou no nome.",
             },
             { type: "heading", text: "Por que importa" },
             {
