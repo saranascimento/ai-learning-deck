@@ -1512,6 +1512,10 @@ for (const area of model.areas()) {
     "n-plus-1-query-problem",
     "connection-pool",
     "slow-query-analysis",
+    "sql-vs-nosql",
+    "nosql-data-models-kv-document-wide-column-graph",
+    "schema-on-read",
+    "choosing-sql-vs-nosql",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",

@@ -15229,7 +15229,245 @@ export default area({
         "SQL vs NoSQL → data models (KV/Document/Wide-Column/Graph consolidados) → schema-on-read → " +
         "escolher SQL vs NoSQL. Story pequena deliberada — modelo mental próprio.",
       concepts: [
-        concept({ order: 10, title: "SQL vs NoSQL", requires: ["Database Design / Normalization"], note: "motivação: escala horizontal, esquema flexível, modelo de acesso" }),
+        concept({
+          order: 10,
+          title: "SQL vs NoSQL",
+          requires: ["Database Design / Normalization"],
+          note: "motivação: escala horizontal, esquema flexível, modelo de acesso",
+          summary:
+            "A diferença entre os bancos relacionais — tabelas normalizadas, esquema fixo, `JOIN` e transações sobre " +
+            "várias linhas — e a família de bancos NoSQL, que organiza os dados em torno de como eles serão lidos, " +
+            "com esquema flexível e escala horizontal como prioridade.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "\"NoSQL\" não é um banco, mas um nome guarda-chuva para modelos de dados diferentes do relacional: " +
+                "chave-valor, documentos, colunas largas e grafos (\"not only SQL\"). O banco relacional parte do dado: " +
+                "normaliza, guarda cada fato uma vez e deixa que qualquer pergunta seja respondida depois, com `JOIN`s. " +
+                "Os bancos NoSQL costumam partir do acesso: organizam o dado no formato em que ele será lido, muitas " +
+                "vezes repetindo informação, para que a leitura seja uma busca só por chave e para que os dados possam " +
+                "ser divididos entre muitas máquinas. Os dois lados trocam coisas diferentes: flexibilidade de consulta e " +
+                "consistência de um lado; escala e simplicidade de leitura do outro.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "A diferença central não é a sintaxe, e sim onde se paga o custo: o relacional paga na leitura (juntando " +
+                "tabelas) para escrever cada fato uma vez; os modelos NoSQL pagam na escrita e na modelagem (repetindo " +
+                "dados) para ler de uma vez só, pela chave.",
+            },
+            { type: "heading", text: "Por que importa" },
+            {
+              type: "paragraph",
+              text:
+                "Os bancos NoSQL surgiram para problemas que o relacional tratava mal em uma máquina só: volumes enormes " +
+                "de escrita, dados espalhados por várias regiões, estruturas que variam muito de um registro para outro. " +
+                "Conhecer o que cada lado oferece evita dois erros comuns: forçar num banco relacional algo que ele " +
+                "atende mal, e escolher um banco NoSQL por moda para dados que são, na essência, relacionais.",
+            },
+            { type: "heading", text: "Na prática" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "order-two-ways.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "// Relacional: cada fato em uma tabela; a página do pedido junta três",
+                "db.exec(`",
+                "  CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
+                "  CREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER NOT NULL REFERENCES customers(id), placed_at TEXT NOT NULL);",
+                "  CREATE TABLE order_items (order_id INTEGER NOT NULL REFERENCES orders(id), product TEXT NOT NULL, quantity INTEGER NOT NULL);",
+                "  INSERT INTO customers VALUES (7, 'Ana Souza');",
+                "  INSERT INTO orders VALUES (100, 7, '2026-09-21');",
+                "  INSERT INTO order_items VALUES (100, 'Caneca', 2), (100, 'Café 500 g', 1);",
+                "`);",
+                "db.prepare(`",
+                "  SELECT o.id, o.placed_at, c.name, i.product, i.quantity",
+                "  FROM orders o JOIN customers c ON c.id = o.customer_id JOIN order_items i ON i.order_id = o.id",
+                "  WHERE o.id = ?`).all(100);   // 2 linhas, montadas a partir de 3 tabelas",
+                "",
+                "// Documento: o pedido guardado no formato em que a página o lê — uma busca pela chave",
+                "const orders = new Map();",
+                "orders.set(\"order:100\", {",
+                "  id: 100,",
+                "  placedAt: \"2026-09-21\",",
+                "  customer: { id: 7, name: \"Ana Souza\" },   // cópia: se o nome mudar, este pedido guarda o nome da época",
+                "  items: [",
+                "    { product: \"Caneca\", quantity: 2 },",
+                "    { product: \"Café 500 g\", quantity: 1 },",
+                "  ],",
+                "});",
+                "orders.get(\"order:100\");   // o pedido inteiro, em uma leitura",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "As duas formas guardam a mesma informação. A relacional responde a qualquer pergunta nova (\"quem comprou " +
+                "canecas?\") sem mudar a estrutura; o documento responde muito bem à pergunta para a qual foi desenhado e " +
+                "mal às outras, a menos que se crie outra cópia dos dados no formato da nova pergunta.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "\"NoSQL\" não diz nada sobre um banco específico: um banco de chave-valor e um de grafos são tão diferentes entre si quanto de um relacional.",
+                "Esquema flexível não significa ausência de esquema: a estrutura continua existindo, só passa a ser garantida pelo código que lê e escreve.",
+                "Muitos bancos NoSQL oferecem transações e consistência mais limitadas entre registros diferentes; o que o relacional dava de graça passa a ser trabalho da aplicação.",
+                "Os bancos relacionais também escalam bastante (réplicas de leitura, particionamento, colunas JSON); a necessidade de outra ferramenta deve vir de um limite medido.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Modelar a partir das perguntas",
+              context: "Em um banco de documentos, a mesma venda pode ser guardada em duas formas, uma por consulta.",
+              code: {
+                language: "javascript",
+                filename: "access-patterns.js",
+                code: [
+                  "// Perguntas que o sistema precisa responder rápido:",
+                  "//   1. \"pedidos de um cliente, dos mais recentes\"   → chave: cliente",
+                  "//   2. \"vendas de um produto no dia\"               → chave: produto + dia",
+                  "const ordersByCustomer = new Map();   // \"customer:7\"            → [pedidos]",
+                  "const salesByProductDay = new Map();  // \"product:caneca:2026-09-21\" → { quantity, orders }",
+                  "",
+                  "function recordSale(order) {",
+                  "  // uma escrita vira várias: cada forma de leitura recebe a sua cópia",
+                  "  const key = `customer:${order.customer.id}`;",
+                  "  ordersByCustomer.set(key, [order, ...(ordersByCustomer.get(key) || [])]);",
+                  "  for (const item of order.items) {",
+                  "    const dayKey = `product:${item.sku}:${order.placedAt}`;",
+                  "    const day = salesByProductDay.get(dayKey) || { quantity: 0, orders: 0 };",
+                  "    salesByProductDay.set(dayKey, { quantity: day.quantity + item.quantity, orders: day.orders + 1 });",
+                  "  }",
+                  "}",
+                  "",
+                  "recordSale({ id: 100, placedAt: \"2026-09-21\", customer: { id: 7 }, items: [{ sku: \"caneca\", quantity: 2 }] });",
+                  "salesByProductDay.get(\"product:caneca:2026-09-21\");   // { quantity: 2, orders: 1 }",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada pergunta ganhou uma estrutura pronta para ela, e responder vira uma busca pela chave. O custo " +
+                "aparece na escrita, que atualiza várias cópias, e numa pergunta nova, que exige uma cópia nova e o " +
+                "preenchimento dos dados antigos. No relacional, a mesma pergunta nova seria só uma consulta diferente.",
+            },
+            {
+              title: "Escala horizontal: dividir pela chave",
+              context:
+                "Distribuir os dados entre máquinas funciona quando a leitura traz a chave que diz onde o dado está.",
+              code: {
+                language: "javascript",
+                filename: "partitioning.js",
+                code: [
+                  "import { createHash } from \"node:crypto\";",
+                  "",
+                  "const NODES = [\"node-a\", \"node-b\", \"node-c\"];",
+                  "const nodeFor = (key) => NODES[createHash(\"sha1\").update(key).digest().readUInt32BE(0) % NODES.length];",
+                  "",
+                  "// Cada cliente mora em uma máquina; buscar pelos pedidos de um cliente consulta só ela",
+                  "nodeFor(\"customer:7\");",
+                  "nodeFor(\"customer:8\");",
+                  "",
+                  "// Uma consulta que não tem a chave (ex.: \"todos os pedidos com a caneca\") precisa perguntar",
+                  "// a TODAS as máquinas e juntar as respostas — o que custa mais a cada máquina acrescentada.",
+                  "const scatterGather = (query) => NODES.map((node) => ({ node, query }));",
+                  "scatterGather(\"items.sku = 'caneca'\").length;   // 3 — uma consulta por máquina",
+                ].join("\n"),
+              },
+              explanation:
+                "A chave de partição decide a máquina de cada registro. As consultas pela chave escalam bem, porque cada " +
+                "uma toca uma máquina; as que não usam a chave viram uma consulta em todas as partições. É por isso que, " +
+                "nesses bancos, a escolha da chave é a decisão de modelagem mais importante.",
+            },
+            {
+              title: "O que costuma faltar",
+              context:
+                "Recursos que o relacional oferece e que em muitos bancos NoSQL são limitados ou ficam com a aplicação.",
+              code: {
+                language: "text",
+                filename: "tradeoffs.txt",
+                code: [
+                  "                                  Relacional            Muitos bancos NoSQL",
+                  "JOIN entre coleções               nativo                ausente ou limitado ($lookup no MongoDB)",
+                  "transação com vários registros    nativa                limitada, mais cara ou só dentro de um item",
+                  "integridade referencial           chave estrangeira     a aplicação garante",
+                  "consulta nova, não planejada      SQL resolve           pode exigir nova estrutura ou varrer tudo",
+                  "esquema                           imposto na escrita    conferido na leitura, pela aplicação",
+                  "escalar escrita entre máquinas    difícil               é o ponto forte",
+                  "",
+                  "Os limites mudam de banco para banco e de versão para versão: o MongoDB tem transações",
+                  "entre documentos desde a 4.0, e o PostgreSQL guarda e indexa JSON (jsonb).",
+                ].join("\n"),
+              },
+              explanation:
+                "A tabela não diz que um lado é melhor; diz o que muda de dono. Ao escolher um banco NoSQL, junções, " +
+                "transações e integridade que o banco relacional garantia passam a ser responsabilidade do desenho dos " +
+                "dados e do código.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A página de perfil de um aplicativo mostra o nome e a foto da pessoa, os três endereços cadastrados e os " +
+              "cinco últimos pedidos (número, data e total). Hoje ela faz quatro consultas relacionais, e o time quer " +
+              "testar um banco de documentos para ler tudo de uma vez.",
+            problemCode: {
+              language: "javascript",
+              filename: "profile.js",
+              code: [
+                "// Consultas atuais da página de perfil",
+                "const queries = [",
+                "  \"SELECT name, photo_url FROM users WHERE id = $1\",",
+                "  \"SELECT street, city, label FROM addresses WHERE user_id = $1\",",
+                "  \"SELECT id, placed_at, total_cents FROM orders WHERE user_id = $1 ORDER BY placed_at DESC LIMIT 5\",",
+                "  \"SELECT count(*) FROM orders WHERE user_id = $1\",",
+                "];",
+                "",
+                "// Desenhe aqui o documento de perfil",
+                "const profileDocument = {};",
+              ].join("\n"),
+            },
+            task:
+              "Desenhe o documento que atende à página com uma leitura, diga o que está embutido e o que é cópia, e " +
+              "explique o que precisa acontecer quando um pedido novo é criado ou quando a pessoa troca o nome.",
+            hint:
+              "Endereços pertencem à pessoa e são poucos: podem ficar dentro. Pedidos crescem sem limite: guarde só um " +
+              "resumo dos últimos cinco e o total.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "profile.answer.js",
+                code: [
+                  "const profileDocument = {",
+                  "  _id: \"user:7\",",
+                  "  name: \"Ana Souza\",",
+                  "  photoUrl: \"https://cdn.example.test/u/7.jpg\",",
+                  "  addresses: [                                  // embutidos: pertencem à pessoa, são poucos e mudam juntos",
+                  "    { label: \"casa\", street: \"Rua A, 10\", city: \"Recife\" },",
+                  "  ],",
+                  "  recentOrders: [                               // cópia resumida: só o que a página mostra, no máximo 5",
+                  "    { id: 100, placedAt: \"2026-09-21\", totalCents: 7000 },",
+                  "  ],",
+                  "  orderCount: 12,                               // contador mantido a cada pedido",
+                  "};",
+                  "",
+                  "// Ao criar um pedido: gravar o pedido (a fonte da verdade continua sendo a coleção de pedidos),",
+                  "// incluir o resumo no início de recentOrders, cortar para 5 e somar 1 em orderCount.",
+                  "// Ao trocar o nome: só este documento muda — os pedidos guardam o nome da época, de propósito.",
+                ].join("\n"),
+              },
+              explanation:
+                "O documento responde à página com uma leitura, e o preço é manter as cópias em cada pedido novo. O que " +
+                "cresce sem limite (os pedidos) não entra inteiro: entra um resumo com tamanho máximo, o que evita " +
+                "documentos gigantes. A coleção de pedidos continua existindo para as outras perguntas.",
+            },
+          },
+        }),
         concept({
           order: 20,
           title: "NoSQL Data Models (KV / Document / Wide-Column / Graph)",
@@ -15237,9 +15475,681 @@ export default area({
           subtopics: ["key-value (cache, sessão)", "document — revisita Software Design / Domain Modeling / Aggregate (documento ≈ aggregate)", "wide-column (série temporal, escala de escrita)", "graph (relações profundas)"],
           note: "consolidada (A8)",
           revisit: ["Software Design / Domain Modeling / Aggregate"],
+          summary:
+            "Os quatro modelos de dados mais comuns fora do relacional: chave-valor (um valor por chave), documentos " +
+            "(objetos aninhados, consultáveis por campo), colunas largas (linhas particionadas e ordenadas para " +
+            "volume de escrita) e grafos (nós e relações percorridas diretamente).",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Cada modelo NoSQL é bom em um tipo de acesso. Chave-valor guarda um valor opaco sob uma chave e só sabe " +
+                "buscar por ela, muito rápido (Redis, DynamoDB no uso mais simples). Documentos guardam objetos " +
+                "aninhados, como JSON, e permitem consultar e indexar os seus campos (MongoDB, Firestore); um documento " +
+                "costuma corresponder a um agregado do domínio, gravado e lido inteiro. Colunas largas organizam as " +
+                "linhas por uma chave de partição e, dentro dela, por uma chave de ordenação, o que suporta volumes " +
+                "enormes de escrita e leituras por intervalo (Cassandra, ScyllaDB). Grafos guardam nós e relações como " +
+                "dados de primeira classe, e percorrer relações é a operação barata (Neo4j).",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Escolha o modelo pela forma do acesso mais importante: buscar por uma chave, ler um objeto inteiro, " +
+                "escrever e ler séries enormes por intervalo, ou percorrer relações em vários níveis.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "text",
+              filename: "shapes.txt",
+              code: [
+                "Chave-valor      \"session:9f2c\"  →  \"{\\\"userId\\\":7,\\\"expires\\\":...}\"     busca: só pela chave",
+                "",
+                "Documento        { _id: \"order:100\", customer: { id: 7, name: \"Ana\" },",
+                "                   items: [{ sku: \"caneca\", qty: 2 }], status: \"paid\" }",
+                "                                                                     busca: por chave ou por campo indexado",
+                "",
+                "Colunas largas   partição: sensor_id = 42",
+                "                   ├─ 2026-09-21T10:00:00 → temp=21.3, hum=40",
+                "                   ├─ 2026-09-21T10:01:00 → temp=21.4, hum=41      busca: partição + intervalo ordenado",
+                "                   └─ ...",
+                "",
+                "Grafo            (Ana)-[:SEGUE]->(Bruno)-[:SEGUE]->(Carla)",
+                "                 (Ana)-[:COMPROU]->(Caneca)<-[:COMPROU]-(Carla)    busca: percorrer relações",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O modelo de documentos é o mais próximo do relacional: um documento é, na prática, um agregado — a raiz " +
+                "e as partes que vivem e mudam junto com ela, gravados como uma unidade. As outras entidades são " +
+                "referenciadas pelo identificador, como se faz entre agregados.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Chave-valor para sessões, caches, contadores e limites de requisição: acesso sempre pela chave, muitas vezes com expiração.",
+                "Documentos para agregados lidos e gravados inteiros e para registros de estrutura variável, como catálogos com atributos diferentes por produto.",
+                "Colunas largas para séries temporais e eventos em grande volume, lidos por dispositivo ou usuário em um intervalo de tempo; grafos para relações de vários níveis, como recomendações e detecção de fraude.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Chave-valor não responde a perguntas sobre o conteúdo dos valores; qualquer busca que não seja pela chave exige outra estrutura.",
+                "Em colunas largas, só as consultas previstas pela chave de partição e de ordenação são eficientes; uma pergunta nova costuma pedir uma tabela nova.",
+                "Dados com muitas relações entre entidades diferentes, consultados de formas variadas, ficam melhor em um banco relacional do que espalhados em documentos ou num grafo.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Chave-valor: sessões com expiração",
+              context: "Cada sessão é lida e escrita só pela sua chave, e some sozinha depois de um tempo.",
+              code: {
+                language: "javascript",
+                filename: "sessions.js",
+                code: [
+                  "// O modelo, em memória: valor por chave, com prazo de validade",
+                  "const store = new Map();",
+                  "const set = (key, value, ttlMs) => store.set(key, { value, expiresAt: Date.now() + ttlMs });",
+                  "const get = (key) => {",
+                  "  const entry = store.get(key);",
+                  "  if (!entry) return null;",
+                  "  if (entry.expiresAt <= Date.now()) { store.delete(key); return null; }",
+                  "  return entry.value;",
+                  "};",
+                  "",
+                  "set(\"session:9f2c\", { userId: 7 }, 30 * 60 * 1000);",
+                  "get(\"session:9f2c\");   // { userId: 7 }",
+                  "get(\"session:0000\");   // null",
+                  "",
+                  "// No Redis, o mesmo:  SET session:9f2c '{\"userId\":7}' EX 1800   /   GET session:9f2c",
+                  "// Perguntar \"quais sessões são do usuário 7?\" não tem resposta: o valor é opaco para o banco.",
+                ].join("\n"),
+              },
+              explanation:
+                "O acesso é sempre pela chave, e é isso que torna o chave-valor tão rápido e simples de distribuir. A " +
+                "última linha mostra o limite: para listar as sessões de alguém, seria preciso manter outra chave com " +
+                "essa lista.",
+            },
+            {
+              title: "Documento: embutir ou referenciar",
+              context: "O que vive e muda junto fica dentro; o que tem vida própria é referenciado pelo id.",
+              code: {
+                language: "javascript",
+                filename: "embed-or-reference.js",
+                code: [
+                  "const order = {",
+                  "  _id: \"order:100\",",
+                  "  customerId: 7,                          // referência: o cliente é outro agregado, com vida própria",
+                  "  status: \"paid\",",
+                  "  items: [                                // embutidos: só existem dentro do pedido",
+                  "    { sku: \"caneca\", name: \"Caneca\", unitPriceCents: 3500, quantity: 2 },   // nome e preço copiados na compra",
+                  "  ],",
+                  "  shippingAddress: { street: \"Rua A, 10\", city: \"Recife\" },                // cópia: o endereço da entrega, daquele dia",
+                  "};",
+                  "",
+                  "// Regra prática:",
+                  "//   embutir  → pertence ao documento, é limitado em tamanho, é lido junto",
+                  "//   referenciar → tem vida própria, é compartilhado, ou cresce sem limite (ex.: comentários de um post popular)",
+                  "const totalCents = order.items.reduce((sum, item) => sum + item.unitPriceCents * item.quantity, 0);   // 7000",
+                ].join("\n"),
+              },
+              explanation:
+                "É a mesma fronteira de um agregado: o pedido e os seus itens formam uma unidade, gravada inteira; o " +
+                "cliente é outra unidade, ligada pelo id. As cópias (nome, preço, endereço) são fatos históricos do " +
+                "pedido, e não dados que precisam acompanhar mudanças no cadastro.",
+            },
+            {
+              title: "Grafo: amigos de amigos",
+              context: "Percorrer relações em vários níveis é a operação natural de um grafo.",
+              code: {
+                language: "javascript",
+                filename: "graph.js",
+                code: [
+                  "// Lista de adjacência: cada pessoa aponta para quem ela segue",
+                  "const follows = new Map([",
+                  "  [\"ana\", [\"bruno\", \"carla\"]],",
+                  "  [\"bruno\", [\"dani\", \"carla\"]],",
+                  "  [\"carla\", [\"edu\"]],",
+                  "  [\"dani\", []],",
+                  "  [\"edu\", [\"ana\"]],",
+                  "]);",
+                  "",
+                  "// Sugestões: quem os meus seguidos seguem, e eu ainda não sigo",
+                  "function suggestions(person) {",
+                  "  const direct = new Set(follows.get(person));",
+                  "  const found = new Set();",
+                  "  for (const friend of direct) for (const candidate of follows.get(friend)) {",
+                  "    if (candidate !== person && !direct.has(candidate)) found.add(candidate);",
+                  "  }",
+                  "  return [...found];",
+                  "}",
+                  "",
+                  "suggestions(\"ana\");   // [\"dani\", \"edu\"]",
+                  "",
+                  "// Em Cypher (Neo4j):  MATCH (:Person {name:'ana'})-[:FOLLOWS]->()-[:FOLLOWS]->(s) WHERE ... RETURN DISTINCT s",
+                  "// No relacional, cada nível é mais um JOIN da tabela follows com ela mesma.",
+                ].join("\n"),
+              },
+              explanation:
+                "Em um banco de grafos, cada relação aponta direto para o próximo nó, e ir mais um nível custa " +
+                "proporcional às relações visitadas, e não ao tamanho das tabelas. Com dois níveis, um `JOIN` resolve " +
+                "bem; com cinco ou seis, como em detecção de fraude, o grafo se destaca.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O catálogo de uma loja tem livros, camisetas e notebooks na mesma tabela `products`, com 60 colunas: " +
+              "`pages`, `author`, `size`, `color`, `ram_gb`, `cpu`... Cada linha usa meia dúzia delas, e cada tipo novo " +
+              "de produto exige uma migração que acrescenta colunas.",
+            problemCode: {
+              language: "javascript",
+              filename: "catalog.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE products (",
+                "    id INTEGER PRIMARY KEY, kind TEXT NOT NULL, title TEXT NOT NULL, price_cents INTEGER NOT NULL,",
+                "    author TEXT, pages INTEGER,            -- livros",
+                "    size TEXT, color TEXT,                 -- camisetas",
+                "    ram_gb INTEGER, cpu TEXT               -- notebooks",
+                "    -- ... e mais 50 colunas",
+                "  );",
+                "`);",
+              ].join("\n"),
+            },
+            task:
+              "Remodele o catálogo no estilo de documentos: campos comuns como colunas, atributos específicos de cada " +
+              "tipo num documento JSON. Mostre como buscar as camisetas tamanho M e como indexar essa busca.",
+            hint:
+              "No SQLite, `json_extract(attributes, '$.size')` lê um campo do documento, e um índice pode ser criado " +
+              "sobre essa mesma expressão.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "catalog.fixed.js",
+                code: [
+                  "import { DatabaseSync } from \"node:sqlite\";",
+                  "const db = new DatabaseSync(\":memory:\");",
+                  "const plan = (sql) => db.prepare(`EXPLAIN QUERY PLAN ${sql}`).all().map((row) => row.detail);",
+                  "",
+                  "db.exec(`",
+                  "  CREATE TABLE products (",
+                  "    id INTEGER PRIMARY KEY,",
+                  "    kind TEXT NOT NULL,",
+                  "    title TEXT NOT NULL,",
+                  "    price_cents INTEGER NOT NULL,",
+                  "    attributes TEXT NOT NULL DEFAULT '{}' CHECK (json_valid(attributes))   -- o que varia por tipo",
+                  "  );",
+                  "  CREATE INDEX idx_products_size ON products(kind, json_extract(attributes, '$.size'));",
+                  "`);",
+                  "",
+                  "const add = db.prepare(\"INSERT INTO products (kind, title, price_cents, attributes) VALUES (?, ?, ?, ?)\");",
+                  "add.run(\"book\", \"Bancos de Dados na Prática\", 8900, JSON.stringify({ author: \"Ana Souza\", pages: 320 }));",
+                  "add.run(\"shirt\", \"Camiseta DevAtlas\", 5900, JSON.stringify({ size: \"M\", colors: [\"azul\", \"preto\"] }));",
+                  "add.run(\"laptop\", \"Notebook 14\", 499900, JSON.stringify({ ramGb: 16, cpu: \"8 núcleos\" }));",
+                  "",
+                  "const sql = \"SELECT id, title FROM products WHERE kind = 'shirt' AND json_extract(attributes, '$.size') = 'M'\";",
+                  "db.prepare(sql).all();   // [{ id: 2, title: \"Camiseta DevAtlas\" }]",
+                  "plan(sql);               // [\"SEARCH products USING INDEX idx_products_size (kind=? AND <expr>=?)\"]",
+                ].join("\n"),
+              },
+              explanation:
+                "Os campos que todo produto tem continuam como colunas, com tipos e restrições; o que varia fica no " +
+                "documento, e um tipo novo de produto não pede migração. As buscas frequentes sobre atributos ganham " +
+                "índice na expressão. O PostgreSQL faz o mesmo com `jsonb` e índices GIN, sem sair do banco relacional.",
+            },
+          },
         }),
-        concept({ order: 30, title: "Schema-on-Read", requires: ["NoSQL Data Models (KV / Document / Wide-Column / Graph)"], collision: "≠ Database Schema (Database Fundamentals) — validação movida para a aplicação" }),
-        concept({ order: 40, title: "Choosing SQL vs NoSQL", requires: ["NoSQL Data Models (KV / Document / Wide-Column / Graph)"], note: "polyglot persistence; NoSQL não é 'sem trade-off'" }),
+        concept({
+          order: 30,
+          title: "Schema-on-Read",
+          requires: ["NoSQL Data Models (KV / Document / Wide-Column / Graph)"],
+          note: "estrutura interpretada na leitura, e não imposta na gravação — a validação passa para a aplicação",
+          collision: "≠ Database Schema (Database Fundamentals) — validação movida para a aplicação",
+          summary:
+            "Guardar os dados sem que o banco imponha uma estrutura na gravação e interpretá-los no momento da " +
+            "leitura — o que dá liberdade para mudar o formato, e passa ao código a tarefa de lidar com registros de " +
+            "formatos diferentes.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "No modelo relacional, o esquema é imposto na gravação (schema-on-write): uma linha que não tem as " +
+                "colunas e os tipos declarados é recusada. Em schema-on-read, o banco aceita qualquer documento, e a " +
+                "estrutura é interpretada por quem lê. O esquema continua existindo — o código espera certos campos —, " +
+                "mas deixa de ser verificado em um lugar só. Isso facilita evoluir o formato sem migrar os dados antigos, " +
+                "e faz conviverem na mesma coleção registros de versões diferentes, que o código de leitura precisa " +
+                "entender.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Schema-on-read não elimina o esquema, só muda quem o garante: o banco deixa de recusar dados errados, e " +
+                "o código que lê passa a ter de lidar com todos os formatos que já foram gravados.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "schema-on-read.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "// O banco só exige JSON válido; a estrutura de cada evento é livre",
+                "db.exec(\"CREATE TABLE events (id INTEGER PRIMARY KEY, body TEXT NOT NULL CHECK (json_valid(body)))\");",
+                "const record = db.prepare(\"INSERT INTO events (body) VALUES (?)\");",
+                "record.run(JSON.stringify({ type: \"signup\", userId: 7, plan: \"free\" }));",
+                "record.run(JSON.stringify({ type: \"purchase\", userId: 7, totalCents: 7000 }));",
+                "record.run(JSON.stringify({ type: \"signup\", user: { id: 8 }, plan: \"pro\" }));   // formato antigo de outro serviço",
+                "",
+                "// A leitura interpreta: quem lê decide o que cada campo significa",
+                "db.prepare(`",
+                "  SELECT json_extract(body, '$.type') AS type,",
+                "         coalesce(json_extract(body, '$.userId'), json_extract(body, '$.user.id')) AS user_id",
+                "  FROM events",
+                "  WHERE json_extract(body, '$.type') = 'signup'`).all();",
+                "// [{ type: \"signup\", user_id: 7 }, { type: \"signup\", user_id: 8 }]",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O `coalesce` é o esquema em ação, só que na leitura: a consulta sabe que o id do usuário pode estar em " +
+                "dois lugares. Cada formato novo que for gravado acrescenta um caso como esse a quem lê.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Para dados de estrutura variável ou que evolui depressa, como eventos, payloads de integrações e atributos específicos por tipo de produto.",
+                "Para guardar dados brutos antes de saber todas as perguntas que serão feitas, como em data lakes, e decidir a estrutura na análise.",
+                "Quando o mesmo serviço é o único que grava e lê, e pode concentrar em uma camada a tradução dos formatos antigos.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Dados que vários sistemas leem e escrevem, e que precisam de regras firmes, como financeiros e cadastrais, ficam mais seguros com o esquema imposto pelo banco.",
+                "Um erro de digitação em um nome de campo é gravado sem aviso e só aparece quando alguém tenta ler, às vezes meses depois.",
+                "Cada formato antigo que continua no banco vira código de compatibilidade na leitura; sem migrar nem versionar, esse código só cresce.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Versões diferentes convivendo",
+              context: "Documentos antigos e novos são traduzidos para um formato só no momento da leitura.",
+              code: {
+                language: "javascript",
+                filename: "upcast.js",
+                code: [
+                  "// v1: { name: \"Ana Souza\" }",
+                  "// v2: { schemaVersion: 2, firstName: \"Ana\", lastName: \"Souza\" }",
+                  "// v3: { schemaVersion: 3, name: { first: \"Ana\", last: \"Souza\" }, locale: \"pt-BR\" }",
+                  "function readCustomer(doc) {",
+                  "  const version = doc.schemaVersion ?? 1;",
+                  "  if (version === 1) {",
+                  "    const [first, ...rest] = doc.name.split(\" \");",
+                  "    return { first, last: rest.join(\" \"), locale: \"pt-BR\" };",
+                  "  }",
+                  "  if (version === 2) return { first: doc.firstName, last: doc.lastName, locale: \"pt-BR\" };",
+                  "  if (version === 3) return { first: doc.name.first, last: doc.name.last, locale: doc.locale };",
+                  "  throw new Error(`versão de cliente desconhecida: ${version}`);",
+                  "}",
+                  "",
+                  "readCustomer({ name: \"Ana Souza\" });                                        // { first: \"Ana\", last: \"Souza\", locale: \"pt-BR\" }",
+                  "readCustomer({ schemaVersion: 3, name: { first: \"Bruno\", last: \"Lima\" }, locale: \"en-US\" });",
+                ].join("\n"),
+              },
+              explanation:
+                "O campo `schemaVersion` diz como ler cada documento, e uma função concentra a tradução para o formato " +
+                "atual (upcasting). O resto do código só conhece o formato novo. Quando os documentos antigos forem " +
+                "regravados na versão atual, os ramos antigos podem ser removidos.",
+            },
+            {
+              title: "O erro que o banco não recusou",
+              context: "Sem esquema na gravação, um campo com o nome errado é aceito em silêncio.",
+              code: {
+                language: "javascript",
+                filename: "silent-typo.js",
+                code: [
+                  "db.exec(\"CREATE TABLE leads (id INTEGER PRIMARY KEY, body TEXT NOT NULL CHECK (json_valid(body)))\");",
+                  "const save = db.prepare(\"INSERT INTO leads (body) VALUES (?)\");",
+                  "save.run(JSON.stringify({ name: \"Ana\", email: \"ana@example.test\" }));",
+                  "save.run(JSON.stringify({ name: \"Bruno\", emial: \"bruno@example.test\" }));   // erro de digitação em um formulário",
+                  "",
+                  "db.prepare(\"SELECT json_extract(body, '$.name') AS name FROM leads WHERE json_extract(body, '$.email') IS NOT NULL\").all();",
+                  "// [{ name: \"Ana\" }] — o Bruno não recebe a campanha, e ninguém percebe",
+                ].join("\n"),
+              },
+              explanation:
+                "Numa tabela com a coluna `email NOT NULL`, a segunda gravação teria falhado na hora. Aqui ela foi " +
+                "aceita, e o problema só aparece na leitura, como um dado que falta. Validar na gravação, mesmo sem o " +
+                "banco exigir, evita que o erro chegue a ser salvo.",
+            },
+            {
+              title: "Validar na gravação, mesmo assim",
+              context: "Bancos de documentos permitem declarar um esquema mínimo, que o próprio banco aplica.",
+              code: {
+                language: "text",
+                filename: "mongodb-validator.txt",
+                code: [
+                  "// MongoDB: validação declarada na coleção (JSON Schema)",
+                  "db.createCollection(\"leads\", {",
+                  "  validator: {",
+                  "    $jsonSchema: {",
+                  "      bsonType: \"object\",",
+                  "      required: [\"name\", \"email\"],",
+                  "      properties: {",
+                  "        name:  { bsonType: \"string\" },",
+                  "        email: { bsonType: \"string\", pattern: \"^.+@.+$\" }",
+                  "      }",
+                  "    }",
+                  "  },",
+                  "  validationAction: \"error\"     // \"warn\" só registra no log",
+                  "})",
+                  "",
+                  "A coleção continua aceitando campos extras e formatos novos; só o mínimo combinado é obrigatório.",
+                ].join("\n"),
+              },
+              explanation:
+                "É um meio-termo comum: o banco garante os campos que todo mundo precisa, e o resto do documento continua " +
+                "livre. Com `validationAction: \"warn\"`, dá para ligar a validação primeiro em modo de observação, para " +
+                "descobrir quantos documentos antigos a violam.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A coleção de usuários tem documentos de três épocas: na primeira, o telefone era uma string em `phone`; " +
+              "na segunda, uma lista em `phones`; na atual, uma lista de objetos em `contacts`. A tela de perfil quebra " +
+              "com os usuários antigos.",
+            problemCode: {
+              language: "javascript",
+              filename: "users.js",
+              code: [
+                "const users = [",
+                "  { _id: 1, name: \"Ana\", phone: \"+55 81 99999-0000\" },",
+                "  { _id: 2, name: \"Bruno\", phones: [\"+55 11 98888-0000\", \"+55 11 3333-0000\"] },",
+                "  { _id: 3, name: \"Carla\", schemaVersion: 3, contacts: [{ kind: \"phone\", value: \"+55 21 97777-0000\" }, { kind: \"email\", value: \"carla@example.test\" }] },",
+                "];",
+                "",
+                "// A tela espera: { id, name, phones: string[] }",
+                "const profile = (user) => ({ id: user._id, name: user.name, phones: user.contacts.filter((c) => c.kind === \"phone\").map((c) => c.value) });",
+              ].join("\n"),
+            },
+            task:
+              "Escreva uma função de leitura que entregue o formato atual para os três tipos de documento e que falhe " +
+              "de forma clara diante de um formato desconhecido. Diga como tirar os formatos antigos do banco com o " +
+              "tempo.",
+            hint:
+              "Identifique a época pelo campo presente (`contacts`, `phones`, `phone`), traduza cada uma para o mesmo " +
+              "objeto e deixe o formato atual como o caso principal.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "users.fixed.js",
+                code: [
+                  "function readUser(doc) {",
+                  "  let phones;",
+                  "  if (Array.isArray(doc.contacts)) phones = doc.contacts.filter((c) => c.kind === \"phone\").map((c) => c.value);   // atual",
+                  "  else if (Array.isArray(doc.phones)) phones = doc.phones;                                                         // 2ª época",
+                  "  else if (typeof doc.phone === \"string\") phones = [doc.phone];                                                    // 1ª época",
+                  "  else if (!(\"phone\" in doc || \"phones\" in doc || \"contacts\" in doc)) phones = [];                                // sem telefone",
+                  "  else throw new Error(`formato de usuário desconhecido: ${doc._id}`);",
+                  "  return { id: doc._id, name: doc.name, phones };",
+                  "}",
+                  "",
+                  "const profile = (user) => readUser(user);",
+                  "users.map(profile);",
+                  "// [{ id: 1, name: \"Ana\", phones: [\"+55 81 99999-0000\"] },",
+                  "//  { id: 2, name: \"Bruno\", phones: [\"+55 11 98888-0000\", \"+55 11 3333-0000\"] },",
+                  "//  { id: 3, name: \"Carla\", phones: [\"+55 21 97777-0000\"] }]",
+                  "",
+                  "// Para aposentar os formatos antigos: toda gravação passa a escrever no formato atual (os documentos",
+                  "// se atualizam quando são editados) e um job regrava, em lotes, os que restarem; quando uma consulta",
+                  "// não encontrar mais `phone` nem `phones`, os dois ramos podem sair.",
+                ].join("\n"),
+              },
+              explanation:
+                "A tela passou a depender de uma função que conhece todas as épocas, em vez de supor o formato atual. O " +
+                "erro explícito para formatos desconhecidos é melhor que um `undefined` que quebra longe dali. A migração " +
+                "gradual reduz os formatos a um só, e com isso o código de compatibilidade pode sair.",
+            },
+          },
+        }),
+        concept({
+          order: 40,
+          title: "Choosing SQL vs NoSQL",
+          requires: ["NoSQL Data Models (KV / Document / Wide-Column / Graph)"],
+          note: "polyglot persistence; NoSQL não é 'sem trade-off'",
+          summary:
+            "Decidir onde guardar cada tipo de dado a partir dos padrões de acesso, das garantias necessárias e do " +
+            "volume esperado — com o banco relacional como ponto de partida razoável e outros modelos entrando onde " +
+            "resolvem um problema concreto.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Escolher entre SQL e NoSQL não é escolher um lado para o sistema inteiro. É decidir, para cada conjunto " +
+                "de dados, qual modelo atende melhor às perguntas que ele precisa responder e às garantias de que ele " +
+                "precisa. Um mesmo sistema costuma usar mais de um banco — um relacional para pedidos e pagamentos, um " +
+                "chave-valor para sessões e cache, um índice de busca para o catálogo — o que se chama persistência " +
+                "poliglota. Cada banco a mais resolve um problema e traz outro: mais uma coisa para operar, monitorar e " +
+                "manter consistente com as demais.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Comece pelo banco relacional e acrescente outro modelo quando um padrão de acesso concreto, medido, " +
+                "pedir por ele: nenhuma das opções é \"sem trade-off\", e cada banco a mais custa operação e consistência " +
+                "entre eles.",
+            },
+            { type: "heading", text: "Como fazer" },
+            {
+              type: "list",
+              items: [
+                "Liste as perguntas que o sistema precisa responder e com que frequência: busca por chave, consultas variadas, relatórios, relações em vários níveis.",
+                "Liste as garantias: transações entre vários registros, integridade referencial, consistência imediata depois de gravar.",
+                "Estime o volume e o crescimento de leitura e escrita, e o que uma máquina bem configurada ainda atende.",
+                "Prefira o relacional (com índices, réplicas de leitura e colunas JSON) enquanto ele der conta; leve para outro modelo só o conjunto de dados que tem um motivo concreto para isso.",
+              ],
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "polyglot.js",
+              code: [
+                "import pg from \"pg\";",
+                "import { createClient } from \"redis\";",
+                "",
+                "const db = new pg.Pool();                       // pedidos, pagamentos, estoque: transações e integridade",
+                "const cache = await createClient().connect();   // sessões e cache: acesso por chave, com expiração",
+                "",
+                "async function getProduct(id) {",
+                "  const cached = await cache.get(`product:${id}`);",
+                "  if (cached) return JSON.parse(cached);",
+                "  const { rows: [product] } = await db.query(\"SELECT id, name, price_cents FROM products WHERE id = $1\", [id]);",
+                "  if (product) await cache.set(`product:${id}`, JSON.stringify(product), { EX: 300 });   // cópia por 5 min",
+                "  return product ?? null;",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A fonte da verdade continua no banco relacional; o Redis guarda uma cópia para leituras rápidas, e a " +
+                "expiração limita quanto tempo ela pode ficar desatualizada. Cada dado tem um dono claro, o que é a " +
+                "condição para a persistência poliglota não virar dados divergentes.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "Escolher um banco de documentos para dados muito relacionados, consultados de muitas formas, leva a junções manuais na aplicação e a cópias difíceis de manter em dia.",
+                "Justificar a troca pela escala que o sistema talvez tenha um dia: a maioria das aplicações cabe com folga em um banco relacional bem indexado.",
+                "Gravar o mesmo dado em dois bancos, em sequência, sem uma estratégia para falhas no meio: um dos dois acaba divergindo (a transação de um não cobre o outro).",
+                "Subestimar o custo de operar mais um banco: backup, monitoramento, atualização e o conhecimento do time sobre ele.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "O meio-termo: JSON dentro do relacional",
+              context:
+                "O PostgreSQL guarda documentos em colunas `jsonb` e os indexa, sem abrir mão de transações e `JOIN`s.",
+              code: {
+                language: "text",
+                filename: "jsonb.sql",
+                code: [
+                  "CREATE TABLE products (",
+                  "  id          bigint PRIMARY KEY,",
+                  "  title       text   NOT NULL,",
+                  "  price_cents int    NOT NULL CHECK (price_cents >= 0),",
+                  "  attributes  jsonb  NOT NULL DEFAULT '{}'",
+                  ");",
+                  "",
+                  "-- índice que atende a buscas por conteúdo do documento",
+                  "CREATE INDEX idx_products_attributes ON products USING gin (attributes);",
+                  "",
+                  "SELECT id, title FROM products WHERE attributes @> '{\"size\": \"M\"}';   -- usa o índice GIN",
+                  "",
+                  "-- e o resto continua relacional: chave estrangeira, JOIN, transação",
+                  "SELECT p.title, s.quantity FROM products p JOIN stock s ON s.product_id = p.id WHERE p.attributes @> '{\"size\": \"M\"}';",
+                ].join("\n"),
+              },
+              explanation:
+                "Muitos casos que parecem pedir um banco de documentos — atributos variáveis, dados de integrações — " +
+                "cabem numa coluna `jsonb`. O sistema continua com um banco só, e as partes que precisam de rigidez " +
+                "mantêm as suas colunas, tipos e restrições.",
+            },
+            {
+              title: "Dois bancos, uma gravação que pode falhar no meio",
+              context:
+                "Escrever no relacional e depois no índice de busca, em sequência, deixa uma janela para divergir.",
+              code: {
+                language: "javascript",
+                filename: "dual-write.js",
+                code: [
+                  "// Frágil: se a segunda escrita falhar, o produto existe no banco e não aparece na busca",
+                  "async function createProductFragile(product) {",
+                  "  await db.query(\"INSERT INTO products (id, title, price_cents) VALUES ($1, $2, $3)\", [product.id, product.title, product.priceCents]);",
+                  "  await search.index({ index: \"products\", id: product.id, document: product });   // pode falhar",
+                  "}",
+                  "",
+                  "// Mais seguro: o banco relacional é a fonte da verdade, e o pedido de indexação é gravado na MESMA transação",
+                  "async function createProduct(product) {",
+                  "  const client = await db.connect();",
+                  "  try {",
+                  "    await client.query(\"BEGIN\");",
+                  "    await client.query(\"INSERT INTO products (id, title, price_cents) VALUES ($1, $2, $3)\", [product.id, product.title, product.priceCents]);",
+                  "    await client.query(\"INSERT INTO outbox (topic, payload) VALUES ('product.upserted', $1)\", [JSON.stringify(product)]);",
+                  "    await client.query(\"COMMIT\");",
+                  "  } catch (error) {",
+                  "    await client.query(\"ROLLBACK\");",
+                  "    throw error;",
+                  "  } finally {",
+                  "    client.release();",
+                  "  }",
+                  "  // um processo separado lê a outbox e atualiza o índice de busca, repetindo até conseguir",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Uma transação não atravessa dois bancos. Gravar o pedido de sincronização na mesma transação do dado (o " +
+                "padrão outbox) garante que ele não se perde; o índice de busca fica alguns instantes atrás, mas chega ao " +
+                "mesmo estado.",
+            },
+            {
+              title: "A escolha pela ferramenta, e não pelo acesso",
+              context: "Um sistema de dados muito relacionados, levado para um banco de documentos por preferência.",
+              code: {
+                language: "text",
+                filename: "wrong-fit.txt",
+                code: [
+                  "Sistema: gestão escolar — alunos, turmas, professores, disciplinas, matrículas, notas.",
+                  "Perguntas: \"notas do aluno X em todas as disciplinas\", \"alunos da turma Y com nota < 6\",",
+                  "           \"turmas do professor Z\", \"média por disciplina e semestre\"... e novas a cada mês.",
+                  "",
+                  "Em documentos, cada pergunta pedia uma forma diferente dos dados:",
+                  "  - aluno com as notas embutidas   → ótimo para o boletim, ruim para a média da turma",
+                  "  - turma com os alunos embutidos  → ótimo para a chamada, e o nome do aluno repetido em 8 turmas",
+                  "  - $lookup para juntar coleções   → a junção do relacional, feita sem os seus índices e otimizador",
+                  "",
+                  "Sinais de que o dado é relacional: muitas entidades ligadas entre si, perguntas variadas e",
+                  "imprevisíveis, e regras de integridade (matrícula só de aluno e turma existentes).",
+                ].join("\n"),
+              },
+              explanation:
+                "Os bancos de documentos são excelentes quando o acesso é previsível e gira em torno de agregados. Quando " +
+                "as perguntas atravessam as entidades de muitas formas, o relacional é justamente a ferramenta feita para " +
+                "isso, e contorná-lo só troca `JOIN`s por código e cópias.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Uma plataforma de cursos está desenhando a sua persistência e listou quatro necessidades. O time quer " +
+              "uma recomendação de onde guardar cada uma, com o motivo, sem adotar mais bancos do que o necessário.",
+            problemCode: {
+              language: "javascript",
+              filename: "needs.js",
+              code: [
+                "const needs = [",
+                "  { id: \"billing\",  what: \"Assinaturas, faturas e pagamentos; relatórios contábeis; nada pode ficar pela metade.\" },",
+                "  { id: \"sessions\", what: \"Sessões de login e limite de requisições por usuário; leitura a cada requisição; expiram sozinhas.\" },",
+                "  { id: \"progress\", what: \"Progresso de cada aluno em cada aula (evento a cada 10 s de vídeo); milhões de escritas por dia; lido por aluno e curso.\" },",
+                "  { id: \"catalog\",  what: \"Cursos com atributos variáveis por tipo (vídeo, livro, trilha); busca por texto no título e na descrição.\" },",
+                "];",
+              ].join("\n"),
+            },
+            task:
+              "Para cada necessidade, recomende o modelo (e um exemplo de banco), com o motivo em uma frase, e diga " +
+              "quais delas você manteria no mesmo banco relacional no início.",
+            hint:
+              "Pergunte, para cada uma: precisa de transação? O acesso é só por chave? O volume de escrita é o " +
+              "problema? A busca é por texto?",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "needs.answer.js",
+                code: [
+                  "const recommendation = {",
+                  "  billing:  { model: \"relacional\", example: \"PostgreSQL\",",
+                  "              why: \"transações entre várias tabelas, integridade e relatórios com consultas variadas\" },",
+                  "  sessions: { model: \"chave-valor\", example: \"Redis\",",
+                  "              why: \"acesso só pela chave, a cada requisição, com expiração nativa\" },",
+                  "  progress: { model: \"relacional no início; colunas largas se o volume passar do que ele atende\", example: \"PostgreSQL → Cassandra\",",
+                  "              why: \"escrita intensa lida por aluno e curso; uma tabela particionada com índice (aluno, curso) atende por muito tempo\" },",
+                  "  catalog:  { model: \"relacional com jsonb + busca textual; índice de busca dedicado se a busca ficar sofisticada\", example: \"PostgreSQL (tsvector) → OpenSearch\",",
+                  "              why: \"atributos variáveis cabem em jsonb, e a busca por texto começa com o recurso nativo do banco\" },",
+                  "};",
+                  "",
+                  "// No início: billing, progress e catalog no mesmo PostgreSQL; Redis só para sessões e limites.",
+                  "// Cada banco novo entra quando uma medição mostrar que o atual não dá conta — e com um dono claro para cada dado.",
+                ].join("\n"),
+              },
+              explanation:
+                "Só as sessões têm um motivo imediato para outro banco: acesso por chave com expiração, lido a cada " +
+                "requisição. Para o progresso e o catálogo, o relacional atende no começo, e os bancos especializados " +
+                "ficam como próximo passo, disparado por medições. Assim o sistema começa com dois bancos, e não com " +
+                "quatro.",
+            },
+          },
+        }),
       ],
     }),
     module({
