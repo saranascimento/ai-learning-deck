@@ -9677,7 +9677,7 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text: "A regra de negócio vem da conversa com quem conhece o domínio, e não de uma decisão técnica.",
+              text: "Uma regra que ninguém do negócio reconhece é uma suposição da equipe, e não uma regra do domínio.",
             },
             { type: "heading", text: "Por que importa" },
             {
