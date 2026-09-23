@@ -1516,6 +1516,15 @@ for (const area of model.areas()) {
     "nosql-data-models-kv-document-wide-column-graph",
     "schema-on-read",
     "choosing-sql-vs-nosql",
+    "cache",
+    "ttl",
+    "cache-invalidation",
+    "cache-eviction-lru-lfu-fifo",
+    "cache-aside",
+    "read-through-write-through-write-behind",
+    "in-memory-data-store",
+    "browser-and-http-cache",
+    "cdn",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",

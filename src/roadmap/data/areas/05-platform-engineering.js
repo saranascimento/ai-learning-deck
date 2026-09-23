@@ -16167,13 +16167,1617 @@ export default area({
           subtopics: ["hit / miss", "hit ratio", "cold/warm"],
           note: "canônico p/ todo o roadmap. Memoization = cache em processo (revisita Programming Foundations / Algorithms & Complexity). Absorve Cache Hit / Miss",
           revisit: ["Programming Foundations / Algorithms & Complexity / Memoization"],
+          summary:
+            "Uma cópia de dados guardada num lugar mais rápido ou mais próximo de quem lê, para responder de novo sem " +
+            "refazer um trabalho caro — ao custo de a cópia poder estar desatualizada em relação à fonte.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Um cache guarda o resultado de algo caro — uma consulta, uma chamada a outra API, um cálculo, um arquivo " +
+                "distante — para reaproveitá-lo nas próximas vezes. Quando o dado pedido está no cache, é um acerto " +
+                "(hit); quando não está, é uma falta (miss), e o dado vem da fonte e costuma ser guardado para a próxima. " +
+                "A proporção de acertos (hit ratio) mede quanto o cache ajuda. Caches existem em todas as camadas: a " +
+                "memoização dentro de uma função, a memória do processo, um servidor como o Redis, o navegador e as CDNs.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Todo cache troca atualidade por velocidade: ele responde mais rápido porque não pergunta à fonte, e por " +
+                "isso pode devolver algo que já mudou — a pergunta de projeto é quanto tempo de defasagem cada dado " +
+                "tolera.",
+            },
+            { type: "heading", text: "Por que importa" },
+            {
+              type: "paragraph",
+              text:
+                "Em muitos sistemas, a maior parte das leituras pede os mesmos poucos dados: a página inicial, os " +
+                "produtos mais vistos, a configuração da aplicação. Um cache bem colocado corta a latência dessas " +
+                "leituras e a carga sobre a fonte. Mal colocado, ele mostra dados velhos, consome memória com o que " +
+                "ninguém relê e esconde da fonte uma carga que volta de uma vez quando o cache se esvazia.",
+            },
+            { type: "heading", text: "Na prática" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "cache.js",
+              code: [
+                "// Um cache em memória na frente de uma busca lenta, contando acertos e faltas",
+                "function withCache(load) {",
+                "  const store = new Map();",
+                "  const stats = { hits: 0, misses: 0 };",
+                "  async function get(key) {",
+                "    if (store.has(key)) {",
+                "      stats.hits++;",
+                "      return store.get(key);",
+                "    }",
+                "    stats.misses++;",
+                "    const value = await load(key);   // a fonte: banco, outra API, cálculo caro",
+                "    store.set(key, value);",
+                "    return value;",
+                "  }",
+                "  const hitRatio = () => stats.hits / (stats.hits + stats.misses || 1);",
+                "  return { get, stats, hitRatio };",
+                "}",
+                "",
+                "const products = withCache(async (id) => ({ id, name: `Produto ${id}` }));   // imagine uma consulta de 40 ms",
+                "",
+                "for (const id of [1, 2, 1, 1, 3, 2, 1]) await products.get(id);",
+                "products.stats;        // { hits: 4, misses: 3 }",
+                "products.hitRatio();   // 0.571…",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A memoização é o mesmo mecanismo, dentro de uma função pura: o resultado de cada combinação de " +
+                "argumentos é guardado. Fora de funções puras, o cache precisa responder a perguntas que a memoização não " +
+                "tinha: quando a cópia fica velha, o que descartar quando a memória acaba e como avisar que a fonte " +
+                "mudou.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "Colocar em cache um dado que muda a cada leitura, ou que ninguém relê, só gasta memória e acrescenta um lugar onde o dado pode estar errado.",
+                "Um cache frio (vazio, depois de reiniciar ou de um deploy) manda todas as leituras para a fonte ao mesmo tempo; a fonte precisa aguentar esse pico.",
+                "Guardar dados de um usuário num cache compartilhado, com uma chave que não inclui o usuário, entrega os dados de uma pessoa para outra.",
+                "Um cache que esconde uma consulta lenta não a corrige: quando ele falha ou esvazia, a lentidão volta toda de uma vez.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "O efeito da taxa de acertos",
+              context: "O ganho do cache depende de quantas leituras ele consegue responder.",
+              code: {
+                language: "javascript",
+                filename: "hit-ratio.js",
+                code: [
+                  "// Latência média = acertos × tempo do cache + faltas × (tempo do cache + tempo da fonte)",
+                  "const averageMs = (hitRatio, cacheMs, sourceMs) =>",
+                  "  Math.round((hitRatio * cacheMs + (1 - hitRatio) * (cacheMs + sourceMs)) * 10) / 10;",
+                  "",
+                  "averageMs(0.0, 1, 40);    // 41   — sem acertos, o cache só acrescenta 1 ms",
+                  "averageMs(0.5, 1, 40);    // 21",
+                  "averageMs(0.9, 1, 40);    // 5",
+                  "averageMs(0.99, 1, 40);   // 1.4",
+                  "",
+                  "// E a carga na fonte cai na mesma proporção: com 90% de acertos, 1.000 leituras viram 100 consultas.",
+                ].join("\n"),
+              },
+              explanation:
+                "Com poucos acertos, o cache quase não ajuda e ainda soma o seu próprio tempo. O ganho aparece de verdade " +
+                "acima de 80% ou 90% de acertos, e por isso a taxa de acertos é a primeira métrica a acompanhar em " +
+                "qualquer cache.",
+            },
+            {
+              title: "Cache frio depois de um deploy",
+              context: "Um cache em memória do processo começa vazio a cada reinício.",
+              code: {
+                language: "text",
+                filename: "cold-cache.txt",
+                code: [
+                  "Antes do deploy:  12 instâncias, cache aquecido, 95% de acertos",
+                  "                  → o banco recebe 5% das leituras: ~500 consultas/s",
+                  "",
+                  "Deploy:           as 12 instâncias reiniciam juntas, com o cache vazio",
+                  "                  → nos primeiros segundos, 100% de faltas: ~10.000 consultas/s no banco",
+                  "                  → o banco satura, as respostas demoram, e as requisições se acumulam",
+                  "",
+                  "Como amortecer:",
+                  "  - reiniciar as instâncias aos poucos (rolling deploy), e não todas juntas",
+                  "  - usar um cache compartilhado (ex.: Redis), que sobrevive ao reinício da aplicação",
+                  "  - aquecer o cache com as chaves mais lidas antes de a instância receber tráfego",
+                ].join("\n"),
+              },
+              explanation:
+                "A carga que o cache absorvia não desaparece: fica guardada até ele esvaziar. Planejar o momento em que o " +
+                "cache está frio é parte de usar cache, e não um detalhe de operação.",
+            },
+            {
+              title: "O que vale a pena guardar",
+              context: "Bons candidatos são caros de obter, lidos muitas vezes e mudam pouco.",
+              code: {
+                language: "text",
+                filename: "candidates.txt",
+                code: [
+                  "Dado                                 custo   leituras   muda         cache?",
+                  "-----------------------------------  ------  ---------  -----------  -------------------------",
+                  "configuração da aplicação            médio   todas      raramente    sim, com TTL de minutos",
+                  "página de um produto                 alto    muitas     às vezes     sim, e invalidar ao editar",
+                  "cotação de moeda de um provedor      alto    muitas     a cada min   sim, TTL de 1 minuto",
+                  "saldo da conta na tela de pagamento  baixo   poucas     sempre       não: precisa ser o atual",
+                  "resultado de busca com filtros       alto    variadas   às vezes     só as buscas mais comuns",
+                ].join("\n"),
+              },
+              explanation:
+                "Os três critérios juntos decidem. O saldo antes de um pagamento é o contraexemplo: ler o valor atual é " +
+                "barato e errar custa caro. Já as buscas com filtros variam tanto que o cache acerta pouco, a não ser nas " +
+                "combinações mais populares.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O serviço de frete consulta uma API externa de cotação de moedas a cada cálculo. A API cobra por chamada " +
+              "e demora cerca de 300 ms, e a cotação só muda algumas vezes por hora. O time quer saber se um cache vale " +
+              "a pena.",
+            problemCode: {
+              language: "javascript",
+              filename: "rates.js",
+              code: [
+                "let apiCalls = 0;",
+                "async function fetchRate(currency) {   // a API externa",
+                "  apiCalls++;",
+                "  return { currency, rate: currency === \"USD\" ? 5.4 : 6.1 };",
+                "}",
+                "",
+                "async function shippingInBrl(amount, currency) {",
+                "  const { rate } = await fetchRate(currency);",
+                "  return Math.round(amount * rate * 100) / 100;",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Coloque um cache em memória na frente de `fetchRate`, conte acertos e faltas, e simule 1.000 cálculos " +
+              "com 90% em dólar e 10% em euro. Quantas chamadas à API sobram?",
+            hint: "A chave do cache é a moeda. Conte as faltas: cada uma é uma chamada à API.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "rates.fixed.js",
+                code: [
+                  "const rateCache = new Map();",
+                  "const stats = { hits: 0, misses: 0 };",
+                  "",
+                  "async function cachedRate(currency) {",
+                  "  if (rateCache.has(currency)) { stats.hits++; return rateCache.get(currency); }",
+                  "  stats.misses++;",
+                  "  const rate = await fetchRate(currency);",
+                  "  rateCache.set(currency, rate);",
+                  "  return rate;",
+                  "}",
+                  "",
+                  "async function shippingInBrl(amount, currency) {",
+                  "  const { rate } = await cachedRate(currency);",
+                  "  return Math.round(amount * rate * 100) / 100;",
+                  "}",
+                  "",
+                  "for (let i = 0; i < 1000; i++) await shippingInBrl(100, i % 10 === 0 ? \"EUR\" : \"USD\");",
+                  "stats;      // { hits: 998, misses: 2 }",
+                  "apiCalls;   // 2 — uma por moeda",
+                ].join("\n"),
+              },
+              explanation:
+                "Com duas moedas, o cache acerta quase sempre, e as chamadas pagas caem de 1.000 para 2. Falta ainda uma " +
+                "coisa: este cache nunca expira, e a cotação muda ao longo do dia — é o que o TTL resolve, no próximo " +
+                "conceito.",
+            },
+          },
         }),
-        concept({ order: 20, title: "TTL", requires: ["Cache"], collision: "TTL de cache ≠ TTL de DNS (Web Fundamentals) ≠ TTL de pacote IP" }),
-        concept({ order: 30, title: "Cache Invalidation", requires: ["Cache"], note: "o problema difícil; invalidação por evento × por tempo" }),
-        concept({ order: 40, title: "Cache Eviction (LRU / LFU / FIFO)", requires: ["Cache"], subtopics: ["LRU", "LFU", "FIFO", "random", "pressão de memória × staleness"], note: "consolidada (A12) — absorve LRU" }),
-        concept({ order: 50, title: "Cache-Aside", requires: ["Cache Invalidation"], note: "padrão mais comum; app orquestra" }),
-        concept({ order: 60, title: "Read-Through / Write-Through / Write-Behind", requires: ["Cache"], subtopics: ["read-through", "write-through", "write-behind/write-back (risco de perda)"], note: "consolidada (A19)" }),
-        concept({ order: 70, title: "In-Memory Data Store", requires: ["Cache"], subtopics: ["Redis", "Valkey", "Memcached"], note: "arquétipo: single-thread, estruturas de dados, persistência, uso como cache × store" }),
+        concept({
+          order: 20,
+          title: "TTL",
+          requires: ["Cache"],
+          note: "tempo de vida de uma entrada de cache — depois dele, a cópia é descartada ou revalidada",
+          collision: "TTL de cache ≠ TTL de DNS (Web Fundamentals) ≠ TTL de pacote IP",
+          summary:
+            "O tempo de vida de uma entrada no cache: passado esse prazo, ela deixa de valer e a próxima leitura vai " +
+            "à fonte — a forma mais simples de limitar por quanto tempo um dado em cache pode estar desatualizado.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "TTL (time to live) é o prazo de validade de cada entrada. Ao guardar um valor, o cache anota até quando " +
+                "ele vale; ao ler, confere o prazo e trata uma entrada vencida como se não existisse. O TTL não descobre " +
+                "que a fonte mudou: ele só garante que nenhuma cópia fica mais velha do que o prazo. O mesmo nome aparece " +
+                "em outros lugares com sentidos parecidos, como o tempo que um resolvedor guarda uma resposta de DNS e o " +
+                "número de saltos de um pacote IP.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "O TTL é o máximo de defasagem que se aceita para um dado: escolha-o pela pergunta \"por quanto tempo tudo " +
+                "bem mostrar o valor antigo?\", dado a dado, e não por um número padrão para o cache inteiro.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "ttl.js",
+              code: [
+                "// Cache com prazo de validade; o relógio é injetado para poder ser testado",
+                "function createTtlCache({ now = () => Date.now() } = {}) {",
+                "  const store = new Map();",
+                "  return {",
+                "    set(key, value, ttlMs) {",
+                "      store.set(key, { value, expiresAt: now() + ttlMs });",
+                "    },",
+                "    get(key) {",
+                "      const entry = store.get(key);",
+                "      if (!entry) return undefined;",
+                "      if (now() >= entry.expiresAt) {",
+                "        store.delete(key);   // vencida: tratada como falta",
+                "        return undefined;",
+                "      }",
+                "      return entry.value;",
+                "    },",
+                "  };",
+                "}",
+                "",
+                "let clock = 0;",
+                "const cache = createTtlCache({ now: () => clock });",
+                "cache.set(\"rate:USD\", 5.4, 60_000);   // vale 1 minuto",
+                "",
+                "clock = 30_000;",
+                "cache.get(\"rate:USD\");   // 5.4",
+                "clock = 60_000;",
+                "cache.get(\"rate:USD\");   // undefined — venceu, a próxima leitura busca a cotação nova",
+              ].join("\n"),
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Para dados que mudam na fonte sem que o sistema seja avisado, como cotações, previsões e respostas de APIs de terceiros.",
+                "Como rede de segurança junto da invalidação por evento: se um aviso de mudança se perder, a cópia errada vence em algum momento.",
+                "Com prazos diferentes por tipo de dado, de acordo com quanta defasagem cada um tolera.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Dados que precisam estar sempre atuais, como saldo e estoque na hora da compra, não toleram nenhum TTL; leia da fonte.",
+                "TTL curto demais derruba a taxa de acertos; longo demais mostra dados velhos por muito tempo. Não existe um valor bom para tudo.",
+                "Muitas entradas criadas ao mesmo tempo, com o mesmo TTL, vencem juntas e mandam uma rajada de leituras para a fonte.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Um TTL por tipo de dado",
+              context: "Cada dado tem a sua tolerância à defasagem.",
+              code: {
+                language: "javascript",
+                filename: "ttl-per-kind.js",
+                code: [
+                  "const TTL = {",
+                  "  exchangeRate: 60 * 1000,             // 1 min: o provedor atualiza a cada minuto",
+                  "  productPage: 10 * 60 * 1000,         // 10 min: e é invalidada quando alguém edita o produto",
+                  "  featureFlags: 30 * 1000,             // 30 s: desligar uma função com problema não pode demorar",
+                  "  countryList: 24 * 60 * 60 * 1000,    // 1 dia: quase nunca muda",
+                  "};",
+                  "",
+                  "cache.set(`rate:${currency}`, rate, TTL.exchangeRate);",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada prazo responde à pergunta \"quanto tempo tudo bem mostrar o valor antigo?\". As flags de " +
+                "funcionalidade são o caso interessante: mudam pouco, mas quando mudam é porque algo precisa ser " +
+                "desligado rápido.",
+            },
+            {
+              title: "Espalhar os vencimentos",
+              context: "Entradas criadas juntas, com o mesmo TTL, vencem juntas.",
+              code: {
+                language: "javascript",
+                filename: "jitter.js",
+                code: [
+                  "// Sem variação: as 10.000 páginas aquecidas às 9h vencem todas às 9h10",
+                  "const fixedTtl = () => 10 * 60 * 1000;",
+                  "",
+                  "// Com variação (jitter): cada uma vence entre 9 e 11 minutos depois",
+                  "const jitteredTtl = (baseMs, spread = 0.1) => Math.round(baseMs * (1 - spread + Math.random() * 2 * spread));",
+                  "",
+                  "const samples = Array.from({ length: 5 }, () => jitteredTtl(10 * 60 * 1000));",
+                  "samples.every((ms) => ms >= 540_000 && ms <= 660_000);   // true — vencimentos espalhados por 2 minutos",
+                ].join("\n"),
+              },
+              explanation:
+                "Um aquecimento em massa, ou um pico de tráfego, cria muitas entradas ao mesmo tempo. Com o mesmo TTL, " +
+                "todas vencem juntas, e a fonte recebe de uma vez as leituras que o cache vinha absorvendo. Uma pequena " +
+                "variação aleatória espalha esses vencimentos.",
+            },
+            {
+              title: "Guardar também o \"não encontrado\"",
+              context: "Buscas repetidas por algo que não existe também custam uma ida à fonte.",
+              code: {
+                language: "javascript",
+                filename: "negative-cache.js",
+                code: [
+                  "const NOT_FOUND = Symbol(\"not-found\");",
+                  "",
+                  "async function findCoupon(code) {",
+                  "  const cached = cache.get(`coupon:${code}`);",
+                  "  if (cached === NOT_FOUND) return null;",
+                  "  if (cached !== undefined) return cached;",
+                  "  const coupon = await db.findCoupon(code);",
+                  "  if (coupon) cache.set(`coupon:${code}`, coupon, 10 * 60 * 1000);",
+                  "  else cache.set(`coupon:${code}`, NOT_FOUND, 30 * 1000);   // \"não existe\", com prazo curto",
+                  "  return coupon;",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Um robô testando códigos de cupom geraria uma consulta por tentativa. Guardar o \"não encontrado\" por " +
+                "pouco tempo (cache negativo) absorve as repetições; o prazo curto garante que um cupom criado agora " +
+                "apareça em segundos.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O cache de cotações do serviço de frete nunca expira: uma cotação guardada de manhã continua sendo usada " +
+              "à noite. Os testes do cache, por sua vez, teriam de esperar minutos reais para ver algo vencer.",
+            problemCode: {
+              language: "javascript",
+              filename: "rate-cache.js",
+              code: [
+                "const rateCache = new Map();",
+                "",
+                "async function cachedRate(currency, fetchRate) {",
+                "  if (rateCache.has(currency)) return rateCache.get(currency);",
+                "  const rate = await fetchRate(currency);",
+                "  rateCache.set(currency, rate);",
+                "  return rate;",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Acrescente um TTL de 1 minuto às cotações, com o relógio injetável, e escreva um teste que mostre: " +
+              "dentro do prazo, uma chamada à API; depois do prazo, uma nova chamada.",
+            hint: "Guarde `{ value, expiresAt }` e receba uma função `now` como parâmetro, com `Date.now` como padrão.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "rate-cache.fixed.js",
+                code: [
+                  "function createRateCache({ ttlMs = 60_000, now = () => Date.now() } = {}) {",
+                  "  const store = new Map();",
+                  "  return async function cachedRate(currency, fetchRate) {",
+                  "    const entry = store.get(currency);",
+                  "    if (entry && now() < entry.expiresAt) return entry.value;",
+                  "    const value = await fetchRate(currency);",
+                  "    store.set(currency, { value, expiresAt: now() + ttlMs });",
+                  "    return value;",
+                  "  };",
+                  "}",
+                  "",
+                  "// Teste com relógio falso",
+                  "let clock = 0;",
+                  "let calls = 0;",
+                  "const fetchRate = async () => { calls++; return 5.4; };",
+                  "const cachedRate = createRateCache({ now: () => clock });",
+                  "",
+                  "await cachedRate(\"USD\", fetchRate);    // calls = 1",
+                  "clock = 59_999;",
+                  "await cachedRate(\"USD\", fetchRate);    // calls = 1 — ainda dentro do prazo",
+                  "clock = 60_000;",
+                  "await cachedRate(\"USD\", fetchRate);    // calls = 2 — venceu, buscou de novo",
+                  "calls;   // 2",
+                ].join("\n"),
+              },
+              explanation:
+                "Com o prazo, nenhuma cotação usada tem mais de um minuto. Injetar o relógio torna o comportamento " +
+                "testável em milissegundos, sem `setTimeout` nem espera real; em produção, o padrão continua sendo " +
+                "`Date.now`.",
+            },
+          },
+        }),
+        concept({
+          order: 30,
+          title: "Cache Invalidation",
+          requires: ["Cache"],
+          note: "o problema difícil; invalidação por evento × por tempo",
+          summary:
+            "Tirar do cache — ou marcar como velha — uma cópia cujo dado mudou na fonte, seja por tempo (TTL), seja " +
+            "por evento (a escrita avisa o cache), e fazer isso sem corridas que deixem uma cópia antiga para trás.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Invalidar é garantir que, depois que a fonte muda, o cache pare de devolver o valor antigo. Há dois " +
+                "caminhos. Por tempo: cada cópia tem um TTL e some sozinha, com a defasagem limitada pelo prazo. Por " +
+                "evento: quem altera o dado apaga (ou atualiza) as cópias afetadas, e a defasagem cai para quase zero. A " +
+                "parte difícil é saber quais cópias um dado afeta — o produto aparece na sua página, na listagem da " +
+                "categoria, na busca, no carrinho — e fazer a remoção sem que uma leitura concorrente grave de volta o " +
+                "valor antigo.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Prefira apagar a cópia a atualizá-la, invalide tudo o que deriva do dado alterado e mantenha um TTL como " +
+                "rede de segurança: a invalidação por evento vai falhar em algum momento, e o prazo limita quanto tempo o " +
+                "erro dura.",
+            },
+            { type: "heading", text: "Por que importa" },
+            {
+              type: "paragraph",
+              text:
+                "Cache sem invalidação correta mostra preço antigo, estoque que já acabou e permissão que foi retirada. " +
+                "Esses erros são difíceis de reproduzir, porque dependem da ordem em que leituras e escritas aconteceram, " +
+                "e somem sozinhos quando a cópia vence — o que faz parecerem aleatórios.",
+            },
+            { type: "heading", text: "Na prática" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "invalidate-on-write.js",
+              code: [
+                "const cache = new Map();",
+                "const db = new Map([[1, { id: 1, name: \"Caneca\", priceCents: 3500 }]]);",
+                "",
+                "function getProduct(id) {",
+                "  if (cache.has(`product:${id}`)) return cache.get(`product:${id}`);",
+                "  const product = db.get(id);",
+                "  cache.set(`product:${id}`, product);",
+                "  return product;",
+                "}",
+                "",
+                "function updatePrice(id, priceCents) {",
+                "  db.set(id, { ...db.get(id), priceCents });   // 1. grava na fonte",
+                "  cache.delete(`product:${id}`);               // 2. apaga a cópia: a próxima leitura busca o valor novo",
+                "}",
+                "",
+                "getProduct(1).priceCents;   // 3500 (e agora está no cache)",
+                "updatePrice(1, 4200);",
+                "getProduct(1).priceCents;   // 4200",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Apagar, em vez de gravar o valor novo no cache, evita que duas atualizações simultâneas deixem no cache " +
+                "a que terminou primeiro, e evita calcular uma cópia que talvez ninguém leia.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "Invalidar só a chave óbvia: o dado alterado costuma aparecer em outras cópias (listas, buscas, agregados), que continuam velhas.",
+                "Uma leitura que começou antes da escrita pode gravar no cache o valor antigo depois da invalidação; um TTL limita quanto tempo esse erro dura.",
+                "Invalidar dentro de uma transação que depois é desfeita remove uma cópia correta; faça-o depois do `COMMIT`.",
+                "Com várias instâncias, cada uma com um cache em memória, apagar a cópia em uma não apaga nas outras; é preciso um cache compartilhado ou um aviso a todas.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "A corrida que deixa o valor velho",
+              context: "Uma leitura lenta começa antes da atualização e termina depois dela.",
+              code: {
+                language: "javascript",
+                filename: "stale-race.js",
+                code: [
+                  "const cache = new Map();",
+                  "const db = new Map([[1, { priceCents: 3500 }]]);",
+                  "",
+                  "// Leitura em dois passos, com a busca na fonte \"demorando\"",
+                  "function startRead(id) {",
+                  "  const value = db.get(id);   // lê 3500 da fonte...",
+                  "  return () => cache.set(`product:${id}`, value);   // ...e só grava no cache mais tarde",
+                  "}",
+                  "",
+                  "const finishRead = startRead(1);      // A: leu 3500",
+                  "db.set(1, { priceCents: 4200 });      // B: atualiza a fonte",
+                  "cache.delete(\"product:1\");            // B: invalida",
+                  "finishRead();                         // A: grava 3500 no cache, DEPOIS da invalidação",
+                  "",
+                  "cache.get(\"product:1\").priceCents;    // 3500 — velho, até alguém invalidar de novo ou o TTL vencer",
+                ].join("\n"),
+              },
+              explanation:
+                "Nenhum passo está errado sozinho; o problema é a ordem. Soluções comuns: um TTL curto como limite, " +
+                "apagar de novo alguns instantes depois da escrita (invalidação atrasada), ou guardar junto a versão do " +
+                "dado e recusar gravar uma versão mais antiga que a atual.",
+            },
+            {
+              title: "Versionar a chave para invalidar um grupo",
+              context:
+                "Invalidar muitas chaves de uma vez apagando uma a uma é caro; trocar a versão do grupo é instantâneo.",
+              code: {
+                language: "javascript",
+                filename: "versioned-keys.js",
+                code: [
+                  "const cache = new Map();",
+                  "let catalogVersion = 1;   // num cache compartilhado, este número também fica no cache",
+                  "",
+                  "const key = (suffix) => `catalog:v${catalogVersion}:${suffix}`;",
+                  "",
+                  "cache.set(key(\"category:5:page:1\"), [\"Caneca\", \"Copo\"]);",
+                  "cache.set(key(\"category:5:page:2\"), [\"Garrafa\"]);",
+                  "cache.set(key(\"search:caneca\"), [\"Caneca\"]);",
+                  "",
+                  "// Reajuste geral de preços: em vez de apagar cada chave, muda a versão",
+                  "catalogVersion++;",
+                  "",
+                  "cache.get(key(\"category:5:page:1\"));   // undefined — as chaves antigas não são mais lidas",
+                  "// as entradas da versão 1 continuam na memória até serem descartadas (TTL ou despejo)",
+                ].join("\n"),
+              },
+              explanation:
+                "Mudar a versão faz todas as leituras procurarem chaves novas, e as antigas ficam órfãs até sumirem por " +
+                "TTL ou por falta de espaço. É útil para invalidar conjuntos grandes ou difíceis de listar, como todas as " +
+                "páginas de listagem e de busca de um catálogo.",
+            },
+            {
+              title: "Invalidar o que deriva do dado",
+              context: "O preço de um produto também aparece na listagem da categoria.",
+              code: {
+                language: "javascript",
+                filename: "tags.js",
+                code: [
+                  "const cache = new Map();",
+                  "const tagIndex = new Map();   // tag → chaves que dependem dela",
+                  "",
+                  "function setWithTags(key, value, tags) {",
+                  "  cache.set(key, value);",
+                  "  for (const tag of tags) {",
+                  "    if (!tagIndex.has(tag)) tagIndex.set(tag, new Set());",
+                  "    tagIndex.get(tag).add(key);",
+                  "  }",
+                  "}",
+                  "",
+                  "function invalidateTag(tag) {",
+                  "  for (const key of tagIndex.get(tag) ?? []) cache.delete(key);",
+                  "  tagIndex.delete(tag);",
+                  "}",
+                  "",
+                  "setWithTags(\"product:1\", { name: \"Caneca\", priceCents: 3500 }, [\"product:1\"]);",
+                  "setWithTags(\"category:5:page:1\", [{ id: 1, priceCents: 3500 }, { id: 2, priceCents: 1900 }], [\"category:5\", \"product:1\", \"product:2\"]);",
+                  "",
+                  "invalidateTag(\"product:1\");   // apaga a página do produto E a listagem em que ele aparece",
+                  "[...cache.keys()];            // []",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada cópia é marcada com os dados de que depende, e alterar um dado invalida todas as cópias marcadas " +
+                "com ele. CDNs e bibliotecas de cache oferecem esse mecanismo com o nome de tags ou surrogate keys.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Depois de uma promoção, a página do produto já mostrava o preço novo, mas a listagem da categoria " +
+              "continuou com o preço antigo por uma hora, até o TTL vencer. O código de atualização só apaga a chave do " +
+              "produto.",
+            problemCode: {
+              language: "javascript",
+              filename: "promo.js",
+              code: [
+                "const cache = new Map();",
+                "const db = {",
+                "  products: new Map([[1, { id: 1, categoryId: 5, name: \"Caneca\", priceCents: 3500 }], [2, { id: 2, categoryId: 5, name: \"Copo\", priceCents: 1900 }]]),",
+                "};",
+                "",
+                "function getProduct(id) {",
+                "  const key = `product:${id}`;",
+                "  if (!cache.has(key)) cache.set(key, db.products.get(id));",
+                "  return cache.get(key);",
+                "}",
+                "",
+                "function getCategoryPage(categoryId) {",
+                "  const key = `category:${categoryId}`;",
+                "  if (!cache.has(key)) cache.set(key, [...db.products.values()].filter((p) => p.categoryId === categoryId));",
+                "  return cache.get(key);",
+                "}",
+                "",
+                "function updatePrice(id, priceCents) {",
+                "  db.products.set(id, { ...db.products.get(id), priceCents });",
+                "  cache.delete(`product:${id}`);",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Corrija `updatePrice` para que a página do produto e a listagem da categoria mostrem o preço novo logo " +
+              "depois da atualização, e mostre com leituras antes e depois.",
+            hint:
+              "A listagem depende de todos os produtos da categoria. Ao mudar um produto, apague também a chave da " +
+              "categoria dele.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "promo.fixed.js",
+                code: [
+                  "function updatePrice(id, priceCents) {",
+                  "  const product = db.products.get(id);",
+                  "  db.products.set(id, { ...product, priceCents });",
+                  "  // invalida tudo o que foi calculado a partir deste produto",
+                  "  cache.delete(`product:${id}`);",
+                  "  cache.delete(`category:${product.categoryId}`);",
+                  "}",
+                  "",
+                  "getProduct(1).priceCents;                   // 3500",
+                  "getCategoryPage(5).map((p) => p.priceCents);   // [3500, 1900]",
+                  "",
+                  "updatePrice(1, 2900);",
+                  "",
+                  "getProduct(1).priceCents;                   // 2900",
+                  "getCategoryPage(5).map((p) => p.priceCents);   // [2900, 1900]",
+                ].join("\n"),
+              },
+              explanation:
+                "A listagem é uma cópia derivada: ela depende do produto, e por isso também precisa ser invalidada quando " +
+                "ele muda. Com muitas dependências assim, marcar as cópias com tags evita ter de lembrar de cada chave em " +
+                "cada ponto do código que altera produtos.",
+            },
+          },
+        }),
+        concept({
+          order: 40,
+          title: "Cache Eviction (LRU / LFU / FIFO)",
+          requires: ["Cache"],
+          subtopics: ["LRU", "LFU", "FIFO", "random", "pressão de memória × staleness"],
+          note: "consolidada (A12) — absorve LRU",
+          summary:
+            "A regra que decide o que sai do cache quando ele fica cheio — o menos usado recentemente (LRU), o menos " +
+            "usado no total (LFU), o mais antigo (FIFO) ou um aleatório —, diferente da expiração, que tira o que " +
+            "ficou velho.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Um cache tem memória limitada. Quando ela acaba e é preciso guardar algo novo, uma política de despejo " +
+                "(eviction) escolhe o que sai. LRU (least recently used) tira o item lido há mais tempo, apostando que o " +
+                "que foi usado há pouco será usado de novo. LFU (least frequently used) tira o menos lido no total, " +
+                "protegendo os itens populares. FIFO (first in, first out) tira o mais antigo, sem olhar o uso. Aleatório " +
+                "é o mais simples e, em muitos casos, surpreendentemente bom. Despejo e expiração são coisas diferentes: " +
+                "a expiração remove o que está velho, e o despejo remove o que não cabe, mesmo que ainda esteja válido.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "A política de despejo é uma aposta sobre o futuro: LRU aposta que o que foi usado há pouco volta a ser " +
+                "usado, LFU que o popular continua popular — e a melhor é a que acerta sobre o padrão real de acesso, o " +
+                "que se mede pela taxa de acertos.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "lru.js",
+              code: [
+                "// LRU com Map: o Map lembra a ordem de inserção, e reinserir move a chave para o fim",
+                "class LruCache {",
+                "  constructor(capacity) {",
+                "    this.capacity = capacity;",
+                "    this.map = new Map();",
+                "  }",
+                "  get(key) {",
+                "    if (!this.map.has(key)) return undefined;",
+                "    const value = this.map.get(key);",
+                "    this.map.delete(key);      // \"usado agora\": vai para o fim da fila",
+                "    this.map.set(key, value);",
+                "    return value;",
+                "  }",
+                "  set(key, value) {",
+                "    this.map.delete(key);",
+                "    this.map.set(key, value);",
+                "    if (this.map.size > this.capacity) {",
+                "      const oldest = this.map.keys().next().value;   // o do início é o usado há mais tempo",
+                "      this.map.delete(oldest);",
+                "    }",
+                "  }",
+                "}",
+                "",
+                "const cache = new LruCache(2);",
+                "cache.set(\"a\", 1);",
+                "cache.set(\"b\", 2);",
+                "cache.get(\"a\");        // usa \"a\": agora \"b\" é o menos recente",
+                "cache.set(\"c\", 3);     // cheio: sai \"b\"",
+                "[...cache.map.keys()]; // [\"a\", \"c\"]",
+              ].join("\n"),
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "LRU como padrão para a maioria dos caches: acessos recentes costumam se repetir, e a implementação é simples e barata.",
+                "LFU quando existe um conjunto estável de itens muito populares que não deve ser expulso por uma varredura pontual de itens lidos uma vez só.",
+                "FIFO ou aleatório quando o custo de registrar cada acesso importa mais que alguns pontos de taxa de acertos.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Uma leitura sequencial de muitos itens usados uma vez só (um relatório, uma exportação) empurra para fora do LRU todo o conjunto útil.",
+                "LFU puro guarda para sempre o que foi popular no passado; sem envelhecer as contagens, ele se adapta mal quando o interesse muda.",
+                "Nenhuma política compensa um cache pequeno demais para o conjunto de dados lido com frequência; nesse caso, a taxa de acertos fica baixa com qualquer uma.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "A mesma sequência, políticas diferentes",
+              context: "Medir a taxa de acertos de cada política num padrão de acesso ajuda a escolher.",
+              code: {
+                language: "javascript",
+                filename: "compare-policies.js",
+                code: [
+                  "function simulate(policy, capacity, accesses) {",
+                  "  const cache = new Map();   // chave → { insertedAt, lastUsedAt, uses }",
+                  "  let hits = 0;",
+                  "  accesses.forEach((key, t) => {",
+                  "    if (cache.has(key)) {",
+                  "      hits++;",
+                  "      const e = cache.get(key);",
+                  "      e.lastUsedAt = t;",
+                  "      e.uses++;",
+                  "      return;",
+                  "    }",
+                  "    if (cache.size >= capacity) {",
+                  "      const [victim] = [...cache].sort(([, a], [, b]) =>",
+                  "        policy === \"FIFO\" ? a.insertedAt - b.insertedAt :",
+                  "        policy === \"LRU\" ? a.lastUsedAt - b.lastUsedAt :",
+                  "        a.uses - b.uses || a.lastUsedAt - b.lastUsedAt   // LFU, desempatando pelo menos recente",
+                  "      )[0];",
+                  "      cache.delete(victim);",
+                  "    }",
+                  "    cache.set(key, { insertedAt: t, lastUsedAt: t, uses: 1 });",
+                  "  });",
+                  "  return hits;",
+                  "}",
+                  "",
+                  "// \"home\" é muito popular; no meio, uma varredura de itens lidos uma vez só",
+                  "const accesses = [\"home\", \"p1\", \"home\", \"p2\", \"home\", \"s1\", \"s2\", \"s3\", \"home\", \"p1\", \"home\", \"p2\"];",
+                  "[\"FIFO\", \"LRU\", \"LFU\"].map((policy) => `${policy}: ${simulate(policy, 3, accesses)} acertos`);",
+                  "// [\"FIFO: 3 acertos\", \"LRU: 3 acertos\", \"LFU: 4 acertos\"]",
+                ].join("\n"),
+              },
+              explanation:
+                "A varredura de itens lidos uma vez (`s1`, `s2`, `s3`) expulsou os itens úteis no FIFO e no LRU; o LFU " +
+                "manteve `home`, que tinha muitos usos. Com outro padrão de acesso, o resultado seria outro — por isso a " +
+                "comparação vale com uma amostra do tráfego real.",
+            },
+            {
+              title: "Expirar e despejar são coisas diferentes",
+              context: "No Redis, as duas coisas são configuradas separadamente.",
+              code: {
+                language: "text",
+                filename: "redis-eviction.txt",
+                code: [
+                  "# Limite de memória e política de despejo (redis.conf)",
+                  "maxmemory 2gb",
+                  "maxmemory-policy allkeys-lru      # cheio: tira qualquer chave, pela menor recência",
+                  "# alternativas:",
+                  "#   volatile-lru   só entre as chaves que têm TTL (as outras nunca saem)",
+                  "#   allkeys-lfu    pela menor frequência de uso (com contagem que envelhece)",
+                  "#   noeviction     recusa escritas novas quando cheio — para quando o Redis é banco, e não cache",
+                  "",
+                  "# Expiração: por chave, independentemente do despejo",
+                  "SET product:1 \"...\" EX 600        # some depois de 10 minutos, mesmo com memória sobrando",
+                ].join("\n"),
+              },
+              explanation:
+                "O TTL tira uma chave porque ela ficou velha; o despejo tira uma chave porque falta espaço, mesmo que ela " +
+                "ainda seja válida. `noeviction` mostra a diferença entre usar o Redis como cache (pode perder chaves) e " +
+                "como banco (não pode).",
+            },
+            {
+              title: "O LFU que não esquece",
+              context: "Sem envelhecer as contagens, o popular de ontem ocupa espaço para sempre.",
+              code: {
+                language: "text",
+                filename: "lfu-aging.txt",
+                code: [
+                  "Segunda:  \"promo-black-friday\" lida 1.000.000 de vezes → contagem enorme",
+                  "Terça:    a promoção acabou; ninguém mais lê a página",
+                  "Quarta:   o LFU puro continua protegendo \"promo-black-friday\" (1.000.000 de usos),",
+                  "          e expulsa as páginas novas, com poucas dezenas de usos cada",
+                  "",
+                  "Correção comum: reduzir as contagens com o tempo (decaimento), como faz o LFU do Redis,",
+                  "ou combinar frequência e recência (políticas como W-TinyLFU, da biblioteca Caffeine).",
+                ].join("\n"),
+              },
+              explanation:
+                "Frequência sem prazo mede o passado inteiro, e não o interesse atual. As implementações práticas de LFU " +
+                "fazem as contagens decaírem, para que um item pare de ser protegido algum tempo depois de deixar de ser " +
+                "lido.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O serviço de miniaturas guarda imagens redimensionadas num `Map` que cresce sem limite. Depois de alguns " +
+              "dias no ar, o processo usa gigabytes de memória e é reiniciado pelo sistema, perdendo o cache inteiro.",
+            problemCode: {
+              language: "javascript",
+              filename: "thumbnails.js",
+              code: [
+                "const thumbnails = new Map();",
+                "",
+                "function getThumbnail(imageId, resize) {",
+                "  if (thumbnails.has(imageId)) return thumbnails.get(imageId);",
+                "  const image = resize(imageId);",
+                "  thumbnails.set(imageId, image);   // nunca sai nada",
+                "  return image;",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Limite o cache a um número máximo de miniaturas com a política LRU, mantendo as lidas recentemente, e " +
+              "mostre que o tamanho nunca passa do limite.",
+            hint:
+              "Um `Map` guarda a ordem de inserção: ao ler um item, remova-o e insira de novo; ao passar do limite, " +
+              "apague a primeira chave.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "thumbnails.fixed.js",
+                code: [
+                  "const MAX_ITEMS = 3;",
+                  "const thumbnails = new Map();",
+                  "",
+                  "function getThumbnail(imageId, resize) {",
+                  "  if (thumbnails.has(imageId)) {",
+                  "    const image = thumbnails.get(imageId);",
+                  "    thumbnails.delete(imageId);        // marca como usado agora",
+                  "    thumbnails.set(imageId, image);",
+                  "    return image;",
+                  "  }",
+                  "  const image = resize(imageId);",
+                  "  thumbnails.set(imageId, image);",
+                  "  if (thumbnails.size > MAX_ITEMS) thumbnails.delete(thumbnails.keys().next().value);   // sai o menos recente",
+                  "  return image;",
+                  "}",
+                  "",
+                  "const resize = (id) => `thumb-of-${id}`;",
+                  "for (const id of [\"a\", \"b\", \"c\", \"a\", \"d\", \"e\"]) getThumbnail(id, resize);",
+                  "thumbnails.size;          // 3",
+                  "[...thumbnails.keys()];   // [\"a\", \"d\", \"e\"] — \"a\" foi relido e sobreviveu; \"b\" e \"c\" saíram",
+                ].join("\n"),
+              },
+              explanation:
+                "O limite troca crescimento sem fim por despejo: o processo passa a usar memória previsível, e as " +
+                "miniaturas pedidas com frequência continuam no cache. Em produção, limitar pelo tamanho em bytes, e não " +
+                "pelo número de itens, é mais preciso quando as imagens variam muito de tamanho.",
+            },
+          },
+        }),
+        concept({
+          order: 50,
+          title: "Cache-Aside",
+          requires: ["Cache Invalidation"],
+          note: "padrão mais comum; app orquestra",
+          summary:
+            "O padrão em que a aplicação consulta o cache primeiro e, numa falta, busca na fonte e guarda o " +
+            "resultado; na escrita, grava na fonte e apaga a cópia — o cache fica ao lado, e é a aplicação que " +
+            "coordena os dois.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "No cache-aside (também chamado de lazy loading), o cache não sabe nada sobre o banco: ele é só um lugar " +
+                "onde a aplicação guarda cópias. Na leitura, a aplicação pergunta ao cache; num acerto, devolve a cópia; " +
+                "numa falta, busca na fonte, guarda a cópia com um TTL e devolve. Na escrita, a aplicação grava na fonte " +
+                "e apaga a cópia, para que a próxima leitura a recarregue. Só entra no cache o que alguém de fato leu, e " +
+                "uma falha do cache não impede a aplicação de funcionar.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Na leitura, cache primeiro e fonte na falta; na escrita, fonte primeiro e depois apagar a cópia — e " +
+                "sempre com TTL, para que qualquer cópia errada tenha prazo para sumir.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "flow",
+              label: "Requisição consulta o cache; em caso de acerto devolve a cópia, em caso de falta busca no banco, grava a cópia no cache com TTL e devolve",
+              steps: [
+                { lines: ["Requisição"] },
+                { title: "Cache", tags: [{ text: "hit → devolve", tone: "ok" }, { text: "miss", tone: "neutral" }] },
+                { lines: ["Banco", "(só na falta)"] },
+                { lines: ["Grava a cópia", "com TTL"] },
+              ],
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "cache-aside.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "db.exec(\"CREATE TABLE profiles (user_id INTEGER PRIMARY KEY, name TEXT NOT NULL, bio TEXT)\");",
+                "db.exec(\"INSERT INTO profiles VALUES (7, 'Ana Souza', 'Engenheira de dados')\");",
+                "",
+                "const cache = new Map();   // no lugar de um Redis: { value, expiresAt }",
+                "const TTL_MS = 5 * 60 * 1000;",
+                "let dbReads = 0;",
+                "",
+                "function getProfile(userId) {",
+                "  const key = `profile:${userId}`;",
+                "  const entry = cache.get(key);",
+                "  if (entry && entry.expiresAt > Date.now()) return entry.value;   // acerto",
+                "  dbReads++;",
+                "  const profile = db.prepare(\"SELECT user_id, name, bio FROM profiles WHERE user_id = ?\").get(userId) ?? null;   // falta: vai à fonte",
+                "  cache.set(key, { value: profile, expiresAt: Date.now() + TTL_MS });",
+                "  return profile;",
+                "}",
+                "",
+                "function updateBio(userId, bio) {",
+                "  db.prepare(\"UPDATE profiles SET bio = ? WHERE user_id = ?\").run(bio, userId);   // 1. fonte",
+                "  cache.delete(`profile:${userId}`);                                             // 2. apaga a cópia",
+                "}",
+                "",
+                "getProfile(7);",
+                "getProfile(7);",
+                "updateBio(7, \"Engenheira de plataforma\");",
+                "getProfile(7).bio;   // \"Engenheira de plataforma\"",
+                "dbReads;             // 2 — a 1ª leitura e a leitura depois da atualização",
+              ].join("\n"),
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Como padrão geral de cache de leitura na aplicação: é simples, funciona com qualquer banco e com qualquer servidor de cache.",
+                "Quando a maioria dos dados raramente é lida: só o que alguém pede ocupa espaço no cache.",
+                "Quando a aplicação precisa continuar funcionando, mais lenta, se o cache cair.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "A primeira leitura de cada item, e toda leitura depois de uma invalidação, paga o custo da fonte mais o do cache.",
+                "Muitas requisições simultâneas pela mesma chave, logo depois de ela vencer, vão todas à fonte ao mesmo tempo (cache stampede).",
+                "A coordenação fica espalhada pelo código: cada ponto que escreve precisa lembrar de invalidar as cópias certas.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Uma falta, uma consulta: evitando a debandada",
+              context:
+                "Quando uma chave popular vence, dezenas de requisições simultâneas veem a falta ao mesmo tempo.",
+              code: {
+                language: "javascript",
+                filename: "single-flight.js",
+                code: [
+                  "let sourceCalls = 0;",
+                  "const loadRanking = async () => {   // consulta cara, ~2 s",
+                  "  sourceCalls++;",
+                  "  await new Promise((resolve) => setTimeout(resolve, 20));",
+                  "  return [\"Ana\", \"Bruno\", \"Carla\"];",
+                  "};",
+                  "",
+                  "const cache = new Map();",
+                  "const inFlight = new Map();   // chave → promessa da busca em andamento",
+                  "",
+                  "async function getRanking() {",
+                  "  if (cache.has(\"ranking\")) return cache.get(\"ranking\");",
+                  "  if (!inFlight.has(\"ranking\")) {   // só a primeira falta vai à fonte; as outras esperam a mesma promessa",
+                  "    inFlight.set(\"ranking\", loadRanking().then((value) => {",
+                  "      cache.set(\"ranking\", value);",
+                  "      return value;",
+                  "    }).finally(() => inFlight.delete(\"ranking\")));",
+                  "  }",
+                  "  return inFlight.get(\"ranking\");",
+                  "}",
+                  "",
+                  "await Promise.all(Array.from({ length: 50 }, () => getRanking()));",
+                  "sourceCalls;   // 1 — e não 50",
+                ].join("\n"),
+              },
+              explanation:
+                "Sem a coordenação, as 50 requisições iriam à fonte juntas, justamente no momento em que o cache deixou " +
+                "de protegê-la. Guardar a promessa em andamento (single-flight) faz todas esperarem a mesma busca. Entre " +
+                "várias instâncias, o equivalente é um lock curto no cache compartilhado ou renovar a cópia um pouco " +
+                "antes de ela vencer.",
+            },
+            {
+              title: "Na escrita, apagar, e não atualizar a cópia",
+              context: "Gravar o valor novo no cache parece mais eficiente e cria uma corrida entre escritas.",
+              code: {
+                language: "text",
+                filename: "delete-vs-update.txt",
+                code: [
+                  "Atualizar a cópia na escrita (set):",
+                  "  Escrita A: UPDATE preço = 30   ...                     cache.set(preço = 30)   ← chega por último",
+                  "  Escrita B:         UPDATE preço = 40   cache.set(40)",
+                  "  Banco: 40.  Cache: 30.  Errado até o TTL vencer.",
+                  "",
+                  "Apagar a cópia na escrita (delete):",
+                  "  Escrita A: UPDATE preço = 30   ...                     cache.delete",
+                  "  Escrita B:         UPDATE preço = 40   cache.delete",
+                  "  Banco: 40.  Cache: vazio → a próxima leitura busca 40.",
+                ].join("\n"),
+              },
+              explanation:
+                "Apagar é idempotente e não depende da ordem em que as escritas terminam: o cache fica vazio, e a próxima " +
+                "leitura busca o valor atual. Gravar a cópia deixa no cache o valor da escrita que terminou por último, " +
+                "que nem sempre é o da última escrita no banco.",
+            },
+            {
+              title: "Cache fora do ar não derruba a leitura",
+              context: "No cache-aside, o cache é uma otimização: se ele falha, a fonte responde.",
+              code: {
+                language: "javascript",
+                filename: "cache-failure.js",
+                code: [
+                  "async function getProfileSafe(userId, { cache, loadFromDb, log = console.warn }) {",
+                  "  const key = `profile:${userId}`;",
+                  "  try {",
+                  "    const cached = await cache.get(key);",
+                  "    if (cached) return JSON.parse(cached);",
+                  "  } catch (error) {",
+                  "    log(`cache indisponível, lendo do banco: ${error.message}`);   // segue para a fonte",
+                  "  }",
+                  "  const profile = await loadFromDb(userId);",
+                  "  cache.set(key, JSON.stringify(profile), { EX: 300 }).catch(() => {});   // gravar a cópia é opcional",
+                  "  return profile;",
+                  "}",
+                  "",
+                  "const brokenCache = { get: async () => { throw new Error(\"ECONNREFUSED\"); }, set: async () => { throw new Error(\"ECONNREFUSED\"); } };",
+                  "await getProfileSafe(7, { cache: brokenCache, loadFromDb: async (id) => ({ id, name: \"Ana\" }), log: () => {} });",
+                  "// { id: 7, name: \"Ana\" } — mais lento, mas funcionando",
+                ].join("\n"),
+              },
+              explanation:
+                "Um erro no cache vira uma falta, e não um erro para quem pediu. É preciso, porém, que a fonte aguente a " +
+                "carga inteira enquanto o cache estiver fora — do contrário, a queda do cache derruba o banco logo em " +
+                "seguida.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O endpoint do ranking semanal roda uma consulta que leva 2 segundos. O time colocou um cache, mas a cada " +
+              "5 minutos, quando a cópia vence, o banco recebe dezenas dessa consulta pesada ao mesmo tempo e fica " +
+              "lento para todo mundo.",
+            problemCode: {
+              language: "javascript",
+              filename: "weekly-ranking.js",
+              code: [
+                "let heavyQueries = 0;",
+                "async function queryWeeklyRanking() {",
+                "  heavyQueries++;",
+                "  await new Promise((resolve) => setTimeout(resolve, 20));   // representa os 2 s",
+                "  return [{ user: \"Ana\", points: 120 }, { user: \"Bruno\", points: 95 }];",
+                "}",
+                "",
+                "let now = 0;",
+                "const cache = new Map();   // { value, expiresAt }",
+                "",
+                "async function getWeeklyRanking() {",
+                "  const entry = cache.get(\"ranking:weekly\");",
+                "  if (entry && entry.expiresAt > now) return entry.value;",
+                "  const value = await queryWeeklyRanking();",
+                "  cache.set(\"ranking:weekly\", { value, expiresAt: now + 300_000 });",
+                "  return value;",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Mostre o problema com 30 chamadas simultâneas depois do vencimento e corrija `getWeeklyRanking` para que " +
+              "só uma consulta pesada aconteça por vencimento.",
+            hint:
+              "Guarde a promessa da busca em andamento e devolva-a para quem chegar enquanto ela não termina; remova-a " +
+              "no `finally`.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "weekly-ranking.fixed.js",
+                code: [
+                  "// O problema: 30 chamadas simultâneas com o cache vencido",
+                  "await Promise.all(Array.from({ length: 30 }, () => getWeeklyRanking()));",
+                  "heavyQueries;   // 30",
+                  "",
+                  "// A correção: uma busca por vez para a mesma chave",
+                  "let loading = null;",
+                  "",
+                  "async function getWeeklyRankingFixed() {",
+                  "  const entry = cache.get(\"ranking:weekly\");",
+                  "  if (entry && entry.expiresAt > now) return entry.value;",
+                  "  loading ??= queryWeeklyRanking()",
+                  "    .then((value) => {",
+                  "      cache.set(\"ranking:weekly\", { value, expiresAt: now + 300_000 });",
+                  "      return value;",
+                  "    })",
+                  "    .finally(() => { loading = null; });",
+                  "  return loading;",
+                  "}",
+                  "",
+                  "heavyQueries = 0;",
+                  "now = 600_000;   // a cópia venceu de novo",
+                  "await Promise.all(Array.from({ length: 30 }, () => getWeeklyRankingFixed()));",
+                  "heavyQueries;   // 1",
+                ].join("\n"),
+              },
+              explanation:
+                "As 30 requisições que chegam durante a falta passam a esperar a mesma promessa, e o banco recebe uma " +
+                "consulta por vencimento. Com várias instâncias da aplicação, cada uma faria no máximo uma; para chegar a " +
+                "uma no total, usa-se um lock no cache compartilhado ou a atualização da cópia em segundo plano, antes de " +
+                "ela vencer.",
+            },
+          },
+        }),
+        concept({
+          order: 60,
+          title: "Read-Through / Write-Through / Write-Behind",
+          requires: ["Cache"],
+          subtopics: ["read-through", "write-through", "write-behind/write-back (risco de perda)"],
+          note: "consolidada (A19)",
+          summary:
+            "Padrões em que o próprio cache conversa com a fonte: na leitura, ele busca o que falta (read-through); " +
+            "na escrita, grava na fonte junto com a cópia (write-through) ou acumula e grava depois (write-behind), " +
+            "trocando segurança por velocidade.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "No cache-aside, a aplicação coordena cache e fonte. Nos padrões \"through\", a aplicação fala só com o " +
+                "cache, e ele sabe falar com a fonte. Read-through: numa falta, o próprio cache chama a função que " +
+                "carrega o dado. Write-through: a escrita vai ao cache, que grava na fonte e atualiza a cópia antes de " +
+                "responder, mantendo os dois sempre iguais. Write-behind (ou write-back): o cache responde logo e grava " +
+                "na fonte depois, em lotes — as escritas ficam rápidas, mas o que ainda não foi gravado se perde se o " +
+                "cache cair.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Read-through e write-through tiram da aplicação a coordenação com a fonte sem abrir mão da segurança; " +
+                "write-behind troca durabilidade por velocidade de escrita, e só serve a dados que podem ser perdidos ou " +
+                "reconstruídos.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "through-cache.js",
+              code: [
+                "// Um cache que conhece a fonte: carrega nas faltas (read-through) e grava junto (write-through)",
+                "function createThroughCache({ load, save }) {",
+                "  const store = new Map();",
+                "  return {",
+                "    async get(key) {",
+                "      if (!store.has(key)) store.set(key, await load(key));   // read-through",
+                "      return store.get(key);",
+                "    },",
+                "    async set(key, value) {",
+                "      await save(key, value);   // write-through: primeiro a fonte...",
+                "      store.set(key, value);    // ...depois a cópia; os dois ficam iguais",
+                "    },",
+                "  };",
+                "}",
+                "",
+                "const database = new Map([[\"user:7\", { name: \"Ana\" }]]);",
+                "const users = createThroughCache({",
+                "  load: async (key) => database.get(key) ?? null,",
+                "  save: async (key, value) => { database.set(key, value); },",
+                "});",
+                "",
+                "await users.get(\"user:7\");                      // { name: \"Ana\" } — carregou da fonte",
+                "await users.set(\"user:7\", { name: \"Ana Souza\" });",
+                "database.get(\"user:7\");                         // { name: \"Ana Souza\" } — a fonte já está atualizada",
+                "await users.get(\"user:7\");                      // { name: \"Ana Souza\" } — e a cópia também",
+              ].join("\n"),
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Read-through quando se quer concentrar num só lugar a lógica de buscar e guardar, como fazem bibliotecas de cache com uma função de carga.",
+                "Write-through quando o dado escrito é lido logo em seguida e a cópia precisa estar sempre igual à fonte.",
+                "Write-behind para escritas muito frequentes que podem ser agrupadas e toleram perdas, como contadores de visualização e métricas.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Write-behind não serve para pedidos, pagamentos ou qualquer coisa que a pessoa já viu como \"salvo\": uma queda antes da gravação perde o dado.",
+                "Write-through deixa cada escrita mais lenta (fonte e cache) e enche o cache com dados escritos que talvez ninguém leia.",
+                "Com o cache no caminho de todas as escritas, uma falha dele passa a afetar as escritas também, e não só as leituras.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Write-behind: rápido, e com o que se pode perder",
+              context: "As escritas vão para uma fila em memória e são gravadas na fonte em lotes.",
+              code: {
+                language: "javascript",
+                filename: "write-behind.js",
+                code: [
+                  "function createWriteBehind({ flush }) {",
+                  "  const pending = new Map();   // chave → último valor ainda não gravado",
+                  "  return {",
+                  "    set(key, value) { pending.set(key, value); },          // responde na hora",
+                  "    async flushNow() {",
+                  "      const batch = [...pending];",
+                  "      pending.clear();",
+                  "      if (batch.length) await flush(batch);                // uma gravação para o lote inteiro",
+                  "    },",
+                  "    get pendingCount() { return pending.size; },",
+                  "  };",
+                  "}",
+                  "",
+                  "const saved = [];",
+                  "const views = createWriteBehind({ flush: async (batch) => saved.push(...batch) });",
+                  "",
+                  "views.set(\"post:1\", 10);",
+                  "views.set(\"post:1\", 11);   // substitui o anterior: só o último valor é gravado",
+                  "views.set(\"post:2\", 3);",
+                  "views.pendingCount;        // 2",
+                  "await views.flushNow();    // em produção, a cada poucos segundos (setInterval)",
+                  "saved;                     // [[\"post:1\", 11], [\"post:2\", 3]]",
+                  "",
+                  "views.set(\"post:3\", 1);",
+                  "// se o processo cair agora, \"post:3\" nunca chega à fonte",
+                ].join("\n"),
+              },
+              explanation:
+                "O ganho vem de duas coisas: responder sem esperar a fonte e juntar várias escritas da mesma chave em " +
+                "uma. O custo aparece na última linha: tudo o que está pendente se perde numa queda. Para contadores de " +
+                "visualização, perder alguns segundos é aceitável; para pedidos, não.",
+            },
+            {
+              title: "Os três padrões lado a lado",
+              context: "O que acontece em uma leitura e em uma escrita em cada padrão.",
+              code: {
+                language: "text",
+                filename: "patterns.txt",
+                code: [
+                  "                  Leitura (falta)                   Escrita                              Risco principal",
+                  "Cache-aside       app busca na fonte e guarda        app grava na fonte e apaga a cópia   cópia velha por corrida",
+                  "Read-through      o cache busca na fonte e guarda    (qualquer um dos abaixo)              lógica de carga escondida",
+                  "Write-through     —                                  cache grava na fonte, depois a cópia escrita mais lenta",
+                  "Write-behind      —                                  cache guarda e grava na fonte depois  perda de escritas numa queda",
+                  "Write-around      —                                  grava só na fonte, sem tocar o cache  1ª leitura depois é uma falta",
+                  "",
+                  "Combinações comuns: read-through + write-through (cache sempre coerente);",
+                  "read-through + write-around (escritas que raramente são lidas logo em seguida).",
+                ].join("\n"),
+              },
+              explanation:
+                "Os padrões de leitura e de escrita se combinam de forma independente. A escolha da escrita é a que mais " +
+                "pesa: ela decide se a cópia pode ficar diferente da fonte e se uma queda pode perder dados.",
+            },
+            {
+              title: "Juntar escritas: o ganho real do write-behind",
+              context: "Mil incrementos no mesmo contador viram uma gravação.",
+              code: {
+                language: "javascript",
+                filename: "coalesce.js",
+                code: [
+                  "let writes = 0;",
+                  "const counts = new Map();",
+                  "",
+                  "function increment(key) {",
+                  "  counts.set(key, (counts.get(key) ?? 0) + 1);   // só em memória",
+                  "}",
+                  "",
+                  "async function flushCounters(db) {",
+                  "  for (const [key, delta] of counts) {",
+                  "    await db.addViews(key, delta);   // UPDATE posts SET views = views + $delta WHERE id = $key",
+                  "    writes++;",
+                  "  }",
+                  "  counts.clear();",
+                  "}",
+                  "",
+                  "for (let i = 0; i < 1000; i++) increment(\"post:1\");",
+                  "await flushCounters({ addViews: async () => {} });",
+                  "writes;   // 1 — em vez de 1.000 UPDATEs",
+                ].join("\n"),
+              },
+              explanation:
+                "Gravar o incremento acumulado (`views + delta`), e não o total, mantém o contador correto mesmo com " +
+                "várias instâncias fazendo o mesmo. É um caso em que perder alguns segundos de visualizações numa queda é " +
+                "um preço pequeno por mil vezes menos escritas.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Três serviços leem configurações de um banco, e cada um repete o mesmo código: consultar o cache, buscar " +
+              "no banco na falta, guardar a cópia. Um deles esqueceu de guardar a cópia, e bate no banco a cada " +
+              "requisição.",
+            problemCode: {
+              language: "javascript",
+              filename: "settings.js",
+              code: [
+                "let dbReads = 0;",
+                "async function loadSetting(key) {",
+                "  dbReads++;",
+                "  return { \"checkout.maxItems\": 20, \"search.pageSize\": 24 }[key] ?? null;",
+                "}",
+                "",
+                "// Repetido em cada serviço (e com erros):",
+                "const cache = new Map();",
+                "async function getSetting(key) {",
+                "  if (cache.has(key)) return cache.get(key);",
+                "  return loadSetting(key);   // esqueceu de guardar",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Escreva uma função `createReadThroughCache(load, { ttlMs })` que encapsule a busca na falta e o TTL, " +
+              "use-a para as configurações e mostre que dez leituras da mesma chave fazem uma ida ao banco.",
+            hint:
+              "O objeto devolvido só precisa de `get(key)`. Guarde `{ value, expiresAt }` e chame `load(key)` quando " +
+              "não houver entrada válida.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "settings.fixed.js",
+                code: [
+                  "function createReadThroughCache(load, { ttlMs = 60_000, now = () => Date.now() } = {}) {",
+                  "  const store = new Map();",
+                  "  return {",
+                  "    async get(key) {",
+                  "      const entry = store.get(key);",
+                  "      if (entry && entry.expiresAt > now()) return entry.value;",
+                  "      const value = await load(key);",
+                  "      store.set(key, { value, expiresAt: now() + ttlMs });",
+                  "      return value;",
+                  "    },",
+                  "  };",
+                  "}",
+                  "",
+                  "const settings = createReadThroughCache(loadSetting, { ttlMs: 30_000 });",
+                  "for (let i = 0; i < 10; i++) await settings.get(\"checkout.maxItems\");",
+                  "dbReads;   // 1",
+                ].join("\n"),
+              },
+              explanation:
+                "A lógica de busca e de validade passou para um lugar só, e cada serviço só chama `settings.get`. Não há " +
+                "mais como esquecer de guardar a cópia, e mudar o TTL ou trocar o `Map` por um Redis passa a ser uma " +
+                "alteração em um ponto.",
+            },
+          },
+        }),
+        concept({
+          order: 70,
+          title: "In-Memory Data Store",
+          requires: ["Cache"],
+          subtopics: ["Redis", "Valkey", "Memcached"],
+          note: "arquétipo: single-thread, estruturas de dados, persistência, uso como cache × store",
+          summary:
+            "Um servidor que guarda os dados em memória e os serve pela rede, com latência de fração de milissegundo " +
+            "— usado como cache compartilhado entre instâncias e, graças às suas estruturas de dados e operações " +
+            "atômicas, também para contadores, filas, rankings e sessões.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Um banco em memória, como o Redis, o Valkey (um fork aberto do Redis) ou o Memcached, mantém todos os " +
+                "dados na RAM e responde a comandos pela rede. Por estar fora do processo da aplicação, ele é " +
+                "compartilhado por todas as instâncias e sobrevive aos deploys. O Memcached é um cache de chave-valor " +
+                "simples. O Redis e o Valkey vão além: oferecem estruturas de dados (strings, hashes, listas, conjuntos, " +
+                "conjuntos ordenados) com operações atômicas sobre elas, expiração por chave e, opcionalmente, " +
+                "persistência em disco. Eles executam os comandos um de cada vez, numa única thread, e por isso cada " +
+                "comando é atômico sem precisar de locks.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Use o banco em memória pelas operações que ele faz de forma atômica e rápida — incrementar, adicionar a " +
+                "um ranking, expirar —, e decida explicitamente se ele é cache (pode perder dados) ou armazenamento (não " +
+                "pode), porque a configuração é diferente em cada caso.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "redis.js",
+              code: [
+                "import { createClient } from \"redis\";",
+                "const redis = await createClient({ url: \"redis://localhost:6379\" }).connect();",
+                "",
+                "// String com expiração: o uso de cache",
+                "await redis.set(\"product:1\", JSON.stringify({ name: \"Caneca\" }), { EX: 600 });",
+                "",
+                "// Contador atômico: o incremento acontece no servidor, sem ler-somar-gravar na aplicação",
+                "await redis.incr(\"views:post:1\");",
+                "",
+                "// Hash: campos de um objeto, alterados um a um",
+                "await redis.hSet(\"cart:7\", { \"sku:caneca\": \"2\", \"sku:cafe\": \"1\" });",
+                "await redis.hIncrBy(\"cart:7\", \"sku:caneca\", 1);",
+                "",
+                "// Conjunto ordenado: ranking mantido pelo próprio servidor",
+                "await redis.zIncrBy(\"ranking:weekly\", 10, \"ana\");",
+                "await redis.zRangeWithScores(\"ranking:weekly\", 0, 9, { REV: true });   // os 10 primeiros, do maior para o menor",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Cada comando é executado inteiro antes do próximo. É isso que torna o `INCR` seguro com dezenas de " +
+                "instâncias incrementando a mesma chave, algo que, feito na aplicação (ler, somar, gravar), perderia " +
+                "atualizações.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Como cache compartilhado entre várias instâncias da aplicação, que sobrevive a deploys e reinícios.",
+                "Para contadores, limites de requisição, rankings e presença online, aproveitando as operações atômicas e a expiração por chave.",
+                "Para sessões e dados temporários, com TTL, lidos a cada requisição.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Como banco principal de dados que não podem ser perdidos, sem configurar persistência e réplicas e sem aceitar que a memória limita o tamanho.",
+                "Para consultas por conteúdo, relatórios ou junções: o acesso é por chave, e qualquer outra pergunta exige estruturas mantidas à mão.",
+                "Comandos lentos, como listar todas as chaves (`KEYS *`), bloqueiam o servidor inteiro, porque ele executa um comando por vez.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Contador atômico e o contador perdido",
+              context: "Incrementar lendo, somando e gravando na aplicação perde atualizações entre instâncias.",
+              code: {
+                language: "javascript",
+                filename: "atomic-counter.js",
+                code: [
+                  "// Errado: duas instâncias leem 41, somam 1 e gravam 42 — uma visualização some",
+                  "async function countViewWrong(postId) {",
+                  "  const current = Number(await redis.get(`views:post:${postId}`)) || 0;",
+                  "  await redis.set(`views:post:${postId}`, String(current + 1));",
+                  "}",
+                  "",
+                  "// Certo: o servidor incrementa, um comando de cada vez",
+                  "async function countView(postId) {",
+                  "  return redis.incr(`views:post:${postId}`);   // devolve o valor novo",
+                  "}",
+                  "",
+                  "// Várias operações juntas, sem nada entre elas: MULTI/EXEC",
+                  "await redis.multi()",
+                  "  .incr(\"views:post:1\")",
+                  "  .expire(\"views:post:1\", 86_400)",
+                  "  .exec();",
+                ].join("\n"),
+              },
+              explanation:
+                "É a mesma atualização perdida dos bancos relacionais, e a solução é a mesma: deixar o servidor ler e " +
+                "escrever num só passo. Como o Redis executa um comando por vez, `INCR` é atômico sem nenhum lock na " +
+                "aplicação.",
+            },
+            {
+              title: "Cache ou armazenamento: a configuração muda",
+              context: "O mesmo servidor pode ser um cache descartável ou guardar dados que não podem sumir.",
+              code: {
+                language: "text",
+                filename: "cache-vs-store.txt",
+                code: [
+                  "                           Como cache                      Como armazenamento",
+                  "maxmemory-policy           allkeys-lru (despeja)            noeviction (recusa escritas quando cheio)",
+                  "persistência               desligada, ou RDB ocasional      AOF (appendfsync everysec) + RDB",
+                  "réplicas                   opcionais                        sim, com failover (Sentinel ou cluster)",
+                  "se perder tudo             a aplicação recarrega da fonte   perda de dados de verdade",
+                  "exemplos                   páginas, consultas, sessões      filas, rankings que são a fonte da verdade",
+                  "",
+                  "Memcached: só o papel da esquerda — sem persistência, sem estruturas, despeja por LRU.",
+                ].join("\n"),
+              },
+              explanation:
+                "Os problemas aparecem quando os dois papéis se misturam no mesmo servidor: uma configuração de cache " +
+                "(que despeja chaves) aplicada a dados que são a fonte da verdade apaga esses dados em silêncio quando a " +
+                "memória enche.",
+            },
+            {
+              title: "O comando que trava o servidor",
+              context: "Um comando lento bloqueia todos os outros clientes.",
+              code: {
+                language: "javascript",
+                filename: "scan-vs-keys.js",
+                code: [
+                  "// Errado em produção: percorre todas as chaves de uma vez; com milhões, trava o servidor por segundos",
+                  "const all = await redis.keys(\"session:*\");",
+                  "",
+                  "// Certo: SCAN percorre aos poucos, devolvendo lotes e um cursor",
+                  "// (no node-redis 5, cada volta do laço recebe um lote de chaves)",
+                  "let count = 0;",
+                  "for await (const keys of redis.scanIterator({ MATCH: \"session:*\", COUNT: 1000 })) {",
+                  "  count += keys.length;   // cada lote é uma chamada curta; outros clientes são atendidos entre elas",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Um servidor que executa um comando por vez é rápido e simples, mas não tolera comandos longos: enquanto " +
+                "o `KEYS` percorre milhões de chaves, todas as outras requisições esperam. O `SCAN` faz o mesmo trabalho " +
+                "em pedaços pequenos.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O ranking semanal de um jogo é calculado com uma consulta pesada no banco relacional a cada pedido da " +
+              "tela. O time quer mantê-lo num conjunto ordenado do Redis, atualizado a cada partida.",
+            problemCode: {
+              language: "javascript",
+              filename: "leaderboard.js",
+              code: [
+                "import { createClient } from \"redis\";",
+                "const redis = await createClient().connect();",
+                "",
+                "// Hoje: a cada abertura da tela",
+                "// SELECT player, sum(points) FROM matches WHERE played_at >= $1 GROUP BY player ORDER BY 2 DESC LIMIT 10",
+                "",
+                "async function onMatchFinished(player, points) {",
+                "  // grava a partida no banco relacional (continua sendo a fonte da verdade)",
+                "}",
+                "",
+                "async function topTen() {",
+                "  // devolver [{ player, points }] dos 10 primeiros",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Implemente `onMatchFinished` para somar os pontos no ranking da semana e `topTen` para ler os dez " +
+              "primeiros, fazendo a chave da semana expirar sozinha depois de algum tempo.",
+            hint:
+              "`zIncrBy` soma à pontuação do jogador; `zRangeWithScores(..., { REV: true })` lê do maior para o menor. " +
+              "Coloque a semana no nome da chave.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "leaderboard.fixed.js",
+                code: [
+                  "const weekKey = (date = new Date()) => {",
+                  "  const monday = new Date(date);",
+                  "  monday.setUTCHours(0, 0, 0, 0);",
+                  "  monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7));",
+                  "  return `ranking:week:${monday.toISOString().slice(0, 10)}`;   // ex.: ranking:week:2026-09-21",
+                  "};",
+                  "",
+                  "async function onMatchFinished(player, points) {",
+                  "  // 1. grava a partida no banco relacional (fonte da verdade)",
+                  "  // 2. atualiza o ranking da semana, de forma atômica",
+                  "  const key = weekKey();",
+                  "  await redis.multi()",
+                  "    .zIncrBy(key, points, player)",
+                  "    .expire(key, 60 * 60 * 24 * 14)   // some duas semanas depois",
+                  "    .exec();",
+                  "}",
+                  "",
+                  "async function topTen() {",
+                  "  const rows = await redis.zRangeWithScores(weekKey(), 0, 9, { REV: true });",
+                  "  return rows.map(({ value, score }) => ({ player: value, points: score }));",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "O ranking passou a ser mantido a cada partida, com um incremento atômico, e ler os dez primeiros é uma " +
+                "operação barata. Como o banco relacional continua com as partidas, o ranking pode ser reconstruído a " +
+                "partir dele se o Redis perder os dados — o que permite tratá-lo como cache, com a configuração de cache.",
+            },
+          },
+        }),
         concept({
           order: 80,
           title: "Browser & HTTP Cache",
@@ -16181,8 +17785,424 @@ export default area({
           subtopics: ["Cache-Control", "ETag / Last-Modified", "revalidação (304)", "private × shared"],
           note: "consolidada (B2) — revisita Web Fundamentals / HTTP Headers",
           revisit: ["Platform / Web Fundamentals / HTTP Headers"],
+          summary:
+            "O cache definido pelo próprio HTTP: o servidor diz, nos cabeçalhos de cada resposta, se ela pode ser " +
+            "guardada, por quem (só o navegador ou também caches compartilhados) e por quanto tempo, e como conferir " +
+            "depois se a cópia ainda vale.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "No HTTP, quem decide sobre o cache é quem responde. O cabeçalho `Cache-Control` diz se a resposta pode " +
+                "ser guardada, por quanto tempo ela é considerada fresca (`max-age`) e por quem: `private` permite só o " +
+                "cache do navegador, e `public` permite também caches compartilhados, como CDNs e proxies. Enquanto a " +
+                "cópia está fresca, o navegador a usa sem perguntar nada ao servidor. Depois, ele revalida: envia o " +
+                "`ETag` ou a data (`Last-Modified`) que recebeu, e o servidor responde `304 Not Modified`, sem corpo, se " +
+                "nada mudou. As diretivas `no-cache` (guardar, mas revalidar sempre) e `no-store` (não guardar) cobrem os " +
+                "outros casos.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Cada tipo de resposta pede uma política própria: arquivos com hash no nome ficam em cache por um ano, " +
+                "HTML e dados de API revalidam a cada uso, dados pessoais são `private` e dados sensíveis são `no-store`.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "cache-headers.js",
+              code: [
+                "// Política de cache por tipo de resposta",
+                "function cacheControlFor(kind) {",
+                "  switch (kind) {",
+                "    case \"hashed-asset\":    // /assets/app.3f9c2a.js — o nome muda quando o conteúdo muda",
+                "      return \"public, max-age=31536000, immutable\";",
+                "    case \"html\":            // a página aponta para os arquivos novos a cada deploy",
+                "      return \"no-cache\";    // pode guardar, mas revalida (ETag → 304) antes de usar",
+                "    case \"public-api\":      // lista de produtos, igual para todos",
+                "      return \"public, max-age=60, stale-while-revalidate=300\";",
+                "    case \"user-api\":        // dados da pessoa logada",
+                "      return \"private, no-cache\";",
+                "    case \"sensitive\":       // extrato, dados de pagamento",
+                "      return \"no-store\";",
+                "    default:",
+                "      return \"no-cache\";",
+                "  }",
+                "}",
+                "",
+                "cacheControlFor(\"hashed-asset\");   // \"public, max-age=31536000, immutable\"",
+                "cacheControlFor(\"user-api\");       // \"private, no-cache\"",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A revalidação com `ETag` e `If-None-Match`, que devolve `304` quando o conteúdo não mudou, é o que torna " +
+                "`no-cache` barato: a cópia é conferida a cada uso, mas o corpo só é transferido quando algo mudou.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Cache longo (`max-age` de um ano e `immutable`) para arquivos estáticos cujo nome inclui um hash do conteúdo.",
+                "`no-cache` com `ETag` para HTML e respostas que mudam sem aviso, para economizar transferência sem servir versões antigas.",
+                "`public` com `max-age` curto e `stale-while-revalidate` para respostas iguais para todos, que CDNs e proxies podem compartilhar.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "`public` numa resposta com dados de uma pessoa permite que um cache compartilhado a entregue a outra; dados pessoais são sempre `private`.",
+                "Um `max-age` longo num arquivo sem hash no nome deixa os navegadores presos à versão antiga até o prazo vencer; não há como mandá-los apagar.",
+                "O servidor só sugere: o navegador pode descartar cópias antes do prazo, e caches intermediários mal configurados podem ignorar as diretivas.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "no-cache não é no-store",
+              context: "Os nomes confundem, e as duas diretivas fazem coisas opostas.",
+              code: {
+                language: "text",
+                filename: "no-cache-vs-no-store.txt",
+                code: [
+                  "no-cache   guarda a resposta, mas confere com o servidor ANTES de cada uso",
+                  "           → requisição condicional (If-None-Match); se nada mudou: 304, sem corpo",
+                  "           → economiza transferência e nunca usa uma versão velha",
+                  "",
+                  "no-store   NÃO guarda a resposta em lugar nenhum (nem em disco, nem em memória)",
+                  "           → toda visita baixa tudo de novo",
+                  "           → para dados sensíveis: extratos, dados de pagamento, telas de administração",
+                  "",
+                  "max-age=0, must-revalidate  ≈ no-cache, na prática",
+                ].join("\n"),
+              },
+              explanation:
+                "Quem quer \"sempre a versão atual\" normalmente quer `no-cache`, e não `no-store`. `no-store` é para " +
+                "quando a cópia em si é o risco, como dados sensíveis num computador compartilhado.",
+            },
+            {
+              title: "Hash no nome para guardar por um ano",
+              context:
+                "O nome do arquivo muda quando o conteúdo muda, e por isso a cópia antiga nunca é usada por engano.",
+              code: {
+                language: "javascript",
+                filename: "fingerprint.js",
+                code: [
+                  "import { createHash } from \"node:crypto\";",
+                  "",
+                  "// O build dá a cada arquivo um nome derivado do conteúdo",
+                  "function fingerprint(name, content) {",
+                  "  const hash = createHash(\"sha256\").update(content).digest(\"hex\").slice(0, 8);",
+                  "  return name.replace(/(\\.[a-z]+)$/, `.${hash}$1`);",
+                  "}",
+                  "",
+                  "fingerprint(\"app.js\", \"console.log('v1')\");   // \"app.<hash>.js\" — um nome por versão do conteúdo",
+                  "fingerprint(\"app.js\", \"console.log('v2')\");   // outro hash: é um arquivo novo para o navegador",
+                  "",
+                  "// O HTML (servido com no-cache) aponta para o nome da versão atual:",
+                  "// <script src=\"/assets/app.<hash>.js\"></script>",
+                  "// e o arquivo pode ser servido com: Cache-Control: public, max-age=31536000, immutable",
+                ].join("\n"),
+              },
+              explanation:
+                "Como cada versão tem um nome diferente, a cópia de um ano nunca fica errada: uma versão nova é, para o " +
+                "navegador, outro arquivo. Só o HTML precisa ser revalidado a cada visita, e ele é pequeno.",
+            },
+            {
+              title: "Vary e o cache compartilhado",
+              context: "Uma resposta que muda conforme um cabeçalho da requisição precisa dizer isso aos caches.",
+              code: {
+                language: "text",
+                filename: "vary.txt",
+                code: [
+                  "GET /api/products     Accept-Language: pt-BR   →  nomes em português",
+                  "GET /api/products     Accept-Language: en      →  nomes em inglês",
+                  "",
+                  "Sem Vary, a CDN guarda a primeira resposta e a entrega a todos, no idioma de quem chegou primeiro.",
+                  "",
+                  "Cache-Control: public, max-age=300",
+                  "Vary: Accept-Language          ← uma cópia por valor de Accept-Language",
+                  "",
+                  "Cuidado: Vary: Cookie ou Vary: User-Agent criam uma cópia para quase cada visitante,",
+                  "e o cache compartilhado deixa de acertar. Para respostas por pessoa, prefira private.",
+                ].join("\n"),
+              },
+              explanation:
+                "O `Vary` faz o cabeçalho indicado entrar na chave do cache. Ele resolve respostas que variam por poucos " +
+                "valores, como idioma e compressão, e atrapalha quando o valor varia por pessoa: nesse caso, a resposta " +
+                "não deveria estar num cache compartilhado.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Um site responde tudo com `Cache-Control: public, max-age=3600`: arquivos JavaScript sem hash no nome, o " +
+              "HTML, a API de produtos e a API do perfil da pessoa logada. Depois de um deploy, alguns usuários ficaram " +
+              "com o JavaScript antigo por uma hora, e um proxy corporativo mostrou o perfil de um funcionário a outro.",
+            problemCode: {
+              language: "javascript",
+              filename: "site-headers.js",
+              code: [
+                "const routes = [",
+                "  { path: \"/\", kind: \"html\" },",
+                "  { path: \"/assets/app.js\", kind: \"script\" },",
+                "  { path: \"/api/products\", kind: \"products\" },",
+                "  { path: \"/api/me\", kind: \"profile\" },",
+                "  { path: \"/api/me/invoices\", kind: \"invoices\" },",
+                "];",
+                "",
+                "const headersFor = (route) => ({ \"cache-control\": \"public, max-age=3600\" });",
+              ].join("\n"),
+            },
+            task:
+              "Reescreva `headersFor` com uma política por rota, explique a mudança necessária no nome do arquivo " +
+              "JavaScript e diga qual diretiva resolve cada um dos dois incidentes.",
+            hint:
+              "O script precisa de hash no nome para poder ter cache longo. O perfil não pode ser `public`. As faturas " +
+              "são dados sensíveis.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "site-headers.fixed.js",
+                code: [
+                  "const routes = [",
+                  "  { path: \"/\", kind: \"html\" },",
+                  "  { path: \"/assets/app.3f9c2a1b.js\", kind: \"script\" },   // o build passa a gerar nomes com hash",
+                  "  { path: \"/api/products\", kind: \"products\" },",
+                  "  { path: \"/api/me\", kind: \"profile\" },",
+                  "  { path: \"/api/me/invoices\", kind: \"invoices\" },",
+                  "];",
+                  "",
+                  "const POLICY = {",
+                  "  html: \"no-cache\",                                              // incidente 1: o HTML sempre aponta para o script atual",
+                  "  script: \"public, max-age=31536000, immutable\",                 // seguro: cada versão tem outro nome",
+                  "  products: \"public, max-age=60, stale-while-revalidate=300\",",
+                  "  profile: \"private, no-cache\",                                  // incidente 2: nenhum cache compartilhado guarda o perfil",
+                  "  invoices: \"no-store\",                                          // sensível: não fica guardado em lugar nenhum",
+                  "};",
+                  "",
+                  "const headersFor = (route) => ({ \"cache-control\": POLICY[route.kind] });",
+                  "routes.map((route) => `${route.path} → ${headersFor(route)[\"cache-control\"]}`);",
+                ].join("\n"),
+              },
+              explanation:
+                "O JavaScript antigo ficou uma hora porque o HTML e o próprio arquivo estavam em cache com o mesmo nome; " +
+                "com hash no nome e o HTML revalidado, um deploy é visto na próxima visita. O perfil vazou porque " +
+                "`public` autorizou o proxy a guardá-lo e a entregá-lo a outra pessoa; `private` restringe a cópia ao " +
+                "navegador de quem a pediu.",
+            },
+          },
         }),
-        concept({ order: 90, title: "CDN", requires: ["Browser & HTTP Cache"], note: "edge, origin pull/push, invalidação/purge, TTL de borda. Architecture / Caching at Scale revisita" }),
+        concept({
+          order: 90,
+          title: "CDN",
+          requires: ["Browser & HTTP Cache"],
+          note: "edge, origin pull/push, invalidação/purge, TTL de borda. Architecture / Caching at Scale revisita",
+          summary:
+            "Uma rede de servidores de cache espalhados pelo mundo (a borda, ou edge) que guarda cópias das respostas " +
+            "perto de quem as pede — reduzindo a latência para os usuários e a carga sobre o servidor de origem.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Uma CDN (content delivery network) coloca servidores de cache em dezenas ou centenas de lugares. O " +
+                "domínio do site aponta para a CDN, e cada pessoa é atendida pelo ponto mais próximo. Num acerto, a " +
+                "resposta sai da borda, a poucos milissegundos de quem pediu; numa falta, a borda busca no servidor de " +
+                "origem (origin pull), guarda a cópia e responde. Quanto tempo a borda guarda cada resposta segue os " +
+                "cabeçalhos HTTP (`s-maxage` vale só para caches compartilhados) ou regras da própria CDN. Quando o " +
+                "conteúdo muda antes do prazo, uma purga (purge) remove as cópias da borda, por URL ou por etiqueta.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "A CDN é um cache HTTP compartilhado e distribuído: tudo o que vale para o cache HTTP vale para ela, e o " +
+                "erro mais caro é deixá-la guardar uma resposta que era de uma pessoa só.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "cdn-headers.js",
+              code: [
+                "// Resposta da origem para a página de um artigo",
+                "function articleResponse(article) {",
+                "  return {",
+                "    status: 200,",
+                "    headers: {",
+                "      // navegador: sempre revalida; CDN: guarda por 5 minutos e serve a cópia velha",
+                "      // por até 1 dia se a origem estiver fora do ar",
+                "      \"cache-control\": \"public, max-age=0, s-maxage=300, stale-if-error=86400\",",
+                "      // etiquetas para purgar depois todas as páginas deste artigo e desta seção",
+                "      \"surrogate-key\": `article-${article.id} section-${article.section}`,",
+                "      etag: `\"${article.version}\"`,",
+                "    },",
+                "    body: `<h1>${article.title}</h1>`,",
+                "  };",
+                "}",
+                "",
+                "articleResponse({ id: 42, section: \"economia\", version: 7, title: \"Juros\" }).headers[\"cache-control\"];",
+                "// \"public, max-age=0, s-maxage=300, stale-if-error=86400\"",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "`s-maxage` separa as duas camadas: o navegador revalida a cada visita, e a revalidação é respondida pela " +
+                "borda, a poucos milissegundos, sem chegar à origem. O nome do cabeçalho de etiquetas varia entre CDNs " +
+                "(`Surrogate-Key`, `Cache-Tag`); a ideia é a mesma.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Para arquivos estáticos (imagens, CSS, JavaScript, vídeos), servidos para pessoas em várias regiões.",
+                "Para páginas e respostas de API iguais para todos, que aguentam segundos ou minutos de defasagem, como notícias e catálogos.",
+                "Para proteger a origem de picos de tráfego e, com `stale-if-error`, manter o site no ar enquanto a origem está com problemas.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Respostas personalizadas por pessoa não devem ficar no cache da borda; elas passam pela CDN direto até a origem.",
+                "Uma purga leva de segundos a minutos para chegar a todos os pontos, e cada ponto recarrega o conteúdo na próxima requisição.",
+                "Parâmetros de URL e cabeçalhos que entram na chave do cache sem necessidade fragmentam as cópias e derrubam a taxa de acertos.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "A chave de cache e os parâmetros que a fragmentam",
+              context: "Para a CDN, URLs diferentes são respostas diferentes.",
+              code: {
+                language: "text",
+                filename: "cache-key.txt",
+                code: [
+                  "/produtos/caneca",
+                  "/produtos/caneca?utm_source=newsletter",
+                  "/produtos/caneca?utm_source=instagram&utm_campaign=verao",
+                  "/produtos/caneca?fbclid=IwAR3...",
+                  "",
+                  "Quatro chaves, quatro faltas, quatro idas à origem — para a mesma página.",
+                  "",
+                  "Regras comuns na configuração da CDN:",
+                  "  - ignorar parâmetros de rastreamento (utm_*, fbclid, gclid) na chave do cache",
+                  "  - ordenar os parâmetros (?b=1&a=2 e ?a=2&b=1 viram a mesma chave)",
+                  "  - não incluir cookies na chave de conteúdo público",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada combinação de parâmetros cria uma entrada separada, e parâmetros de campanha mudam a cada clique. " +
+                "Normalizar a chave, mantendo só os parâmetros que de fato mudam o conteúdo, é muitas vezes o que leva a " +
+                "taxa de acertos de 40% para 90%.",
+            },
+            {
+              title: "Purgar quando o conteúdo muda",
+              context: "Ao publicar a correção de um artigo, as cópias da borda precisam sair antes do prazo.",
+              code: {
+                language: "javascript",
+                filename: "purge.js",
+                code: [
+                  "// Ao salvar o artigo: purgar pelas etiquetas, e não URL por URL",
+                  "async function onArticlePublished(article, { purgeTags }) {",
+                  "  await purgeTags([`article-${article.id}`, `section-${article.section}`]);",
+                  "  // remove a página do artigo, a capa da seção e as listagens em que ele aparece",
+                  "}",
+                  "",
+                  "// Implementação genérica: cada CDN tem a sua API de purga por etiqueta",
+                  "const purgeTags = async (tags) =>",
+                  "  fetch(process.env.CDN_PURGE_URL, {",
+                  "    method: \"POST\",",
+                  "    headers: { authorization: `Bearer ${process.env.CDN_TOKEN}`, \"content-type\": \"application/json\" },",
+                  "    body: JSON.stringify({ tags }),",
+                  "  });",
+                ].join("\n"),
+              },
+              explanation:
+                "As etiquetas enviadas pela origem em cada resposta permitem purgar, de uma vez, todas as páginas em que " +
+                "o artigo aparece, sem precisar conhecer cada URL. É a mesma ideia da invalidação por tags de um cache de " +
+                "aplicação, aplicada à borda.",
+            },
+            {
+              title: "Servir o velho enquanto busca o novo",
+              context: "Duas diretivas fazem a CDN proteger a origem e o usuário.",
+              code: {
+                language: "text",
+                filename: "stale.txt",
+                code: [
+                  "Cache-Control: public, s-maxage=60, stale-while-revalidate=300, stale-if-error=86400",
+                  "",
+                  "0–60 s       a cópia está fresca: a borda responde direto",
+                  "60–360 s     a cópia está vencida, mas a borda a entrega NA HORA e busca a nova em segundo plano",
+                  "             → ninguém espera a origem; a próxima pessoa já recebe a versão nova",
+                  "origem fora  enquanto a origem responder com erro, a borda entrega a última cópia por até 1 dia",
+                ].join("\n"),
+              },
+              explanation:
+                "`stale-while-revalidate` tira a latência da origem do caminho do usuário depois que a cópia vence, e " +
+                "`stale-if-error` mantém o site de pé durante uma falha da origem. Juntas, elas fazem a CDN funcionar " +
+                "também como proteção, e não só como aceleração.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A capa de um portal de notícias é a mesma para todos e recebe milhares de acessos por segundo em dias de " +
+              "eleição. Hoje ela sai com `Cache-Control: no-store`, e toda requisição chega à origem. Quando uma " +
+              "notícia é publicada, a capa precisa mostrá-la em menos de um minuto.",
+            problemCode: {
+              language: "javascript",
+              filename: "homepage.js",
+              code: [
+                "function homepageHeaders() {",
+                "  return { \"cache-control\": \"no-store\" };",
+                "}",
+                "",
+                "async function publishArticle(article) {",
+                "  // grava o artigo no banco",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Defina os cabeçalhos da capa para que a CDN a guarde e os navegadores revalidem, com a origem protegida " +
+              "durante falhas, e complete `publishArticle` para que a notícia nova apareça na capa logo depois de " +
+              "publicada.",
+            hint:
+              "`s-maxage` para a borda, `max-age=0` para o navegador, `stale-if-error` para as falhas. Marque a capa " +
+              "com uma etiqueta e purgue essa etiqueta ao publicar.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "homepage.fixed.js",
+                code: [
+                  "function homepageHeaders() {",
+                  "  return {",
+                  "    \"cache-control\": \"public, max-age=0, s-maxage=30, stale-while-revalidate=30, stale-if-error=3600\",",
+                  "    \"surrogate-key\": \"homepage\",",
+                  "  };",
+                  "}",
+                  "",
+                  "async function publishArticle(article, { save, purgeTags }) {",
+                  "  await save(article);",
+                  "  await purgeTags([\"homepage\", `section-${article.section}`]);   // a capa sai da borda agora",
+                  "}",
+                  "",
+                  "homepageHeaders()[\"cache-control\"];",
+                  "// \"public, max-age=0, s-maxage=30, stale-while-revalidate=30, stale-if-error=3600\"",
+                ].join("\n"),
+              },
+              explanation:
+                "Com a borda guardando a capa por 30 segundos, a origem recebe algumas requisições por minuto em cada " +
+                "ponto da CDN, e não milhares por segundo. O TTL curto já garante a atualização em menos de um minuto; a " +
+                "purga ao publicar a torna imediata. Os navegadores revalidam a cada visita, e quem responde é a borda.",
+            },
+          },
+        }),
       ],
     }),
     module({
