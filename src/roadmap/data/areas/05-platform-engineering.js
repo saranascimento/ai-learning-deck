@@ -3290,26 +3290,22 @@ export default area({
           title: "API",
           note: "a interface pela qual um programa usa outro",
           summary:
-            "Uma interface que um sistema oferece para que outros programas o usem, sem conhecer o seu " +
-            "interior — na web, geralmente um conjunto de endereços HTTP que recebem e devolvem dados.",
+            "Uma API (Application Programming Interface) é a fronteira que um software expõe para ser usado por outro " +
+            "software.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "API (Application Programming Interface) é a fronteira que um software expõe para ser usado por " +
-                "outro software. Quem usa, o consumidor, sabe o que pode pedir e o que receberá, mas não como o " +
-                "resultado é produzido. É a aplicação de Interface e Abstraction (Programming Fundamentals) no nível " +
-                "de sistemas: em vez de chamar uma função na mesma memória, um programa envia uma requisição pela " +
-                "rede a outro. Uma API web costuma trafegar JSON sobre HTTP, mas há outros estilos, como GraphQL, gRPC " +
-                "e webhooks.",
+                "Quem usa, o consumidor, sabe o que pode pedir e o que receberá, mas não como o resultado é produzido. É " +
+                "a aplicação de Interface e Abstraction (Programming Fundamentals) no nível de sistemas: em vez de chamar " +
+                "uma função na mesma memória, um programa envia uma requisição pela rede a outro. Uma API web costuma " +
+                "trafegar JSON sobre HTTP, mas há outros estilos, como GraphQL, gRPC e webhooks.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "A API é a porta de entrada de um sistema: quem consome depende só do que ela promete, e o " +
-                "sistema pode mudar por dentro sem que o consumidor perceba.",
+              text: "Uma API bem desenhada deixa o sistema mudar por dentro sem que nenhum consumidor perceba.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -3483,25 +3479,25 @@ export default area({
           note: "aplica Contract (pré/pós-condições) a fronteira de serviço; Testing & Quality Engineering / Contract Testing verifica isto",
           revisit: ["Programming Foundations / Programming Fundamentals / Contract", "Testing & Quality Engineering / Testing Strategy / Contract Testing"],
           summary:
-            "Tudo o que a API promete aos seus consumidores — endereços, formatos de entrada e de saída, erros, " +
-            "limites e comportamentos —, e as regras sobre o que pode mudar sem quebrar quem depende dela.",
+            "O API Contract é tudo o que uma API promete aos seus consumidores: operações, formatos, erros, limites e " +
+            "comportamentos.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "O contrato de uma API é a promessa entre provedor e consumidor: quais operações existem, o que " +
-                "cada uma exige (pré-condições, como campos obrigatórios e permissões), o que devolve " +
-                "(pós-condições, como o formato e os status) e o que sempre vale (invariantes, como \"o total nunca " +
-                "é negativo\"). É a aplicação de Contract (Programming Fundamentals) a uma fronteira entre serviços, e " +
-                "é o que os testes de contrato (Contract Testing) verificam.",
+                "É a promessa entre provedor e consumidor: quais operações existem, o que cada uma exige (pré-condições, " +
+                "como campos obrigatórios e permissões), o que devolve (pós-condições, como o formato e os status) e o " +
+                "que sempre vale (invariantes, como \"o total nunca é negativo\"). É a aplicação de Contract (Programming " +
+                "Fundamentals) a uma fronteira entre serviços, e é o que os testes de contrato (Contract Testing) " +
+                "verificam.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "O contrato é o que você não pode mudar sem avisar: consumidores dependem dele, e tudo o que a " +
-                "API expõe passa a fazer parte dele, querendo ou não.",
+                "Tudo o que a API expõe vira contrato, até o que você não documentou, porque algum consumidor vai " +
+                "depender disso.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -3687,25 +3683,24 @@ export default area({
           requires: ["API"],
           note: "restrições REST, HATEOAS (menção), maturidade de Richardson",
           summary:
-            "Um estilo de arquitetura para APIs baseado em recursos identificados por URLs, manipulados por " +
-            "meio de representações e de uma interface uniforme sobre HTTP, sem estado entre requisições.",
+            "REST (Representational State Transfer) é um estilo de arquitetura para APIs baseado em recursos com " +
+            "endereço próprio, manipulados pelos métodos HTTP.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "REST (Representational State Transfer) foi descrito por Roy Fielding como um conjunto de restrições " +
-                "que, juntas, fazem sistemas na web escalarem e evoluírem. O eixo é o recurso: uma coisa do domínio, " +
-                "como um pedido, com um endereço próprio, que os clientes manipulam trocando representações dela " +
-                "(em geral JSON) com os métodos HTTP. Muitas APIs chamadas de \"REST\" seguem só parte das " +
-                "restrições, e o termo é usado de forma mais frouxa no dia a dia.",
+                "Roy Fielding o descreveu como um conjunto de restrições que, juntas, fazem sistemas na web escalarem e " +
+                "evoluírem. O eixo é o recurso: uma coisa do domínio, como um pedido, que os clientes manipulam trocando " +
+                "representações dela (em geral JSON). Muitas APIs chamadas de \"REST\" seguem só parte das restrições, e o " +
+                "termo é usado de forma mais frouxa no dia a dia.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Pense em recursos com endereços e nas ações padrão do HTTP sobre eles: o significado vem dos " +
-                "métodos e dos status, e não de nomes de operações inventados a cada endpoint.",
+                "Numa API REST, o significado vem dos métodos e dos status do HTTP, e não de nomes de operação inventados " +
+                "em cada endpoint.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -3878,26 +3873,23 @@ export default area({
           subtopics: ["recursos como substantivos", "coleção × item", "aninhamento/hierarquia", "path × query param"],
           note: "consolidada (A15)",
           summary:
-            "Como transformar os conceitos do domínio em recursos com endereços claros: substantivos no plural, " +
-            "coleção e item, hierarquia com moderação, e a diferença entre o que identifica (caminho) e o que " +
-            "refina (consulta).",
+            "Resource Modeling é decidir quais coisas do domínio a API expõe como recursos e como cada uma é " +
+            "endereçada.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Modelar recursos é decidir quais são as \"coisas\" que a API expõe e como cada uma é endereçada. " +
                 "O endereço é um substantivo, e o verbo é o método HTTP: `GET /orders/42`, e não `GET /getOrder?id=42`. " +
-                "Uma coleção (`/orders`) agrupa os itens, e um item (`/orders/42`) é identificado pelo seu id. " +
-                "Relações fortes viram hierarquia (`/orders/42/items`), e filtros, ordenação e paginação vão na consulta " +
+                "Uma coleção (`/orders`) agrupa os itens, e um item (`/orders/42`) é identificado pelo seu id. Relações " +
+                "fortes viram hierarquia (`/orders/42/items`), e filtros, ordenação e paginação vão na consulta " +
                 "(`?status=paid`).",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "O caminho identifica um recurso, a consulta o refina: substantivos no plural, coleções e itens, e " +
-                "os verbos ficam por conta do método HTTP.",
+                "Se o caminho de uma URL tem um verbo, a ação está no lugar errado, porque ela pertence ao método HTTP.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -4071,25 +4063,22 @@ export default area({
           collision: "≠ Application Security / Input Validation — validar o contrato de API × defender contra entrada maliciosa (conceitos distintos)",
           revisit: ["Platform / Application Security / Input Validation"],
           summary:
-            "Conferir, na entrada da API, se a requisição cumpre o contrato — campos obrigatórios, tipos, " +
-            "formatos e limites — e recusá-la com uma mensagem clara antes que chegue à lógica de negócio.",
+            "Request Validation é conferir, na entrada da API, se a requisição cumpre o contrato antes de executar " +
+            "qualquer regra.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "A validação de requisição é a guarda da fronteira: antes de executar qualquer regra, a API checa se o " +
-                "que chegou tem a forma prometida no contrato: os campos obrigatórios estão presentes, os tipos e " +
-                "formatos estão certos, os valores estão dentro dos limites. Se não estiverem, responde 400 (ou 422) " +
-                "com a lista do que está errado. Não é o mesmo que a defesa contra entrada maliciosa (Input Validation, " +
-                "em Application Security): aquela trata de segurança, e esta, de contrato.",
+                "A API checa se o que chegou tem a forma prometida: os campos obrigatórios estão presentes, os tipos e " +
+                "formatos estão certos, os valores estão dentro dos limites. Se não estiverem, responde 400 (ou 422) com " +
+                "a lista do que está errado. Não é o mesmo que a defesa contra entrada maliciosa (Input Validation, em " +
+                "Application Security): aquela trata de segurança, e esta, de contrato.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Valide na borda, antes da lógica de negócio, e diga com precisão o que está errado: o restante do " +
-                "código pode assumir que os dados já têm a forma certa.",
+              text: "Com a entrada validada na borda, o resto do código pode confiar que os dados já têm a forma certa.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -4284,25 +4273,25 @@ export default area({
           requires: ["REST"],
           note: "envelope, status coerente, Location em criação",
           summary:
-            "Como estruturar as respostas de uma API de forma consistente: formato do corpo, envelope, status " +
-            "coerente com o resultado, datas e identificadores padronizados, e o que se devolve em cada operação.",
+            "Response Design é a forma de estruturar as respostas de uma API para que sejam previsíveis em todos os " +
+            "endpoints.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "A resposta é a metade da API que o consumidor mais lê. Projetá-la bem significa ser previsível: o " +
-                "mesmo tipo de operação devolve sempre a mesma forma, os status dizem o que aconteceu, e os campos " +
-                "seguem convenções únicas. Decisões típicas: devolver o objeto diretamente ou dentro de um " +
-                "envelope (`{ data, meta }`), o que responder após criar (201, o recurso e `Location`), e como " +
-                "representar datas, valores monetários e ausências.",
+                "A resposta é a metade da API que o consumidor mais lê. Ser previsível significa que o mesmo tipo de " +
+                "operação devolve sempre a mesma forma, os status dizem o que aconteceu, e os campos seguem convenções " +
+                "únicas. Decisões típicas: devolver o objeto diretamente ou dentro de um envelope (`{ data, meta }`), o " +
+                "que responder após criar (201, o recurso e `Location`), e como representar datas, valores monetários e " +
+                "ausências.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Consistência é o que faz uma API ser aprendida uma vez: mesma forma, mesmas convenções e status " +
-                "coerentes em todos os endpoints.",
+                "Uma API consistente se aprende uma vez, e cada exceção à regra é algo que todo consumidor precisa " +
+                "descobrir sozinho.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -4484,26 +4473,24 @@ export default area({
           note: "revisita Software Craft / Error Handling / Result Pattern; RFC 7807 (problem+json)",
           revisit: ["Software Craft / Error Handling / Result Pattern"],
           summary:
-            "Como uma API comunica falhas: um formato único e legível por máquina, com o status correto, um " +
-            "código estável, uma mensagem útil e os detalhes por campo — sem vazar o que é interno.",
+            "Error Response Design é a forma como uma API comunica falhas, num formato único que máquinas e pessoas " +
+            "conseguem ler.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Toda API falha, e o consumidor precisa entender a falha para reagir: corrigir o pedido, tentar de " +
-                "novo, ou mostrar algo ao usuário. Um bom design de erro usa o status HTTP certo, um corpo com formato " +
-                "único em todos os endpoints e um identificador estável do tipo de erro. A RFC 7807 (atualizada pela " +
-                "RFC 9457) padroniza isso como `application/problem+json`, com os campos `type`, `title`, `status`, " +
-                "`detail` e `instance`, além de extensões. É a versão de rede do Result Pattern (Error Handling): " +
-                "erros como valores previstos, e não como surpresas.",
+                "Toda API falha, e o consumidor precisa entender a falha para reagir: corrigir o pedido, tentar de novo, " +
+                "ou mostrar algo ao usuário. Um bom design de erro usa o status HTTP certo, um corpo com formato único em " +
+                "todos os endpoints e um identificador estável do tipo de erro. A RFC 7807 (atualizada pela RFC 9457) " +
+                "padroniza isso como `application/problem+json`, com os campos `type`, `title`, `status`, `detail` e " +
+                "`instance`, além de extensões. É a versão de rede do Result Pattern (Error Handling): erros como valores " +
+                "previstos, e não como surpresas.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Um erro é parte do contrato: o mesmo formato em toda a API, um código estável para as máquinas e uma " +
-                "mensagem clara para as pessoas, sem detalhes internos.",
+              text: "O consumidor deve decidir o que fazer pelo código do erro, e nunca lendo o texto da mensagem.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -4705,25 +4692,22 @@ export default area({
           subtopics: ["offset/limit: simples, page drift, custo de página profunda", "cursor/keyset: estável, sem página N, requer ordenação total"],
           note: "consolidada (A3)",
           summary:
-            "Como devolver uma coleção grande em pedaços: por deslocamento (`offset` e `limit`), simples mas instável " +
-            "e caro em páginas profundas, ou por cursor, estável e eficiente, mas sem saltar para uma página qualquer.",
+            "Pagination é devolver uma coleção grande em pedaços, por deslocamento (offset) ou a partir de um " +
+            "marcador (cursor).",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Devolver milhares de itens em uma resposta é lento e caro, então as coleções são divididas em páginas. " +
-                "Há duas estratégias. A paginação por offset pede \"os `limit` itens a partir da posição `offset`\", e " +
-                "é fácil de implementar e permite ir a qualquer página. A paginação por cursor pede \"os `limit` itens " +
-                "depois deste marcador\", em que o cursor guarda o valor do último item visto; é estável e eficiente, mas " +
-                "só avança e retrocede, sem saltar a uma página N.",
+                "Devolver milhares de itens em uma resposta é lento e caro. A paginação por offset pede \"os `limit` itens " +
+                "a partir da posição `offset`\", e é fácil de implementar e permite ir a qualquer página. A paginação por " +
+                "cursor pede \"os `limit` itens depois deste marcador\", em que o cursor guarda o valor do último item " +
+                "visto; é estável e eficiente, mas só avança e retrocede, sem saltar a uma página N.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Offset conta posições e cursor guarda um ponto de referência: contar posições quebra quando os dados " +
-                "mudam e fica lento nas páginas fundas, e o cursor resiste aos dois problemas.",
+              text: "Se os dados mudam enquanto alguém pagina, ou as páginas vão fundo, prefira cursor a offset.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -4909,26 +4893,25 @@ export default area({
           subtopics: ["operadores de filtro", "ordenação multi-campo", "whitelist de campos ordenáveis"],
           note: "consolidada (A16)",
           summary:
-            "Parâmetros de consulta que deixam o consumidor restringir e ordenar uma coleção — com operadores de " +
-            "filtro, ordenação por vários campos e uma lista fechada de campos permitidos.",
+            "Filtering & Sorting são os parâmetros de consulta que deixam o consumidor restringir e ordenar uma " +
+            "coleção.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Uma coleção grande só é útil se o consumidor puder pedir apenas o que interessa e na ordem que " +
-                "quer. Os filtros e a ordenação vão na consulta: `?status=paid&price[gte]=10&sort=-createdAt,name`. " +
-                "Convenções comuns: um parâmetro por campo para igualdade, um operador para comparações " +
-                "(`price[gte]`, `price_gte`), e `sort` com campos separados por vírgula, em que o prefixo `-` inverte a " +
-                "ordem. O ponto crucial é a lista fechada (whitelist): só se filtra e ordena pelo que a API " +
-                "declarou.",
+                "Uma coleção grande só é útil se o consumidor puder pedir apenas o que interessa e na ordem que quer: " +
+                "`?status=paid&price[gte]=10&sort=-createdAt,name`. Convenções comuns: um parâmetro por campo para " +
+                "igualdade, um operador para comparações (`price[gte]`, `price_gte`), e `sort` com campos separados por " +
+                "vírgula, em que o prefixo `-` inverte a ordem. O ponto crucial é a lista fechada (whitelist): só se " +
+                "filtra e ordena pelo que a API declarou.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Filtre e ordene só pelos campos que a API autorizou: cada um é um compromisso de desempenho e de " +
-                "segurança, e nomes vindos do cliente nunca vão direto para a consulta.",
+                "Cada campo liberado para filtro é uma consulta que o banco precisa aguentar, então libere só o que tem " +
+                "índice e propósito.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -5111,25 +5094,25 @@ export default area({
           note: "canônico — mecânica HTTP (header + store de dedup + replay de resposta; retry seguro de POST). Mudança não silenciosa vs Fase 1 (que dizia 'Platform/API referencia')",
           collision: "≠ Idempotency conceito de resiliência (Architecture / Resilience Patterns)",
           summary:
-            "Uma chave enviada pelo cliente em uma operação não idempotente, como um POST, que permite ao servidor " +
-            "reconhecer uma repetição e devolver o resultado da primeira execução, em vez de fazê-la de novo.",
+            "Uma Idempotency Key é um identificador que o cliente envia numa operação não idempotente para o servidor " +
+            "reconhecer repetições.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
                 "Quando uma requisição falha por tempo limite, o cliente não sabe se o servidor chegou a processá-la: " +
-                "repetir pode duplicar uma cobrança ou um pedido. A chave de idempotência resolve isso: o cliente gera " +
-                "um identificador único por operação, e o envia em um cabeçalho (`Idempotency-Key`). O servidor guarda o " +
-                "resultado associado à chave, e, se a mesma chave chegar de novo, devolve o resultado guardado sem " +
-                "executar a operação outra vez. É o que torna seguro repetir um POST (HTTP Methods).",
+                "repetir pode duplicar uma cobrança ou um pedido. O cliente gera um identificador único por operação e o " +
+                "envia em um cabeçalho (`Idempotency-Key`). O servidor guarda o resultado associado à chave, e, se a " +
+                "mesma chave chegar de novo, devolve o resultado guardado sem executar a operação outra vez. É o que " +
+                "torna seguro repetir um POST (HTTP Methods).",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "A mesma chave significa a mesma operação: a primeira vez executa, e as seguintes só repetem a " +
-                "resposta guardada — o cliente pode tentar de novo sem medo de duplicar.",
+                "Um timeout não diz se a operação aconteceu, e a chave de idempotência é o que permite tentar de novo sem " +
+                "cobrar duas vezes.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -5347,26 +5330,24 @@ export default area({
           subtopics: ["token bucket", "leaky bucket", "janela fixa/deslizante"],
           note: "canônico — 429 + Retry-After + headers de quota. Mudança não silenciosa vs Fase 1 (que colocava em Architecture / Resilience Patterns). Architecture e AI Engineering revisitam",
           collision: "≠ Query Complexity (GraphQL) ≠ Throttle client-side (Performance Engineering)",
-          summary:
-            "Limitar quantas requisições um cliente pode fazer em um período, para proteger a API contra abuso e " +
-            "sobrecarga e dividir a capacidade de forma justa — respondendo 429 quando o limite estoura.",
+          summary: "Rate Limiting é limitar quantas requisições um cliente pode fazer num período.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Uma API tem capacidade finita, e um único cliente com um laço descontrolado, ou um abuso " +
-                "deliberado, pode esgotá-la para todos. O rate limiting define uma cota, por exemplo 100 " +
-                "requisições por minuto por chave de API, e recusa o excedente com o status `429 Too Many Requests`, " +
-                "acompanhado de `Retry-After`. Os algoritmos mais comuns são a janela fixa, a janela deslizante, o token " +
-                "bucket (baldes de fichas, que permitem rajadas curtas) e o leaky bucket (escoamento em ritmo constante).",
+                "Uma API tem capacidade finita, e um único cliente com um laço descontrolado, ou um abuso deliberado, " +
+                "pode esgotá-la para todos. O rate limiting define uma cota, por exemplo 100 requisições por minuto por " +
+                "chave de API, e recusa o excedente com o status `429 Too Many Requests`, acompanhado de `Retry-After`. " +
+                "Os algoritmos mais comuns são a janela fixa, a janela deslizante, o token bucket (baldes de fichas, que " +
+                "permitem rajadas curtas) e o leaky bucket (escoamento em ritmo constante).",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Defina uma cota por cliente e avise claramente quando ela acabar: quem excede recebe 429 e o tempo de " +
-                "espera, e o restante dos clientes continua sendo atendido.",
+                "Um único cliente descontrolado não pode derrubar a API para todos, e a cota por cliente é o que garante " +
+                "isso.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -5589,25 +5570,25 @@ export default area({
           note: "revisita Software Craft / Semantic Versioning, Backward Compatibility (URL vs header vs media type)",
           revisit: ["Software Craft / Dependency & Version Management / Semantic Versioning", "Software Craft / Dependency & Version Management / Backward Compatibility"],
           summary:
-            "A forma de publicar mudanças incompatíveis de uma API sem quebrar quem já a usa: manter versões " +
-            "convivendo, identificadas na URL, em um cabeçalho ou no tipo de mídia.",
+            "API Versioning é publicar uma mudança incompatível como uma nova versão, mantendo a anterior " +
+            "funcionando.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
                 "Mudanças compatíveis, como acrescentar campos ou endpoints, não exigem uma nova versão. Quando uma " +
-                "mudança é incompatível (breaking change), a saída é publicar uma nova versão da API e manter a " +
-                "anterior em funcionamento por um tempo, para que cada consumidor migre no seu ritmo. É o mesmo " +
-                "raciocínio de Semantic Versioning e de Backward Compatibility (Dependency & Version Management), " +
-                "aplicado a um serviço em execução, em que só a versão maior importa.",
+                "mudança é incompatível (breaking change), a versão anterior continua em funcionamento por um tempo, para " +
+                "que cada consumidor migre no seu ritmo. A versão pode ser identificada na URL, num cabeçalho ou no tipo " +
+                "de mídia. É o mesmo raciocínio de Semantic Versioning e de Backward Compatibility (Dependency & Version " +
+                "Management), aplicado a um serviço em execução, em que só a versão maior importa.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Versione só quando não houver como evoluir de forma compatível, e mantenha as versões antigas " +
-                "funcionando até que os consumidores migrem.",
+                "Cada versão publicada é mais uma API para manter, então versione só quando não houver como evoluir de " +
+                "forma compatível.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -5799,26 +5780,24 @@ export default area({
           requires: ["API Versioning"],
           note: "revisita Software Craft / Deprecation (sunset headers, janelas de migração)",
           revisit: ["Software Craft / Dependency & Version Management / Deprecation"],
-          summary:
-            "O processo de aposentar uma versão ou um recurso de uma API com aviso e prazo: anunciar, sinalizar nas " +
-            "respostas, acompanhar quem ainda usa, e só então desligar.",
+          summary: "API Deprecation é aposentar uma versão ou um recurso de uma API com aviso, alternativa e prazo.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Versões antigas não podem existir para sempre, mas desligá-las de surpresa quebra os consumidores. A " +
-                "depreciação é o caminho combinado: anuncia-se que algo será retirado, indica-se a alternativa, dá-se " +
-                "uma janela de migração e, só depois de uma data definida, remove-se. É o mesmo processo de Deprecation " +
-                "em bibliotecas (Dependency & Version Management), com a diferença de que os consumidores são " +
-                "sistemas em produção que você nem sempre conhece.",
+                "Versões antigas não podem existir para sempre, mas desligá-las de surpresa quebra os consumidores. O " +
+                "caminho combinado é anunciar que algo será retirado, indicar a alternativa, dar uma janela de migração " +
+                "e, só depois de uma data definida, remover. É o mesmo processo de Deprecation em bibliotecas (Dependency " +
+                "& Version Management), com a diferença de que os consumidores são sistemas em produção que você nem " +
+                "sempre conhece.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Avise cedo, sinalize nas próprias respostas, meça quem ainda usa e desligue só na data anunciada: a " +
-                "aposentadoria de uma API é um processo, e não um evento.",
+                "Antes de desligar uma versão, meça quem ainda a usa, porque os consumidores de uma API nem sempre são " +
+                "conhecidos.",
             },
             { type: "heading", text: "Como fazer" },
             {
@@ -6002,27 +5981,23 @@ export default area({
           title: "OpenAPI",
           requires: ["API Contract"],
           note: "spec-as-doc, Swagger UI, contract-first — absorve o SUGESTÃO 'API Documentation' deixado pelo Epic 03",
-          summary:
-            "Um formato padrão, em YAML ou JSON, para descrever uma API HTTP — endpoints, parâmetros, corpos, " +
-            "respostas e autenticação — que serve ao mesmo tempo de documentação, de contrato e de base para " +
-            "gerar código e testes.",
+          summary: "OpenAPI é um formato padrão, em YAML ou JSON, para descrever o contrato de uma API HTTP.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "OpenAPI (antes chamado de Swagger) é uma especificação para escrever o contrato de uma API em uma " +
-                "forma que humanos e máquinas leem. Um documento OpenAPI lista os caminhos, os métodos de cada um, os " +
-                "parâmetros, o formato do corpo e das respostas (descritos com JSON Schema) e a segurança. Com ele, " +
-                "geram-se páginas de documentação interativas (Swagger UI, Redoc), clientes e servidores em várias " +
-                "linguagens, dublês para testes e validação automática de requisições e respostas.",
+                "Antes se chamava Swagger. Um documento OpenAPI lista os caminhos, os métodos de cada um, os parâmetros, " +
+                "o formato do corpo e das respostas (descritos com JSON Schema) e a segurança, numa forma que humanos e " +
+                "máquinas leem. Com ele, geram-se páginas de documentação interativas (Swagger UI, Redoc), clientes e " +
+                "servidores em várias linguagens, dublês para testes e validação automática de requisições e respostas.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Descreva a API uma vez, em um formato padrão, e deixe as ferramentas gerarem a documentação, os " +
-                "clientes e as verificações a partir dessa fonte.",
+                "Quando a documentação é gerada da mesma fonte que valida a API, ela não consegue ficar desatualizada em " +
+                "silêncio.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -6241,16 +6216,15 @@ export default area({
           isNew: true,
           note: "cadeia de handlers (auth, logging, rate limiting, validação) antes do controller. Ancora o Chain of Responsibility que o Epic 04 deixou como Advanced/Optional — o pattern continua SUGESTÃO no Epic 04, não é movido",
           summary:
-            "Uma cadeia de funções por onde a requisição passa antes de chegar ao controlador — cada uma faz uma " +
-            "tarefa transversal, como registrar, autenticar ou validar, e decide se passa adiante ou responde.",
+            "Middleware é uma função que fica entre o recebimento da requisição e o código que a trata, formando uma " +
+            "cadeia.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Middleware é uma função que fica entre o recebimento da requisição e o código que a trata. Ela recebe " +
-                "a requisição, faz algo (registrar, autenticar, limitar, validar, comprimir) e chama `next()` para " +
-                "passar ao próximo elo, ou responde por conta própria e encerra a cadeia. O conjunto forma um " +
+                "Ela recebe a requisição, faz algo (registrar, autenticar, limitar, validar, comprimir) e chama `next()` " +
+                "para passar ao próximo elo, ou responde por conta própria e encerra a cadeia. O conjunto forma um " +
                 "pipeline: as preocupações que valem para muitas rotas ficam em peças reutilizáveis, e os controladores " +
                 "só cuidam da regra da rota. É a aplicação do padrão Chain of Responsibility.",
             },
@@ -6258,8 +6232,8 @@ export default area({
               type: "callout",
               title: "Ideia principal",
               text:
-                "Cada middleware faz uma coisa, na ordem em que foi registrado, e decide se passa adiante: a ordem " +
-                "da cadeia é parte do comportamento da API.",
+                "A ordem dos middlewares é comportamento: autenticar depois de uma rota já ter respondido não protege " +
+                "nada.",
             },
             { type: "heading", text: "Como funciona" },
             {
