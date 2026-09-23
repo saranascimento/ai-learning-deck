@@ -1916,27 +1916,20 @@ export default area({
           title: "Memory",
           note: "Memória",
           requires: ["Programming Fundamentals / Abstraction"],
-          summary:
-            "O espaço endereçável onde um programa guarda dados durante a execução — cada informação vive em " +
-            "algum endereço, e entender isso explica identidade vs. igualdade, custo de alocação e bugs de " +
-            "estado compartilhado.",
+          summary: "Memory é o espaço endereçável onde um programa guarda seus dados enquanto roda.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Memory é o espaço que um programa usa pra guardar dados enquanto roda — cada valor, cada " +
-                "objeto, cada variável ocupa um endereço específico nesse espaço. Um programa não \"sabe\" " +
-                "onde as coisas estão por mágica: cada acesso a um dado é, por baixo, um acesso a um endereço " +
-                "de memória.",
+                "Cada valor, cada objeto, cada variável ocupa um endereço específico nesse espaço. Um programa não \"sabe\" " +
+                "onde as coisas estão por mágica: cada acesso a um dado é, por baixo, um acesso a um endereço de memória.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Memory é o espaço endereçável onde os dados de um programa vivem durante a execução — todo " +
-                "acesso a uma variável é, por baixo, um acesso a um endereço. Isso explica identidade vs. " +
-                "igualdade, custo de alocação, e por que compartilhar memória é uma fonte comum de bugs.",
+                "Pensar em endereços, e não só em valores, é o que explica a maioria dos bugs de estado compartilhado.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -2038,26 +2031,22 @@ export default area({
           requires: ["Memory"],
           revisit: ["Concurrency / Shared State", "Software Design / Mutable vs Immutable Objects", "Functional Programming / Immutability"],
           summary:
-            "Duas formas diferentes de uma variável se relacionar com um dado: copiar o valor por completo, ou " +
-            "compartilhar o endereço onde ele vive — a origem do bug \"mudei uma coisa e outra mudou junto\".",
+            "Value vs Reference é a diferença entre uma atribuição copiar o dado inteiro ou copiar só o endereço onde " +
+            "ele vive.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Quando você atribui um valor a outra variável (ou passa como argumento), duas coisas podem " +
-                "acontecer: o valor é copiado por completo (semântica de valor), ou o endereço é copiado e " +
-                "ambas passam a apontar pro mesmo dado na memória (semântica de referência). Em JavaScript, " +
-                "primitivos (number, string, boolean...) têm semântica de valor; objetos e arrays têm " +
-                "semântica de referência.",
+                "Isso acontece sempre que você atribui um valor a outra variável ou o passa como argumento. Com semântica " +
+                "de valor, cada nome fica com a sua cópia; com semântica de referência, os dois passam a apontar pro " +
+                "mesmo dado na memória. Em JavaScript, primitivos (number, string, boolean...) têm semântica de valor; " +
+                "objetos e arrays têm semântica de referência.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Semântica de valor copia o dado inteiro; semântica de referência copia só o endereço, e os " +
-                "dois nomes passam a compartilhar o mesmo dado. Saber qual das duas está em jogo é a diferença " +
-                "entre um bug de estado compartilhado sem querer e código previsível.",
+              text: "Se mudar uma variável mudou outra, as duas estavam compartilhando a mesma referência.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -2199,26 +2188,22 @@ export default area({
           requires: ["Value vs Reference"],
           collision: "≠ Stack ADT (Data Structures)",
           summary:
-            "Duas regiões de memória com regras de vida muito diferentes: stack guarda dados de vida curta e " +
-            "previsível (frames de função), heap guarda dados que precisam sobreviver além de uma única chamada.",
+            "Stack e Heap são as duas regiões onde um programa guarda dados, separadas pelo tempo que esses dados " +
+            "precisam viver.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Stack e Heap são duas regiões de memória com propósitos diferentes. A Stack guarda dados de " +
-                "vida curta e previsível — cada chamada de função empilha um \"frame\" com suas variáveis " +
-                "locais, removido automaticamente (LIFO — o último que entra é o primeiro que sai) quando a " +
+                "A Stack guarda dados de vida curta e previsível — cada chamada de função empilha um \"frame\" com suas " +
+                "variáveis locais, removido automaticamente (LIFO — o último que entra é o primeiro que sai) quando a " +
                 "função retorna. O Heap guarda dados que precisam viver além de uma única chamada — alocados " +
                 "dinamicamente, removidos só quando nada mais precisa deles.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Stack guarda dados de vida curta e previsível, na disciplina LIFO de frames de função. Heap " +
-                "guarda dados que precisam sobreviver além de uma única chamada. Um valor primitivo geralmente " +
-                "cabe na stack; um objeto retornado ou compartilhado precisa do heap.",
+              text: "Se um dado precisa sobreviver ao fim da função que o criou, ele não pode morar na Stack.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -2340,25 +2325,22 @@ export default area({
           collision: "≠ Stack ADT (Data Structures)",
           revisit: ["Algorithms & Complexity / Recursion", "Asynchronous Programming / Call Stack"],
           summary:
-            "A estrutura que rastreia em que ponto do programa a execução está — cada chamada de função " +
-            "empilha um frame, cada retorno desempilha, e é exatamente essa pilha que aparece num stack trace.",
+            "A Call Stack é a pilha de frames que o runtime mantém para saber onde a execução está e para onde ela " +
+            "volta.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "A Call Stack é a pilha de frames de execução que o runtime mantém para saber \"onde estou, e " +
-                "pra onde volto quando essa função terminar\". Toda vez que uma função é chamada, um novo " +
-                "frame é empilhado com suas variáveis locais e o ponto de retorno; quando a função termina, o " +
-                "frame é removido e a execução volta pro frame anterior.",
+                "Toda vez que uma função é chamada, um novo frame é empilhado com suas variáveis locais e o ponto de " +
+                "retorno; quando a função termina, o frame é removido e a execução volta pro frame anterior.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Call Stack é a pilha de frames que registra onde a execução está e pra onde ela volta. Cada " +
-                "chamada empilha, cada retorno desempilha — e um stack trace é literalmente uma foto dessa " +
-                "pilha no momento do erro.",
+                "Um stack trace é uma foto da Call Stack no momento do erro, então leia-o como o caminho que levou até " +
+                "ali.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -2462,26 +2444,23 @@ export default area({
           requires: ["Stack vs Heap"],
           revisit: ["Concurrency (pausas de GC)", "Platform / Performance Engineering"],
           summary:
-            "O mecanismo que recupera automaticamente a memória do heap que não é mais alcançável por nenhuma " +
-            "parte do programa — a alternativa a gerenciar memória manualmente, ao custo de menos controle " +
-            "direto sobre quando isso acontece.",
+            "Garbage Collection é o processo automático que libera a memória do heap que nenhuma parte do programa " +
+            "consegue mais alcançar.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Garbage Collection (GC) é o processo automático que identifica quais dados no heap não são " +
-                "mais alcançáveis por nenhuma parte do programa em execução, e libera essa memória para reuso. " +
-                "\"Alcançável\" (reachability) significa: existe algum caminho de referências, a partir de algo " +
-                "que o programa ainda usa, até aquele dado?",
+                "\"Alcançável\" (reachability) significa: existe algum caminho de referências, a partir de algo que o " +
+                "programa ainda usa, até aquele dado? Quando esse caminho não existe mais, o GC pode devolver aquela " +
+                "memória para reuso.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Garbage Collection libera automaticamente a memória do heap que não é mais alcançável por " +
-                "nada que o programa ainda usa. Evita gestão manual, mas troca controle direto por menos " +
-                "previsibilidade sobre quando exatamente a liberação acontece.",
+                "Com Garbage Collection você não libera memória, você deixa de alcançá-la, e o runtime decide quando " +
+                "recuperá-la.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -2585,25 +2564,22 @@ export default area({
           requires: ["Garbage Collection", "Value vs Reference"],
           revisit: ["Platform / Performance Engineering"],
           summary:
-            "Memória que deveria ter sido liberada, mas continua retida porque alguma referência esquecida " +
-            "ainda a mantém alcançável — mesmo em runtimes com Garbage Collection, é possível vazar memória.",
+            "Memory Leak é memória que já não é necessária, mas continua retida porque alguma referência esquecida " +
+            "ainda a alcança.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Um Memory Leak acontece quando memória que já não é mais necessária continua alcançável — por " +
-                "causa de uma referência que alguém esqueceu de remover — e por isso o Garbage Collection " +
-                "nunca a recupera. Não é um bug de \"esquecer de liberar\" (como em linguagens sem GC); é um " +
-                "bug de \"esquecer de deixar de referenciar\".",
+                "Como ela continua alcançável, o Garbage Collection nunca a recupera. Não é um bug de \"esquecer de " +
+                "liberar\" (como em linguagens sem GC); é um bug de \"esquecer de deixar de referenciar\".",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Memory Leak é memória que deveria estar livre, mas continua alcançável por uma referência " +
-                "esquecida — mesmo com Garbage Collection automático, um programa ainda pode vazar memória se " +
-                "ele mesmo mantém, sem querer, um caminho até dados que já não precisa.",
+                "Em linguagens com Garbage Collection, todo leak começa com uma referência que você guardou e esqueceu de " +
+                "soltar.",
             },
             { type: "heading", text: "Por que importa" },
             {
