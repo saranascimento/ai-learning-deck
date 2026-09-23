@@ -25,23 +25,20 @@ export default area({
           title: "Naming",
           note: "vocabulário/legibilidade — ponto de entrada da Story",
           summary:
-            "Escolher nomes que revelam a intenção — o que a coisa é ou faz, no vocabulário do problema — para que " +
-            "o código possa ser lido sem precisar de uma explicação à parte.",
+            "Naming é a escolha dos nomes de variáveis, funções, classes e arquivos para que comuniquem o que cada " +
+            "coisa representa ou faz.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Naming é a prática de escolher os nomes de variáveis, funções, classes e arquivos de modo que " +
-                "comuniquem o que aquilo representa ou faz. Um bom nome revela a intenção, usa o vocabulário do " +
-                "problema (não o da implementação) e é consistente com os outros nomes do código.",
+                "Um bom nome revela a intenção, usa o vocabulário do problema (não o da implementação) e é consistente " +
+                "com os outros nomes do código.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Um bom nome responde \"o que é isto e por que existe\" sem obrigar ninguém a ler a implementação — " +
-                "é a documentação que sempre está junto do código.",
+              text: "Se para entender um nome é preciso ler a implementação, o nome ainda não está pronto.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -209,24 +206,19 @@ export default area({
           order: 20,
           title: "Functions",
           note: "tamanho, responsabilidade única no nível de função",
-          summary:
-            "Escrever funções pequenas que fazem uma coisa só, num único nível de abstração — para que cada uma " +
-            "possa ser entendida, testada e reaproveitada sem precisar ler o resto.",
+          summary: "Boas Functions são pequenas, têm um único propósito e operam num único nível de abstração.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Escrever boas funções é uma prática de projeto: cada função deve ser pequena, ter um único " +
-                "propósito, operar em um único nível de abstração e ter um nome que descreva exatamente o que faz. " +
-                "É a aplicação da responsabilidade única na menor escala em que ela faz sentido.",
+                "O nome de cada uma descreve exatamente o que ela faz. É a aplicação da responsabilidade única na menor " +
+                "escala em que ela faz sentido.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Uma boa função tem um propósito só, um nível de abstração e um nome que o descreve — se a descrição " +
-                "precisa de \"e\", provavelmente são duas funções.",
+              text: "O critério para dividir uma função é o propósito, e não o número de linhas.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -432,23 +424,20 @@ export default area({
           requires: ["Functions"],
           note: "aridade, ordem, flags booleanas",
           summary:
-            "Manter poucos parâmetros, em ordem previsível e sem flags booleanas — cada argumento a mais é algo " +
-            "que quem chama precisa lembrar e acertar.",
+            "Function Arguments é a forma como uma função recebe os seus dados: quantos parâmetros, em que ordem e de " +
+            "que tipo.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Function Arguments trata de como uma função recebe seus dados: quantos parâmetros tem (aridade), em " +
-                "que ordem, e de que tipo. A regra geral é preferir poucos, previsíveis e autoexplicativos — 0 a 2 " +
-                "são o ideal, e 3 já pede atenção.",
+                "A regra geral é preferir poucos, previsíveis e autoexplicativos — 0 a 2 são o ideal, e 3 já pede " +
+                "atenção.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Poucos argumentos, nomeados quando forem vários e sem flags booleanas — cada parâmetro extra é " +
-                "custo de leitura e chance de erro em todo ponto de chamada.",
+              text: "Se a chamada não se explica sozinha no ponto de uso, os argumentos precisam de nomes.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -621,24 +610,20 @@ export default area({
           requires: ["Functions"],
           note: "early return — revisita Programming Foundations / Type Systems / Type Narrowing (mecanismo de tipos lá, estilo de código aqui)",
           collision: "≠ Type Narrowing (Programming Foundations / Type Systems) — mecanismo de type system × estilo de código",
-          summary:
-            "Tratar os casos inválidos ou excepcionais logo no início da função, com retorno antecipado, para que " +
-            "o caminho normal fique plano, sem aninhamento.",
+          summary: "Uma Guard Clause é um if no começo da função que trata um caso de saída e retorna imediatamente.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Uma guard clause é um if no começo da função que verifica uma condição de saída — entrada inválida, " +
-                "caso vazio, permissão negada — e retorna (ou lança um erro) imediatamente. O que sobra depois dela " +
-                "é o caminho principal, escrito sem estar dentro de nenhum bloco de condição.",
+                "O caso de saída pode ser uma entrada inválida, um caso vazio, uma permissão negada — a guarda retorna " +
+                "(ou lança um erro) na hora. O que sobra depois dela é o caminho principal, escrito sem estar dentro de " +
+                "nenhum bloco de condição.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Resolva os casos excepcionais primeiro e saia cedo — assim o caminho principal fica no nível base " +
-                "da função, sem pirâmide de aninhamento.",
+              text: "Com as saídas resolvidas no topo, a última linha da função mostra o que ela de fato faz.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -826,24 +811,19 @@ export default area({
           order: 50,
           title: "Comments",
           note: "quando comentar (e quando não)",
-          summary:
-            "Usar comentários para explicar o porquê — decisões, restrições e armadilhas que o código não consegue " +
-            "dizer — e não para repetir o que o código já diz nem para compensar nomes ruins.",
+          summary: "Comments são textos escritos ao lado do código, que o computador ignora e as pessoas leem.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Comentários são texto escrito ao lado do código que o computador ignora e as pessoas leem. A boa " +
-                "prática é tratá-los como último recurso: primeiro tente expressar a ideia no próprio código (com um " +
-                "bom nome ou uma função extraída) e comente apenas o que o código sozinho não consegue dizer.",
+                "A boa prática é tratá-los como último recurso: primeiro tente expressar a ideia no próprio código (com " +
+                "um bom nome ou uma função extraída) e comente apenas o que o código sozinho não consegue dizer.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Se o código pode dizer, deixe o código dizer; use comentários para o porquê — a informação que só " +
-                "existe na cabeça de quem escreveu.",
+              text: "Um comentário que diz o que o código faz envelhece, e um que diz por quê continua valendo.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -1006,24 +986,19 @@ export default area({
           order: 60,
           title: "Magic Numbers",
           note: "extrair para constantes nomeadas. Inclui a técnica \"substituir por constante\" — não vira Task própria (ver Refactoring)",
-          summary:
-            "Substituir números (e textos) soltos no código por constantes nomeadas que dizem o que o valor " +
-            "significa e permitem mudá-lo em um único lugar.",
+          summary: "Um Magic Number é um valor literal no código cujo significado não fica claro pelo contexto.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Um magic number é um valor literal, escrito direto no código, cujo significado não é óbvio pelo " +
-                "contexto — 86400000, 0.07, 3. A prática é substituí-lo por uma constante com um nome que diga o " +
-                "que o valor representa (ONE_DAY_MS, LOYALTY_DISCOUNT_RATE, MAX_RETRIES).",
+                "Exemplos: 86400000, 0.07, 3. A prática é substituí-lo por uma constante com um nome que diga o que o " +
+                "valor representa (ONE_DAY_MS, LOYALTY_DISCOUNT_RATE, MAX_RETRIES).",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Um número solto esconde o significado e se espalha; uma constante nomeada explica o valor e o " +
-                "concentra em um único lugar — mas só vale nomear o que realmente não é óbvio.",
+              text: "Um número repetido em cinco lugares é uma regra de negócio esperando para ficar inconsistente.",
             },
             { type: "heading", text: "Por que importa" },
             {
