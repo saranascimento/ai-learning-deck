@@ -8166,25 +8166,22 @@ export default area({
           title: "Repository Pattern",
           note: "abstrai o acesso a dados atrás de uma interface de coleção",
           summary:
-            "Faz o acesso aos dados parecer uma coleção de objetos do domínio — `add`, `findById`, `remove` —, " +
-            "escondendo por trás dela como e onde eles são guardados.",
+            "Repository é um padrão que dá ao domínio uma interface de coleção para obter e guardar objetos, " +
+            "escondendo onde eles ficam.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Repository é um padrão que oferece ao domínio uma interface de coleção para obter e guardar objetos: " +
-                "\"me dê o usuário com este id\", \"adicione este pedido\". O código de negócio fala com o repositório " +
-                "nos termos do domínio, e o repositório cuida de traduzir isso para SQL, HTTP, arquivos ou memória. " +
-                "É a aplicação de Program to an Interface ao acesso a dados, e a forma comum de seguir o Dependency " +
-                "Inversion Principle na fronteira com o banco (Database Fundamentals).",
+                "As operações falam a língua do domínio: \"me dê o usuário com este id\", \"adicione este pedido\". O " +
+                "repositório cuida de traduzir isso para SQL, HTTP, arquivos ou memória. É a aplicação de Program to an " +
+                "Interface ao acesso a dados, e a forma comum de seguir o Dependency Inversion Principle na fronteira com " +
+                "o banco (Database Fundamentals).",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "O domínio enxerga uma coleção de objetos, e não um banco: como e onde eles são guardados é um " +
-                "detalhe atrás do repositório.",
+              text: "Se uma regra de negócio cita uma tabela ou uma coluna, falta um repositório entre ela e o banco.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -8387,24 +8384,21 @@ export default area({
           requires: ["Repository Pattern"],
           note: "separa o objeto de domínio da forma como é persistido",
           summary:
-            "Uma camada de mapeamento que move dados entre os objetos de domínio e o banco, para que o objeto de " +
-            "domínio não saiba nada sobre como é persistido.",
+            "Data Mapper é um padrão em que um componente separado converte entre o objeto de domínio e o formato em " +
+            "que ele é guardado.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Data Mapper é um padrão em que um componente separado, o mapper, converte entre o objeto de domínio " +
-                "e a representação persistida, linhas, documentos, colunas. O objeto de domínio fica livre de " +
-                "persistência: não tem `save()`, não conhece nomes de coluna, nem o banco. É o que permite um Rich " +
-                "Domain Model sem que ele dependa da infraestrutura, e costuma ser usado dentro do Repository.",
+                "O mapper traduz para linhas, documentos ou colunas, e de volta. O objeto de domínio fica livre de " +
+                "persistência: não tem `save()`, não conhece nomes de coluna, nem o banco. É o que permite um Rich Domain " +
+                "Model sem que ele dependa da infraestrutura, e costuma ser usado dentro do Repository.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "O objeto de domínio não sabe como é guardado: um mapper traduz nos dois sentidos, entre o modelo do " +
-                "negócio e o formato do banco.",
+              text: "Com um Data Mapper, dá para renomear uma coluna sem tocar numa linha do modelo de domínio.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -8608,24 +8602,23 @@ export default area({
           requires: ["Repository Pattern"],
           note: "contraste direto com Data Mapper — o objeto que se persiste",
           summary:
-            "O próprio objeto de domínio sabe como se carregar e se salvar no banco — cada instância corresponde a " +
-            "uma linha, e tem métodos como `save()` e `find()`.",
+            "Active Record é um padrão em que o objeto que representa uma linha do banco também sabe se buscar e se " +
+            "gravar.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Active Record é um padrão em que uma classe representa uma linha de uma tabela e junta os dados, a " +
-                "lógica de negócio e a persistência: `user.save()`, `User.find(id)`. Não há um mapper separado, porque " +
-                "o objeto conhece o seu próprio esquema. É o oposto do Data Mapper e a escolha de frameworks como " +
-                "Rails e de muitas bibliotecas de ORM em JavaScript.",
+                "A mesma classe junta os dados, a lógica de negócio e a persistência: `user.save()`, `User.find(id)`. Não " +
+                "há um mapper separado, porque o objeto conhece o seu próprio esquema. É o oposto do Data Mapper e a " +
+                "escolha de frameworks como Rails e de muitas bibliotecas de ORM em JavaScript.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "O objeto que representa a linha também sabe se gravar e se buscar: menos peças e menos código, ao " +
-                "custo de misturar domínio e persistência.",
+                "Active Record é ótimo enquanto o objeto é quase só um cadastro, e começa a pesar quando as regras de " +
+                "negócio crescem.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -8825,24 +8818,21 @@ export default area({
           requires: ["Repository Pattern"],
           note: "agrupa mudanças numa única transação lógica",
           summary:
-            "Acompanha todas as mudanças feitas em objetos durante uma operação de negócio e as grava juntas, em " +
-            "uma única transação — ou tudo é salvo, ou nada.",
+            "Unit of Work é um padrão que acompanha as mudanças de uma operação de negócio e as grava todas juntas, " +
+            "numa só transação.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Unit of Work registra o que foi criado, alterado e removido durante uma operação de negócio e, no " +
-                "final, grava tudo de uma vez em uma transação. Em vez de cada mudança ir imediatamente ao banco, elas " +
-                "se acumulam e são confirmadas com um `commit()`. Se algo falha no meio, nada é gravado. É a base do " +
+                "Ele registra o que foi criado, alterado e removido. Em vez de cada mudança ir imediatamente ao banco, " +
+                "elas se acumulam e são confirmadas com um `commit()`. Se algo falha no meio, nada é gravado. É a base do " +
                 "que ORMs oferecem como sessão, contexto ou gerenciador de entidades (Database Fundamentals, transações).",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Acumule as mudanças de uma operação e grave todas juntas, em uma transação: ou tudo é salvo, ou " +
-                "nada é.",
+              text: "Com uma Unit of Work, o banco nunca vê uma operação de negócio pela metade.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -9046,26 +9036,23 @@ export default area({
           note: "orquestra casos de uso; depende de injeção de colaboradores",
           collision: "≠ Domain Service (Domain Modeling) — camada de orquestração × comportamento de domínio puro",
           summary:
-            "Uma camada de serviços de aplicação que orquestra os casos de uso — coordena repositórios, objetos de " +
-            "domínio, transações e notificações — sem conter as regras de negócio em si.",
+            "Service Layer é a camada que define os casos de uso da aplicação e coordena as peças necessárias para " +
+            "executá-los.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Service Layer é a camada que define as operações que a aplicação oferece, os casos de uso " +
-                "(`placeOrder`, `cancelSubscription`), e as coordena: busca os objetos nos repositórios, chama o " +
-                "domínio, controla a transação e dispara efeitos como o envio de e-mail. Ela fica entre quem pede, o " +
-                "controlador HTTP, um comando de terminal, uma fila, e o domínio. Recebe os colaboradores por injeção " +
+                "Um caso de uso (`placeOrder`, `cancelSubscription`) busca os objetos nos repositórios, chama o domínio, " +
+                "controla a transação e dispara efeitos como o envio de e-mail. A camada fica entre quem pede, o " +
+                "controlador HTTP, um comando de terminal, uma fila, e o domínio, e recebe os colaboradores por injeção " +
                 "(Dependency Injection). Não é o mesmo que um Domain Service (módulo Domain Modeling): aquele contém " +
                 "regra de negócio, e este apenas orquestra.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "A camada de serviço diz o que a aplicação faz e em que ordem, mas as regras de negócio ficam no " +
-                "domínio: ela coordena, e não decide.",
+              text: "Se um método da camada de serviço tem um `if` com regra de negócio, essa regra pertence ao domínio.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -9257,25 +9244,24 @@ export default area({
           title: "Specification Pattern",
           note: "encapsula regra de negócio/consulta reutilizável e combinável",
           summary:
-            "Representa uma regra de negócio como um objeto que responde se um candidato a satisfaz, e que pode ser " +
-            "combinado com outros por E, OU e NÃO.",
+            "Specification é um padrão que representa uma regra de negócio como um objeto que responde se um " +
+            "candidato a satisfaz.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Specification transforma uma regra, \"o cliente é elegível\", \"o produto está em promoção\", em um " +
-                "objeto com um único método, `isSatisfiedBy(candidato)`. Como cada especificação é uma peça " +
-                "independente, elas são combinadas (`e`, `ou`, `não`) para formar regras maiores, e a mesma regra " +
-                "serve para validar um objeto ou para filtrar uma coleção. Dá um nome ao que antes era uma condição " +
-                "solta e repetida.",
+                "O objeto tem um único método, `isSatisfiedBy(candidato)`, para regras como \"o cliente é elegível\" ou \"o " +
+                "produto está em promoção\". Como cada especificação é uma peça independente, elas são combinadas (`e`, " +
+                "`ou`, `não`) para formar regras maiores, e a mesma regra serve para validar um objeto ou para filtrar " +
+                "uma coleção. Dá um nome ao que antes era uma condição solta e repetida.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Dê nome a cada regra de negócio e faça-a combinável: regras maiores nascem de regras pequenas, e a " +
-                "mesma regra vale para validar e para filtrar.",
+                "Uma regra com nome é escrita uma vez e reaproveitada, enquanto a mesma condição solta acaba copiada e " +
+                "divergindo.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -9456,24 +9442,23 @@ export default area({
           title: "DTO",
           note: "objeto de transporte de dados entre camadas/fronteiras",
           summary:
-            "Um objeto simples, só com dados e sem regras, usado para transportar informação entre camadas ou " +
-            "sistemas — separando o que atravessa a fronteira do modelo interno.",
+            "Um DTO (Data Transfer Object) é um objeto só com dados, sem regras, usado para carregar informação " +
+            "através de uma fronteira.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "DTO (Data Transfer Object) é um objeto sem comportamento cuja função é carregar dados através de " +
-                "uma fronteira: da API para o cliente, do cliente para o caso de uso, entre serviços. Ele tem o " +
-                "formato que a fronteira precisa, e não o do domínio. Assim, o modelo interno pode mudar sem " +
-                "quebrar quem consome a API, e campos internos, como senhas e flags de controle, não vazam para fora.",
+                "A fronteira pode ser da API para o cliente, do cliente para o caso de uso ou entre serviços. O DTO tem o " +
+                "formato que ela precisa, e não o do domínio. Assim, o modelo interno pode mudar sem quebrar quem consome " +
+                "a API, e campos internos, como senhas e flags de controle, não vazam para fora.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "O que atravessa a fronteira tem um formato próprio, só de dados: o modelo interno fica livre para " +
-                "mudar, e nenhum detalhe interno vaza por acidente.",
+                "Um DTO de entrada que só aceita os campos permitidos impede que alguém mude o que não devia pelo corpo " +
+                "da requisição.",
             },
             { type: "heading", text: "Como funciona" },
             {
