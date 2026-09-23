@@ -1,0 +1,331 @@
+/*
+ * _concept.css — layout de documentação da página do Concept (site gerado).
+ *
+ * Carregado SOMENTE pelas páginas geradas em build/preview/ (a SPA da raiz não
+ * importa este arquivo). Tudo é escopado sob .concept-study / .doc-concept,
+ * classes que só a página do Concept usa. Referência visual: protótipo v4
+ * aprovado (scripts/proto/, 2026-09-19).
+ *
+ * Grade: cabeçalho, abas e Anterior/Próximo na coluna principal; a coluna
+ * direita (Neste conteúdo, relações, atalhos) fica fixa na lateral e desce
+ * para depois das abas em telas estreitas.
+ */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* roadmap.css põe `overflow` em html E body: o body vira contêiner de rolagem e o `position: sticky`
+   da coluna direita nunca gruda. Aqui o body volta a não recortar; o html continua com overflow-x oculto. */
+body {
+  overflow: visible;
+}
+
+/* ---- breadcrumb compacto ---- */
+/* base.css fixa `li { font-size }`: herdar não basta, o tamanho vai no próprio <li>. */
+.concept-study .crumbs,
+.concept-study .crumbs__item {
+  font-size: 0.875rem;
+}
+.concept-study .crumbs__link,
+.concept-study .crumbs__here,
+.concept-study .crumbs__sep {
+  font-size: inherit;
+}
+
+/* ---- grade ---- */
+.doc-concept {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 17rem;
+  grid-template-areas:
+    "head rail"
+    "study rail"
+    "nav rail";
+  column-gap: 2.5rem;
+  row-gap: var(--space-md);
+  align-items: start;
+}
+.doc-concept > .page-head {
+  grid-area: head;
+}
+.doc-concept > .study-area {
+  grid-area: study;
+}
+.doc-concept > .concept-nav {
+  grid-area: nav;
+}
+.doc-concept > .doc-rail {
+  grid-area: rail;
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  scrollbar-width: thin;
+}
+
+/* ---- cabeçalho ---- */
+.doc-concept > .page-head {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+.doc-titlebar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.doc-actions {
+  display: flex;
+  flex: none;
+  gap: 0.25rem;
+  margin-top: 0.4rem;
+}
+.doc-actions:empty {
+  display: none;
+}
+.doc-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.7rem;
+  border: 0;
+  border-radius: 0.4rem;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.doc-action:hover {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+}
+.doc-action svg {
+  width: 1.1em;
+  height: 1.1em;
+}
+.doc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.9rem;
+}
+.doc-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+.concept-study .doc-meta__icon {
+  width: 1em;
+  height: 1em;
+}
+.page-head__lede {
+  max-width: 48rem;
+  margin: 0.25rem 0 0;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--color-text-muted);
+}
+
+/* ---- Área de estudo: as abas já dizem o que é, sem título nem divisor por cima ---- */
+.doc-concept > .study-area {
+  border-top: 0;
+  padding-top: 0;
+  scroll-margin-top: 1rem;
+}
+.concept-study .content-block__heading {
+  scroll-margin-top: 1rem;
+}
+
+/* ---- cards da coluna direita ---- */
+.doc-card {
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.7rem;
+  background: var(--color-surface);
+}
+.doc-card__title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 0.7rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.concept-study .doc-card__icon {
+  width: 1.2em;
+  height: 1.2em;
+  color: var(--color-text-muted);
+}
+.doc-card .relation-list,
+.doc-card .taglist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.doc-card li {
+  font-size: 0.875rem;
+}
+
+/* "Neste conteúdo": títulos numerados como no texto; a seção visível fica destacada (JS). */
+.doc-toc ol {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: toc;
+}
+.doc-toc li {
+  counter-increment: toc;
+  font-size: 0.9rem;
+}
+.doc-toc a {
+  display: flex;
+  gap: 0.7rem;
+  padding: 0.3rem 0.6rem;
+  border-left: 2px solid transparent;
+  color: var(--color-text-muted);
+  text-decoration: none;
+}
+.doc-toc a::before {
+  content: counter(toc);
+  min-width: 1ch;
+}
+.doc-toc a:hover {
+  color: var(--color-text);
+}
+.doc-toc a[aria-current="location"] {
+  border-left-color: var(--area-color);
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+/* Atalhos para as abas Exemplos / Exercícios. */
+.doc-cta {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid color-mix(in srgb, var(--area-color) 35%, var(--color-border));
+  border-radius: 0.7rem;
+  background: color-mix(in srgb, var(--area-color) 10%, transparent);
+  color: var(--color-text);
+  text-decoration: none;
+}
+.doc-cta:hover {
+  background: color-mix(in srgb, var(--area-color) 16%, transparent);
+}
+.concept-study .doc-cta__svg {
+  width: 1.6rem;
+  height: 1.6rem;
+  color: var(--area-color);
+}
+.doc-cta__text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+.doc-cta__text small {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+.doc-cta__arrow {
+  color: var(--area-color);
+  font-size: 1.2rem;
+}
+
+/* ---- Anterior / Próximo em cards ---- */
+.concept-study .concept-nav {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-sm);
+  border-top: 0;
+  padding-top: 0;
+  font-size: inherit;
+}
+.concept-study .concept-nav__link {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.6rem;
+  color: var(--color-text);
+  text-decoration: none;
+}
+.concept-study .concept-nav__link:hover {
+  border-color: color-mix(in srgb, var(--area-color) 60%, var(--color-border));
+  background: color-mix(in srgb, var(--area-color) 6%, transparent);
+  color: var(--color-text);
+}
+.concept-study .concept-nav__link--next {
+  grid-column: 2;
+  justify-content: space-between;
+  margin-left: 0;
+  text-align: right;
+}
+.concept-nav__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+.concept-nav__text small {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+.concept-nav__text strong {
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.concept-nav__arrow {
+  font-size: 1.25rem;
+  color: var(--color-text-muted);
+}
+
+/* ---- telas estreitas: a coluna direita desce para depois das abas ---- */
+@media (max-width: 64rem) {
+  .doc-concept {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "head"
+      "study"
+      "rail"
+      "nav";
+  }
+  .doc-concept > .doc-rail {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+}
+@media (max-width: 48rem) {
+  .concept-study .concept-nav {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .concept-study .concept-nav__link--next {
+    grid-column: 1;
+  }
+  .doc-action span {
+    display: none; /* só o ícone no celular */
+  }
+}

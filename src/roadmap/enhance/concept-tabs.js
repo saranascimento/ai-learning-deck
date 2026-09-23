@@ -24,6 +24,15 @@
  * conteúdo é perdido. COM o script, clique copia o texto puro do <code> via
  * Clipboard API nativa (sem lib) e mostra "Copiado!" por ~1.5s.
  *
+ * Layout de documentação (etapa 1 do layout novo) — também aqui, pelo mesmo
+ * motivo (um script só):
+ *   - atalhos `[data-goto-tab]` (itens de "Neste conteúdo", "Ver exemplos
+ *     práticos", "Praticar agora") ativam a aba certa antes de a âncora rolar;
+ *     sem JS eles são âncoras comuns (#sec-N / #estudo) e tudo está visível;
+ *   - "Neste conteúdo" destaca a seção que está na tela (aria-current="location");
+ *   - botão Compartilhar no cabeçalho ([data-actions-slot]) copia o link da página.
+ *     Sem JS o slot fica vazio (e oculto por CSS).
+ *
  * Porte 1:1 de src/roadmap/ui/concept-tabs.js (o enhancement da SPA) na parte
  * de tabs, com duas diferenças mínimas: (1) auto-executa e trata TODOS os
  * `[data-study-tabs]` do documento (não recebe `root`); (2) os ids são
@@ -33,7 +42,7 @@
  * última aba = fora da v0).
  */
 
-const TAB_LABELS = { conteudo: "Conteúdo", exemplos: "Exemplos", exercicio: "Exercício" };
+const TAB_LABELS = { conteudo: "Conteúdo", exemplos: "Exemplos", exercicio: "Exercícios" };
 
 // Mesmos desenhos de src/roadmap/render/icons.mjs (book/code/pencil) — só o
 // <path>/<polyline> interno, sem o <svg> wrapper (montado abaixo).
@@ -161,3 +170,80 @@ function wireCopyButtons() {
 }
 
 wireCopyButtons();
+
+// ---- Atalhos para as abas ("Neste conteúdo", "Ver exemplos práticos", "Praticar agora") ----
+// O clique ativa a aba antes da navegação padrão da âncora, que então encontra o alvo visível.
+document.addEventListener("click", function (event) {
+  const link = event.target.closest("[data-goto-tab]");
+  if (!link) return;
+  const tab = document.querySelector('[role="tab"][id$="-tab-' + link.getAttribute("data-goto-tab") + '"]');
+  if (tab && tab.getAttribute("aria-selected") !== "true") tab.click();
+});
+
+// ---- "Neste conteúdo": destaca a seção que está na tela ----
+function wireTocSpy() {
+  const links = Array.prototype.slice.call(document.querySelectorAll(".doc-toc a[href^='#']"));
+  if (!links.length) return;
+  const targets = links.map(function (a) {
+    return document.getElementById(a.getAttribute("href").slice(1));
+  });
+  let frame = 0;
+  function spy() {
+    frame = 0;
+    let current = -1;
+    targets.forEach(function (el, i) {
+      // offsetParent null = painel oculto (outra aba ativa): nada a destacar
+      if (el && el.offsetParent !== null && el.getBoundingClientRect().top < 140) current = i;
+    });
+    if (current === -1 && targets[0] && targets[0].offsetParent !== null) current = 0;
+    links.forEach(function (a, i) {
+      if (i === current) a.setAttribute("aria-current", "location");
+      else a.removeAttribute("aria-current");
+    });
+  }
+  function schedule() {
+    if (!frame) frame = requestAnimationFrame(spy);
+  }
+  spy();
+  addEventListener("scroll", schedule, { passive: true });
+  document.addEventListener("click", function () {
+    setTimeout(spy, 50); // troca de aba muda o que está visível
+  });
+}
+
+wireTocSpy();
+
+// ---- Ação do cabeçalho: Compartilhar (copia o link da página) ----
+const SHARE_ICON =
+  '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
+  'stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="18" cy="5" r="3"></circle>' +
+  '<circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><path d="M8.6 10.6l6.8-4.2M8.6 13.4l6.8 4.2"></path></svg>';
+
+function wireActions() {
+  const slot = document.querySelector("[data-actions-slot]");
+  if (!slot || !navigator.clipboard || !navigator.clipboard.writeText) return;
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "doc-action";
+  button.innerHTML = SHARE_ICON + '<span class="doc-action__label">Compartilhar</span>';
+  button.setAttribute("aria-label", "Copiar o link desta página");
+  const label = button.querySelector(".doc-action__label");
+  let resetTimer = null;
+  button.addEventListener("click", function () {
+    navigator.clipboard.writeText(location.href).then(
+      function () {
+        if (resetTimer) clearTimeout(resetTimer);
+        label.textContent = "Link copiado";
+        resetTimer = setTimeout(function () {
+          label.textContent = "Compartilhar";
+        }, 1600);
+      },
+      function () {
+        // clipboard negada — o endereço continua na barra do navegador.
+      }
+    );
+  });
+  slot.appendChild(button);
+}
+
+wireActions();

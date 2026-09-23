@@ -1095,15 +1095,17 @@ a.relation-pill:focus-visible {
   padding: 0;
   list-style: none;
 }
+/* Bolinha posicionada (e não flex): com flex, cada `código inline` do item virava uma coluna. */
 .content-list li {
-  display: flex;
-  align-items: baseline;
-  gap: 0.7rem;
+  position: relative;
+  padding-left: 1.25rem;
   font-size: 0.95rem;
 }
 .content-list li::before {
   content: "";
-  flex: none;
+  position: absolute;
+  left: 0;
+  top: 0.55em;
   width: 0.55rem;
   height: 0.55rem;
   border-radius: 50%;

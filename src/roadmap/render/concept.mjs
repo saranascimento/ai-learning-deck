@@ -1,31 +1,31 @@
 /*
- * concept — renderer puro da Concept Study Page do DevAtlas (folha da hierarquia).
+ * concept — renderer puro da página do Concept do DevAtlas (folha da hierarquia).
  *
- * Base: porte 1:1 de views.js › renderConcept (R3). R3.5.11 redesenha só esta
- * página (Home/Area/Module inalteradas) com cards com ícone, code blocks com
- * cabeçalho (arquivo + Copiar) e syntax highlighting, e tabs com ícone — sem
- * mudar o contrato estrutural: breadcrumb 4 níveis, .detail-block, .study-area
- * com 3 <section data-study-panel>, nav prev/next.
+ * Layout de documentação (aprovado no protótipo v4, 2026-09-19; implementado de
+ * verdade na etapa 1 do layout novo, 2026-09-22):
  *
- * Estrutura:
- *   breadcrumb 4 níveis · header (kicker + h1 + [subtítulo] + .markers) ·
- *   .detail-block { Resumo (card) · grid { Pré-requisitos · [Relacionado a] }
- *     · [Revisita de] · [Subtópicos] · [Recursos] (cards) } ·
- *   .study-area { h2 "Área de estudo" + 3 <section.study-panel> com ícone
- *     data-study-panel = conteudo/exemplos/exercicio } ·
- *   [nav.concept-nav prev/next]
+ *   breadcrumb 4 níveis (largura total) ·
+ *   .doc-concept (grade: coluna principal + coluna direita) {
+ *     header.page-head { h1 + [data-actions-slot] · chips + [tempo de leitura]
+ *                        · [texto de abertura = summary, ou note quando não há summary] }
+ *     section.study-area#estudo { h2 "Área de estudo" (só leitor de tela) +
+ *       3 <section data-study-panel> conteudo/exemplos/exercicio }
+ *     [nav.concept-nav — Anterior/Próximo em cards]
+ *     aside.doc-rail { [Neste conteúdo] · Pré-requisitos · [Relacionados]
+ *                      · [Subtópicos] · [Recursos] · [atalhos Exemplos/Exercícios] }
+ *   }
+ *
+ * No celular a coluna direita desce para depois das abas (CSS).
  *
  * O HTML base é SÓ pré-enhancement: as 3 seções de estudo ficam SEQUENCIAIS e
  * VISÍVEIS sem JavaScript. O renderer NÃO adiciona `hidden`, `role="tab*"`,
- * `role="tablist"` nem tabindex nos painéis. Botão "Copiar" é HTML estático
- * inerte sem JS (funcional só com `assets/concept-tabs.js`); "Ver solução" é
- * `<details>/<summary>` nativo, sempre funcional (zero JS necessário).
+ * `role="tablist"` nem tabindex nos painéis. Sem JS, "Neste conteúdo" e os
+ * atalhos são âncoras comuns (#sec-N, #estudo), o botão "Copiar" fica inerte e
+ * não há ações no cabeçalho; "Ver solução" é `<details>/<summary>` nativo.
  *
- * R3.5.7: quando `vm.enhancementScript` vem preenchido, o documento carrega
- * `<script type="module" src="…/assets/concept-tabs.js">` ao fim do <body> —
- * progressive enhancement que promove `[data-study-tabs]` / `[data-study-panel]`
- * ao padrão APG Tabs, e wire o botão Copiar (Clipboard API). Sem o script,
- * nada muda no HTML base.
+ * `vm.enhancementScript` preenchido → `<script type="module" src="…/assets/concept-tabs.js">`
+ * ao fim do <body>: abas APG, Copiar, atalhos que trocam de aba, destaque da
+ * seção visível em "Neste conteúdo" e o botão Compartilhar.
  *
  * Blocos de `concept.content` (schema): heading · paragraph · code · takeaway · list · callout · flow.
  *   - texto de paragraph/list/callout/takeaway aceita `código inline` entre crases (renderInline);
@@ -33,24 +33,23 @@
  *   - flow = diagrama de caixas com setas (só quando o conceito tem um fluxo real — bloco OPCIONAL);
  *   - tipo de bloco desconhecido ou bloco malformado LANÇA erro (nunca renderiza "undefined" em silêncio).
  *
- * note: R3.5.11 passa a exibir como subtítulo sob o H1 (tradução curta do
- * termo em inglês) quando presente — deixou de ser 100% invisível. collision/
- * isNew/relocated/suggestions continuam NÃO aparecendo (metadata editorial).
- * summary/content/examples/exercise: vazios → empty state; quando o dataset
- * traz dados estruturados (piloto: Abstraction), o renderer produz o HTML
- * real — nenhum branching por slug, só por presença de dado.
+ * collision/isNew/relocated/suggestions NÃO aparecem (metadata editorial).
+ * content/examples/exercise vazios → empty state; nenhum branching por slug,
+ * só por presença de dado.
  */
 import { renderDocument } from "./html.mjs";
-import { escapeHtml, escapeAttr, num, renderChipList, renderInline, renderRelationList, renderRelationPill } from "./partials.mjs";
+import { escapeHtml, escapeAttr, num, renderChipList, renderInline, renderRelationList } from "./partials.mjs";
 import { icon } from "./icons.mjs";
 import { highlight } from "./highlight.mjs";
 
 const EMPTY = {
-  resumo: "Resumo ainda não disponível.",
   conteudo: "Conteúdo ainda não disponível.",
   exemplos: "Exemplos ainda não disponíveis.",
-  exercicio: "Exercício ainda não disponível.",
+  exercicio: "Exercícios ainda não disponíveis.",
 };
+
+// Tempo de leitura: todo o texto da Área de estudo (inclusive código), a ~200 palavras por minuto.
+const WORDS_PER_MINUTE = 200;
 
 const PANEL_ICON = { conteudo: "book", exemplos: "code", exercicio: "pencil" };
 
@@ -188,10 +187,8 @@ function renderExercise(ex) {
   ].join("\n");
 }
 
-// Card com ícone (Resumo/Pré-requisitos/Relacionado a/Revisita de/Subtópicos/
-// Recursos/Problema/Sua tarefa/Dica). `level` = nível do heading real
-// (2 no detail-block, 4 dentro do painel Exercício — mantém hierarquia sob
-// o h3 do painel). id/aria-labelledby preservam o contrato de âncora.
+// Card com ícone do painel Exercícios (Problema/Sua tarefa/Dica). `level` = nível
+// do heading real (4, sob o h3 do painel). id/aria-labelledby = contrato de âncora.
 function card(id, iconName, label, bodyHtml, level, extraClass) {
   const tag = `h${level}`;
   return [
@@ -228,6 +225,40 @@ function taglist(items, asLink) {
   );
 }
 
+// Card da coluna direita (Pré-requisitos, Relacionados, Subtópicos, Recursos).
+function railCard(id, iconName, label, bodyHtml) {
+  return [
+    `          <section class="doc-card" aria-labelledby="${id}">`,
+    `            <h2 id="${id}" class="doc-card__title">${icon(iconName, "doc-card__icon")}<span>${escapeHtml(label)}</span></h2>`,
+    `            <div class="doc-card__body">${bodyHtml}</div>`,
+    "          </section>",
+  ].join("\n");
+}
+
+// Atalho da coluna direita para uma aba. Sem JS é só uma âncora para a Área de estudo.
+function railShortcut(tab, iconName, label, text) {
+  return (
+    `          <a class="doc-cta" href="#estudo" data-goto-tab="${tab}">` +
+    `<span class="doc-cta__icon">${icon(iconName, "doc-cta__svg")}</span>` +
+    `<span class="doc-cta__text"><strong>${escapeHtml(label)}</strong><small>${escapeHtml(text)}</small></span>` +
+    '<span class="doc-cta__arrow" aria-hidden="true">→</span></a>'
+  );
+}
+
+function navCard(dir, target) {
+  const isPrev = dir === "prev";
+  const arrow = `<span class="concept-nav__arrow" aria-hidden="true">${isPrev ? "←" : "→"}</span>`;
+  const text = `<span class="concept-nav__text"><small>${isPrev ? "Anterior" : "Próximo"}</small><strong>${escapeHtml(target.title)}</strong></span>`;
+  const aria = `${isPrev ? "Conceito anterior" : "Próximo conceito"}: ${target.title}`;
+  return (
+    `          <a class="concept-nav__link concept-nav__link--${dir}" href="${escapeAttr(target.href)}" rel="${dir}" aria-label="${escapeAttr(aria)}">` +
+    (isPrev ? arrow + text : text + arrow) +
+    "</a>"
+  );
+}
+
+const plainWords = (html) => html.replace(/<[^>]+>/g, " ").split(/\s+/).filter(Boolean).length;
+
 /**
  * renderConcept(vm) → documento HTML.
  *   vm.product    : { name, tagline, footerText }
@@ -241,56 +272,77 @@ function taglist(items, asLink) {
  *   vm.resources  : { label, href }[]
  *   vm.prev/next  : { title, href } | null
  *   vm.homeHref, vm.stylesheets
- *   vm.enhancementScript : href relativo do <script type="module"> de tabs, ou
- *                          "" / ausente para não emitir <script> (R3.5.7)
+ *   vm.enhancementScript : href relativo do <script type="module"> de enhancement, ou
+ *                          "" / ausente para não emitir <script>
  */
 export function renderConcept(vm) {
   const { product, area, module, concept, requires, revisitOf, revisit, resources, prev, next, homeHref, stylesheets, enhancementScript } = vm;
-  const kicker = ("Conceito " + num(concept.index)).toUpperCase();
 
-  const contentHtml = concept.content && concept.content.length ? renderContentBlocks(concept.content) : null;
+  const content = concept.content && concept.content.length ? concept.content : null;
+  const contentHtml = content ? renderContentBlocks(content) : null;
   const examplesHtml = concept.examples && concept.examples.length ? renderExamples(concept.examples) : null;
   const exerciseHtml = concept.exercise ? renderExercise(concept.exercise) : null;
 
-  const resumoCard = card(
-    "concept-resumo",
-    "info",
-    "Resumo",
-    concept.summary ? `<p>${renderInline(concept.summary)}</p>` : `<p class="empty-state">${EMPTY.resumo}</p>`,
-    2
-  );
-  const requiresCard = card(
-    "concept-requires",
-    "link",
-    "Pré-requisitos",
-    requires.length ? renderRelationList(requires) : '<span class="muted">nenhum</span>',
-    2
-  );
-  const relatedCard = revisit.length ? card("concept-revisit", "share", "Relacionado a", renderRelationList(revisit), 2) : null;
-  const gridHtml = ['          <div class="detail-block__grid">', requiresCard, ...(relatedCard ? [relatedCard] : []), "          </div>"].join("\n");
+  // ---- cabeçalho ----------------------------------------------------------------------------------
+  const minutes = contentHtml ? Math.max(1, Math.round(plainWords([contentHtml, examplesHtml, exerciseHtml].join(" ")) / WORDS_PER_MINUTE)) : 0;
+  const readingTime = minutes
+    ? `<span class="doc-meta">${icon("clock", "doc-meta__icon")}<span>${minutes} min de leitura</span></span>`
+    : "";
+  // Texto de abertura: o resumo; sem resumo, a nota curta do termo (quando houver).
+  const lede = concept.summary ? renderInline(concept.summary) : concept.note ? escapeHtml(concept.note) : "";
 
-  const extraCards = [];
-  if (revisitOf) extraCards.push(card("concept-revisitof", "link", "Revisita de", renderRelationPill(revisitOf), 2));
-  if (concept.subtopics.length) extraCards.push(card("concept-subtopics", "checklist", "Subtópicos", taglist(concept.subtopics, false), 2));
-  if (resources.length) extraCards.push(card("concept-resources", "file", "Recursos", taglist(resources, true), 2));
+  const header = [
+    '          <header class="page-head">',
+    '            <div class="doc-titlebar">',
+    `              <h1 class="page-head__title">${escapeHtml(concept.title)}</h1>`,
+    '              <div class="doc-actions" data-actions-slot=""></div>',
+    "            </div>",
+    `            <div class="doc-chips"><div class="markers" role="group" aria-label="Classificações">${renderChipList(concept, {})}</div>${readingTime}</div>`,
+    ...(lede ? [`            <p class="page-head__lede">${lede}</p>`] : []),
+    "          </header>",
+  ].join("\n");
 
-  const detailBlock = ['        <div class="detail-block">', resumoCard, gridHtml, ...extraCards, "        </div>"].join("\n");
+  // ---- Área de estudo (3 abas com JS; 3 seções em sequência sem JS) -------------------------------------
+  const study = [
+    '          <section class="study-area" id="estudo" aria-labelledby="concept-study-heading">',
+    '            <h2 id="concept-study-heading" class="visually-hidden">Área de estudo</h2>',
+    '            <div class="study-area__panels" data-study-tabs="">',
+    studyPanel("conteudo", "Conteúdo", EMPTY.conteudo, contentHtml),
+    studyPanel("exemplos", "Exemplos", EMPTY.exemplos, examplesHtml),
+    studyPanel("exercicio", "Exercícios", EMPTY.exercicio, exerciseHtml),
+    "            </div>",
+    "          </section>",
+  ].join("\n");
 
-  const navLinks = [];
-  if (prev) {
-    navLinks.push(
-      `          <a class="concept-nav__link concept-nav__link--prev" href="${escapeAttr(prev.href)}" rel="prev" aria-label="Conceito anterior: ${escapeAttr(
-        prev.title
-      )}">← ${escapeHtml(prev.title)}</a>`
-    );
-  }
-  if (next) {
-    navLinks.push(
-      `          <a class="concept-nav__link concept-nav__link--next" href="${escapeAttr(next.href)}" rel="next" aria-label="Próximo conceito: ${escapeAttr(
-        next.title
-      )}">${escapeHtml(next.title)} →</a>`
-    );
-  }
+  // ---- Anterior / Próximo em cards ---------------------------------------------------------------------
+  const navLinks = [...(prev ? [navCard("prev", prev)] : []), ...(next ? [navCard("next", next)] : [])];
+  const nav = navLinks.length ? ['        <nav class="concept-nav" aria-label="Navegação entre conceitos">', ...navLinks, "        </nav>"].join("\n") : "";
+
+  // ---- coluna direita ----------------------------------------------------------------------------------
+  const toc = content ? content.filter((b) => b.type === "heading") : [];
+  const tocHtml = toc.length
+    ? [
+        '          <nav class="doc-card doc-toc" aria-labelledby="concept-toc">',
+        '            <h2 id="concept-toc" class="doc-card__title"><span>Neste conteúdo</span></h2>',
+        `            <ol>${toc.map((h, i) => `<li><a href="#sec-${i + 1}" data-goto-tab="conteudo">${escapeHtml(h.text)}</a></li>`).join("")}</ol>`,
+        "          </nav>",
+      ].join("\n")
+    : "";
+  const related = [...(revisitOf ? [revisitOf] : []), ...revisit];
+
+  const rail = [
+    '        <aside class="doc-rail" aria-label="Neste conceito">',
+    tocHtml,
+    railCard("concept-requires", "link", "Pré-requisitos", requires.length ? renderRelationList(requires) : '<span class="muted">nenhum</span>'),
+    related.length ? railCard("concept-related", "share", "Relacionados", renderRelationList(related)) : "",
+    concept.subtopics.length ? railCard("concept-subtopics", "checklist", "Subtópicos", taglist(concept.subtopics, false)) : "",
+    resources.length ? railCard("concept-resources", "file", "Recursos", taglist(resources, true)) : "",
+    examplesHtml ? railShortcut("exemplos", "code", "Ver exemplos práticos", "Veja exemplos de uso deste conceito.") : "",
+    exerciseHtml ? railShortcut("exercicio", "pencil", "Praticar agora", "Resolva um exercício e teste o que aprendeu.") : "",
+    "        </aside>",
+  ]
+    .filter(Boolean)
+    .join("\n");
 
   const main = [
     `      <div class="view view--concept concept-study" style="--area-color: ${escapeAttr(concept.color)}">`,
@@ -308,24 +360,12 @@ export function renderConcept(vm) {
     )}</span></li>`,
     "          </ol>",
     "        </nav>",
-    '        <header class="page-head">',
-    `          <p class="page-head__kicker">${escapeHtml(kicker)}</p>`,
-    `          <h1 class="page-head__title">${escapeHtml(concept.title)}</h1>`,
-    ...(concept.note ? [`          <p class="page-head__subtitle">${escapeHtml(concept.note)}</p>`] : []),
-    `          <div class="markers" role="group" aria-label="Classificações">${renderChipList(concept, {})}</div>`,
-    "        </header>",
-    detailBlock,
-    '        <section class="study-area" aria-labelledby="concept-study-heading">',
-    '          <h2 id="concept-study-heading" class="concept-section__title">Área de estudo</h2>',
-    '          <div class="study-area__panels" data-study-tabs="">',
-    studyPanel("conteudo", "Conteúdo", EMPTY.conteudo, contentHtml),
-    studyPanel("exemplos", "Exemplos", EMPTY.exemplos, examplesHtml),
-    studyPanel("exercicio", "Exercício", EMPTY.exercicio, exerciseHtml),
-    "          </div>",
-    "        </section>",
-    ...(navLinks.length
-      ? ['        <nav class="concept-nav" aria-label="Navegação entre conceitos">', ...navLinks, "        </nav>"]
-      : []),
+    '        <div class="doc-concept">',
+    header,
+    study,
+    ...(nav ? [nav] : []),
+    rail,
+    "        </div>",
     "      </div>",
   ].join("\n");
 

@@ -29,7 +29,7 @@ import { renderHome } from "../src/roadmap/render/home.mjs";
 import { renderArea } from "../src/roadmap/render/area.mjs";
 import { renderModule } from "../src/roadmap/render/module.mjs";
 import { renderConcept } from "../src/roadmap/render/concept.mjs";
-import { num, escapeHtml } from "../src/roadmap/render/partials.mjs";
+import { num, escapeHtml, renderInline } from "../src/roadmap/render/partials.mjs";
 
 // ---- harness mínimo (sem framework, sem deps) -----------------------------
 const results = [];
@@ -233,6 +233,8 @@ const PREVIEW_DIR = join(ROOT, "build", "preview");
 // Não move nem altera os originais em css/. hrefs relativos, sem base absoluta.
 const CSS_FILES = ["reset.css", "variables.css", "base.css", "roadmap.css", "roadmap/_shell.css"];
 const STYLESHEETS = CSS_FILES.map((p) => "css/" + p);
+// Layout de documentação da página do Concept — só as 668 Concept Pages carregam (depois dos demais).
+const CONCEPT_CSS = "roadmap/_concept.css";
 
 // Enhancement JS (R3.5.7) — SÓ as 668 Concept Pages carregam este asset, como
 // <script type="module">. É COPIADO para dentro do preview (o deploy não depende
@@ -845,7 +847,7 @@ for (const area of model.areas()) {
         prev: sib.prev ? { title: sib.prev.title, href: relativize(cPath, pathFor(sib.prev)) } : null,
         next: sib.next ? { title: sib.next.title, href: relativize(cPath, pathFor(sib.next)) } : null,
         homeHref: relativize(cPath, HOME_PATH), // "../../../../../../"
-        stylesheets: stylesheetsFor(cPath),
+        stylesheets: [...stylesheetsFor(cPath), relativize(cPath, HOME_PATH) + "css/" + CONCEPT_CSS],
         enhancementScript: assetHrefFor(cPath, ENHANCE_DEST), // "../../../../../../assets/concept-tabs.js"
       };
       conceptPages.push({ area, module, concept, ci, file: filePathFor(concept), html: renderConcept(vm), vm });
@@ -869,6 +871,7 @@ for (const area of model.areas()) {
     'main#main tabindex="-1"': (h) => h.includes('<main id="main" tabindex="-1">'),
     "um <footer class=site-footer>": (h) => (h.match(/<footer class="site-footer">/g) || []).length === 1,
     "_shell.css referenciado": (h) => h.includes("css/roadmap/_shell.css"),
+    "_concept.css referenciado (último stylesheet)": (h) => [...h.matchAll(/<link rel="stylesheet" href="([^"]*)"/g)].pop()?.[1].endsWith("css/" + CONCEPT_CSS),
     "sem copy de nível/sênior": (h) => !/senior software engineer|nível sênior|roadmap.{0,12}sênior/i.test(h),
   };
   for (const [name, fn] of Object.entries(checks)) {
@@ -898,7 +901,8 @@ for (const area of model.areas()) {
     flags[k] = (flags[k] === undefined ? true : flags[k]) && !!v;
   };
 
-  let withResumoEmpty = 0;
+  let withLedeSummary = 0;
+  let withToc = 0;
   let withRequires = 0;
   let withRequiresNone = 0;
   let withRevisitOf = 0;
@@ -922,8 +926,9 @@ for (const area of model.areas()) {
     set("title", F(html.includes(`<title>${escapeHtml(concept.title)} · ${PRODUCT.name}</title>`), "title = Concept · DevAtlas", s));
     set("h1count", F((html.match(/<h1[\s>]/g) || []).length === 1, "1 h1", s));
     set("h1text", F(html.includes(`<h1 class="page-head__title">${escapeHtml(concept.title)}</h1>`), "h1 = título do Concept", s));
-    set("kicker", F(html.includes(`<p class="page-head__kicker">${("Conceito " + num(ci)).toUpperCase()}</p>`), "kicker CONCEITO NN", s));
-    set("wrapper", F(html.includes('<div class="view view--concept concept-study"'), "wrapper .view--concept.concept-study", s));
+    set("noKicker", F(!html.includes("page-head__kicker"), "sem kicker (CONCEITO NN saiu no layout novo)", s));
+    set("wrapper", F(html.includes('<div class="view view--concept concept-study"') && html.includes('<div class="doc-concept">'), "wrapper .view--concept.concept-study + grade .doc-concept", s));
+    set("actionsSlot", F(html.includes('<div class="doc-actions" data-actions-slot=""></div>'), "slot de ações vazio no HTML (preenchido por JS)", s));
 
     // breadcrumb 4 níveis + item atual sem self-link
     set("crumbHome", F(html.includes(`<a class="crumbs__link" href="${vm.homeHref}">${PRODUCT.name}</a>`), "breadcrumb Home", s));
@@ -951,14 +956,19 @@ for (const area of model.areas()) {
       )
     );
 
-    // Resumo (sempre) — card com ícone (R3.5.11); label continua "Resumo"
-    if (!concept.summary) {
-      withResumoEmpty++;
-      set("resumo", F(html.includes('id="concept-resumo" class="info-card__title"') && html.includes("<span>Resumo</span></h2>") && html.includes(">Resumo ainda não disponível.</p>"), "Resumo (empty state, card com ícone)", s));
+    // Texto de abertura: summary; sem summary, a note; sem nenhum dos dois, nada (sem card de Resumo)
+    set("noResumoCard", F(!html.includes("concept-resumo") && !html.includes("Resumo ainda não disponível") && !html.includes("detail-block"), "sem card de Resumo nem detail-block", s));
+    if (concept.summary) {
+      withLedeSummary++;
+      set("ledeSummary", F(html.includes(`<p class="page-head__lede">${renderInline(concept.summary)}</p>`), "texto de abertura = summary", s));
+    } else if (concept.note) {
+      set("ledeNote", F(html.includes(`<p class="page-head__lede">${escapeHtml(concept.note)}</p>`), "texto de abertura = note quando não há summary", s));
+    } else {
+      set("noLede", F(!html.includes('class="page-head__lede"'), "sem texto de abertura quando não há summary nem note", s));
     }
 
-    // Pré-requisitos (Requires) — sempre presente; card com ícone, label sem "(Requires)" (R3.5.11)
-    set("requiresHeading", F(html.includes('id="concept-requires" class="info-card__title"') && html.includes("<span>Pré-requisitos</span></h2>"), "seção Pré-requisitos presente (card)", s));
+    // Pré-requisitos (Requires) — sempre presente, na coluna direita
+    set("requiresHeading", F(html.includes('id="concept-requires" class="doc-card__title"') && html.includes("<span>Pré-requisitos</span></h2>"), "Pré-requisitos presente (coluna direita)", s));
     if ((concept.requires || []).length) {
       withRequires++;
       set("requiresList", F(/id="concept-requires"[\s\S]*?<ul class="relation-list">/.test(html), "Requires com <ul>", s));
@@ -967,48 +977,50 @@ for (const area of model.areas()) {
       set("requiresNone", F(/id="concept-requires"[\s\S]{0,700}<span class="muted">nenhum<\/span>/.test(html), 'Requires = "nenhum"', s));
     }
 
-    // Revisita de (só canonical:false / revisitOf) — card com ícone
-    if (concept.revisitOf) {
-      withRevisitOf++;
-      set("revisitOf", F(html.includes('id="concept-revisitof" class="info-card__title"') && html.includes("<span>Revisita de</span></h2>"), "seção Revisita de (card)", s));
+    // Relacionados = revisitOf + revisit, num card só da coluna direita
+    if (concept.revisitOf) withRevisitOf++;
+    if (concept.revisitOf || (concept.revisit || []).length) {
+      const relatedCount = (concept.revisitOf ? 1 : 0) + (concept.revisit || []).length;
+      const card = (html.match(/id="concept-related"[\s\S]*?<\/section>/) || [""])[0];
+      set("related", F(html.includes('id="concept-related" class="doc-card__title"') && html.includes("<span>Relacionados</span></h2>") && (card.match(/relation-list__item/g) || []).length === relatedCount, "Relacionados com revisitOf + revisit", s));
     } else {
-      set("noRevisitOf", F(!html.includes('id="concept-revisitof"'), "sem Revisita de quando não há revisitOf", s));
+      set("noRelated", F(!html.includes('id="concept-related"'), "sem Relacionados quando não há relações", s));
     }
 
     // Subtópicos — card com ícone
     if ((concept.subtopics || []).length) {
       withSubtopics++;
-      set("subtopics", F(html.includes('id="concept-subtopics" class="info-card__title"') && html.includes("<span>Subtópicos</span></h2>"), "seção Subtópicos (card)", s));
+      set("subtopics", F(html.includes('id="concept-subtopics" class="doc-card__title"') && html.includes("<span>Subtópicos</span></h2>"), "Subtópicos (coluna direita)", s));
     } else {
       set("noSubtopics", F(!html.includes('id="concept-subtopics"'), "sem Subtópicos quando vazio", s));
     }
 
-    // Relacionado a (era "Revisitado em" — R3.5.11 renomeia o rótulo visual;
-    // dado/semântica de concept.revisit não mudam) — card com ícone
-    if ((concept.revisit || []).length) {
-      withRevisit++;
-      set("revisit", F(html.includes('id="concept-revisit" class="info-card__title"') && html.includes("<span>Relacionado a</span></h2>"), "seção Relacionado a (card)", s));
-    } else {
-      set("noRevisit", F(!html.includes('id="concept-revisit"'), "sem Relacionado a quando vazio", s));
-    }
+    if ((concept.revisit || []).length) withRevisit++;
 
     // Recursos — card com ícone
     if ((concept.resources || []).length) {
       withResources++;
-      set("resources", F(html.includes('id="concept-resources" class="info-card__title"') && html.includes("<span>Recursos</span></h2>"), "seção Recursos (card)", s));
+      set("resources", F(html.includes('id="concept-resources" class="doc-card__title"') && html.includes("<span>Recursos</span></h2>"), "Recursos (coluna direita)", s));
     } else {
       set("noResources", F(!html.includes('id="concept-resources"'), "sem Recursos quando vazio", s));
     }
 
-    // Subtítulo (note) — R3.5.11: exibido sob o H1 só quando concept.note não vazio
-    if (concept.note) {
-      set("subtitle", F(html.includes(`<p class="page-head__subtitle">${escapeHtml(concept.note)}</p>`), "subtítulo (note) presente quando não vazio", s));
+    // Coluna direita: "Neste conteúdo" = um link por título do Conteúdo (#sec-N); atalhos só quando há o que abrir
+    const headingCount = (concept.content || []).filter((b) => b.type === "heading").length;
+    set("rail", F(html.includes('<aside class="doc-rail" aria-label="Neste conceito">'), "coluna direita (aside.doc-rail)", s));
+    if (headingCount) {
+      withToc++;
+      const tocLinks = [...html.matchAll(/<li><a href="#sec-(\d+)" data-goto-tab="conteudo">/g)].map((m) => m[1]);
+      set("toc", F(html.includes('id="concept-toc"') && tocLinks.join(",") === Array.from({ length: headingCount }, (_, i) => i + 1).join(","), "Neste conteúdo = títulos do Conteúdo (#sec-1…N)", s));
+      set("readingTime", F(/<span>\d+ min de leitura<\/span>/.test(html), "tempo de leitura quando há conteúdo", s));
     } else {
-      set("noSubtitle", F(!html.includes('class="page-head__subtitle"'), "sem subtítulo quando note vazio", s));
+      set("noToc", F(!html.includes('id="concept-toc"') && !html.includes("min de leitura"), "sem Neste conteúdo nem tempo de leitura sem conteúdo", s));
     }
+    set("ctaExamples", F(html.includes('data-goto-tab="exemplos"') === (concept.examples || []).length > 0, "atalho Exemplos ⇔ há exemplos", s));
+    set("ctaExercise", F(html.includes('data-goto-tab="exercicio"') === !!concept.exercise, "atalho Exercícios ⇔ há exercício", s));
 
     // Área de estudo — 3 <section data-study-panel>, TODAS visíveis (sem hidden)
-    set("studyHeading", F(html.includes('<h2 id="concept-study-heading" class="concept-section__title">Área de estudo</h2>'), "seção Área de estudo", s));
+    set("studyHeading", F(html.includes('<section class="study-area" id="estudo"') && html.includes('<h2 id="concept-study-heading" class="visually-hidden">Área de estudo</h2>'), "Área de estudo (#estudo, título só para leitor de tela)", s));
     set("studyContainer", F(html.includes('<div class="study-area__panels" data-study-tabs="">'), "container data-study-tabs", s));
     // Painel: empty state quando o Concept não tem dado estruturado (maioria hoje);
     // conteúdo real (e AUSÊNCIA do empty state) quando o dataset traz content/
@@ -1017,7 +1029,7 @@ for (const area of model.areas()) {
     for (const [k, label, empty, hasReal] of [
       ["conteudo", "Conteúdo", "Conteúdo ainda não disponível.", (concept.content || []).length > 0],
       ["exemplos", "Exemplos", "Exemplos ainda não disponíveis.", (concept.examples || []).length > 0],
-      ["exercicio", "Exercício", "Exercício ainda não disponível.", !!concept.exercise],
+      ["exercicio", "Exercícios", "Exercícios ainda não disponíveis.", !!concept.exercise],
     ]) {
       const wrapperOk =
         html.includes(`<section class="study-panel" data-study-panel="${k}">`) &&
@@ -1044,13 +1056,13 @@ for (const area of model.areas()) {
     const nx = realSibs.next;
     if (pv) {
       hasPrev++;
-      set("prev", F(html.includes(`<a class="concept-nav__link concept-nav__link--prev" href="${relativize(cPath, pathFor(pv))}" rel="prev"`) && html.includes(`← ${escapeHtml(pv.title)}</a>`), "prev correto", s));
+      set("prev", F(html.includes(`<a class="concept-nav__link concept-nav__link--prev" href="${relativize(cPath, pathFor(pv))}" rel="prev"`) && html.includes(`<small>Anterior</small><strong>${escapeHtml(pv.title)}</strong>`), "prev correto (card)", s));
     } else {
       set("noPrev", F(!html.includes('concept-nav__link--prev'), "sem prev no 1º Concept", s));
     }
     if (nx) {
       hasNext++;
-      set("next", F(html.includes(`<a class="concept-nav__link concept-nav__link--next" href="${relativize(cPath, pathFor(nx))}" rel="next"`) && html.includes(`${escapeHtml(nx.title)} →</a>`), "next correto", s));
+      set("next", F(html.includes(`<a class="concept-nav__link concept-nav__link--next" href="${relativize(cPath, pathFor(nx))}" rel="next"`) && html.includes(`<small>Próximo</small><strong>${escapeHtml(nx.title)}</strong>`), "next correto (card)", s));
     } else {
       set("noNext", F(!html.includes('concept-nav__link--next'), "sem next no último Concept", s));
     }
@@ -1106,41 +1118,47 @@ for (const area of model.areas()) {
   P("title", "title = «Concept · DevAtlas»");
   P("h1count", "exatamente um <h1>");
   P("h1text", "h1 = título do Concept");
-  P("kicker", "kicker CONCEITO NN por Module, na ordem");
-  P("wrapper", "wrapper .view--concept.concept-study");
+  P("noKicker", "sem kicker CONCEITO NN (layout novo)");
+  P("wrapper", "wrapper .view--concept.concept-study + grade .doc-concept");
+  P("actionsSlot", "slot de ações vazio no HTML (ações só com JS)");
   P("crumbHome", "breadcrumb: DevAtlas");
   P("crumbArea", "breadcrumb: Area (link)");
   P("crumbMod", "breadcrumb: Module (link)");
   P("crumbCurrent", "breadcrumb: Concept atual = aria-current, sem self-link");
   P("chips", "classificações == dataset");
-  P("resumo", "Resumo (empty state, card com ícone)");
-  P("requiresHeading", "seção Pré-requisitos sempre presente (card com ícone)");
+  P("noResumoCard", "sem card de Resumo nem detail-block");
+  if (flags.ledeSummary !== undefined) P("ledeSummary", "texto de abertura = summary quando há");
+  if (flags.ledeNote !== undefined) P("ledeNote", "texto de abertura = note quando não há summary");
+  if (flags.noLede !== undefined) P("noLede", "sem texto de abertura quando não há summary nem note");
+  P("requiresHeading", "Pré-requisitos sempre presente (coluna direita)");
   if (flags.requiresList !== undefined) P("requiresList", "Requires com <ul class=relation-list> quando há refs");
   if (flags.requiresNone !== undefined) P("requiresNone", 'Requires = "nenhum" quando vazio');
-  if (flags.revisitOf !== undefined) P("revisitOf", "seção «Revisita de» quando revisitOf (card)");
-  P("noRevisitOf", "sem «Revisita de» quando não há revisitOf");
-  if (flags.subtopics !== undefined) P("subtopics", "seção «Subtópicos» quando há (card)");
+  if (flags.related !== undefined) P("related", "«Relacionados» = revisitOf + revisit, quando há");
+  P("noRelated", "sem «Relacionados» quando não há relações");
+  if (flags.subtopics !== undefined) P("subtopics", "«Subtópicos» quando há (coluna direita)");
   P("noSubtopics", "sem «Subtópicos» quando vazio");
-  if (flags.revisit !== undefined) P("revisit", "seção «Relacionado a» quando há (card)");
-  P("noRevisit", "sem «Relacionado a» quando vazio");
-  if (flags.resources !== undefined) P("resources", "seção «Recursos» quando há (card)");
+  if (flags.resources !== undefined) P("resources", "«Recursos» quando há (coluna direita)");
   P("noResources", "sem «Recursos» quando vazio");
-  if (flags.subtitle !== undefined) P("subtitle", "subtítulo (note) presente quando não vazio");
-  P("noSubtitle", "sem subtítulo quando note vazio");
-  P("studyHeading", "seção «Área de estudo»");
+  P("rail", "coluna direita (aside.doc-rail)");
+  if (flags.toc !== undefined) P("toc", "«Neste conteúdo» = títulos do Conteúdo (#sec-1…N)");
+  if (flags.readingTime !== undefined) P("readingTime", "tempo de leitura quando há conteúdo");
+  P("noToc", "sem «Neste conteúdo» nem tempo de leitura quando não há conteúdo");
+  P("ctaExamples", "atalho «Ver exemplos práticos» ⇔ há exemplos");
+  P("ctaExercise", "atalho «Praticar agora» ⇔ há exercício");
+  P("studyHeading", "«Área de estudo» (#estudo, título só para leitor de tela)");
   P("studyContainer", "container data-study-tabs");
   P("panelOrder", "3 painéis na ordem conteudo → exemplos → exercicio");
   if (flags.panel_conteudo_empty !== undefined) P("panel_conteudo_empty", "painel Conteúdo + empty state");
   if (flags.panel_conteudo_full !== undefined) P("panel_conteudo_full", "painel Conteúdo com conteúdo real (empty state ausente)");
   if (flags.panel_exemplos_empty !== undefined) P("panel_exemplos_empty", "painel Exemplos + empty state");
   if (flags.panel_exemplos_full !== undefined) P("panel_exemplos_full", "painel Exemplos com conteúdo real (empty state ausente)");
-  if (flags.panel_exercicio_empty !== undefined) P("panel_exercicio_empty", "painel Exercício + empty state");
-  if (flags.panel_exercicio_full !== undefined) P("panel_exercicio_full", "painel Exercício com conteúdo real (empty state ausente)");
+  if (flags.panel_exercicio_empty !== undefined) P("panel_exercicio_empty", "painel Exercícios + empty state");
+  if (flags.panel_exercicio_full !== undefined) P("panel_exercicio_full", "painel Exercícios com conteúdo real (empty state ausente)");
   P("noHidden", "3 painéis SEM atributo hidden no HTML fonte (visíveis sem JS)");
   P("noTabRole", "sem role=tab/tablist/tabpanel no HTML fonte (roles = enhancement client-side)");
   P("noAriaSelected", "sem aria-selected no HTML fonte");
-  if (flags.prev !== undefined) P("prev", "prev correto (href relativo + rel=prev + título)");
-  if (flags.next !== undefined) P("next", "next correto (href relativo + rel=next + título)");
+  if (flags.prev !== undefined) P("prev", "Anterior em card (href relativo + rel=prev + título)");
+  if (flags.next !== undefined) P("next", "Próximo em card (href relativo + rel=next + título)");
   P("noPrev", "sem prev no 1º Concept de cada Module");
   P("noNext", "sem next no último Concept de cada Module");
   P("navNoAriaCurrentPrevNext", "prev/next SEM aria-current");
@@ -1435,14 +1453,15 @@ for (const area of model.areas()) {
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",
-    `Resumo empty state: ${withResumoEmpty} (esperado ${668 - PILOT_SLUGS.length} — ${PILOT_SLUGS.length} Concepts do piloto têm summary real)`,
-    withResumoEmpty === 668 - PILOT_SLUGS.length
+    `páginas com resumo como texto de abertura: ${withLedeSummary} (esperado ${PILOT_SLUGS.length} — os Concepts do piloto)`,
+    withLedeSummary === PILOT_SLUGS.length
   );
+  record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas com «Neste conteúdo»: ${withToc} (esperado ${PILOT_SLUGS.length})`, withToc === PILOT_SLUGS.length);
   record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas com Requires: ${withRequires} (dataset 495)`, withRequires === 495);
   record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas Requires = "nenhum": ${withRequiresNone} (dataset 173)`, withRequiresNone === 173);
-  record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas com «Revisita de»: ${withRevisitOf} (dataset 15)`, withRevisitOf === 15);
+  record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas com revisitOf (em «Relacionados»): ${withRevisitOf} (dataset 15)`, withRevisitOf === 15);
   record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas com «Subtópicos»: ${withSubtopics} (dataset 103)`, withSubtopics === 103);
-  record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas com «Relacionado a»: ${withRevisit} (dataset 160)`, withRevisit === 160);
+  record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas com revisit (em «Relacionados»): ${withRevisit} (dataset 160)`, withRevisit === 160);
   record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas com «Recursos»: ${withResources} (dataset 12)`, withResources === 12);
   record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas com prev: ${hasPrev} (esperado 579)`, hasPrev === 579);
   record("Concept — cobertura de blocos (renderer ↔ dataset)", `páginas com next: ${hasNext} (esperado 579)`, hasNext === 579);
@@ -1543,7 +1562,7 @@ for (const area of model.areas()) {
       record("Concept — cobertura de blocos (renderer ↔ dataset)", `${slug}: syntax highlight aplicado (tok-keyword presente)`, ph.includes('class="tok-keyword"'));
       record("Concept — cobertura de blocos (renderer ↔ dataset)", `${slug}: botão Copiar presente e inerte sem handler inline`, (ph.match(/data-copy-code/g) || []).length >= 1 && !/data-copy-code[^>]*\son[a-z]+=/i.test(ph));
       record("Concept — cobertura de blocos (renderer ↔ dataset)", `${slug}: <details class=solution-toggle> com <summary> (Ver solução, zero JS)`, ph.includes('<details class="solution-toggle">') && ph.includes(">Ver solução</span>") && !ph.includes('<details class="solution-toggle" open'));
-      record("Concept — cobertura de blocos (renderer ↔ dataset)", `${slug}: grid Pré-requisitos/Relacionado a presente`, ph.includes('<div class="detail-block__grid">'));
+      record("Concept — cobertura de blocos (renderer ↔ dataset)", `${slug}: coluna direita com «Neste conteúdo» e atalhos Exemplos/Exercícios`, ph.includes('id="concept-toc"') && ph.includes('data-goto-tab="exemplos"') && ph.includes('data-goto-tab="exercicio"'));
     }
     // regex-literal destacado — só abstraction tem exemplo com regex no dataset atual.
     const abstractionPage = conceptPages.find(({ concept }) => concept.slug === "abstraction");
@@ -1740,8 +1759,8 @@ console.log("Preview estático (R3.5.7 — Home + 7 Areas + 89 Modules + 668 Con
 let assetOk = true;
 if (failed === 0) {
   mkdirSync(join(PREVIEW_DIR, "css", "roadmap"), { recursive: true });
-  for (const f of CSS_FILES) copyFileSync(join(ROOT, "css", f), join(PREVIEW_DIR, "css", f));
-  console.log(`  copiado: build/preview/css/ (${CSS_FILES.length} arquivos CSS)`);
+  for (const f of [...CSS_FILES, CONCEPT_CSS]) copyFileSync(join(ROOT, "css", f), join(PREVIEW_DIR, "css", f));
+  console.log(`  copiado: build/preview/css/ (${CSS_FILES.length + 1} arquivos CSS)`);
   mkdirSync(join(PREVIEW_DIR, dirname(ENHANCE_DEST)), { recursive: true });
   copyFileSync(join(ROOT, ENHANCE_SRC), join(PREVIEW_DIR, ENHANCE_DEST));
   assetOk = existsSync(join(PREVIEW_DIR, ENHANCE_DEST));
