@@ -15090,29 +15090,27 @@ export default area({
           requires: ["Database Design / Normalization"],
           note: "motivação: escala horizontal, esquema flexível, modelo de acesso",
           summary:
-            "A diferença entre os bancos relacionais — tabelas normalizadas, esquema fixo, `JOIN` e transações sobre " +
-            "várias linhas — e a família de bancos NoSQL, que organiza os dados em torno de como eles serão lidos, " +
-            "com esquema flexível e escala horizontal como prioridade.",
+            "SQL vs NoSQL é a diferença entre os bancos relacionais, que partem do dado, e os bancos NoSQL, que " +
+            "organizam o dado em torno de como ele será lido.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
                 "\"NoSQL\" não é um banco, mas um nome guarda-chuva para modelos de dados diferentes do relacional: " +
-                "chave-valor, documentos, colunas largas e grafos (\"not only SQL\"). O banco relacional parte do dado: " +
-                "normaliza, guarda cada fato uma vez e deixa que qualquer pergunta seja respondida depois, com `JOIN`s. " +
-                "Os bancos NoSQL costumam partir do acesso: organizam o dado no formato em que ele será lido, muitas " +
-                "vezes repetindo informação, para que a leitura seja uma busca só por chave e para que os dados possam " +
-                "ser divididos entre muitas máquinas. Os dois lados trocam coisas diferentes: flexibilidade de consulta e " +
-                "consistência de um lado; escala e simplicidade de leitura do outro.",
+                "chave-valor, documentos, colunas largas e grafos (\"not only SQL\"). O banco relacional normaliza, guarda " +
+                "cada fato uma vez e deixa que qualquer pergunta seja respondida depois, com `JOIN`s. Os bancos NoSQL " +
+                "costumam organizar o dado no formato em que ele será lido, muitas vezes repetindo informação, para que a " +
+                "leitura seja uma busca só por chave e para que os dados possam ser divididos entre muitas máquinas. Os " +
+                "dois lados trocam coisas diferentes: flexibilidade de consulta e consistência de um lado; escala e " +
+                "simplicidade de leitura do outro.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "A diferença central não é a sintaxe, e sim onde se paga o custo: o relacional paga na leitura (juntando " +
-                "tabelas) para escrever cada fato uma vez; os modelos NoSQL pagam na escrita e na modelagem (repetindo " +
-                "dados) para ler de uma vez só, pela chave.",
+                "O relacional paga o custo na leitura, juntando tabelas, e o NoSQL paga na escrita e na modelagem, " +
+                "repetindo dados.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -15331,28 +15329,27 @@ export default area({
           note: "consolidada (A8)",
           revisit: ["Software Design / Domain Modeling / Aggregate"],
           summary:
-            "Os quatro modelos de dados mais comuns fora do relacional: chave-valor (um valor por chave), documentos " +
-            "(objetos aninhados, consultáveis por campo), colunas largas (linhas particionadas e ordenadas para " +
-            "volume de escrita) e grafos (nós e relações percorridas diretamente).",
+            "NoSQL Data Models são os quatro modelos de dados mais comuns fora do relacional: chave-valor, " +
+            "documentos, colunas largas e grafos.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Cada modelo NoSQL é bom em um tipo de acesso. Chave-valor guarda um valor opaco sob uma chave e só sabe " +
-                "buscar por ela, muito rápido (Redis, DynamoDB no uso mais simples). Documentos guardam objetos " +
-                "aninhados, como JSON, e permitem consultar e indexar os seus campos (MongoDB, Firestore); um documento " +
-                "costuma corresponder a um agregado do domínio, gravado e lido inteiro. Colunas largas organizam as " +
-                "linhas por uma chave de partição e, dentro dela, por uma chave de ordenação, o que suporta volumes " +
-                "enormes de escrita e leituras por intervalo (Cassandra, ScyllaDB). Grafos guardam nós e relações como " +
-                "dados de primeira classe, e percorrer relações é a operação barata (Neo4j).",
+                "Cada um é bom em um tipo de acesso. Chave-valor guarda um valor opaco sob uma chave e só sabe buscar por " +
+                "ela, muito rápido (Redis, DynamoDB no uso mais simples). Documentos guardam objetos aninhados, como " +
+                "JSON, e permitem consultar e indexar os seus campos (MongoDB, Firestore); um documento costuma " +
+                "corresponder a um agregado do domínio, gravado e lido inteiro. Colunas largas organizam as linhas por " +
+                "uma chave de partição e, dentro dela, por uma chave de ordenação, o que suporta volumes enormes de " +
+                "escrita e leituras por intervalo (Cassandra, ScyllaDB). Grafos guardam nós e relações como dados de " +
+                "primeira classe, e percorrer relações é a operação barata (Neo4j).",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Escolha o modelo pela forma do acesso mais importante: buscar por uma chave, ler um objeto inteiro, " +
-                "escrever e ler séries enormes por intervalo, ou percorrer relações em vários níveis.",
+                "Escolha o modelo pela forma do acesso mais importante, porque cada um é barato numa operação e caro nas " +
+                "outras.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -15571,9 +15568,8 @@ export default area({
           note: "estrutura interpretada na leitura, e não imposta na gravação — a validação passa para a aplicação",
           collision: "≠ Database Schema (Database Fundamentals) — validação movida para a aplicação",
           summary:
-            "Guardar os dados sem que o banco imponha uma estrutura na gravação e interpretá-los no momento da " +
-            "leitura — o que dá liberdade para mudar o formato, e passa ao código a tarefa de lidar com registros de " +
-            "formatos diferentes.",
+            "Schema-on-Read é guardar os dados sem que o banco imponha uma estrutura na gravação e interpretá-los só " +
+            "no momento da leitura.",
           content: [
             { type: "heading", text: "Conceito" },
             {
@@ -15590,8 +15586,7 @@ export default area({
               type: "callout",
               title: "Ideia principal",
               text:
-                "Schema-on-read não elimina o esquema, só muda quem o garante: o banco deixa de recusar dados errados, e " +
-                "o código que lê passa a ter de lidar com todos os formatos que já foram gravados.",
+                "Sem esquema no banco, o código de leitura precisa entender todos os formatos que um dia foram gravados.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -15791,28 +15786,22 @@ export default area({
           requires: ["NoSQL Data Models (KV / Document / Wide-Column / Graph)"],
           note: "polyglot persistence; NoSQL não é 'sem trade-off'",
           summary:
-            "Decidir onde guardar cada tipo de dado a partir dos padrões de acesso, das garantias necessárias e do " +
-            "volume esperado — com o banco relacional como ponto de partida razoável e outros modelos entrando onde " +
-            "resolvem um problema concreto.",
+            "Choosing SQL vs NoSQL é decidir, para cada conjunto de dados, qual modelo atende às perguntas e às " +
+            "garantias de que ele precisa.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Escolher entre SQL e NoSQL não é escolher um lado para o sistema inteiro. É decidir, para cada conjunto " +
-                "de dados, qual modelo atende melhor às perguntas que ele precisa responder e às garantias de que ele " +
-                "precisa. Um mesmo sistema costuma usar mais de um banco — um relacional para pedidos e pagamentos, um " +
-                "chave-valor para sessões e cache, um índice de busca para o catálogo — o que se chama persistência " +
-                "poliglota. Cada banco a mais resolve um problema e traz outro: mais uma coisa para operar, monitorar e " +
-                "manter consistente com as demais.",
+                "Não é escolher um lado para o sistema inteiro. Um mesmo sistema costuma usar mais de um banco — um " +
+                "relacional para pedidos e pagamentos, um chave-valor para sessões e cache, um índice de busca para o " +
+                "catálogo — o que se chama persistência poliglota. Cada banco a mais resolve um problema e traz outro: " +
+                "mais uma coisa para operar, monitorar e manter consistente com as demais.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Comece pelo banco relacional e acrescente outro modelo quando um padrão de acesso concreto, medido, " +
-                "pedir por ele: nenhuma das opções é \"sem trade-off\", e cada banco a mais custa operação e consistência " +
-                "entre eles.",
+              text: "Comece pelo relacional e só acrescente outro banco quando um padrão de acesso medido pedir por ele.",
             },
             { type: "heading", text: "Como fazer" },
             {
