@@ -7903,20 +7903,2134 @@ export default area({
         "Modelo relacional → SQL → tabela/keys/constraint → JOIN → agregações → subqueries & CTEs → schema. " +
         "Confirma a dependência formal de Software Design / Enterprise & Application Patterns.",
       concepts: [
-        concept({ order: 10, title: "Relational Database", note: "modelo relacional, tuplas/relações" }),
-        concept({ order: 20, title: "SQL", requires: ["Relational Database"], note: "DDL/DML/DQL" }),
-        concept({ order: 30, title: "Table", requires: ["Relational Database"], note: "a unidade que PK/FK/Constraint referenciam" }),
-        concept({ order: 40, title: "Primary Key", requires: ["Table"], collision: "≠ Natural vs Surrogate Key (Database Design) — que discute a escolha" }),
-        concept({ order: 50, title: "Foreign Key", requires: ["Primary Key"], note: "integridade referencial" }),
-        concept({ order: 60, title: "Constraint", requires: ["Table"], note: "NOT NULL, UNIQUE, CHECK, DEFAULT" }),
-        concept({ order: 70, title: "JOIN", requires: ["Foreign Key"], subtopics: ["INNER", "LEFT/RIGHT OUTER", "FULL OUTER", "CROSS", "self-join"], note: "consolidada (A17)" }),
-        concept({ order: 80, title: "Aggregate Functions & GROUP BY", requires: ["SQL"], subtopics: ["COUNT/SUM/AVG/MIN/MAX", "GROUP BY", "HAVING × WHERE"], note: "consolidada (A18)" }),
-        concept({ order: 90, title: "Subqueries & CTEs", requires: ["SQL"], subtopics: ["correlacionada × não-correlacionada", "WITH", "CTE recursiva (menção)"], note: "consolidada (§D) — absorve CTE do rascunho" }),
+        concept({
+          order: 10,
+          title: "Relational Database",
+          note: "modelo relacional, tuplas/relações",
+          summary:
+            "Um banco de dados que organiza a informação em tabelas de linhas e colunas tipadas, relacionadas " +
+            "entre si por valores em comum (chaves) e consultadas em uma linguagem declarativa, o SQL.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "O modelo relacional, proposto por Edgar Codd em 1970, guarda os dados em relações, o que na prática " +
+                "chamamos de tabelas. Cada tabela é um conjunto de linhas (tuplas), e cada linha tem os mesmos " +
+                "atributos (colunas), cada um com um tipo. As tabelas se ligam por valores, e não por ponteiros: um " +
+                "pedido guarda o id do cliente, e não uma referência a ele. Bancos como PostgreSQL, MySQL, SQL Server, " +
+                "Oracle e SQLite implementam esse modelo (RDBMS), e é com eles que se começa a maioria dos sistemas.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Dados estruturados em tabelas, ligados por valores em comum e consultados pelo que se quer, e não " +
+                "pelo caminho para encontrá-lo: o banco decide como executar.",
+            },
+            { type: "heading", text: "Por que importa" },
+            {
+              type: "paragraph",
+              text:
+                "O modelo relacional dá um esquema explícito, regras de integridade aplicadas pelo próprio banco e " +
+                "a capacidade de combinar os dados de formas que ninguém previu ao modelá-los, com uma única linguagem. " +
+                "Junto de transações (ACID, tema de Database Transactions), é o que sustenta sistemas em que a " +
+                "consistência importa, como pedidos, pagamentos e cadastros. Por isso é a escolha-padrão, e os outros " +
+                "modelos (NoSQL) se justificam por necessidades específicas.",
+            },
+            { type: "heading", text: "Na prática" },
+            {
+              type: "paragraph",
+              text:
+                "Os exemplos deste módulo usam o `node:sqlite`, o SQLite embutido no Node.js (ainda experimental), " +
+                "para poderem ser executados sem instalar nada. A sintaxe é SQL padrão, salvo onde indicado.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "relational.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
+                "  CREATE TABLE orders (",
+                "    id INTEGER PRIMARY KEY,",
+                "    customer_id INTEGER NOT NULL REFERENCES customers(id),   -- a relação é um VALOR: o id do cliente",
+                "    total_cents INTEGER NOT NULL",
+                "  );",
+                "  INSERT INTO customers VALUES (1, 'Ana'), (2, 'Bia');",
+                "  INSERT INTO orders VALUES (10, 1, 1990), (11, 1, 500), (12, 2, 3000);",
+                "`);",
+                "",
+                "// Consulta declarativa: diz O QUE se quer, e o banco decide COMO buscar",
+                "db.prepare(`",
+                "  SELECT c.name, o.total_cents",
+                "  FROM orders o JOIN customers c ON c.id = o.customer_id",
+                "  WHERE o.total_cents > 1000",
+                "  ORDER BY o.total_cents",
+                "`).all();",
+                "// [{ name: \"Ana\", total_cents: 1990 }, { name: \"Bia\", total_cents: 3000 }]",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O pedido não contém o cliente: contém o seu id, e o `JOIN` reúne as duas tabelas pelo valor em comum.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "Uma tabela é um conjunto, sem ordem: sem `ORDER BY`, a ordem das linhas devolvidas não é garantida, mesmo que pareça estável em testes.",
+                "`NULL` significa \"desconhecido\", e não \"vazio\" nem zero: qualquer comparação com `NULL` resulta em desconhecido, e por isso `NULL = NULL` não é verdadeiro; usa-se `IS NULL`.",
+                "O modelo se ajusta bem a dados estruturados e relacionados, mas nem tudo se encaixa: documentos muito variáveis, grafos profundos e séries temporais enormes podem pedir outra ferramenta.",
+                "Existe um descompasso entre objetos da aplicação e linhas de tabelas (impedance mismatch), e ferramentas como ORMs e o padrão Data Mapper existem para gerenciá-lo, mas não o eliminam.",
+                "Mudar a estrutura de uma tabela em produção exige cuidado (migrações), especialmente em tabelas grandes.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Relacionar por valor, e não por aninhamento",
+              context: "Em vez de repetir o cliente dentro de cada pedido, cada dado tem um só lugar.",
+              code: {
+                language: "javascript",
+                filename: "by-value.js",
+                code: [
+                  "// Aninhado, como em um documento: o nome do cliente se repete em cada pedido",
+                  "// { pedido: 10, cliente: { id: 1, nome: \"Ana\" }, total: 1990 }",
+                  "// { pedido: 11, cliente: { id: 1, nome: \"Ana\" }, total: 500 }     ← se Ana mudar de nome, são 2 lugares",
+                  "",
+                  "// Relacional: o nome está em um só lugar, e o pedido guarda só o id",
+                  "db.exec(\"UPDATE customers SET name = 'Ana Souza' WHERE id = 1\");",
+                  "",
+                  "// Todos os pedidos de Ana já refletem a mudança",
+                  "db.prepare(\"SELECT c.name FROM orders o JOIN customers c ON c.id = o.customer_id WHERE o.id = 11\").get();",
+                  "// { name: \"Ana Souza\" }",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada fato existe uma vez, e as outras tabelas o referenciam. Isso evita as inconsistências de atualizar " +
+                "uma cópia e esquecer outra.",
+            },
+            {
+              title: "O NULL não é igual a nada, nem a ele mesmo",
+              context: "A lógica de três valores (verdadeiro, falso e desconhecido) surpreende quem vem de linguagens de programação.",
+              code: {
+                language: "javascript",
+                filename: "null-logic.js",
+                code: [
+                  "db.prepare(\"SELECT NULL = NULL AS igual, NULL IS NULL AS eh_nulo\").get();",
+                  "// { igual: null, eh_nulo: 1 }   — `NULL = NULL` é desconhecido; `IS NULL` é a forma correta",
+                  "",
+                  "db.exec(\"CREATE TABLE customers_email (id INTEGER PRIMARY KEY, email TEXT)\");",
+                  "db.exec(\"INSERT INTO customers_email VALUES (1, 'a@x.com'), (2, NULL)\");",
+                  "",
+                  "db.prepare(\"SELECT COUNT(*) AS n FROM customers_email WHERE email = NULL\").get();    // { n: 0 } — nunca casa",
+                  "db.prepare(\"SELECT COUNT(*) AS n FROM customers_email WHERE email IS NULL\").get();   // { n: 1 }",
+                ].join("\n"),
+              },
+              explanation:
+                "Um filtro `= NULL` nunca devolve linhas, e é um erro silencioso comum. `IS NULL` e `IS NOT NULL` são os " +
+                "operadores certos.",
+            },
+            {
+              title: "Sem ORDER BY, não há ordem",
+              context: "A ordem que aparece nos testes não é uma garantia.",
+              code: {
+                language: "javascript",
+                filename: "unordered.js",
+                code: [
+                  "// Sem ORDER BY: o banco devolve as linhas na ordem que for mais conveniente para ele.",
+                  "// Ela pode mudar com um índice novo, um VACUUM, uma atualização de versão ou o volume de dados.",
+                  "db.prepare(\"SELECT id FROM orders\").all();",
+                  "",
+                  "// Para uma ordem garantida, ela precisa ser pedida; e, se houver empate, desempatada por uma chave única",
+                  "db.prepare(\"SELECT id FROM orders ORDER BY total_cents DESC, id\").all();",
+                ].join("\n"),
+              },
+              explanation:
+                "Código que depende de uma ordem \"por acaso\" funciona até o dia em que deixa de funcionar. A ordem faz " +
+                "parte da consulta, e não do armazenamento.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Uma planilha exportada repete os dados do cliente em cada linha de pedido. Quando um cliente muda de " +
+              "e-mail, é preciso atualizar várias linhas, e já há e-mails divergentes para o mesmo cliente.",
+            problemCode: {
+              language: "javascript",
+              filename: "flat-table.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE sheet (order_id INTEGER, customer_name TEXT, customer_email TEXT, total_cents INTEGER);",
+                "  INSERT INTO sheet VALUES (10, 'Ana', 'ana@x.com', 1990), (11, 'Ana', 'ana@x.com', 500), (12, 'Bia', 'bia@x.com', 3000);",
+                "`);",
+              ].join("\n"),
+            },
+            task:
+              "Separe em duas tabelas relacionadas, `customers` e `orders`, sem repetir os dados do cliente, e escreva a " +
+              "consulta que reconstrói a lista original.",
+            hint: "`customers` guarda cada cliente uma vez (com um id), e `orders` guarda o id do cliente. O `JOIN` refaz a planilha.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "flat-table.fixed.js",
+                code: [
+                  "db.exec(`",
+                  "  CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL UNIQUE);",
+                  "  CREATE TABLE orders (",
+                  "    id INTEGER PRIMARY KEY,",
+                  "    customer_id INTEGER NOT NULL REFERENCES customers(id),",
+                  "    total_cents INTEGER NOT NULL",
+                  "  );",
+                  "",
+                  "  INSERT INTO customers (name, email) SELECT DISTINCT customer_name, customer_email FROM sheet;",
+                  "  INSERT INTO orders (id, customer_id, total_cents)",
+                  "    SELECT s.order_id, c.id, s.total_cents FROM sheet s JOIN customers c ON c.email = s.customer_email;",
+                  "`);",
+                  "",
+                  "db.prepare(`",
+                  "  SELECT o.id AS order_id, c.name, c.email, o.total_cents",
+                  "  FROM orders o JOIN customers c ON c.id = o.customer_id",
+                  "  ORDER BY o.id",
+                  "`).all();",
+                  "// as mesmas 3 linhas da planilha, agora com o e-mail de cada cliente guardado uma vez",
+                  "",
+                  "db.prepare(\"SELECT COUNT(*) AS n FROM customers\").get();   // { n: 2 }",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada cliente existe uma vez, e mudar um e-mail é uma única atualização. O `UNIQUE` no e-mail impede " +
+                "duplicatas, e o `JOIN` reconstrói a visão da planilha quando ela for necessária.",
+            },
+          },
+        }),
+        concept({
+          order: 20,
+          title: "SQL",
+          requires: ["Relational Database"],
+          note: "DDL/DML/DQL",
+          summary:
+            "A linguagem declarativa dos bancos relacionais, com comandos para definir a estrutura (DDL), alterar " +
+            "os dados (DML) e consultá-los (DQL) — em que se descreve o resultado, e o banco escolhe como obtê-lo.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "SQL (Structured Query Language) é a linguagem padrão para falar com bancos relacionais. É " +
+                "declarativa (Declarative vs Imperative): em vez de ensinar o banco a percorrer as linhas, você " +
+                "descreve o que quer, e o otimizador escolhe o plano de execução. Os comandos se agrupam por papel: " +
+                "DDL define a estrutura (`CREATE`, `ALTER`, `DROP`), DML altera os dados (`INSERT`, `UPDATE`, " +
+                "`DELETE`) e DQL os consulta (`SELECT`). Há ainda comandos de controle de acesso e de transação.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Descreva o resultado que quer, e não os passos: o SQL trabalha sobre conjuntos de linhas, e o " +
+                "banco decide a melhor forma de executá-lo.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "Uma consulta é escrita em uma ordem, mas avaliada em outra: primeiro o `FROM` (e os `JOIN`), depois o " +
+                "`WHERE`, o `GROUP BY`, o `HAVING`, só então o `SELECT`, e por fim o `ORDER BY` e o `LIMIT`. Entender " +
+                "essa ordem lógica explica por que um alias criado no `SELECT` não pode ser usado no `WHERE` no SQL " +
+                "padrão. Os valores que vêm de fora entram como parâmetros, e nunca concatenados.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "sql.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "// DDL: define a estrutura",
+                "db.exec(\"CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT NOT NULL, price_cents INTEGER NOT NULL, active INTEGER NOT NULL DEFAULT 1)\");",
+                "",
+                "// DML: altera os dados (os valores entram por parâmetros `?`)",
+                "const insert = db.prepare(\"INSERT INTO products (name, price_cents) VALUES (?, ?)\");",
+                "insert.run(\"caneta\", 500);",
+                "insert.run(\"caderno\", 2000);",
+                "insert.run(\"lápis\", 300);",
+                "db.prepare(\"UPDATE products SET price_cents = price_cents + 50 WHERE name = ?\").run(\"lápis\");",
+                "db.prepare(\"DELETE FROM products WHERE name = ?\").run(\"caneta\");",
+                "",
+                "// DQL: consulta",
+                "db.prepare(\"SELECT name, price_cents FROM products WHERE price_cents < ? ORDER BY price_cents\").all(5000);",
+                "// [{ name: \"lápis\", price_cents: 350 }, { name: \"caderno\", price_cents: 2000 }]",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Cada grupo de comandos tem um papel: `CREATE` cria a tabela, `INSERT`, `UPDATE` e `DELETE` mudam as " +
+                "linhas, e `SELECT` só lê. Os valores nunca foram escritos dentro do texto do comando.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Para qualquer trabalho de filtrar, juntar, agrupar e resumir dados em um banco relacional: quase sempre é mais eficiente pedir ao banco o resultado pronto do que trazer as linhas e processá-las na aplicação.",
+                "Com parâmetros para os valores, para se proteger de injeção de SQL e permitir que o banco reaproveite o plano da consulta.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Um `UPDATE` ou `DELETE` sem `WHERE` age em todas as linhas: rode primeiro o `SELECT` equivalente e, quando possível, use uma transação para poder desfazer.",
+                "Concatenar valores no texto do comando abre a porta para injeção de SQL; use sempre parâmetros.",
+                "`SELECT *` traz colunas que a aplicação não usa, e quebra quando a tabela muda; liste as colunas.",
+                "O SQL varia entre bancos (tipos, funções, paginação, `UPSERT`): o padrão cobre o essencial, e o resto é dialeto.",
+                "Pensar em linhas, com um laço na aplicação que consulta o banco a cada item, ignora a força do SQL e cria o problema N+1; prefira operações sobre conjuntos.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Injeção de SQL, e por que os parâmetros a impedem",
+              context: "O valor digitado por um usuário nunca deve virar parte do comando.",
+              code: {
+                language: "javascript",
+                filename: "sql-injection.js",
+                code: [
+                  "db.exec(\"CREATE TABLE users (name TEXT, secret TEXT); INSERT INTO users VALUES ('ana', 's1'), ('bia', 's2')\");",
+                  "",
+                  "const input = \"x' OR '1'='1\";   // o que um atacante digita",
+                  "",
+                  "// Perigoso: o texto vira parte do comando, e a condição passa a ser sempre verdadeira",
+                  "db.prepare(`SELECT * FROM users WHERE name = '${input}'`).all().length;   // 2 — devolveu tudo",
+                  "",
+                  "// Seguro: o valor viaja à parte e é tratado só como dado",
+                  "db.prepare(\"SELECT * FROM users WHERE name = ?\").all(input).length;       // 0",
+                ].join("\n"),
+              },
+              explanation:
+                "Com a concatenação, o atacante reescreveu a condição. Com o parâmetro, a mesma entrada é só um nome que " +
+                "não existe. É a defesa básica descrita em Application Security.",
+            },
+            {
+              title: "A ordem em que uma consulta é avaliada",
+              context: "Ler na ordem lógica explica muitos erros e comportamentos.",
+              code: {
+                language: "text",
+                filename: "logical-order.txt",
+                code: [
+                  "Escrita:  SELECT ... FROM ... WHERE ... GROUP BY ... HAVING ... ORDER BY ... LIMIT",
+                  "",
+                  "Avaliada: 1. FROM / JOIN   quais linhas existem",
+                  "          2. WHERE         filtra as linhas (antes de agrupar)",
+                  "          3. GROUP BY      forma os grupos",
+                  "          4. HAVING        filtra os grupos",
+                  "          5. SELECT        calcula as colunas e os aliases",
+                  "          6. ORDER BY      ordena (aqui os aliases já existem)",
+                  "          7. LIMIT         corta",
+                  "",
+                  "Por isso: um alias definido no SELECT pode ser usado no ORDER BY, mas (no SQL padrão e no PostgreSQL) não no WHERE.",
+                ].join("\n"),
+              },
+              explanation:
+                "Alguns bancos, como o SQLite e o MySQL, toleram o alias no `WHERE`, e o código funciona neles e falha em " +
+                "outros. Conhecer a ordem lógica evita depender dessa tolerância.",
+            },
+            {
+              title: "UPDATE sem WHERE",
+              context: "O erro clássico: uma condição esquecida altera a tabela inteira.",
+              code: {
+                language: "javascript",
+                filename: "update-without-where.js",
+                code: [
+                  "db.exec(\"CREATE TABLE stock (sku TEXT, qty INTEGER); INSERT INTO stock VALUES ('a', 5), ('b', 7), ('c', 9)\");",
+                  "",
+                  "// Esqueceu o WHERE: TODAS as linhas foram alteradas",
+                  "db.prepare(\"UPDATE stock SET qty = 0\").run().changes;   // 3",
+                  "",
+                  "// Boa prática: conferir o alcance antes, com o mesmo filtro em um SELECT, e usar uma transação",
+                  "db.prepare(\"SELECT COUNT(*) AS n FROM stock WHERE sku = 'a'\").get();   // { n: 1 } — é o que eu esperava alterar?",
+                  "db.exec(\"BEGIN\");",
+                  "const { changes } = db.prepare(\"UPDATE stock SET qty = 10 WHERE sku = 'a'\").run();",
+                  "if (changes !== 1) db.exec(\"ROLLBACK\"); else db.exec(\"COMMIT\");",
+                ].join("\n"),
+              },
+              explanation:
+                "O número de linhas afetadas é a evidência de que a condição fez o que se esperava. Com a transação, um " +
+                "resultado inesperado pode ser desfeito antes de virar definitivo.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A aplicação vai gerir uma biblioteca, mas ninguém escreveu os comandos SQL: é preciso criar a tabela, " +
+              "inserir livros, marcar um como emprestado e listar os disponíveis.",
+            problemCode: {
+              language: "javascript",
+              filename: "library-sql.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "// 1. DDL: tabela books (id, title obrigatório, available com padrão 1)",
+                "// 2. DML: inserir 3 livros",
+                "// 3. DML: marcar o livro 'Dom Casmurro' como indisponível (available = 0)",
+                "// 4. DQL: listar os títulos disponíveis, em ordem alfabética",
+              ].join("\n"),
+            },
+            task:
+              "Escreva os quatro passos, usando parâmetros para os valores que vêm de fora e conferindo quantas linhas " +
+              "o `UPDATE` alterou.",
+            hint: "`db.exec` para a DDL, `db.prepare(...).run(...)` para as escritas e `.all()` para a leitura. O `UPDATE` devolve `changes`.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "library-sql.fixed.js",
+                code: [
+                  "db.exec(\"CREATE TABLE books (id INTEGER PRIMARY KEY, title TEXT NOT NULL, available INTEGER NOT NULL DEFAULT 1)\");",
+                  "",
+                  "const insert = db.prepare(\"INSERT INTO books (title) VALUES (?)\");",
+                  "for (const title of [\"Dom Casmurro\", \"Quincas Borba\", \"Memórias Póstumas\"]) insert.run(title);",
+                  "",
+                  "const { changes } = db.prepare(\"UPDATE books SET available = 0 WHERE title = ?\").run(\"Dom Casmurro\");",
+                  "changes;   // 1 — exatamente o livro esperado",
+                  "",
+                  "db.prepare(\"SELECT title FROM books WHERE available = 1 ORDER BY title\").all();",
+                  "// [{ title: \"Memórias Póstumas\" }, { title: \"Quincas Borba\" }]",
+                ].join("\n"),
+              },
+              explanation:
+                "Os quatro tipos de comando aparecem: DDL, DML (duas vezes) e DQL. O título entrou por parâmetro, e o " +
+                "contador de linhas alteradas confirma que o `UPDATE` atingiu só o livro esperado.",
+            },
+          },
+        }),
+        concept({
+          order: 30,
+          title: "Table",
+          requires: ["Relational Database"],
+          note: "a unidade que PK/FK/Constraint referenciam",
+          summary:
+            "A estrutura básica de armazenamento em um banco relacional: um conjunto de linhas que têm todas as " +
+            "mesmas colunas, cada uma com um nome e um tipo.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Uma tabela representa uma coisa do domínio (clientes, pedidos, produtos) ou uma relação entre coisas. " +
+                "As colunas definem que informações cada linha tem, com o tipo de cada uma; as linhas são os registros. " +
+                "Em geral, uma tabela por entidade, e uma tabela intermediária para relações de muitos para muitos. A " +
+                "tabela é a unidade que chaves primárias, chaves estrangeiras e constraints referenciam.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Uma tabela, um assunto: colunas tipadas e valores atômicos, uma linha por fato, e uma chave que " +
+                "identifica cada linha.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "list",
+              items: [
+                "Cada coluna tem um nome e um tipo (inteiro, texto, data, decimal, booleano), que limita o que pode ser guardado.",
+                "Cada célula guarda um único valor (atômico): uma lista de itens em uma coluna é sinal de que falta uma tabela.",
+                "Uma relação de muitos para muitos, como pedidos e produtos, vira uma tabela intermediária com as chaves das duas pontas.",
+                "Valores monetários são guardados em inteiros (centavos) ou em tipos decimais exatos, e não em ponto flutuante.",
+              ],
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "table.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE products (",
+                "    id INTEGER PRIMARY KEY,",
+                "    name TEXT NOT NULL,",
+                "    price_cents INTEGER NOT NULL,        -- dinheiro em centavos, sem ponto flutuante",
+                "    created_at TEXT NOT NULL             -- data em ISO 8601",
+                "  );",
+                "",
+                "  CREATE TABLE tags (id INTEGER PRIMARY KEY, label TEXT NOT NULL UNIQUE);",
+                "",
+                "  -- muitos para muitos: um produto tem várias tags, e uma tag está em vários produtos",
+                "  CREATE TABLE product_tags (",
+                "    product_id INTEGER NOT NULL REFERENCES products(id),",
+                "    tag_id INTEGER NOT NULL REFERENCES tags(id),",
+                "    PRIMARY KEY (product_id, tag_id)",
+                "  );",
+                "`);",
+                "",
+                "db.prepare(\"PRAGMA table_info(products)\").all().map((column) => `${column.name} ${column.type}`);",
+                "// [\"id INTEGER\", \"name TEXT\", \"price_cents INTEGER\", \"created_at TEXT\"]",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "As tags ficaram em uma tabela própria, ligada por uma tabela intermediária, em vez de uma lista dentro " +
+                "de uma coluna do produto.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "Guardar várias informações em uma coluna, como uma lista separada por vírgulas, impede filtrar, indexar e proteger a integridade desse dado; use uma tabela filha.",
+                "Uma tabela sem chave primária admite linhas duplicadas e não tem como identificar uma linha para atualizar.",
+                "Tipos frouxos escondem erros: o SQLite, por exemplo, aceita texto em uma coluna declarada como inteiro; defina constraints e valide na entrada.",
+                "Uma tabela \"para tudo\", com dezenas de colunas de assuntos diferentes, e o padrão de pares chave-valor genéricos (EAV) perdem tipos, constraints e desempenho.",
+                "Ponto flutuante para dinheiro acumula erros de arredondamento (`0.1 + 0.2` não dá `0.3`).",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "A lista dentro de uma coluna",
+              context: "Parece prático, e deixa de funcionar assim que se precisa consultar.",
+              code: {
+                language: "javascript",
+                filename: "list-in-column.js",
+                code: [
+                  "// Ruim: as tags em uma string",
+                  "db.exec(\"CREATE TABLE posts_bad (id INTEGER PRIMARY KEY, tags TEXT)\");",
+                  "db.exec(\"INSERT INTO posts_bad VALUES (1, 'sql,banco'), (2, 'banco-de-dados,web')\");",
+                  "",
+                  "// Buscar a tag \"banco\" com LIKE acerta o post 1 e também o 2, que só tem \"banco-de-dados\"",
+                  "db.prepare(\"SELECT id FROM posts_bad WHERE tags LIKE '%banco%'\").all();   // [{ id: 1 }, { id: 2 }]  ← errado",
+                  "",
+                  "// Bom: uma linha por tag, e a busca é exata (e pode usar um índice)",
+                  "db.exec(\"CREATE TABLE post_tags (post_id INTEGER, tag TEXT, PRIMARY KEY (post_id, tag))\");",
+                  "db.exec(\"INSERT INTO post_tags VALUES (1, 'sql'), (1, 'banco'), (2, 'banco-de-dados'), (2, 'web')\");",
+                  "db.prepare(\"SELECT post_id FROM post_tags WHERE tag = 'banco'\").all();     // [{ post_id: 1 }]",
+                ].join("\n"),
+              },
+              explanation:
+                "Com a tabela filha, a busca é exata e indexável, e cada tag pode ser validada, renomeada e contada. A " +
+                "lista em texto força a aplicação a reinventar tudo isso.",
+            },
+            {
+              title: "Muitos para muitos com uma tabela intermediária",
+              context: "A tabela de junção guarda cada ligação uma vez, e a chave composta impede repetições.",
+              code: {
+                language: "javascript",
+                filename: "junction-table.js",
+                code: [
+                  "db.exec(`",
+                  "  INSERT INTO products VALUES (1, 'caneta', 500, '2026-01-01'), (2, 'caderno', 2000, '2026-01-02');",
+                  "  INSERT INTO tags VALUES (1, 'escritório'), (2, 'escola');",
+                  "  INSERT INTO product_tags VALUES (1, 1), (1, 2), (2, 2);",
+                  "`);",
+                  "",
+                  "db.prepare(`",
+                  "  SELECT p.name FROM products p",
+                  "  JOIN product_tags pt ON pt.product_id = p.id",
+                  "  JOIN tags t ON t.id = pt.tag_id",
+                  "  WHERE t.label = 'escola' ORDER BY p.name",
+                  "`).all();   // [{ name: \"caderno\" }, { name: \"caneta\" }]",
+                  "",
+                  "try { db.exec(\"INSERT INTO product_tags VALUES (1, 1)\"); }",
+                  "catch (error) { error.message; }   // \"UNIQUE constraint failed: product_tags.product_id, product_tags.tag_id\"",
+                ].join("\n"),
+              },
+              explanation:
+                "A chave composta `(product_id, tag_id)` impede associar duas vezes o mesmo par. Consultar de um lado ou " +
+                "do outro é só uma questão de qual tabela se filtra.",
+            },
+            {
+              title: "Dinheiro: inteiro em centavos",
+              context: "O ponto flutuante representa mal as frações decimais.",
+              code: {
+                language: "javascript",
+                filename: "money.js",
+                code: [
+                  "db.prepare(\"SELECT 0.1 + 0.2 AS soma\").get();   // { soma: 0.30000000000000004 }",
+                  "",
+                  "// Em centavos inteiros, a conta é exata",
+                  "db.prepare(\"SELECT 10 + 20 AS soma_em_centavos\").get();   // { soma_em_centavos: 30 }",
+                  "",
+                  "// Na apresentação: divide por 100 (e formata) só na hora de mostrar",
+                  "const format = (cents) => (cents / 100).toLocaleString(\"pt-BR\", { style: \"currency\", currency: \"BRL\" });",
+                  "format(1990);   // \"R$ 19,90\"",
+                ].join("\n"),
+              },
+              explanation:
+                "Bancos como o PostgreSQL também têm o tipo `NUMERIC`, decimal exato. O importante é nunca usar `REAL` ou " +
+                "`FLOAT` para valores em dinheiro.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A tabela de produtos guarda as categorias em uma coluna de texto, separadas por vírgula. Ninguém " +
+              "consegue listar com segurança todos os produtos de uma categoria.",
+            problemCode: {
+              language: "javascript",
+              filename: "csv-column.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT NOT NULL, categories TEXT);",
+                "  INSERT INTO products VALUES (1, 'caneta', 'escritório,escola'), (2, 'caderno', 'escola'), (3, 'grampeador', 'escritório');",
+                "`);",
+              ].join("\n"),
+            },
+            task:
+              "Crie a tabela `product_categories` (chave composta, sem repetições), migre os dados da coluna de texto " +
+              "para ela e escreva a consulta exata dos produtos da categoria \"escola\".",
+            hint: "Uma linha para cada par produto/categoria. Para separar o texto no exemplo, faça o laço em JavaScript com `split(\",\")`.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "csv-column.fixed.js",
+                code: [
+                  "db.exec(`",
+                  "  CREATE TABLE product_categories (",
+                  "    product_id INTEGER NOT NULL REFERENCES products(id),",
+                  "    category TEXT NOT NULL,",
+                  "    PRIMARY KEY (product_id, category)",
+                  "  )",
+                  "`);",
+                  "",
+                  "const insert = db.prepare(\"INSERT OR IGNORE INTO product_categories VALUES (?, ?)\");",
+                  "for (const { id, categories } of db.prepare(\"SELECT id, categories FROM products\").all()) {",
+                  "  for (const category of categories.split(\",\")) insert.run(id, category.trim());",
+                  "}",
+                  "",
+                  "db.prepare(`",
+                  "  SELECT p.name FROM products p",
+                  "  JOIN product_categories pc ON pc.product_id = p.id",
+                  "  WHERE pc.category = ? ORDER BY p.name",
+                  "`).all(\"escola\");   // [{ name: \"caderno\" }, { name: \"caneta\" }]",
+                  "",
+                  "// Depois de conferir a migração, a coluna `categories` pode ser removida",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada par produto/categoria virou uma linha, com a chave composta impedindo repetições. A busca passou a " +
+                "ser exata, e cada categoria pode ser indexada, validada e contada.",
+            },
+          },
+        }),
+        concept({
+          order: 40,
+          title: "Primary Key",
+          requires: ["Table"],
+          note: "o identificador único e obrigatório de cada linha da tabela",
+          collision: "≠ Natural vs Surrogate Key (Database Design) — que discute a escolha",
+          summary:
+            "A coluna, ou o conjunto de colunas, que identifica cada linha de uma tabela de forma única e " +
+            "obrigatória — o endereço da linha, e o alvo das chaves estrangeiras.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "A chave primária (PK) garante duas coisas: nenhum valor se repete e nenhum é nulo. Isso permite " +
+                "apontar para uma linha específica, atualizá-la e ser referenciada por outras tabelas (Foreign Key). " +
+                "Cada tabela tem uma só chave primária, que pode ser simples (uma coluna, como `id`) ou composta (várias, " +
+                "como `(order_id, product_id)`). O banco cria automaticamente um índice para ela, o que torna a busca " +
+                "por chave rápida. Se a chave é um dado do negócio ou um número gerado é a escolha tratada em Database " +
+                "Design (chave natural ou substituta).",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Toda linha precisa de uma identidade única e estável: a chave primária é o que permite falar de " +
+                "uma linha específica sem ambiguidade.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "primary-key.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "import { randomUUID } from \"node:crypto\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "// Chave simples, gerada pelo banco",
+                "db.exec(\"CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL)\");",
+                "const first = db.prepare(\"INSERT INTO customers (name) VALUES (?)\").run(\"Ana\");",
+                "first.lastInsertRowid;   // 1 — o banco gerou a chave",
+                "",
+                "// A chave é única: repetir o valor é recusado",
+                "try { db.exec(\"INSERT INTO customers (id, name) VALUES (1, 'Outra Ana')\"); }",
+                "catch (error) { error.message; }   // \"UNIQUE constraint failed: customers.id\"",
+                "",
+                "// Chave composta: o par identifica a linha (uma linha por produto em cada pedido)",
+                "db.exec(\"CREATE TABLE order_items (order_id INTEGER, product_id INTEGER, quantity INTEGER NOT NULL, PRIMARY KEY (order_id, product_id))\");",
+                "",
+                "// Chave textual opaca (UUID), gerada pela aplicação",
+                "db.exec(\"CREATE TABLE api_tokens (id TEXT PRIMARY KEY, owner TEXT NOT NULL)\");",
+                "db.prepare(\"INSERT INTO api_tokens VALUES (?, ?)\").run(randomUUID(), \"ana\");",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "As três formas resolvem o mesmo problema: identificar uma linha sem ambiguidade. O que muda é quem " +
+                "gera o valor e se ele significa algo para o negócio.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "Uma chave que muda, como o e-mail ou o CPF, obriga a atualizar todas as tabelas que a referenciam; a chave deve ser estável durante toda a vida da linha.",
+                "Expor ids sequenciais em endereços (`/customers/1`, `/customers/2`) permite enumerar os registros; a autorização por recurso é indispensável, e um identificador opaco, como o UUID, ajuda.",
+                "UUIDs aleatórios como chave primária espalham as inserções pelo índice e podem prejudicar o desempenho em tabelas grandes; existem variantes ordenáveis por tempo.",
+                "Chaves compostas longas se propagam para todas as chaves estrangeiras que as referenciam, o que as torna pesadas; uma chave substituta simples costuma ser mais prática.",
+                "A chave primária identifica a linha, mas não substitui as regras de unicidade do negócio: o e-mail continua precisando de um `UNIQUE` próprio.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "A chave que muda",
+              context: "Usar um dado do negócio como chave o prende a esse dado.",
+              code: {
+                language: "javascript",
+                filename: "changing-key.js",
+                code: [
+                  "// E-mail como chave primária: parece natural, e vira problema quando o e-mail muda",
+                  "db.exec(`",
+                  "  CREATE TABLE users_bad (email TEXT PRIMARY KEY, name TEXT);",
+                  "  CREATE TABLE posts_bad (id INTEGER PRIMARY KEY, author_email TEXT REFERENCES users_bad(email), title TEXT);",
+                  "`);",
+                  "// Trocar o e-mail exige atualizar users_bad e TODAS as linhas de posts_bad (e de qualquer outra tabela)",
+                  "",
+                  "// Chave estável + e-mail como coluna única: mudar o e-mail é uma atualização",
+                  "db.exec(`",
+                  "  CREATE TABLE users (id INTEGER PRIMARY KEY, email TEXT NOT NULL UNIQUE, name TEXT);",
+                  "  CREATE TABLE posts (id INTEGER PRIMARY KEY, author_id INTEGER REFERENCES users(id), title TEXT);",
+                  "`);",
+                ].join("\n"),
+              },
+              explanation:
+                "Com uma chave substituta estável, o e-mail deixa de ser a identidade e passa a ser um atributo, com a " +
+                "unicidade garantida por um `UNIQUE`.",
+            },
+            {
+              title: "Chave composta em uma tabela intermediária",
+              context: "O par de chaves das duas pontas identifica a linha e impede repetições.",
+              code: {
+                language: "javascript",
+                filename: "composite-key.js",
+                code: [
+                  "db.exec(\"INSERT INTO order_items VALUES (10, 1, 2), (10, 2, 1)\");   // o pedido 10 tem 2 produtos diferentes",
+                  "",
+                  "try { db.exec(\"INSERT INTO order_items VALUES (10, 1, 5)\"); }        // o mesmo produto de novo, no mesmo pedido",
+                  "catch (error) { error.message; }",
+                  "// \"UNIQUE constraint failed: order_items.order_id, order_items.product_id\"",
+                  "",
+                  "// Para mudar a quantidade, atualiza-se a linha existente (ou se soma a ela), e não se insere outra",
+                  "db.prepare(\"UPDATE order_items SET quantity = quantity + 5 WHERE order_id = 10 AND product_id = 1\").run();",
+                ].join("\n"),
+              },
+              explanation:
+                "A chave composta expressa a regra \"um produto aparece uma vez por pedido\" diretamente na estrutura, " +
+                "sem depender do cuidado da aplicação.",
+            },
+            {
+              title: "Ids sequenciais versus opacos",
+              context: "A previsibilidade de um contador ajuda quem quer enumerar os registros.",
+              code: {
+                language: "javascript",
+                filename: "id-exposure.js",
+                code: [
+                  "// Sequencial: quem vê /invoices/1042 tenta /invoices/1041, 1040, ...",
+                  "//   → sem checagem de autorização por recurso, dá para ler as faturas de outros clientes",
+                  "",
+                  "// Opaco: um UUID não é adivinhável",
+                  "//   /invoices/3f6c5e0a-8d1b-4a53-9b64-0c2f1e7a9d21",
+                  "",
+                  "// Mas o UUID NÃO substitui a autorização: quem obtiver o endereço ainda pode acessar.",
+                  "function getInvoice(user, id) {",
+                  "  const invoice = findInvoice(id);",
+                  "  if (!invoice || invoice.ownerId !== user.id) return { status: 404 };   // sempre verifica o dono",
+                  "  return { status: 200, body: invoice };",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "O identificador opaco dificulta a enumeração, e a checagem do dono é o que protege de verdade. As duas " +
+                "medidas se complementam.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A tabela de matrículas foi criada sem chave primária, e já tem linhas duplicadas: o mesmo aluno " +
+              "matriculado duas vezes no mesmo curso.",
+            problemCode: {
+              language: "javascript",
+              filename: "enrollments.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE enrollments (student_id INTEGER, course_id INTEGER, enrolled_on TEXT);",
+                "  INSERT INTO enrollments VALUES (1, 10, '2026-01-10'), (1, 10, '2026-01-12'), (2, 10, '2026-01-11'), (1, 20, '2026-01-13');",
+                "`);",
+              ].join("\n"),
+            },
+            task:
+              "Recrie a tabela com a chave primária composta `(student_id, course_id)`, mantendo, para cada par, a " +
+              "matrícula mais antiga, e mostre que uma nova duplicata é recusada.",
+            hint: "Crie a tabela nova com a chave, copie com `MIN(enrolled_on)` agrupando por aluno e curso, e troque os nomes.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "enrollments.fixed.js",
+                code: [
+                  "db.exec(`",
+                  "  CREATE TABLE enrollments_new (",
+                  "    student_id INTEGER NOT NULL,",
+                  "    course_id INTEGER NOT NULL,",
+                  "    enrolled_on TEXT NOT NULL,",
+                  "    PRIMARY KEY (student_id, course_id)",
+                  "  );",
+                  "",
+                  "  INSERT INTO enrollments_new",
+                  "    SELECT student_id, course_id, MIN(enrolled_on) FROM enrollments GROUP BY student_id, course_id;",
+                  "",
+                  "  DROP TABLE enrollments;",
+                  "  ALTER TABLE enrollments_new RENAME TO enrollments;",
+                  "`);",
+                  "",
+                  "db.prepare(\"SELECT COUNT(*) AS n FROM enrollments\").get();   // { n: 3 } — a duplicata do aluno 1 no curso 10 foi eliminada",
+                  "",
+                  "try { db.exec(\"INSERT INTO enrollments VALUES (1, 10, '2026-02-01')\"); }",
+                  "catch (error) { error.message; }   // \"UNIQUE constraint failed: enrollments.student_id, enrollments.course_id\"",
+                ].join("\n"),
+              },
+              explanation:
+                "A regra \"um aluno, uma matrícula por curso\" passou a ser garantida pelo banco, e a duplicata futura é " +
+                "recusada. A migração manteve a matrícula mais antiga de cada par.",
+            },
+          },
+        }),
+        concept({
+          order: 50,
+          title: "Foreign Key",
+          requires: ["Primary Key"],
+          note: "integridade referencial",
+          summary:
+            "Uma coluna que referencia a chave primária de outra tabela e faz o banco impedir referências para " +
+            "linhas que não existem — a integridade referencial.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "A chave estrangeira (FK) declara que os valores de uma coluna precisam existir como chave de outra " +
+                "tabela: `orders.customer_id` referencia `customers.id`. Com isso, o banco recusa criar um pedido de um " +
+                "cliente que não existe (linha órfã) e decide o que acontece com os pedidos quando o cliente é apagado. " +
+                "É a integridade referencial: as relações entre as tabelas deixam de ser uma convenção da aplicação e " +
+                "passam a ser garantidas pelo banco.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "A chave estrangeira transforma a relação entre tabelas em uma regra: o banco não deixa uma " +
+                "referência apontar para o nada.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "list",
+              items: [
+                "`INSERT` ou `UPDATE` com um valor sem correspondente na tabela referenciada é recusado.",
+                "`ON DELETE RESTRICT` (ou `NO ACTION`): não deixa apagar a linha referenciada enquanto houver referências; é o padrão seguro.",
+                "`ON DELETE CASCADE`: apagar a linha referenciada apaga também as que a referenciam.",
+                "`ON DELETE SET NULL`: mantém as linhas dependentes, e zera a referência (a coluna precisa aceitar `NULL`).",
+                "Em alguns bancos, como o PostgreSQL, a coluna da chave estrangeira não ganha um índice automaticamente, e criá-lo costuma ser necessário.",
+              ],
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "foreign-key.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
+                "  CREATE TABLE orders (",
+                "    id INTEGER PRIMARY KEY,",
+                "    customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE RESTRICT",
+                "  );",
+                "  INSERT INTO customers VALUES (1, 'Ana');",
+                "  INSERT INTO orders VALUES (10, 1);",
+                "`);",
+                "",
+                "// Pedido de um cliente que não existe: recusado",
+                "try { db.exec(\"INSERT INTO orders VALUES (11, 99)\"); }",
+                "catch (error) { error.message; }   // \"FOREIGN KEY constraint failed\"",
+                "",
+                "// Apagar um cliente que tem pedidos: recusado (RESTRICT)",
+                "try { db.exec(\"DELETE FROM customers WHERE id = 1\"); }",
+                "catch (error) { error.message; }   // \"FOREIGN KEY constraint failed\"",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Nenhum pedido órfão pode existir, e nenhum cliente com pedidos desaparece por descuido. No SQLite, a " +
+                "verificação de chaves estrangeiras precisa estar ligada (`PRAGMA foreign_keys = ON`), e o " +
+                "`node:sqlite` já a liga por padrão.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "`ON DELETE CASCADE` apaga em cadeia: um `DELETE` inocente pode remover milhares de linhas de várias tabelas; use-o só onde a dependência é de fato \"parte de\", e nunca por conveniência.",
+                "Sem índice na coluna da chave estrangeira, os `JOIN`s e as exclusões na tabela pai precisam varrer a tabela filha inteira.",
+                "Chaves estrangeiras não atravessam bancos nem serviços: em arquiteturas com bancos separados, a integridade passa a ser responsabilidade da aplicação.",
+                "Referências circulares entre duas tabelas dificultam inserir os dados e apagá-los; costumam indicar um problema de modelagem.",
+                "Desligar a verificação para uma carga em massa, e esquecer de religá-la ou de validar depois, deixa órfãos silenciosamente.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Os três comportamentos de exclusão",
+              context: "O que fazer com as linhas dependentes é uma decisão de modelagem.",
+              code: {
+                language: "javascript",
+                filename: "on-delete.js",
+                code: [
+                  "db.exec(`",
+                  "  CREATE TABLE authors (id INTEGER PRIMARY KEY);",
+                  "  CREATE TABLE posts_cascade (id INTEGER PRIMARY KEY, author_id INTEGER REFERENCES authors(id) ON DELETE CASCADE);",
+                  "  CREATE TABLE posts_setnull (id INTEGER PRIMARY KEY, author_id INTEGER REFERENCES authors(id) ON DELETE SET NULL);",
+                  "  CREATE TABLE posts_restrict (id INTEGER PRIMARY KEY, author_id INTEGER REFERENCES authors(id) ON DELETE RESTRICT);",
+                  "  INSERT INTO authors VALUES (1);",
+                  "  INSERT INTO posts_cascade VALUES (1, 1);",
+                  "  INSERT INTO posts_setnull VALUES (1, 1);",
+                  "  INSERT INTO posts_restrict VALUES (1, 1);",
+                  "`);",
+                  "",
+                  "db.exec(\"DELETE FROM posts_restrict\");   // libera o RESTRICT para o exemplo",
+                  "db.exec(\"DELETE FROM authors WHERE id = 1\");",
+                  "",
+                  "db.prepare(\"SELECT COUNT(*) AS n FROM posts_cascade\").get();          // { n: 0 } — apagou junto",
+                  "db.prepare(\"SELECT author_id FROM posts_setnull\").get();              // { author_id: null } — ficou sem autor",
+                  "// posts_restrict teria impedido a exclusão enquanto houvesse posts",
+                ].join("\n"),
+              },
+              explanation:
+                "`CASCADE` propaga a exclusão, `SET NULL` preserva o dependente sem a referência, e `RESTRICT` protege. " +
+                "A escolha reflete o que o relacionamento significa no negócio.",
+            },
+            {
+              title: "O índice que falta na chave estrangeira",
+              context: "Sem um índice, buscar pelos filhos de um pai varre a tabela toda.",
+              code: {
+                language: "javascript",
+                filename: "fk-index.js",
+                code: [
+                  "const plan = (sql) => db.prepare(`EXPLAIN QUERY PLAN ${sql}`).all().map((row) => row.detail);",
+                  "",
+                  "plan(\"SELECT * FROM orders WHERE customer_id = 1\");",
+                  "// [\"SCAN orders\"]   — lê todos os pedidos",
+                  "",
+                  "db.exec(\"CREATE INDEX idx_orders_customer ON orders(customer_id)\");",
+                  "",
+                  "plan(\"SELECT * FROM orders WHERE customer_id = 1\");",
+                  "// [\"SEARCH orders USING COVERING INDEX idx_orders_customer (customer_id=?)\"]   — vai direto aos pedidos do cliente",
+                ].join("\n"),
+              },
+              explanation:
+                "Com poucas linhas a diferença é invisível, e com milhões ela decide se a consulta leva milissegundos ou " +
+                "segundos. É o assunto de Database Performance.",
+            },
+            {
+              title: "Chaves estrangeiras e microsserviços",
+              context: "A integridade referencial do banco só vale dentro do próprio banco.",
+              code: {
+                language: "javascript",
+                filename: "cross-service.js",
+                code: [
+                  "// Banco de pedidos e banco de clientes são separados: não há FK entre eles.",
+                  "// A aplicação precisa garantir a regra, e aceitar os casos em que ela falha.",
+                  "",
+                  "async function createOrder(customerId, items) {",
+                  "  const customer = await customersApi.find(customerId);          // checagem na aplicação",
+                  "  if (!customer) throw new Error(\"cliente inexistente\");",
+                  "  return orders.insert({ customerId, items });",
+                  "}",
+                  "",
+                  "// Mesmo assim, o cliente pode ser apagado depois: o pedido ficaria com uma referência solta,",
+                  "// e o sistema precisa lidar com isso (eventos, tratamento tolerante, limpeza periódica).",
+                ].join("\n"),
+              },
+              explanation:
+                "Ao separar os bancos, ganha-se independência e perde-se a garantia automática. É um dos custos da " +
+                "divisão em serviços.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A tabela de comentários tem `post_id`, mas sem chave estrangeira. Já existem comentários de posts que " +
+              "foram apagados, e ninguém sabe quantos.",
+            problemCode: {
+              language: "javascript",
+              filename: "orphans.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE posts (id INTEGER PRIMARY KEY, title TEXT);",
+                "  CREATE TABLE comments (id INTEGER PRIMARY KEY, post_id INTEGER NOT NULL, body TEXT);",
+                "  INSERT INTO posts VALUES (1, 'A'), (2, 'B');",
+                "  INSERT INTO comments VALUES (1, 1, 'ok'), (2, 2, 'bom'), (3, 3, 'órfão!'), (4, 1, 'legal');",
+                "`);",
+              ].join("\n"),
+            },
+            task:
+              "Ache os comentários órfãos, remova-os e recrie a tabela com uma chave estrangeira `ON DELETE CASCADE`, " +
+              "para que apagar um post apague os seus comentários.",
+            hint: "Um `LEFT JOIN` com `posts.id IS NULL` (ou `NOT EXISTS`) acha os órfãos. Depois recrie `comments` com `REFERENCES posts(id)`.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "orphans.fixed.js",
+                code: [
+                  "// 1. Achar os órfãos",
+                  "db.prepare(`",
+                  "  SELECT c.id FROM comments c LEFT JOIN posts p ON p.id = c.post_id WHERE p.id IS NULL",
+                  "`).all();   // [{ id: 3 }]",
+                  "",
+                  "// 2. Recriar a tabela com a chave estrangeira, copiando só os comentários válidos",
+                  "db.exec(`",
+                  "  CREATE TABLE comments_new (",
+                  "    id INTEGER PRIMARY KEY,",
+                  "    post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,",
+                  "    body TEXT",
+                  "  );",
+                  "  INSERT INTO comments_new SELECT c.* FROM comments c WHERE c.post_id IN (SELECT id FROM posts);",
+                  "  DROP TABLE comments;",
+                  "  ALTER TABLE comments_new RENAME TO comments;",
+                  "  CREATE INDEX idx_comments_post ON comments(post_id);",
+                  "`);",
+                  "",
+                  "// 3. Agora o banco garante a integridade",
+                  "try { db.exec(\"INSERT INTO comments VALUES (9, 77, 'sem post')\"); }",
+                  "catch (error) { error.message; }   // \"FOREIGN KEY constraint failed\"",
+                  "",
+                  "db.exec(\"DELETE FROM posts WHERE id = 1\");",
+                  "db.prepare(\"SELECT COUNT(*) AS n FROM comments WHERE post_id = 1\").get();   // { n: 0 } — apagados junto do post",
+                ].join("\n"),
+              },
+              explanation:
+                "Os órfãos foram removidos, e a nova tabela impede que voltem. O `CASCADE` faz sentido aqui porque um " +
+                "comentário só existe como parte do seu post, e o índice acelera as buscas por post.",
+            },
+          },
+        }),
+        concept({
+          order: 60,
+          title: "Constraint",
+          requires: ["Table"],
+          note: "NOT NULL, UNIQUE, CHECK, DEFAULT",
+          summary:
+            "Regras declaradas na estrutura da tabela que o próprio banco aplica em toda escrita — nulidade, " +
+            "unicidade, condições sobre os valores e valores padrão —, independentemente de quem escreve.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Uma constraint é uma regra de integridade que o banco garante. `NOT NULL` proíbe valores ausentes, " +
+                "`UNIQUE` proíbe repetições, `CHECK` exige que uma condição sobre a linha seja verdadeira, e `DEFAULT` " +
+                "preenche um valor quando nenhum é informado (a chave primária e a chave estrangeira também são " +
+                "constraints). Elas valem para toda escrita, venha da aplicação, de um script, de outro serviço ou de " +
+                "alguém com um terminal aberto, e por isso são a última linha de defesa da qualidade dos dados.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Se uma regra precisa valer sempre, declare-a no banco: a validação da aplicação pode ser " +
+                "contornada, e a constraint, não.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "constraints.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE products (",
+                "    id INTEGER PRIMARY KEY,",
+                "    sku TEXT NOT NULL UNIQUE,                                     -- obrigatório e sem repetição",
+                "    name TEXT NOT NULL,",
+                "    price_cents INTEGER NOT NULL CHECK (price_cents >= 0),        -- condição sobre o valor",
+                "    status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'active', 'archived')),",
+                "    created_at TEXT NOT NULL DEFAULT (datetime('now'))            -- valor padrão",
+                "  )",
+                "`);",
+                "",
+                "const attempt = (sql) => { try { db.exec(sql); return \"ok\"; } catch (error) { return error.message; } };",
+                "",
+                "attempt(\"INSERT INTO products (sku, name, price_cents) VALUES ('A1', 'caneta', 500)\");        // \"ok\" (status = 'draft')",
+                "attempt(\"INSERT INTO products (sku, name, price_cents) VALUES ('A1', 'outra', 100)\");         // \"UNIQUE constraint failed: products.sku\"",
+                "attempt(\"INSERT INTO products (sku, name, price_cents) VALUES ('B2', NULL, 100)\");            // \"NOT NULL constraint failed: products.name\"",
+                "attempt(\"INSERT INTO products (sku, name, price_cents) VALUES ('C3', 'lápis', -5)\");          // \"CHECK constraint failed: price_cents >= 0\"",
+                "attempt(\"INSERT INTO products (sku, name, price_cents, status) VALUES ('D4', 'x', 1, 'lost')\");   // \"CHECK constraint failed: ...\"",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Cada tentativa inválida foi recusada pelo banco, sem uma linha de validação no código. O `DEFAULT` " +
+                "preencheu o status e a data da primeira linha.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Para invariantes que precisam valer sempre e por qualquer caminho: campos obrigatórios, unicidade, faixas de valores, conjuntos de valores válidos.",
+                "Para garantir unicidade sem condições de corrida: um `UNIQUE` funciona mesmo com duas requisições simultâneas, e uma checagem prévia na aplicação, não.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Regras que dependem de outras tabelas, do tempo ou de cálculos complexos não cabem em um `CHECK` (na maioria dos bancos ele só enxerga a própria linha); ficam na aplicação, em gatilhos ou em outras constraints.",
+                "Regras que mudam com frequência, como limites de negócio, tornam a constraint um custo de migração; prefira configuração e validação na aplicação.",
+                "As mensagens de erro do banco são técnicas: a aplicação ainda precisa validar antes, para dar respostas claras, e traduzir o que escapar.",
+                "Acrescentar uma constraint a uma tabela que já tem dados inválidos falha até que os dados sejam corrigidos.",
+                "`DEFAULT` não valida nada: só preenche o que faltou, e um valor explicitamente informado ainda pode ser errado.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Unicidade sem condição de corrida",
+              context: "Verificar antes de inserir deixa uma janela em que duas requisições passam juntas.",
+              code: {
+                language: "javascript",
+                filename: "race-safe.js",
+                code: [
+                  "// Checar e inserir: outra requisição pode inserir o mesmo SKU entre as duas linhas",
+                  "const exists = db.prepare(\"SELECT 1 FROM products WHERE sku = ?\").get(\"Z9\");",
+                  "if (!exists) db.prepare(\"INSERT INTO products (sku, name, price_cents) VALUES (?, ?, ?)\").run(\"Z9\", \"x\", 1);",
+                  "",
+                  "// Com o UNIQUE, o banco decide: uma inserção vence, e a outra falha, sempre",
+                  "function createProduct(sku, name, price) {",
+                  "  try {",
+                  "    db.prepare(\"INSERT INTO products (sku, name, price_cents) VALUES (?, ?, ?)\").run(sku, name, price);",
+                  "    return { status: 201 };",
+                  "  } catch (error) {",
+                  "    if (error.message.includes(\"UNIQUE constraint failed\")) return { status: 409 };   // conflito",
+                  "    throw error;",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "A constraint é a única garantia real, porque é atômica. A aplicação deve tratar a falha e devolver um " +
+                "conflito, em vez de confiar em uma verificação que pode envelhecer em milissegundos.",
+            },
+            {
+              title: "Traduzir o erro do banco para a API",
+              context: "Cada tipo de violação corresponde a um problema do cliente, e não a um erro do servidor.",
+              code: {
+                language: "javascript",
+                filename: "translate-errors.js",
+                code: [
+                  "function toHttp(error) {",
+                  "  const message = error.message;",
+                  "  if (message.includes(\"UNIQUE constraint failed\")) return { status: 409, title: \"Já existe\" };",
+                  "  if (message.includes(\"NOT NULL constraint failed\")) return { status: 422, title: \"Campo obrigatório ausente\" };",
+                  "  if (message.includes(\"CHECK constraint failed\")) return { status: 422, title: \"Valor inválido\" };",
+                  "  if (message.includes(\"FOREIGN KEY constraint failed\")) return { status: 422, title: \"Referência inexistente\" };",
+                  "  return { status: 500, title: \"Erro interno\" };",
+                  "}",
+                  "",
+                  "// No PostgreSQL, o código do erro (SQLSTATE) é mais confiável que o texto:",
+                  "//   23505 unique_violation   23502 not_null_violation   23514 check_violation   23503 foreign_key_violation",
+                ].join("\n"),
+              },
+              explanation:
+                "A violação de uma constraint quase sempre é um problema do pedido, e por isso vira 4xx, e não 500. " +
+                "Bibliotecas de acesso expõem o código do erro, e é nele, e não no texto, que se deve confiar.",
+            },
+            {
+              title: "Dados existentes impedem a nova constraint",
+              context: "Acrescentar uma regra depois exige antes corrigir o que já a viola.",
+              code: {
+                language: "javascript",
+                filename: "add-constraint.js",
+                code: [
+                  "db.exec(\"CREATE TABLE members (id INTEGER PRIMARY KEY, email TEXT)\");",
+                  "db.exec(\"INSERT INTO members (email) VALUES ('a@x.com'), ('a@x.com'), ('b@x.com')\");   // duplicata",
+                  "",
+                  "try { db.exec(\"CREATE UNIQUE INDEX uq_members_email ON members(email)\"); }",
+                  "catch (error) { error.message; }   // \"UNIQUE constraint failed: members.email\" — os dados atuais violam a regra",
+                  "",
+                  "// 1. Corrigir os dados (aqui, manter a linha mais antiga de cada e-mail)",
+                  "db.exec(\"DELETE FROM members WHERE id NOT IN (SELECT MIN(id) FROM members GROUP BY email)\");",
+                  "",
+                  "// 2. Só então acrescentar a constraint",
+                  "db.exec(\"CREATE UNIQUE INDEX uq_members_email ON members(email)\");",
+                ].join("\n"),
+              },
+              explanation:
+                "Quanto mais cedo a regra entra no esquema, mais barato é aplicá-la. Depois, é preciso limpar os dados " +
+                "antes, e decidir o que fazer com cada violação.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A tabela de usuários aceita qualquer coisa: e-mails repetidos ou vazios, idades negativas, papéis " +
+              "inexistentes. A validação existe só em um formulário, e scripts internos a contornam.",
+            problemCode: {
+              language: "javascript",
+              filename: "users-table.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE users (",
+                "    id INTEGER PRIMARY KEY,",
+                "    email TEXT,",
+                "    age INTEGER,",
+                "    role TEXT,",
+                "    created_at TEXT",
+                "  )",
+                "`);",
+              ].join("\n"),
+            },
+            task:
+              "Recrie a tabela com constraints: e-mail obrigatório e único, idade entre 0 e 130 (opcional), papel " +
+              "restrito a `user`, `admin` e `guest` (padrão `user`), e `created_at` com a data atual por padrão.",
+            hint: "Combine `NOT NULL`, `UNIQUE`, `CHECK (age BETWEEN 0 AND 130)`, `CHECK (role IN (...))` e `DEFAULT`.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "users-table.fixed.js",
+                code: [
+                  "db.exec(\"DROP TABLE users\");",
+                  "db.exec(`",
+                  "  CREATE TABLE users (",
+                  "    id INTEGER PRIMARY KEY,",
+                  "    email TEXT NOT NULL UNIQUE CHECK (length(email) > 3),",
+                  "    age INTEGER CHECK (age BETWEEN 0 AND 130),                        -- opcional, mas, se existir, válida",
+                  "    role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin', 'guest')),",
+                  "    created_at TEXT NOT NULL DEFAULT (datetime('now'))",
+                  "  )",
+                  "`);",
+                  "",
+                  "const attempt = (sql) => { try { db.exec(sql); return \"ok\"; } catch (error) { return error.message; } };",
+                  "",
+                  "attempt(\"INSERT INTO users (email) VALUES ('ana@x.com')\");                     // \"ok\" (role 'user', data preenchida)",
+                  "attempt(\"INSERT INTO users (email) VALUES ('ana@x.com')\");                     // UNIQUE constraint failed",
+                  "attempt(\"INSERT INTO users (email, age) VALUES ('bia@x.com', -3)\");            // CHECK constraint failed",
+                  "attempt(\"INSERT INTO users (email, role) VALUES ('caio@x.com', 'root')\");      // CHECK constraint failed",
+                  "attempt(\"INSERT INTO users (email) VALUES (NULL)\");                           // NOT NULL constraint failed",
+                ].join("\n"),
+              },
+              explanation:
+                "Agora nenhum caminho de escrita, formulário, script ou console, consegue gravar dados inválidos. A " +
+                "idade continua opcional, mas se aparecer precisa ser válida (`NULL` passa em um `CHECK`).",
+            },
+          },
+        }),
+        concept({
+          order: 70,
+          title: "JOIN",
+          requires: ["Foreign Key"],
+          subtopics: ["INNER", "LEFT/RIGHT OUTER", "FULL OUTER", "CROSS", "self-join"],
+          note: "consolidada (A17)",
+          summary:
+            "A operação que combina linhas de duas tabelas pela relação entre elas — o INNER mantém só quem tem " +
+            "par, os OUTER mantêm também quem não tem, o CROSS combina tudo com tudo.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Como as tabelas se ligam por valores (Foreign Key), reunir as informações de um pedido e do seu " +
+                "cliente é um `JOIN`. A condição `ON` diz quando duas linhas se correspondem. O tipo de `JOIN` diz o " +
+                "que fazer com as linhas sem par: o `INNER JOIN` as descarta, o `LEFT JOIN` mantém as da tabela da " +
+                "esquerda (com `NULL` no lado sem par), o `RIGHT JOIN` faz o inverso, o `FULL JOIN` mantém as duas, e " +
+                "o `CROSS JOIN` combina todas as linhas com todas, sem condição. Um `JOIN` de uma tabela com ela " +
+                "mesma é o self-join.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "O JOIN reúne o que a modelagem separou: escolha o tipo pelo que deve acontecer com as linhas sem " +
+                "correspondente.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "join.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT);",
+                "  CREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER REFERENCES customers(id), total_cents INTEGER);",
+                "  INSERT INTO customers VALUES (1, 'Ana'), (2, 'Bia'), (3, 'Caio');          -- Caio nunca comprou",
+                "  INSERT INTO orders VALUES (10, 1, 1990), (11, 1, 500), (12, 2, 3000);",
+                "`);",
+                "",
+                "const rows = (sql) => db.prepare(sql).all().map((row) => ({ ...row }));",
+                "",
+                "// INNER: só quem tem par nas duas tabelas",
+                "rows(\"SELECT c.name, o.id AS order_id FROM customers c INNER JOIN orders o ON o.customer_id = c.id ORDER BY o.id\");",
+                "// Ana/10, Ana/11, Bia/12   — Caio não aparece",
+                "",
+                "// LEFT: todos os clientes, com NULL onde não há pedido",
+                "rows(\"SELECT c.name, o.id AS order_id FROM customers c LEFT JOIN orders o ON o.customer_id = c.id ORDER BY c.id, o.id\");",
+                "// Ana/10, Ana/11, Bia/12, Caio/null",
+                "",
+                "// CROSS: todas as combinações (3 clientes × 3 pedidos = 9 linhas)",
+                "rows(\"SELECT c.name, o.id FROM customers c CROSS JOIN orders o\").length;   // 9",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A diferença entre `INNER` e `LEFT` é justamente o Caio: um mantém só quem comprou, e o outro mantém " +
+                "todos os clientes. O `RIGHT JOIN` é o `LEFT` com as tabelas trocadas, e o `FULL JOIN` mantém as duas " +
+                "pontas.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "`INNER JOIN` quando só interessam as linhas que têm correspondência nas duas tabelas.",
+                "`LEFT JOIN` quando a tabela da esquerda deve aparecer por inteiro, com ou sem correspondente: \"todos os clientes e os seus pedidos, se houver\", e para achar quem não tem par (`... WHERE o.id IS NULL`).",
+                "Self-join para relações dentro da mesma tabela, como funcionários e gerentes, ou categorias e subcategorias.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Um filtro no `WHERE` sobre uma coluna da tabela do lado direito de um `LEFT JOIN` descarta as linhas sem par e o transforma, na prática, em `INNER JOIN`; a condição deve ir no `ON`.",
+                "Juntar uma tabela com relações de um para muitos multiplica as linhas: agregar depois de duas junções paralelas conta em dobro (fan-out).",
+                "Esquecer a condição `ON` (ou usar `CROSS JOIN` sem querer) gera o produto cartesiano, com milhões de linhas em tabelas médias.",
+                "Valores `NULL` nunca se correspondem em um `JOIN`: linhas com a chave nula ficam de fora do `INNER JOIN`.",
+                "`JOIN` em colunas sem índice, em tabelas grandes, é lento; e muitas junções em uma só consulta são difíceis de ler e de otimizar.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "A armadilha do WHERE em um LEFT JOIN",
+              context: "Onde se coloca o filtro muda o resultado.",
+              code: {
+                language: "javascript",
+                filename: "left-join-where.js",
+                code: [
+                  "// Filtro no WHERE: Caio (sem pedidos) some, porque `o.total_cents` é NULL para ele e a condição falha",
+                  "rows(`",
+                  "  SELECT c.name, o.total_cents FROM customers c",
+                  "  LEFT JOIN orders o ON o.customer_id = c.id",
+                  "  WHERE o.total_cents > 1000 ORDER BY c.id",
+                  "`);   // Ana/1990, Bia/3000   — virou um INNER JOIN",
+                  "",
+                  "// Filtro no ON: o filtro vale só para a junção, e todos os clientes continuam aparecendo",
+                  "rows(`",
+                  "  SELECT c.name, o.total_cents FROM customers c",
+                  "  LEFT JOIN orders o ON o.customer_id = c.id AND o.total_cents > 1000 ORDER BY c.id",
+                  "`);   // Ana/1990, Bia/3000, Caio/null",
+                ].join("\n"),
+              },
+              explanation:
+                "Na primeira forma, o Caio desapareceu junto com os pedidos pequenos de Ana. Na segunda, o filtro só " +
+                "restringe quais pedidos entram na junção, e todos os clientes permanecem.",
+            },
+            {
+              title: "Self-join: funcionários e gerentes",
+              context: "A mesma tabela aparece duas vezes, com aliases diferentes.",
+              code: {
+                language: "javascript",
+                filename: "self-join.js",
+                code: [
+                  "db.exec(`",
+                  "  CREATE TABLE employees (id INTEGER PRIMARY KEY, name TEXT, manager_id INTEGER REFERENCES employees(id));",
+                  "  INSERT INTO employees VALUES (1, 'Diana', NULL), (2, 'Eva', 1), (3, 'Fábio', 1), (4, 'Gil', 2);",
+                  "`);",
+                  "",
+                  "rows(`",
+                  "  SELECT e.name AS employee, m.name AS manager",
+                  "  FROM employees e LEFT JOIN employees m ON m.id = e.manager_id",
+                  "  ORDER BY e.id",
+                  "`);",
+                  "// Diana/null (sem gerente), Eva/Diana, Fábio/Diana, Gil/Eva",
+                ].join("\n"),
+              },
+              explanation:
+                "O `LEFT JOIN` mantém Diana, que não tem gerente. Cada linha do lado esquerdo é um funcionário, e a do " +
+                "direito é o seu gerente.",
+            },
+            {
+              title: "Multiplicação de linhas em junções paralelas",
+              context: "Juntar duas relações de um para muitos ao mesmo tempo produz um produto entre elas.",
+              code: {
+                language: "javascript",
+                filename: "fan-out.js",
+                code: [
+                  "db.exec(`",
+                  "  CREATE TABLE payments (id INTEGER PRIMARY KEY, order_id INTEGER, amount_cents INTEGER);",
+                  "  CREATE TABLE shipments (id INTEGER PRIMARY KEY, order_id INTEGER, carrier TEXT);",
+                  "  INSERT INTO payments VALUES (1, 10, 1000), (2, 10, 990);          -- o pedido 10 foi pago em 2 parcelas",
+                  "  INSERT INTO shipments VALUES (1, 10, 'A'), (2, 10, 'B');          -- e enviado em 2 remessas",
+                  "`);",
+                  "",
+                  "// 2 pagamentos × 2 remessas = 4 linhas para o mesmo pedido, e a soma dos pagamentos dobra",
+                  "rows(`",
+                  "  SELECT SUM(p.amount_cents) AS pago",
+                  "  FROM orders o JOIN payments p ON p.order_id = o.id JOIN shipments s ON s.order_id = o.id",
+                  "  WHERE o.id = 10",
+                  "`);   // { pago: 3980 }  ← errado: o correto é 1990",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada parcela de pagamento foi repetida uma vez por remessa. A solução é agregar cada relação separada, " +
+                "antes de juntá-las, ou consultá-las em separado.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O time de marketing quer contatar os clientes que nunca fizeram um pedido, e também saber quantos " +
+              "pedidos cada cliente fez, incluindo os que fizeram zero.",
+            problemCode: {
+              language: "javascript",
+              filename: "customers-without-orders.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT);",
+                "  CREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER, total_cents INTEGER);",
+                "  INSERT INTO customers VALUES (1, 'Ana'), (2, 'Bia'), (3, 'Caio');",
+                "  INSERT INTO orders VALUES (10, 1, 1990), (11, 1, 500), (12, 2, 3000);",
+                "`);",
+              ].join("\n"),
+            },
+            task:
+              "Escreva duas consultas: os nomes dos clientes sem nenhum pedido, e a contagem de pedidos por cliente, " +
+              "com zero para quem não tem.",
+            hint: "`LEFT JOIN` de clientes com pedidos. Para os sem pedido, `WHERE o.id IS NULL`. Para a contagem, `COUNT(o.id)` (e não `COUNT(*)`) ignora os `NULL`.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "customers-without-orders.fixed.js",
+                code: [
+                  "const rows = (sql) => db.prepare(sql).all().map((row) => ({ ...row }));",
+                  "",
+                  "// 1. Clientes sem pedidos",
+                  "rows(`",
+                  "  SELECT c.name FROM customers c",
+                  "  LEFT JOIN orders o ON o.customer_id = c.id",
+                  "  WHERE o.id IS NULL",
+                  "`);   // [{ name: \"Caio\" }]",
+                  "",
+                  "// 2. Pedidos por cliente, com zero para quem não tem",
+                  "rows(`",
+                  "  SELECT c.name, COUNT(o.id) AS pedidos",
+                  "  FROM customers c LEFT JOIN orders o ON o.customer_id = c.id",
+                  "  GROUP BY c.id, c.name ORDER BY c.id",
+                  "`);   // Ana/2, Bia/1, Caio/0",
+                ].join("\n"),
+              },
+              explanation:
+                "O `LEFT JOIN` mantém todos os clientes, e `IS NULL` isola os sem pedido. `COUNT(o.id)` conta só os " +
+                "valores não nulos, então Caio fica com zero, enquanto `COUNT(*)` contaria a linha do Caio como 1.",
+            },
+          },
+        }),
+        concept({
+          order: 80,
+          title: "Aggregate Functions & GROUP BY",
+          requires: ["SQL"],
+          subtopics: ["COUNT/SUM/AVG/MIN/MAX", "GROUP BY", "HAVING × WHERE"],
+          note: "consolidada (A18)",
+          summary:
+            "Funções que resumem várias linhas em um valor — contar, somar, tirar a média, o mínimo e o " +
+            "máximo — e o `GROUP BY`, que faz esse resumo por grupo, com `HAVING` para filtrar os grupos.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Uma função de agregação transforma um conjunto de linhas em um único valor: `COUNT`, `SUM`, `AVG`, " +
+                "`MIN` e `MAX`. Sem `GROUP BY`, o resumo é da tabela toda. Com `GROUP BY`, ele é feito para cada grupo de " +
+                "linhas com o mesmo valor nas colunas indicadas, como o total por cliente ou por mês. O `WHERE` filtra " +
+                "as linhas antes de agrupar, e o `HAVING` filtra os grupos depois de agregados.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Agrupe as linhas, resuma cada grupo, e filtre no momento certo: WHERE antes de agrupar, HAVING " +
+                "depois.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "aggregates.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE orders (id INTEGER PRIMARY KEY, customer TEXT, status TEXT, total_cents INTEGER);",
+                "  INSERT INTO orders VALUES",
+                "    (1, 'Ana', 'paid', 1990), (2, 'Ana', 'paid', 500), (3, 'Ana', 'cancelled', 8000),",
+                "    (4, 'Bia', 'paid', 3000), (5, 'Caio', 'paid', 200);",
+                "`);",
+                "",
+                "const rows = (sql) => db.prepare(sql).all().map((row) => ({ ...row }));",
+                "",
+                "// Sem GROUP BY: um resumo da tabela inteira",
+                "rows(\"SELECT COUNT(*) AS pedidos, SUM(total_cents) AS soma, MAX(total_cents) AS maior FROM orders\");",
+                "// { pedidos: 5, soma: 13690, maior: 8000 }",
+                "",
+                "// Com GROUP BY: um resumo por cliente, só com os pedidos pagos (WHERE), e só os que somam mais de 1000 (HAVING)",
+                "rows(`",
+                "  SELECT customer, COUNT(*) AS pedidos, SUM(total_cents) AS total",
+                "  FROM orders",
+                "  WHERE status = 'paid'            -- filtra as LINHAS, antes de agrupar",
+                "  GROUP BY customer",
+                "  HAVING SUM(total_cents) > 1000   -- filtra os GRUPOS, depois de agregar",
+                "  ORDER BY total DESC",
+                "`);   // Bia/1/3000, Ana/2/2490   (Caio, com 200, ficou de fora)",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O pedido cancelado de Ana, de 8.000, foi eliminado pelo `WHERE` antes de o grupo ser formado, e o " +
+                "Caio foi eliminado pelo `HAVING`, depois de a soma ser calculada.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Para relatórios e indicadores: totais por cliente, por período e por categoria, contagens e médias.",
+                "Sempre que a resposta é um resumo, e não as linhas: pedir ao banco a soma é muito mais eficiente que trazer as linhas e somá-las na aplicação.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "`COUNT(*)` conta linhas, e `COUNT(coluna)` conta só os valores não nulos; confundir os dois dá números diferentes.",
+                "As funções ignoram `NULL`, e `SUM` de nenhuma linha devolve `NULL`, e não zero; use `COALESCE(SUM(x), 0)` quando um zero for o esperado.",
+                "No SQL padrão, toda coluna do `SELECT` que não é agregada precisa estar no `GROUP BY`; alguns bancos (SQLite, MySQL em certos modos) toleram e devolvem um valor arbitrário.",
+                "Agregar depois de juntar relações de um para muitos pode contar em dobro (fan-out); agregue cada lado antes de juntar.",
+                "Filtrar com `HAVING` o que poderia ser filtrado com `WHERE` desperdiça trabalho, porque as linhas são agrupadas antes de serem descartadas.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "WHERE ou HAVING?",
+              context: "Filtrar linhas e filtrar grupos são etapas diferentes.",
+              code: {
+                language: "javascript",
+                filename: "where-vs-having.js",
+                code: [
+                  "// WHERE: uma condição sobre cada linha, antes do agrupamento",
+                  "rows(\"SELECT customer, COUNT(*) AS n FROM orders WHERE status = 'paid' GROUP BY customer ORDER BY customer\");",
+                  "// Ana/2, Bia/1, Caio/1",
+                  "",
+                  "// HAVING: uma condição sobre o resultado da agregação (não existe antes de agrupar)",
+                  "rows(\"SELECT customer, COUNT(*) AS n FROM orders GROUP BY customer HAVING COUNT(*) >= 2\");",
+                  "// Ana/3   — só Ana tem 2 ou mais pedidos",
+                  "",
+                  "// Usar WHERE com uma agregação não funciona: `WHERE COUNT(*) >= 2` é um erro,",
+                  "// porque a contagem só existe depois de as linhas serem agrupadas.",
+                ].join("\n"),
+              },
+              explanation:
+                "A regra prática: se a condição é sobre uma coluna, use `WHERE`; se é sobre um resultado de agregação, " +
+                "use `HAVING`.",
+            },
+            {
+              title: "COUNT(*), COUNT(coluna) e COUNT(DISTINCT)",
+              context: "O que cada forma conta muda quando há valores nulos e repetidos.",
+              code: {
+                language: "javascript",
+                filename: "count-forms.js",
+                code: [
+                  "db.exec(\"CREATE TABLE visits (id INTEGER PRIMARY KEY, user_id INTEGER)\");",
+                  "db.exec(\"INSERT INTO visits (user_id) VALUES (1), (1), (2), (NULL), (NULL)\");",
+                  "",
+                  "rows(`",
+                  "  SELECT COUNT(*) AS linhas,                  -- 5: todas as linhas",
+                  "         COUNT(user_id) AS com_usuario,       -- 3: ignora os NULL",
+                  "         COUNT(DISTINCT user_id) AS usuarios  -- 2: valores distintos e não nulos",
+                  "  FROM visits",
+                  "`);   // { linhas: 5, com_usuario: 3, usuarios: 2 }",
+                ].join("\n"),
+              },
+              explanation:
+                "Visitas anônimas (`NULL`) contam em `COUNT(*)`, mas não em `COUNT(user_id)`. Para contar usuários únicos, " +
+                "o `DISTINCT` é o que interessa.",
+            },
+            {
+              title: "Contar em dobro depois de um JOIN",
+              context: "Agregue cada lado antes de juntar, e o resultado deixa de se multiplicar.",
+              code: {
+                language: "javascript",
+                filename: "fan-out-fix.js",
+                code: [
+                  "db.exec(`",
+                  "  CREATE TABLE payments (order_id INTEGER, amount_cents INTEGER);",
+                  "  CREATE TABLE shipments (order_id INTEGER, carrier TEXT);",
+                  "  INSERT INTO payments VALUES (10, 1000), (10, 990);",
+                  "  INSERT INTO shipments VALUES (10, 'A'), (10, 'B');",
+                  "`);",
+                  "",
+                  "// Errado: 2 × 2 linhas por pedido, e o total dobra",
+                  "rows(\"SELECT SUM(p.amount_cents) AS pago FROM payments p JOIN shipments s ON s.order_id = p.order_id\");",
+                  "// { pago: 3980 }",
+                  "",
+                  "// Certo: agrega cada lado separadamente e junta os resumos",
+                  "rows(`",
+                  "  SELECT p.order_id, p.pago, s.remessas",
+                  "  FROM (SELECT order_id, SUM(amount_cents) AS pago FROM payments GROUP BY order_id) p",
+                  "  JOIN (SELECT order_id, COUNT(*) AS remessas FROM shipments GROUP BY order_id) s ON s.order_id = p.order_id",
+                  "`);   // { order_id: 10, pago: 1990, remessas: 2 }",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada lado foi resumido a uma linha por pedido antes da junção, e o produto entre as duas relações deixou " +
+                "de existir. Os números agora batem com a realidade.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O financeiro quer saber, para cada mês, quantos pedidos pagos houve e quanto foi faturado, mostrando só " +
+              "os meses com faturamento acima de 2.000 centavos, do maior para o menor.",
+            problemCode: {
+              language: "javascript",
+              filename: "monthly-revenue.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE orders (id INTEGER PRIMARY KEY, created_at TEXT, status TEXT, total_cents INTEGER);",
+                "  INSERT INTO orders VALUES",
+                "    (1, '2026-01-05', 'paid', 1500), (2, '2026-01-20', 'paid', 1200), (3, '2026-01-25', 'cancelled', 9000),",
+                "    (4, '2026-02-03', 'paid', 800), (5, '2026-03-10', 'paid', 4000), (6, '2026-03-11', 'paid', 700);",
+                "`);",
+              ].join("\n"),
+            },
+            task:
+              "Escreva a consulta: mês (`substr(created_at, 1, 7)`), número de pedidos pagos e faturamento, só para meses " +
+              "acima de 2.000, em ordem decrescente de faturamento.",
+            hint: "Filtre o status com `WHERE`, agrupe por mês, e filtre o total do mês com `HAVING`.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "monthly-revenue.fixed.js",
+                code: [
+                  "db.prepare(`",
+                  "  SELECT substr(created_at, 1, 7) AS mes,",
+                  "         COUNT(*) AS pedidos,",
+                  "         SUM(total_cents) AS faturamento",
+                  "  FROM orders",
+                  "  WHERE status = 'paid'                      -- antes de agrupar: o cancelado não entra",
+                  "  GROUP BY substr(created_at, 1, 7)",
+                  "  HAVING SUM(total_cents) > 2000             -- depois de agregar: descarta os meses fracos",
+                  "  ORDER BY faturamento DESC",
+                  "`).all().map((row) => ({ ...row }));",
+                  "// [{ mes: \"2026-03\", pedidos: 2, faturamento: 4700 }, { mes: \"2026-01\", pedidos: 2, faturamento: 2700 }]",
+                  "// fevereiro (800) ficou de fora pelo HAVING, e o pedido cancelado de janeiro pelo WHERE",
+                ].join("\n"),
+              },
+              explanation:
+                "O `WHERE` tirou o pedido cancelado antes do agrupamento, e o `HAVING` descartou fevereiro depois da soma. " +
+                "Cada condição foi colocada na etapa em que a informação existe.",
+            },
+          },
+        }),
+        concept({
+          order: 90,
+          title: "Subqueries & CTEs",
+          requires: ["SQL"],
+          subtopics: ["correlacionada × não-correlacionada", "WITH", "CTE recursiva (menção)"],
+          note: "consolidada (§D) — absorve CTE do rascunho",
+          summary:
+            "Consultas dentro de consultas: a subquery aparece no meio de outra, e a CTE (`WITH`) dá nome a um " +
+            "resultado intermediário para que a consulta se leia em passos, e pode até se referir a si mesma.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Uma subquery é um `SELECT` dentro de outro, usado como valor (`WHERE preco > (SELECT AVG(preco) ...)`), " +
+                "como lista (`IN (SELECT ...)`), como teste de existência (`EXISTS`) ou como uma tabela temporária no " +
+                "`FROM`. Ela é não correlacionada quando roda de forma independente da consulta externa, e correlacionada " +
+                "quando depende da linha externa. Uma CTE (Common Table Expression, `WITH nome AS (...)`) dá um nome a " +
+                "um resultado intermediário, o que permite escrever a consulta como uma sequência de passos legíveis. " +
+                "A CTE recursiva se refere a si mesma e percorre estruturas hierárquicas.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Quebre uma pergunta complicada em partes com nomes: a subquery responde a uma pergunta dentro da " +
+                "outra, e a CTE deixa a sequência de raciocínio explícita.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "subqueries-ctes.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT);",
+                "  CREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER, total_cents INTEGER);",
+                "  INSERT INTO customers VALUES (1, 'Ana'), (2, 'Bia'), (3, 'Caio');",
+                "  INSERT INTO orders VALUES (10, 1, 1990), (11, 1, 500), (12, 2, 3000);",
+                "`);",
+                "",
+                "const rows = (sql) => db.prepare(sql).all().map((row) => ({ ...row }));",
+                "",
+                "// Subquery escalar: pedidos acima da média",
+                "rows(\"SELECT id, total_cents FROM orders WHERE total_cents > (SELECT AVG(total_cents) FROM orders) ORDER BY id\");",
+                "// [{ id: 12, total_cents: 3000 }]",
+                "",
+                "// Subquery correlacionada com EXISTS: clientes que têm ao menos um pedido",
+                "rows(\"SELECT name FROM customers c WHERE EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.id) ORDER BY name\");",
+                "// Ana, Bia",
+                "",
+                "// CTE: a consulta em passos nomeados (1. total por cliente; 2. quem passa de 2.000)",
+                "rows(`",
+                "  WITH totals AS (",
+                "    SELECT customer_id, SUM(total_cents) AS total FROM orders GROUP BY customer_id",
+                "  )",
+                "  SELECT c.name, t.total FROM totals t JOIN customers c ON c.id = t.customer_id",
+                "  WHERE t.total > 2000 ORDER BY t.total DESC",
+                "`);   // Bia/3000, Ana/2490",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A versão com `WITH` se lê de cima para baixo: primeiro se calcula o total por cliente, depois se " +
+                "filtra. Sem a CTE, o mesmo cálculo estaria aninhado dentro do `FROM`.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Subqueries para perguntas do tipo \"acima da média\", \"que existe em\" e \"que não existe em\", com `EXISTS` e `NOT EXISTS`.",
+                "CTEs para dividir uma consulta longa em partes com nome, reaproveitar um resultado intermediário e melhorar a leitura.",
+                "CTEs recursivas para hierarquias: organogramas, categorias com subcategorias e árvores de arquivos.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Uma subquery correlacionada pode ser executada uma vez por linha externa, e ficar lenta em tabelas grandes; o otimizador costuma reescrevê-la, mas nem sempre, e um `JOIN` pode ser mais claro.",
+                "`NOT IN` com uma subquery que devolve algum `NULL` não devolve nenhuma linha; prefira `NOT EXISTS`.",
+                "O tratamento de CTEs pelo otimizador varia: em alguns bancos ou versões elas são calculadas uma vez e guardadas, e em outros são incorporadas à consulta; não conte com uma como uma \"barreira\" de desempenho.",
+                "Uma CTE recursiva precisa de uma condição de parada: com dados cíclicos, ela não termina; use `UNION` (que descarta repetidas) ou um limite de profundidade.",
+                "Aninhar subqueries demais deixa a consulta ilegível; é o sinal para usar `WITH`.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "A armadilha do NOT IN com NULL",
+              context: "Um único `NULL` na lista faz `NOT IN` deixar de devolver qualquer linha.",
+              code: {
+                language: "javascript",
+                filename: "not-in-null.js",
+                code: [
+                  "db.exec(\"INSERT INTO orders VALUES (13, NULL, 100)\");   // um pedido sem cliente informado",
+                  "",
+                  "// Errado: `id NOT IN (1, 2, NULL)` é desconhecido para todos, e a consulta devolve 0 linhas",
+                  "rows(\"SELECT name FROM customers WHERE id NOT IN (SELECT customer_id FROM orders)\");   // []  ← Caio deveria aparecer",
+                  "",
+                  "// Certo: NOT EXISTS não tem esse problema",
+                  "rows(\"SELECT name FROM customers c WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.id)\");",
+                  "// [{ name: \"Caio\" }]",
+                ].join("\n"),
+              },
+              explanation:
+                "Por causa da lógica de três valores, comparar com `NULL` resulta em desconhecido, e `NOT IN` exige que " +
+                "todas as comparações sejam verdadeiras. `NOT EXISTS` testa a existência, e ignora esse problema.",
+            },
+            {
+              title: "CTEs encadeadas",
+              context: "Cada passo usa o resultado do anterior, e a leitura acompanha o raciocínio.",
+              code: {
+                language: "javascript",
+                filename: "chained-ctes.js",
+                code: [
+                  "rows(`",
+                  "  WITH totals AS (",
+                  "    SELECT customer_id, SUM(total_cents) AS total FROM orders WHERE customer_id IS NOT NULL GROUP BY customer_id",
+                  "  ),",
+                  "  average AS (",
+                  "    SELECT AVG(total) AS media FROM totals",
+                  "  )",
+                  "  SELECT c.name, t.total",
+                  "  FROM totals t",
+                  "  JOIN customers c ON c.id = t.customer_id",
+                  "  JOIN average a ON t.total > a.media",
+                  "  ORDER BY t.total DESC",
+                  "`);   // clientes cujo total está acima da média dos totais",
+                ].join("\n"),
+              },
+              explanation:
+                "Primeiro o total por cliente, depois a média desses totais, e por fim quem a supera. Escrito com " +
+                "subqueries aninhadas, a mesma consulta seria bem mais difícil de acompanhar.",
+            },
+            {
+              title: "CTE recursiva: percorrer uma hierarquia",
+              context: "Uma tabela que aponta para si mesma pode ser percorrida em todos os níveis.",
+              code: {
+                language: "javascript",
+                filename: "recursive-cte.js",
+                code: [
+                  "db.exec(`",
+                  "  CREATE TABLE employees (id INTEGER PRIMARY KEY, name TEXT, manager_id INTEGER);",
+                  "  INSERT INTO employees VALUES (1, 'Diana', NULL), (2, 'Eva', 1), (3, 'Fábio', 1), (4, 'Gil', 2);",
+                  "`);",
+                  "",
+                  "// Todos os subordinados de Diana, diretos e indiretos, com o nível de cada um",
+                  "rows(`",
+                  "  WITH RECURSIVE team(id, name, level) AS (",
+                  "    SELECT id, name, 0 FROM employees WHERE id = 1              -- ponto de partida",
+                  "    UNION ALL",
+                  "    SELECT e.id, e.name, t.level + 1                            -- passo recursivo",
+                  "    FROM employees e JOIN team t ON e.manager_id = t.id",
+                  "  )",
+                  "  SELECT name, level FROM team ORDER BY level, name",
+                  "`);   // Diana/0, Eva/1, Fábio/1, Gil/2",
+                ].join("\n"),
+              },
+              explanation:
+                "A consulta começa em Diana e, a cada passo, acrescenta quem responde a alguém já encontrado, até não " +
+                "haver mais ninguém. Sem um ponto de parada, um ciclo nos dados a faria rodar para sempre.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A gerência quer saber quais clientes gastaram mais do que a média dos clientes, mostrando o nome, o " +
+              "total gasto e a diferença em relação à média. A primeira versão tem três níveis de subqueries aninhadas.",
+            problemCode: {
+              language: "javascript",
+              filename: "above-average.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT);",
+                "  CREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER, total_cents INTEGER);",
+                "  INSERT INTO customers VALUES (1, 'Ana'), (2, 'Bia'), (3, 'Caio');",
+                "  INSERT INTO orders VALUES (10, 1, 1990), (11, 1, 500), (12, 2, 3000), (13, 3, 200);",
+                "`);",
+                "",
+                "// Versão atual, difícil de ler:",
+                "// SELECT name, total FROM (SELECT c.name, SUM(o.total_cents) AS total FROM customers c JOIN orders o ON ...",
+                "//   GROUP BY c.id) WHERE total > (SELECT AVG(total) FROM (SELECT SUM(total_cents) AS total FROM orders GROUP BY customer_id))",
+              ].join("\n"),
+            },
+            task:
+              "Reescreva com CTEs nomeadas (`totals` e `average`), devolvendo `name`, `total` e `above_average` (a " +
+              "diferença), em ordem decrescente.",
+            hint: "`totals` soma por cliente e faz o `JOIN` com o nome. `average` calcula `AVG(total)` sobre `totals`. Depois, junte e filtre.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "above-average.fixed.js",
+                code: [
+                  "db.prepare(`",
+                  "  WITH totals AS (",
+                  "    SELECT c.id, c.name, SUM(o.total_cents) AS total",
+                  "    FROM customers c JOIN orders o ON o.customer_id = c.id",
+                  "    GROUP BY c.id, c.name",
+                  "  ),",
+                  "  average AS (",
+                  "    SELECT AVG(total) AS media FROM totals",
+                  "  )",
+                  "  SELECT t.name, t.total, t.total - a.media AS above_average",
+                  "  FROM totals t, average a",
+                  "  WHERE t.total > a.media",
+                  "  ORDER BY above_average DESC",
+                  "`).all().map((row) => ({ ...row }));",
+                  "// médias: (2490 + 3000 + 200) / 3 = 1896.67 → só Bia (3000) e Ana (2490) estão acima",
+                  "// [{ name: \"Bia\", total: 3000, above_average: 1103.33... }, { name: \"Ana\", total: 2490, above_average: 593.33... }]",
+                ].join("\n"),
+              },
+              explanation:
+                "As duas CTEs deixam a lógica em dois passos legíveis: primeiro o total de cada cliente, depois a média " +
+                "desses totais. O filtro e a diferença ficam em uma consulta final simples.",
+            },
+          },
+        }),
         concept({
           order: 100,
           title: "Database Schema",
           requires: ["Table", "Constraint"],
+          note: "a estrutura do banco: tabelas, colunas, tipos, chaves e constraints",
           collision: "≠ Schema-on-Read (NoSQL) ≠ GraphQL Schema ≠ JSON Schema (AI Engineering)",
+          summary:
+            "A descrição completa da estrutura de um banco — as tabelas, as colunas e os seus tipos, as chaves, as " +
+            "constraints e os índices — e a forma de evoluí-la de maneira controlada, por migrações.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "O esquema (schema) de um banco relacional é a sua estrutura: quais tabelas existem, quais colunas cada " +
+                "uma tem e de que tipo, como se relacionam (chaves) e que regras valem (constraints), além de índices e " +
+                "visões. Ele é o contrato entre o banco e a aplicação. Em bancos como o PostgreSQL, \"schema\" também é " +
+                "um espaço de nomes dentro do banco (`public.orders`), o que é um segundo significado. Como o esquema " +
+                "muda ao longo da vida do sistema, ele é versionado por migrações, scripts numerados e guardados no " +
+                "repositório junto do código.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "O esquema é o contrato do banco, e mudá-lo é uma alteração de código como outra qualquer: " +
+                "versionada, revisada e aplicada de forma repetível em todos os ambientes.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "O esquema é lido pelo próprio banco (introspecção) e evoluído por migrações: cada uma é um passo " +
+                "identificado, aplicado uma única vez e registrado em uma tabela de controle. Quem sobe o sistema em " +
+                "qualquer ambiente aplica as migrações pendentes, na ordem, e chega ao mesmo esquema.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "schema.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "// Migrações: passos numerados e imutáveis (uma vez aplicada, uma migração não é editada)",
+                "const migrations = [",
+                "  { id: 1, name: \"create customers\", sql: \"CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL)\" },",
+                "  { id: 2, name: \"add email\", sql: \"ALTER TABLE customers ADD COLUMN email TEXT\" },",
+                "  { id: 3, name: \"index email\", sql: \"CREATE UNIQUE INDEX idx_customers_email ON customers(email)\" },",
+                "];",
+                "",
+                "function migrate(db, migrations) {",
+                "  db.exec(\"CREATE TABLE IF NOT EXISTS schema_migrations (id INTEGER PRIMARY KEY, name TEXT NOT NULL, applied_at TEXT NOT NULL DEFAULT (datetime('now')))\");",
+                "  const applied = new Set(db.prepare(\"SELECT id FROM schema_migrations\").all().map((row) => row.id));",
+                "",
+                "  for (const migration of migrations.filter((m) => !applied.has(m.id)).sort((a, b) => a.id - b.id)) {",
+                "    db.exec(\"BEGIN\");",
+                "    try {",
+                "      db.exec(migration.sql);",
+                "      db.prepare(\"INSERT INTO schema_migrations (id, name) VALUES (?, ?)\").run(migration.id, migration.name);",
+                "      db.exec(\"COMMIT\");",
+                "    } catch (error) {",
+                "      db.exec(\"ROLLBACK\");   // uma migração que falha não deixa o esquema pela metade",
+                "      throw error;",
+                "    }",
+                "  }",
+                "}",
+                "",
+                "migrate(db, migrations);   // aplica as 3",
+                "migrate(db, migrations);   // repetir não faz nada: todas já foram aplicadas",
+                "",
+                "// Introspecção: o esquema atual, lido do próprio banco",
+                "db.prepare(\"SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name\").all();",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Rodar `migrate` em um banco novo o leva do zero à versão atual, e em um banco antigo aplica só o que " +
+                "falta. Ferramentas como Flyway, Liquibase, Prisma Migrate e Knex fazem esse trabalho com mais recursos.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "Alterar o banco de produção à mão, sem migração, deixa os ambientes com esquemas diferentes (drift), e ninguém sabe ao certo qual é o real.",
+                "Editar uma migração já aplicada não muda os bancos que a executaram: crie sempre uma nova migração.",
+                "Migrações destrutivas, como apagar uma coluna, perdem dados sem volta; faça cópia e confirme antes.",
+                "O esquema novo precisa conviver com a versão antiga da aplicação durante a implantação: renomear ou apagar uma coluna de uma vez quebra o código que ainda roda; a saída é o padrão \"expandir e contrair\".",
+                "Em tabelas grandes, alguns `ALTER TABLE` bloqueiam a tabela por muito tempo; avalie o comportamento do banco antes de rodar em produção.",
+                "\"Schema\" tem vários sentidos: o do banco relacional, o namespace do PostgreSQL, o GraphQL Schema, o JSON Schema e o schema-on-read dos bancos NoSQL não são a mesma coisa.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Ler o esquema do próprio banco",
+              context: "O esquema é dado como qualquer outro, e pode ser consultado.",
+              code: {
+                language: "javascript",
+                filename: "introspection.js",
+                code: [
+                  "db.prepare(\"PRAGMA table_info(customers)\").all().map((column) => ({",
+                  "  name: column.name, type: column.type, notNull: column.notnull === 1, primaryKey: column.pk === 1,",
+                  "}));",
+                  "// [{ name: \"id\", type: \"INTEGER\", notNull: false, primaryKey: true },",
+                  "//  { name: \"name\", type: \"TEXT\", notNull: true, primaryKey: false },",
+                  "//  { name: \"email\", type: \"TEXT\", notNull: false, primaryKey: false }]",
+                  "",
+                  "// No PostgreSQL, o equivalente é a consulta ao `information_schema.columns`.",
+                ].join("\n"),
+              },
+              explanation:
+                "É assim que ferramentas geram diagramas, documentação, tipos de código e comparações entre ambientes: " +
+                "lendo o esquema do próprio banco.",
+            },
+            {
+              title: "Expandir e contrair: renomear uma coluna sem derrubar o sistema",
+              context: "Trocar o nome de uma vez quebra a versão antiga da aplicação que ainda está no ar.",
+              code: {
+                language: "text",
+                filename: "expand-contract.txt",
+                code: [
+                  "Objetivo: renomear customers.fullname para customers.name, sem indisponibilidade.",
+                  "",
+                  "1. EXPANDIR   Migração: adicionar a coluna nova (name), com os dados copiados da antiga.",
+                  "              Aplicação v1 (antiga) segue usando fullname; nada quebra.",
+                  "2. MIGRAR     Aplicação v2: passa a escrever nas duas colunas e a ler de name.",
+                  "3. CONTRAIR   Quando nenhuma instância antiga estiver no ar: migração que remove fullname.",
+                  "",
+                  "Um renomear direto (ALTER ... RENAME COLUMN) em um passo só quebra a v1 no instante em que roda.",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada passo é compatível com a versão da aplicação que está no ar, o que permite implantar sem parada. " +
+                "É a mesma ideia de compatibilidade das APIs, aplicada ao banco.",
+            },
+            {
+              title: "Uma migração que falha não deixa rastros",
+              context: "A transação garante que a migração é aplicada por inteiro ou não é aplicada.",
+              code: {
+                language: "javascript",
+                filename: "failing-migration.js",
+                code: [
+                  "const broken = [",
+                  "  ...migrations,",
+                  "  { id: 4, name: \"partial\", sql: \"ALTER TABLE customers ADD COLUMN phone TEXT; ALTER TABLE customers ADD COLUMN phone TEXT\" },   // a 2ª falha",
+                  "];",
+                  "",
+                  "try { migrate(db, broken); }",
+                  "catch (error) { error.message; }   // \"duplicate column name: phone\"",
+                  "",
+                  "// A transação desfez a 1ª coluna: o esquema não ficou pela metade, e a migração 4 não foi registrada",
+                  "db.prepare(\"SELECT id FROM schema_migrations ORDER BY id\").all().map((row) => row.id);   // [1, 2, 3]",
+                ].join("\n"),
+              },
+              explanation:
+                "Bancos como o PostgreSQL também tornam a maior parte das alterações de esquema transacionais. Em outros, " +
+                "como o MySQL, muitas alterações confirmam sozinhas, e é preciso mais cuidado.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O time aplica as alterações de esquema executando scripts SQL à mão em cada ambiente. Homologação e " +
+              "produção já estão diferentes, e ninguém sabe qual script foi rodado onde.",
+            problemCode: {
+              language: "javascript",
+              filename: "manual-scripts.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "const migrations = [",
+                "  { id: 1, name: \"create products\", sql: \"CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT NOT NULL)\" },",
+                "  { id: 2, name: \"add price\", sql: \"ALTER TABLE products ADD COLUMN price_cents INTEGER NOT NULL DEFAULT 0\" },",
+                "];",
+                "",
+                "function migrate(db, migrations) {",
+                "  // aplicar só as pendentes, na ordem, registrando cada uma; uma falha desfaz a migração inteira",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Implemente `migrate`: crie a tabela de controle, aplique só as migrações ainda não registradas, em ordem, " +
+              "cada uma em uma transação, e mostre que rodar duas vezes não repete nada.",
+            hint: "Leia os ids já aplicados de `schema_migrations`, filtre e ordene as pendentes, e envolva cada uma em `BEGIN`/`COMMIT` com `ROLLBACK` no erro.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "manual-scripts.fixed.js",
+                code: [
+                  "function migrate(db, migrations) {",
+                  "  db.exec(`",
+                  "    CREATE TABLE IF NOT EXISTS schema_migrations (",
+                  "      id INTEGER PRIMARY KEY, name TEXT NOT NULL, applied_at TEXT NOT NULL DEFAULT (datetime('now'))",
+                  "    )",
+                  "  `);",
+                  "",
+                  "  const applied = new Set(db.prepare(\"SELECT id FROM schema_migrations\").all().map((row) => row.id));",
+                  "  const pending = migrations.filter((m) => !applied.has(m.id)).sort((a, b) => a.id - b.id);",
+                  "",
+                  "  for (const migration of pending) {",
+                  "    db.exec(\"BEGIN\");",
+                  "    try {",
+                  "      db.exec(migration.sql);",
+                  "      db.prepare(\"INSERT INTO schema_migrations (id, name) VALUES (?, ?)\").run(migration.id, migration.name);",
+                  "      db.exec(\"COMMIT\");",
+                  "    } catch (error) {",
+                  "      db.exec(\"ROLLBACK\");",
+                  "      throw error;",
+                  "    }",
+                  "  }",
+                  "  return pending.map((m) => m.id);",
+                  "}",
+                  "",
+                  "migrate(db, migrations);   // [1, 2]",
+                  "migrate(db, migrations);   // []  — nada pendente",
+                ].join("\n"),
+              },
+              explanation:
+                "Qualquer ambiente, vazio ou antigo, chega ao mesmo esquema aplicando só o que falta, e a tabela de " +
+                "controle diz exatamente quais passos foram rodados. Cada migração é aplicada por inteiro ou nenhuma.",
+            },
+          },
         }),
       ],
     }),

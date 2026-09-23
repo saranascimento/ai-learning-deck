@@ -1415,6 +1415,16 @@ for (const area of model.areas()) {
     "batching-and-per-request-caching",
     "query-complexity",
     "graphql-vs-rest",
+    "relational-database",
+    "sql",
+    "table",
+    "primary-key",
+    "foreign-key",
+    "constraint",
+    "join",
+    "aggregate-functions-and-group-by",
+    "subqueries-and-ctes",
+    "database-schema",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",
