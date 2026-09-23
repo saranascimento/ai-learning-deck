@@ -25,24 +25,21 @@ export default area({
           title: "Object vs Class",
           note: "instância × definição — ponto de entrada da Story",
           summary:
-            "A classe é a definição — quais dados e quais comportamentos algo tem —, e o objeto é uma instância " +
-            "concreta dessa definição, com seu próprio estado. Uma classe, muitos objetos.",
+            "Object vs Class é a diferença entre a definição de um tipo de coisa, a classe, e uma coisa concreta " +
+            "criada a partir dela, o objeto.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Uma classe descreve um tipo de coisa: que campos ela guarda e que operações oferece. Um objeto é uma " +
-                "coisa concreta criada a partir dessa descrição — uma instância. Se a classe é a planta de uma casa, " +
-                "os objetos são as casas construídas: todas seguem a mesma planta, mas cada uma tem seus próprios " +
-                "moradores, sua cor de parede, seu estado.",
+                "A classe diz que campos esse tipo guarda e que operações oferece; o objeto é uma instância, com o seu " +
+                "próprio estado. Se a classe é a planta de uma casa, os objetos são as casas construídas: todas seguem a " +
+                "mesma planta, mas cada uma tem seus próprios moradores, sua cor de parede, seu estado.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "A classe define, o objeto existe: uma definição pode gerar muitos objetos, cada um com seu próprio " +
-                "estado — e saber o que é de cada objeto e o que é da classe evita bugs de estado compartilhado.",
+              text: "Escreva o comportamento uma vez na classe e confie que cada objeto cuida só do seu próprio estado.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -239,26 +236,22 @@ export default area({
           title: "Identity",
           requires: ["Object vs Class"],
           note: "o que faz dois objetos serem \"o mesmo\" — reordenada para antes de Entity/Value Object (Requires real)",
-          summary:
-            "O que torna dois objetos \"o mesmo\": a mesma referência na memória, o mesmo identificador de domínio, " +
-            "ou apenas os mesmos valores — três noções diferentes que precisam ser distinguidas.",
+          summary: "Identity é o que faz dois objetos serem considerados a mesma coisa.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Identidade responde à pergunta \"estes dois objetos são a mesma coisa?\". Há pelo menos três respostas " +
-                "possíveis. Identidade de referência: é literalmente o mesmo objeto na memória (=== em JavaScript). " +
-                "Identidade de domínio: representam a mesma coisa do mundo real, reconhecida por um identificador " +
-                "(o usuário de id 42). Igualdade por valor: são intercambiáveis porque têm os mesmos dados (duas " +
-                "notas de R$ 10).",
+                "Há pelo menos três respostas possíveis. Identidade de referência: é literalmente o mesmo objeto na " +
+                "memória (=== em JavaScript). Identidade de domínio: representam a mesma coisa do mundo real, reconhecida " +
+                "por um identificador (o usuário de id 42). Igualdade por valor: são intercambiáveis porque têm os mesmos " +
+                "dados (duas notas de R$ 10).",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "\"Ser o mesmo\" pode significar mesma referência, mesmo id ou mesmos valores — decida qual vale para " +
-                "cada tipo de objeto e expresse isso em código.",
+                "Para cada tipo de objeto, decida qual das três noções de \"mesmo\" vale e deixe isso explícito no código.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -442,24 +435,23 @@ export default area({
           requires: ["Identity"],
           note: "objeto definido pela identidade que persiste no tempo, ainda que os atributos mudem",
           summary:
-            "Um objeto do domínio definido pela sua identidade, não pelos seus atributos: ele continua sendo o mesmo " +
-            "ao longo do tempo mesmo quando seus dados mudam.",
+            "Uma Entity é um objeto do domínio definido pela sua identidade, que continua o mesmo mesmo quando os " +
+            "seus dados mudam.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Uma Entity é um objeto que tem identidade própria e ciclo de vida. O que a define não é o que ela " +
-                "contém em um dado momento, mas o fato de ser aquela coisa específica: o cliente 42, o pedido " +
-                "ORD-1001, a conta 7. Seus atributos mudam (endereço, status, saldo), mas ela continua sendo a mesma. " +
-                "Duas entidades são iguais se, e só se, têm o mesmo identificador.",
+                "Ela tem ciclo de vida. O que a define não é o que ela contém em um dado momento, mas o fato de ser " +
+                "aquela coisa específica: o cliente 42, o pedido ORD-1001, a conta 7. Seus atributos mudam (endereço, " +
+                "status, saldo), mas ela continua sendo a mesma. Duas entidades são iguais se, e só se, têm o mesmo " +
+                "identificador.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Uma entidade é \"aquela coisa\" — identificada por um id estável e igual a outra só se o id for o " +
-                "mesmo, não importa o quanto seus atributos tenham mudado.",
+                "Duas entidades com todos os dados iguais ainda são coisas diferentes se os seus ids forem diferentes.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -672,25 +664,20 @@ export default area({
           title: "Value Object",
           requires: ["Identity"],
           note: "definido por contraste — igualdade por valor, sem identidade própria",
-          summary:
-            "Um objeto definido apenas pelos seus valores, sem identidade própria: dois com os mesmos dados são " +
-            "intercambiáveis, e ele é imutável — para mudar, cria-se outro.",
+          summary: "Um Value Object é um objeto do domínio definido apenas pelos seus valores, sem identidade própria.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Um Value Object representa um valor do domínio: uma quantia em dinheiro, um e-mail, um intervalo de " +
-                "datas, um endereço. Ao contrário da Entity, ele não tem identidade — o que importa são os " +
-                "valores. Duas notas de R$ 10 são intercambiáveis; ninguém pergunta \"qual\" delas. Por isso a " +
-                "igualdade é por valor, e o objeto costuma ser imutável: trocar o valor significa criar um novo objeto.",
+                "Ele representa um valor: uma quantia em dinheiro, um e-mail, um intervalo de datas, um endereço. Duas " +
+                "notas de R$ 10 são intercambiáveis; ninguém pergunta \"qual\" delas. Por isso a igualdade é por valor, e o " +
+                "objeto costuma ser imutável: trocar o valor significa criar um novo objeto.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Se importa o valor e não a identidade, faça um Value Object: imutável, validado ao ser criado e igual " +
-                "por valor — em vez de um primitivo solto que qualquer um pode usar errado.",
+              text: "Se ninguém pergunta \"qual\", e só \"quanto\" ou \"o quê\", o conceito é um Value Object.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -891,24 +878,23 @@ export default area({
           requires: ["Programming Foundations / Functional Programming / Immutability"],
           note: "aplica o conceito de Immutability (Epic 01) a objetos com estado",
           summary:
-            "Um objeto mutável pode ter seu estado alterado depois de criado; um imutável nunca muda — e cada " +
-            "modelo tem seus custos e benefícios, com o compartilhamento de estado sendo o ponto crítico.",
+            "Mutable vs Immutable Objects é a diferença entre um objeto cujo estado pode mudar depois de criado e um " +
+            "que nunca muda.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Um objeto mutável permite que seus campos sejam alterados depois da criação (account.balance += 10). " +
-                "Um objeto imutável, uma vez criado, nunca muda: qualquer \"alteração\" produz um objeto novo e deixa o " +
-                "original intacto. É a aplicação da ideia de Immutability (módulo Functional Programming) a objetos " +
-                "com estado, em vez de a simples valores.",
+                "Num objeto mutável, os campos podem ser alterados depois da criação (account.balance += 10). Num " +
+                "imutável, qualquer \"alteração\" produz um objeto novo e deixa o original intacto. É a aplicação da ideia " +
+                "de Immutability (módulo Functional Programming) a objetos com estado, em vez de a simples valores.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Estado compartilhado e mutável é a raiz de muitos bugs — prefira imutabilidade para valores e " +
-                "mutabilidade controlada para entidades, e nunca exponha o estado interno.",
+                "Prefira imutabilidade para valores e mutabilidade controlada para entidades, sempre sem expor o estado " +
+                "interno.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -1097,24 +1083,21 @@ export default area({
           title: "Tell, Don't Ask",
           note: "estilo de interação entre objetos — revisita informalmente Encapsulation (Epic 01), sem Requires estrito",
           summary:
-            "Diga ao objeto o que fazer, em vez de perguntar pelos seus dados para decidir por ele — mantendo a " +
-            "lógica junto do estado a que ela pertence.",
+            "Tell, Don't Ask é o estilo de projeto em que quem chama diz ao objeto o que fazer, em vez de consultar o " +
+            "estado dele para decidir por fora.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Tell, Don't Ask (\"diga, não pergunte\") é um estilo de projeto em que quem chama envia uma instrução " +
-                "para o objeto (order.ship()) em vez de consultar seu estado, tomar a decisão por fora e depois " +
-                "alterar o objeto (if (order.status === \"paid\") order.status = \"shipped\"). A lógica sobre o " +
+                "A chamada vira uma instrução (order.ship()), e não uma sequência de consultar o estado, decidir e " +
+                "alterar o objeto por fora (if (order.status === \"paid\") order.status = \"shipped\"). A lógica sobre o " +
                 "estado de um objeto deve estar dentro do objeto.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Se você lê o estado de um objeto para decidir como mudá-lo, mova essa decisão para dentro dele — " +
-                "diga o que fazer e deixe o objeto cuidar das regras.",
+              text: "Quando a regra vive fora do objeto, cada chamador precisa repeti-la, e um dia alguém esquece.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -1307,25 +1290,22 @@ export default area({
           note: "consolida os dois nomes (sinônimos na literatura) — regra concreta para minimizar acoplamento entre objetos",
           collision: "Law of Demeter = Principle of Least Knowledge — mesma coisa, dois nomes",
           summary:
-            "Um objeto deve conversar apenas com seus vizinhos imediatos — e não com os objetos que estão dentro deles. " +
-            "É uma regra concreta para reduzir acoplamento: \"não fale com estranhos\".",
+            "A Law of Demeter diz que um método só deve conversar com os seus vizinhos imediatos, e não com os " +
+            "objetos que estão dentro deles.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "A Lei de Deméter (ou Princípio do Menor Conhecimento) diz que um método só deve chamar métodos de: " +
-                "o próprio objeto, seus parâmetros, objetos que ele mesmo cria e seus componentes diretos. Ele " +
-                "não deve navegar pela estrutura interna de objetos que recebeu: order.getCustomer().getAddress()." +
-                "getCity() é o exemplo típico de violação — quem chama fica sabendo que o pedido tem um cliente, que o " +
-                "cliente tem um endereço e que o endereço tem uma cidade.",
+                "Vizinhos imediatos são o próprio objeto, seus parâmetros, objetos que ele mesmo cria e seus componentes " +
+                "diretos. O método não deve navegar pela estrutura interna de objetos que recebeu: " +
+                "order.getCustomer().getAddress().getCity() é o exemplo típico de violação — quem chama fica sabendo que " +
+                "o pedido tem um cliente, que o cliente tem um endereço e que o endereço tem uma cidade.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Converse só com seus vizinhos imediatos: peça o que precisa a quem você conhece, em vez de navegar por " +
-                "dentro dos objetos dele.",
+              text: "Cada ponto numa cadeia de chamadas é mais um detalhe interno de que o seu código passa a depender.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -1499,25 +1479,23 @@ export default area({
           requires: ["Software Design / Object-Oriented Design / Entity"],
           note: "modelo onde o objeto só guarda dados, sem comportamento",
           summary:
-            "Um modelo em que os objetos do domínio só guardam dados (getters e setters) e toda a lógica fica em " +
-            "serviços separados — a forma de orientação a objetos sem os benefícios dela.",
+            "Anemic Domain Model é um modelo em que os objetos do domínio só guardam dados e toda a lógica fica em " +
+            "serviços separados.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Um modelo de domínio anêmico tem classes que se parecem com objetos de negócio (Order, Customer, " +
-                "Account), mas que são só contêineres de dados: campos, getters e setters, sem regras. Toda a lógica " +
-                "— validar, calcular, mudar de estado — vive em classes de serviço (OrderService, AccountService) que " +
-                "manipulam esses dados por fora. Martin Fowler o descreveu como um anti-padrão: tem a estrutura de " +
-                "orientação a objetos e o estilo procedural.",
+                "As classes se parecem com objetos de negócio (Order, Customer, Account), mas são só contêineres: campos, " +
+                "getters e setters, sem regras. Validar, calcular e mudar de estado fica com classes de serviço " +
+                "(OrderService, AccountService) que manipulam esses dados por fora. Martin Fowler o descreveu como um " +
+                "anti-padrão: tem a estrutura de orientação a objetos e o estilo procedural.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Se seus objetos de negócio são só getters e setters e a lógica está em serviços, as regras estão " +
-                "desprotegidas — o objeto deveria ser o guardião do próprio estado.",
+                "Se qualquer serviço pode mudar o estado de um objeto, nenhum deles é responsável por mantê-lo válido.",
             },
             { type: "heading", text: "Por que é um problema" },
             {
@@ -1702,25 +1680,23 @@ export default area({
           requires: ["Anemic Domain Model"],
           note: "contraste direto — objeto com dados + comportamento",
           summary:
-            "Um modelo em que os objetos do domínio combinam dados e comportamento, expõem operações na linguagem do " +
-            "negócio e protegem as suas próprias regras — de modo que não seja possível colocá-los em estado inválido.",
+            "Rich Domain Model é um modelo em que os objetos do domínio combinam dados e comportamento e protegem as " +
+            "suas próprias regras.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Em um modelo de domínio rico, os objetos são donos das regras do negócio. Em vez de setters, oferecem " +
-                "operações com nomes do domínio (course.enroll(student), account.withdraw(amount), order.ship()), que " +
-                "validam antes de mudar o estado. O estado interno é protegido: só é alterado por esses métodos, e por " +
-                "isso o objeto nunca fica em um estado que o negócio considera inválido. É o contraponto direto do " +
-                "modelo anêmico.",
+                "Em vez de setters, eles oferecem operações com nomes do domínio (course.enroll(student), " +
+                "account.withdraw(amount), order.ship()), que validam antes de mudar o estado. O estado interno só é " +
+                "alterado por esses métodos, e por isso o objeto nunca fica em um estado que o negócio considera " +
+                "inválido. É o contraponto direto do modelo anêmico.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Dê ao objeto os dados e as regras que os governam, exponha operações do negócio em vez de setters — " +
-                "e o estado inválido deixa de ser representável.",
+                "Quando só as operações do negócio mudam o estado, um objeto inválido deixa de ser possível de construir.",
             },
             { type: "heading", text: "Por que importa" },
             {
