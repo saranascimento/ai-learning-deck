@@ -11833,26 +11833,24 @@ export default area({
           note: "BEGIN/COMMIT/ROLLBACK; unidade de trabalho. Software Design / Enterprise Patterns / Unit of Work abstrai isto (pointer)",
           revisit: ["Software Design / Enterprise & Application Patterns / Unit of Work"],
           summary:
-            "Um grupo de comandos que o banco trata como uma unidade: ou todos valem (`COMMIT`), ou nenhum vale " +
-            "(`ROLLBACK`) — para que uma operação de várias etapas nunca fique pela metade.",
+            "Uma Transaction é um grupo de comandos que o banco trata como uma unidade: ou todos valem, ou nenhum " +
+            "vale.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Uma transação agrupa vários comandos em uma unidade de trabalho. Ela começa com `BEGIN`, e termina com " +
-                "`COMMIT`, que confirma tudo de uma vez, ou com `ROLLBACK`, que desfaz tudo o que foi feito desde o " +
-                "início. Se o processo cair, a conexão cair ou um comando falhar no meio, o banco desfaz a parte já " +
-                "executada. Fora de um `BEGIN` explícito, os bancos relacionais tratam cada comando como uma transação " +
-                "própria (o modo autocommit).",
+                "Ela começa com `BEGIN`, e termina com `COMMIT`, que confirma tudo de uma vez, ou com `ROLLBACK`, que " +
+                "desfaz tudo o que foi feito desde o início. Se o processo cair, a conexão cair ou um comando falhar no " +
+                "meio, o banco desfaz a parte já executada. Fora de um `BEGIN` explícito, os bancos relacionais tratam " +
+                "cada comando como uma transação própria (o modo autocommit).",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Toda operação de negócio que exige mais de uma escrita — baixar o estoque e criar o pedido, por exemplo " +
-                "— precisa estar dentro de uma transação; sem ela, uma falha no meio deixa o banco em um estado que não " +
-                "deveria existir.",
+                "Toda operação de negócio com mais de uma escrita vai numa transação, ou uma falha no meio deixa o banco " +
+                "num estado impossível.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -12115,27 +12113,25 @@ export default area({
           note: "consolidada (A7 + C6). Isolation fica Task própria",
           collision: "Consistency (ACID) ≠ Distributed Consistency (Architecture); Atomicity ≠ Atomic Operation (Programming Foundations / Concurrency)",
           summary:
-            "As garantias que um banco transacional dá a cada transação: atomicidade (tudo ou nada), consistência (as " +
-            "regras declaradas continuam valendo), isolamento (tratado à parte) e durabilidade (o que foi confirmado " +
-            "não se perde).",
+            "ACID é a sigla das garantias que um banco transacional dá a cada transação: atomicidade, consistência, " +
+            "isolamento e durabilidade.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "ACID é a sigla das quatro propriedades de uma transação. Atomicidade: a transação acontece por inteiro " +
-                "ou não acontece. Consistência: ela leva o banco de um estado válido a outro estado válido, segundo as " +
-                "regras declaradas (chaves, `CHECK`, `UNIQUE`). Isolamento: transações simultâneas não se atrapalham — ou " +
-                "se atrapalham só do jeito permitido pelo nível escolhido. Durabilidade: depois do `COMMIT`, o resultado " +
-                "sobrevive a uma queda do processo ou da máquina. O isolamento é o que os bancos mais relaxam na prática, " +
-                "e por isso ganha um conceito próprio.",
+                "Atomicidade: a transação acontece por inteiro ou não acontece. Consistência: ela leva o banco de um " +
+                "estado válido a outro estado válido, segundo as regras declaradas (chaves, `CHECK`, `UNIQUE`). " +
+                "Isolamento: transações simultâneas não se atrapalham — ou se atrapalham só do jeito permitido pelo nível " +
+                "escolhido. Durabilidade: depois do `COMMIT`, o resultado sobrevive a uma queda do processo ou da " +
+                "máquina. O isolamento é o que os bancos mais relaxam na prática, e por isso ganha um conceito próprio.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "ACID descreve o que o banco garante sobre cada transação, e não sobre o sistema inteiro: ele só protege " +
-                "o que está dentro da transação e só verifica as regras que foram declaradas.",
+                "O banco só garante a consistência das regras que foram declaradas nele, e o resto continua sendo " +
+                "problema da aplicação.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -12337,26 +12333,25 @@ export default area({
           requires: ["ACID (A / C / D)"],
           note: "por que o 'I' é separado — é o que se relaxa na prática",
           summary:
-            "A propriedade que define quanto uma transação enxerga e sofre das outras que rodam ao mesmo tempo — do " +
-            "ideal de parecerem executadas uma depois da outra aos níveis mais frouxos que os bancos usam por padrão.",
+            "Isolation é o quanto uma transação enxerga e sofre das outras que rodam ao mesmo tempo sobre os mesmos " +
+            "dados.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Isolamento é o \"I\" do ACID: o que acontece quando duas transações rodam ao mesmo tempo sobre os mesmos " +
-                "dados. O ideal, chamado serializável, é que o resultado seja igual ao de alguma execução em fila, uma " +
-                "depois da outra. Garantir isso custa espera ou transações abortadas, e por isso os bancos oferecem " +
-                "níveis mais frouxos, e costumam usar um deles por padrão. Para implementar o isolamento, os bancos usam " +
-                "bloqueios (quem escreve impede os outros de mexer) e versões (MVCC: cada transação lê uma \"foto\" dos " +
-                "dados, sem bloquear quem escreve).",
+                "É o \"I\" do ACID. O ideal, chamado serializável, é que o resultado seja igual ao de alguma execução em " +
+                "fila, uma depois da outra. Garantir isso custa espera ou transações abortadas, e por isso os bancos " +
+                "oferecem níveis mais frouxos, e costumam usar um deles por padrão. Para implementar o isolamento, os " +
+                "bancos usam bloqueios (quem escreve impede os outros de mexer) e versões (MVCC: cada transação lê uma " +
+                "\"foto\" dos dados, sem bloquear quem escreve).",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "O isolamento é a letra do ACID que os bancos relaxam por padrão: quem escreve código que lê um dado para " +
-                "decidir uma escrita precisa saber qual nível está em uso, e o que ele deixa passar.",
+                "O nível padrão do seu banco não é serializável, então código que lê para decidir uma escrita precisa " +
+                "saber o que ele deixa passar.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -12582,26 +12577,22 @@ export default area({
           requires: ["Isolation"],
           note: "Read Uncommitted → Serializable; trade-off com throughput",
           summary:
-            "Os quatro níveis de isolamento do padrão SQL — Read Uncommitted, Read Committed, Repeatable Read e " +
-            "Serializable —, cada um permitindo menos interferência entre transações, em troca de mais espera ou de " +
-            "mais transações abortadas.",
+            "Isolation Levels são os quatro níveis do padrão SQL: Read Uncommitted, Read Committed, Repeatable Read e " +
+            "Serializable.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "O padrão SQL define quatro níveis de isolamento, do mais frouxo ao mais forte. Cada nível é definido " +
-                "pelas anomalias que ele impede, e os bancos podem oferecer mais do que o mínimo pedido. O nível pode ser " +
-                "escolhido para o banco inteiro ou para cada transação, o que permite usar um nível forte só onde ele é " +
-                "necessário.",
+                "Eles vão do mais frouxo ao mais forte, e cada um é definido pelas anomalias que impede; os bancos podem " +
+                "oferecer mais do que o mínimo pedido. Menos interferência custa mais espera ou mais transações " +
+                "abortadas. O nível pode ser escolhido para o banco inteiro ou para cada transação, o que permite usar um " +
+                "nível forte só onde ele é necessário.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Escolha o nível pela pergunta que a transação faz: o padrão do banco serve para a maioria das operações, " +
-                "e o Serializable fica para as que leem dados para decidir uma escrita — com a aplicação pronta para " +
-                "repetir a transação quando o banco a recusar.",
+              text: "Quem pede Serializable precisa estar pronto para repetir a transação quando o banco a recusar.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -12828,16 +12819,14 @@ export default area({
           subtopics: ["dirty read", "non-repeatable read", "phantom read", "matriz 'qual nível previne qual'"],
           note: "consolidada (A6)",
           summary:
-            "As três anomalias de leitura que definem os níveis de isolamento: ler o que outra transação ainda não " +
-            "confirmou (dirty read), ler a mesma linha duas vezes e obter valores diferentes (non-repeatable read) e " +
-            "repetir uma consulta e encontrar linhas novas (phantom read).",
+            "Read Phenomena são as três anomalias de leitura que definem os níveis de isolamento: dirty read, " +
+            "non-repeatable read e phantom read.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Os fenômenos de leitura são os tipos de interferência que uma transação pode sofrer ao ler dados que " +
-                "outras estão mudando. O padrão SQL define cada nível de isolamento pelos fenômenos que ele impede. Dirty " +
+                "São os tipos de interferência que uma transação pode sofrer ao ler dados que outras estão mudando. Dirty " +
                 "read: ler um valor que outra transação escreveu e ainda pode desfazer. Non-repeatable read: ler a mesma " +
                 "linha duas vezes, na mesma transação, e obter valores diferentes, porque outra transação a alterou e " +
                 "confirmou no meio. Phantom read: repetir uma consulta com uma condição e encontrar linhas que não " +
@@ -12847,9 +12836,7 @@ export default area({
               type: "callout",
               title: "Ideia principal",
               text:
-                "Cada fenômeno é uma pergunta sobre a mesma transação: posso ver o que não foi confirmado? A mesma linha " +
-                "pode mudar? O mesmo conjunto pode ganhar ou perder linhas? O nível de isolamento escolhido responde a " +
-                "cada uma.",
+                "Para saber qual nível de isolamento você precisa, pergunte qual desses fenômenos quebraria a sua regra.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -13065,25 +13052,23 @@ export default area({
           note: "versão/timestamp, retry em conflito — revisita Programming Foundations / Concurrency / Race Condition",
           revisit: ["Programming Foundations / Concurrency / Race Condition"],
           summary:
-            "Detectar, na hora de gravar, que outra pessoa mudou o registro desde que ele foi lido — com uma coluna " +
-            "de versão conferida no `UPDATE` —, em vez de bloquear o registro durante toda a edição.",
+            "Optimistic Locking é detectar, na hora de gravar, que outra transação mudou o registro desde que ele foi " +
+            "lido.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "O lock otimista parte da suposição de que conflitos são raros: ninguém bloqueia nada enquanto lê ou " +
-                "edita. Cada linha tem uma versão (um número que sobe a cada alteração). Quem vai gravar diz qual versão " +
-                "leu, e o `UPDATE` só acontece se a versão ainda for aquela. Se outra escrita chegou antes, nenhuma linha " +
-                "é alterada, e a aplicação sabe que houve conflito. É a solução para a condição de corrida em que duas " +
+                "Ele parte da suposição de que conflitos são raros: ninguém bloqueia nada enquanto lê ou edita. Cada " +
+                "linha tem uma versão (um número que sobe a cada alteração). Quem vai gravar diz qual versão leu, e o " +
+                "`UPDATE` só acontece se a versão ainda for aquela. Se outra escrita chegou antes, nenhuma linha é " +
+                "alterada, e a aplicação sabe que houve conflito. É a solução para a condição de corrida em que duas " +
                 "pessoas editam o mesmo registro e a última a salvar apaga o trabalho da outra.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "O `UPDATE ... WHERE id = ? AND version = ?` transforma uma escrita cega em uma escrita condicional: ou " +
-                "ela parte da versão que a pessoa viu, ou não acontece, e o conflito vira uma decisão explícita.",
+              text: "Com uma coluna de versão, a última pessoa a salvar deixa de apagar em silêncio o trabalho da outra.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -13296,27 +13281,23 @@ export default area({
           note: "SELECT … FOR UPDATE, ordem de lock — revisita Programming Foundations / Concurrency / Deadlock",
           revisit: ["Programming Foundations / Concurrency / Deadlock"],
           summary:
-            "Bloquear as linhas que se vai alterar no momento da leitura — com `SELECT … FOR UPDATE` —, para que " +
-            "nenhuma outra transação as mude até o `COMMIT`: quem chega depois espera, em vez de descobrir o conflito " +
-            "ao gravar.",
+            "Pessimistic Locking é bloquear as linhas que se vai alterar já no momento da leitura, até o fim da " +
+            "transação.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "O lock pessimista parte da suposição oposta à do otimista: o conflito é provável, então é melhor " +
-                "impedi-lo. A transação lê as linhas com `SELECT ... FOR UPDATE`, e o banco as bloqueia: outras " +
-                "transações que tentem alterá-las, ou bloqueá-las também, esperam até o `COMMIT` ou o `ROLLBACK`. " +
-                "Enquanto isso, a primeira transação decide e grava com a certeza de que os dados não mudam debaixo dela. " +
-                "Como qualquer lock, ele traz o risco de deadlock quando duas transações bloqueiam as mesmas linhas em " +
-                "ordens diferentes.",
+                "Ele parte da suposição oposta à do otimista: o conflito é provável, então é melhor impedi-lo. A " +
+                "transação lê as linhas com `SELECT ... FOR UPDATE`, e o banco as bloqueia: outras transações que tentem " +
+                "alterá-las, ou bloqueá-las também, esperam até o `COMMIT` ou o `ROLLBACK`. Enquanto isso, a primeira " +
+                "transação decide e grava com a certeza de que os dados não mudam debaixo dela. Como qualquer lock, ele " +
+                "traz o risco de deadlock quando duas transações bloqueiam as mesmas linhas em ordens diferentes.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Bloqueie só as linhas necessárias, pelo menor tempo possível, e sempre na mesma ordem: o lock pessimista " +
-                "troca conflitos por espera, e uma espera mal controlada vira lentidão ou deadlock.",
+              text: "Use o lock pessimista quando o conflito é provável, e o otimista quando ele é raro.",
             },
             { type: "heading", text: "Como funciona" },
             {
