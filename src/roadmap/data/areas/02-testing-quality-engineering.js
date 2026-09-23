@@ -25,26 +25,23 @@ export default area({
           revisit: ["Functional Programming / Pure Functions (alvo trivial)", "AI Engineering / AI Evaluation (offline eval ≈ teste)"],
           note: "testar a menor unidade de comportamento, isolada do resto do sistema",
           summary:
-            "Verificar automaticamente que a menor unidade de comportamento — uma função, um método — faz o que " +
-            "deveria, isolada de rede, banco de dados ou UI, e em milissegundos.",
+            "Unit Testing é verificar automaticamente, e em isolamento, se a menor unidade de comportamento de um " +
+            "sistema faz o que deveria.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Unit Testing é a prática de escrever código que executa uma unidade pequena e isolada do sistema " +
-                "— tipicamente uma função ou método — e verifica automaticamente se o resultado bate com o " +
-                "esperado. \"Unidade\" aqui não é um tamanho fixo: é o menor pedaço de comportamento que faz " +
-                "sentido testar sozinho, sem depender de colaboradores externos como banco de dados, rede ou " +
-                "sistema de arquivos.",
+                "Na prática, o teste executa uma unidade pequena — tipicamente uma função ou método — e compara o " +
+                "resultado com o esperado. \"Unidade\" aqui não é um tamanho fixo: é o menor pedaço de comportamento que " +
+                "faz sentido testar sozinho, sem depender de colaboradores externos como banco de dados, rede ou sistema " +
+                "de arquivos.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Unit Testing isola a menor unidade de comportamento e verifica automaticamente se ela continua " +
-                "correta — rápido o bastante para rodar a cada mudança, e preciso o bastante para apontar " +
-                "exatamente o que quebrou.",
+                "Um unit test que falha diz qual função quebrou, e é essa precisão que deixa você mudar código sem medo.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -180,24 +177,21 @@ export default area({
           note: "a verificação atômica: valor real × esperado; base de pass/fail",
           collision: "≠ assert / invariante em runtime (relacionado a Programming Foundations / Contract) — a asserção de teste roda no teste",
           summary:
-            "A verificação atômica que compara um valor real com um valor esperado e decide, sozinha, se aquele " +
-            "pedaço do teste passa ou falha — o bloco de construção sobre o qual todo teste automatizado é montado.",
+            "Uma Assertion é a verificação que compara um valor real com o esperado e decide se o teste passa ou " +
+            "falha.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Uma assertion é uma instrução que afirma que algo deveria ser verdade — normalmente que um valor " +
-                "real (o que o código produziu) é igual a um valor esperado (o que deveria ter produzido). Se a " +
-                "afirmação é verdadeira, nada acontece; se é falsa, a assertion lança um erro que interrompe o " +
-                "teste e o marca como falho.",
+                "Ela afirma que algo deveria ser verdade: o valor real (o que o código produziu) é igual ao esperado (o " +
+                "que deveria ter produzido). Se a afirmação é verdadeira, nada acontece; se é falsa, a assertion lança um " +
+                "erro que interrompe o teste e o marca como falho.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Uma assertion compara um valor real com o esperado e falha ruidosamente quando eles divergem — é " +
-                "o mecanismo atômico de pass/fail sobre o qual todo teste automatizado é construído.",
+              text: "Um teste sem uma assertion capaz de falhar não testa nada, só executa código.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -337,24 +331,20 @@ export default area({
           title: "Arrange-Act-Assert",
           requires: ["Unit Testing", "Assertion"],
           note: "a estrutura de 3 fases de um teste",
-          summary:
-            "As três fases universais de um teste de unidade: preparar o cenário (Arrange), executar a ação sob " +
-            "teste (Act) e verificar o resultado (Assert) — sempre nessa ordem, sempre separadas.",
+          summary: "Arrange-Act-Assert é o padrão que divide um teste em três fases: preparar, executar e verificar.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Arrange-Act-Assert (AAA) é um padrão que divide o corpo de um teste em três blocos sequenciais e " +
-                "claramente separados: Arrange prepara tudo que o teste precisa (dados, objetos, dublês); Act " +
-                "executa a única ação que está sendo testada; Assert verifica se o resultado da ação é o esperado.",
+                "Os três blocos vêm em sequência e bem separados: Arrange prepara tudo que o teste precisa (dados, " +
+                "objetos, dublês); Act executa a única ação que está sendo testada; Assert verifica se o resultado da " +
+                "ação é o esperado.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "AAA separa um teste em preparar, executar e verificar — a mesma sequência em todo teste, o que " +
-                "torna qualquer teste legível de relance, mesmo por quem nunca o viu antes.",
+              text: "Um teste bem escrito em AAA tem um Arrange curto, uma única ação e uma verificação sobre ela.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -538,25 +528,23 @@ export default area({
           requires: ["Unit Testing", "Assertion"],
           note: "a mesma estrutura de 3 fases, na fraseologia BDD — não depende de AAA",
           summary:
-            "A mesma estrutura de três fases do Arrange-Act-Assert, na fraseologia do Behavior-Driven Development: " +
-            "dado um contexto (Given), quando uma ação acontece (When), então um resultado é esperado (Then).",
+            "Given-When-Then é a estrutura de três fases do Arrange-Act-Assert escrita no vocabulário do " +
+            "Behavior-Driven Development.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Given-When-Then é uma forma de descrever um teste em três frases: Given estabelece o contexto " +
-                "inicial (\"dado que o carrinho tem dois itens\"), When descreve a ação (\"quando o usuário remove " +
-                "um item\"), Then descreve o resultado esperado (\"então o carrinho tem um item\"). " +
-                "Estruturalmente é a mesma ideia de Arrange-Act-Assert — a diferença é o vocabulário, voltado " +
-                "para descrever comportamento em linguagem próxima da de negócio.",
+                "Given estabelece o contexto inicial (\"dado que o carrinho tem dois itens\"), When descreve a ação " +
+                "(\"quando o usuário remove um item\"), Then descreve o resultado esperado (\"então o carrinho tem um " +
+                "item\"). A diferença para o AAA é só o vocabulário, voltado para descrever comportamento em linguagem " +
+                "próxima da de negócio.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Given-When-Then é Arrange-Act-Assert com outro nome, pensado para ler como uma especificação de " +
-                "comportamento em linguagem de negócio — útil quando o teste também documenta um requisito.",
+                "Escolha Given-When-Then quando alguém de negócio vai ler o teste, e AAA quando só quem programa vai.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -741,26 +729,21 @@ export default area({
           isNew: true,
           requires: ["Unit Testing"],
           note: "o estado/dado base fixo sobre o qual um teste roda",
-          summary:
-            "O estado ou conjunto de dados conhecido e fixo que um teste precisa existir antes de rodar — o " +
-            "cenário reutilizável que o bloco Arrange constrói (ou reconstrói) a cada execução.",
+          summary: "Uma Test Fixture é o estado conhecido que um teste espera encontrar pronto antes de começar.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Uma fixture é o estado base sobre o qual um teste roda: um objeto pré-configurado, um conjunto " +
-                "de registros num banco de teste, um arquivo temporário — qualquer coisa que o teste espera " +
-                "encontrar pronta antes de começar. \"Fixture\" tanto se refere ao dado em si quanto ao código " +
-                "que o prepara (e, às vezes, o desfaz depois).",
+                "Pode ser um objeto pré-configurado, um conjunto de registros num banco de teste, um arquivo temporário. " +
+                "\"Fixture\" tanto se refere ao dado em si quanto ao código que o prepara (e, às vezes, o desfaz depois).",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Uma fixture é o estado conhecido e reutilizável que um teste assume como ponto de partida — " +
-                "construída (e, quando necessário, desfeita) de forma consistente para que cada teste comece do " +
-                "mesmo lugar, isolado dos demais.",
+                "Centralize na fixture o cenário que vários testes repetem, e crie nela só os dados que eles realmente " +
+                "usam.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -925,25 +908,21 @@ export default area({
           requires: ["Unit Testing", "Assertion"],
           note: "a ferramenta que descobre, executa e reporta testes",
           summary:
-            "A ferramenta que descobre os arquivos de teste, executa cada um isoladamente, coleta o resultado de " +
-            "cada assertion e reporta o que passou, o que falhou e por quê — a maquinaria que transforma testes " +
-            "soltos em uma suíte executável.",
+            "Um Test Runner é a ferramenta que encontra os testes de um projeto, executa cada um e reporta o que " +
+            "passou e o que falhou.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Um test runner é o programa que encontra os arquivos/funções de teste num projeto (geralmente " +
-                "por convenção de nome, como *.test.js), executa cada um, captura o resultado das assertions " +
-                "dentro dele, e produz um relatório: quantos passaram, quantos falharam, e a mensagem de erro de " +
-                "cada falha. Jest, Vitest, JUnit e pytest são exemplos de test runners.",
+                "A descoberta costuma ser por convenção de nome, como *.test.js. Para cada teste, o runner captura o " +
+                "resultado das assertions e, no fim, produz um relatório com quantos passaram, quantos falharam e a " +
+                "mensagem de erro de cada falha. Jest, Vitest, JUnit e pytest são exemplos de test runners.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Um test runner descobre, executa isoladamente e reporta o resultado de cada teste — é a camada " +
-                "de infraestrutura que transforma um punhado de funções de teste soltas numa suíte confiável e automatizável.",
+              text: "Sem um runner que isole cada teste, uma falha interrompe a suíte e esconde o resultado dos outros.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -1099,26 +1078,23 @@ export default area({
           note: "\"integração\" pressupõe \"unidades\"",
           collision: "≠ Continuous Integration (Platform / CI-CD)",
           summary:
-            "Testar como duas ou mais unidades — já testadas isoladamente — funcionam quando combinadas de " +
-            "verdade: um serviço e seu banco de dados, um componente e a API que ele chama.",
+            "Integration Testing é testar se unidades já verificadas isoladamente funcionam quando conectadas de " +
+            "verdade.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Integration Testing verifica que múltiplas unidades do sistema — que já passaram por unit tests " +
-                "individualmente — funcionam corretamente quando conectadas entre si. Em vez de isolar uma " +
-                "função com dublês, um teste de integração deixa componentes reais interagirem: um repositório " +
-                "conversa com um banco de dados de verdade (ou um banco de teste), um client HTTP conversa com " +
-                "uma API real.",
+                "Em vez de isolar uma função com dublês, um teste de integração deixa componentes reais interagirem: um " +
+                "repositório conversa com um banco de dados de verdade (ou um banco de teste), um client HTTP conversa " +
+                "com uma API real.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Integration Testing verifica a fronteira entre unidades reais — sem substituir dependências por " +
-                "dublês — para pegar falhas que só aparecem quando as peças se encaixam de verdade, como " +
-                "incompatibilidades de schema ou de contrato.",
+                "Coloque os testes de integração nas fronteiras, onde um dublê esconderia exatamente o erro que você quer " +
+                "pegar.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -1296,26 +1272,22 @@ export default area({
           title: "E2E Testing",
           requires: ["Integration Testing"],
           note: "o caso máximo de integração — sistema inteiro, ótica do usuário",
-          summary:
-            "Exercitar o sistema inteiro, de ponta a ponta, do jeito que um usuário real o usaria — a interface, " +
-            "o backend, o banco de dados e tudo entre eles, numa única jornada.",
+          summary: "E2E Testing é testar o sistema inteiro, de ponta a ponta, pelo caminho que um usuário real percorreria.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "End-to-End (E2E) Testing verifica o sistema completo, simulando o caminho que um usuário real " +
-                "percorreria: abrir a aplicação, clicar em botões, preencher formulários, esperar respostas — " +
-                "tudo através da interface real, contra um backend real (ou o mais próximo disso possível). Não " +
-                "há nenhuma parte do sistema substituída por dublê; é o caso limite de Integration Testing, " +
-                "levado ao sistema inteiro.",
+                "O teste abre a aplicação, clica em botões, preenche formulários e espera respostas — tudo através da " +
+                "interface real, contra um backend real (ou o mais próximo disso possível). Não há nenhuma parte do " +
+                "sistema substituída por dublê; é o caso limite de Integration Testing, levado ao sistema inteiro.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "E2E Testing exercita o sistema inteiro pela ótica do usuário, sem nenhuma parte substituída — o " +
-                "teste mais próximo da realidade, mas também o mais lento e caro, reservado para os fluxos mais críticos.",
+                "Reserve o E2E para as poucas jornadas que não podem quebrar, e deixe as regras de negócio para testes " +
+                "menores.",
             },
             { type: "heading", text: "Por que importa" },
             {
