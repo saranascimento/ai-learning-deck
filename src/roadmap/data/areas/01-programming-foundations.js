@@ -6626,26 +6626,20 @@ export default area({
           title: "Time Complexity",
           note: "Tempo em função do tamanho",
           requires: ["Data Structures"],
-          summary:
-            "Como o tempo de execução de um algoritmo cresce conforme o tamanho da entrada aumenta — não o " +
-            "tempo em segundos (que depende da máquina), mas a taxa de crescimento, o que permite comparar " +
-            "algoritmos de forma independente de hardware.",
+          summary: "Time Complexity é a forma como o número de operações de um algoritmo cresce conforme a entrada aumenta.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Time Complexity descreve como o número de operações que um algoritmo executa cresce " +
-                "conforme o tamanho da entrada (n) aumenta. Não é uma medida de tempo em segundos — é uma " +
-                "medida de taxa de crescimento, abstraída de qual máquina está rodando o código.",
+                "O tamanho da entrada costuma ser chamado de n. Não é uma medida de tempo em segundos — é uma medida de " +
+                "taxa de crescimento, abstraída de qual máquina está rodando o código.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Time Complexity mede como o número de operações de um algoritmo cresce em função do tamanho " +
-                "da entrada — não tempo em segundos, mas taxa de crescimento, o que torna algoritmos " +
-                "comparáveis independente de hardware.",
+                "A pergunta certa não é quanto tempo leva, mas o que acontece com as operações quando a entrada dobra.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -6740,23 +6734,22 @@ export default area({
           note: "Memória em função do tamanho",
           requires: ["Time Complexity"],
           summary:
-            "Como a quantidade de memória extra que um algoritmo usa cresce conforme o tamanho da entrada " +
-            "aumenta — o par natural de Time Complexity, medindo espaço em vez de tempo.",
+            "Space Complexity é a forma como a memória extra usada por um algoritmo cresce conforme a entrada " +
+            "aumenta.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Space Complexity descreve como a quantidade de memória extra que um algoritmo precisa, além " +
-                "da entrada original, cresce em função do tamanho da entrada. Assim como Time Complexity, não " +
-                "é uma medida em bytes exatos — é uma taxa de crescimento.",
+                "\"Extra\" quer dizer além da entrada original. Assim como Time Complexity, não é uma medida em bytes " +
+                "exatos — é uma taxa de crescimento.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Space Complexity mede como a memória extra usada por um algoritmo cresce em função do " +
-                "tamanho da entrada — o par de Time Complexity, e às vezes um trade-off direto contra ela.",
+                "Muitas vezes dá para gastar mais memória para ganhar tempo, e a escolha depende de qual dos dois está " +
+                "faltando.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -6848,24 +6841,22 @@ export default area({
           note: "A notação",
           requires: ["Time Complexity", "Space Complexity"],
           summary:
-            "A notação matemática que expressa a taxa de crescimento de um algoritmo, focando no pior caso e " +
-            "ignorando constantes e termos menores — a forma padrão de comunicar Time/Space Complexity.",
+            "Big O é a notação que expressa a taxa de crescimento de um algoritmo no pior caso, como O(n) ou O(log " +
+            "n).",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Big O é a notação formal usada pra expressar Time/Space Complexity — O(n), O(n²), O(log n), " +
-                "etc. Ela descreve o comportamento assintótico do pior caso, ignorando constantes " +
-                "multiplicativas e termos de menor ordem — O(2n + 100) simplifica pra O(n).",
+                "Ela descreve o comportamento assintótico, ignorando constantes multiplicativas e termos de menor ordem — " +
+                "O(2n + 100) simplifica pra O(n). É a forma padrão de comunicar Time e Space Complexity.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Big O é a notação que expressa a taxa de crescimento assintótica de um algoritmo, focando no " +
-                "pior caso e ignorando constantes e termos menores — a linguagem padrão pra comparar Time/Space " +
-                "Complexity entre algoritmos diferentes.",
+                "Em Big O, só o termo que mais cresce importa, porque é ele que decide o comportamento com entradas " +
+                "grandes.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -6946,25 +6937,21 @@ export default area({
           isNew: true,
           requires: ["Big O"],
           subtopics: ["O(1)", "O(log n)", "O(n)", "O(n log n)", "O(n²)"],
-          summary:
-            "Um catálogo das taxas de crescimento mais comuns — O(1), O(log n), O(n), O(n log n), O(n²) — " +
-            "cada uma com um exemplo canônico, pra reconhecer de cara qual classe um algoritmo pertence.",
+          summary: "Common Time Complexities são as classes de crescimento que mais aparecem na prática, de O(1) a O(n²).",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Common Time Complexities é o catálogo das classes de crescimento mais frequentes na " +
-                "prática, da mais rápida pra mais lenta: O(1) constante, O(log n) logarítmica, O(n) linear, " +
-                "O(n log n) linearítmica, O(n²) quadrática.",
+                "Da mais rápida pra mais lenta: O(1) constante, O(log n) logarítmica, O(n) linear, O(n log n) " +
+                "linearítmica, O(n²) quadrática. Cada uma tem um padrão de código reconhecível.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "As classes de crescimento mais comuns, da mais rápida pra mais lenta, são O(1), O(log n), " +
-                "O(n), O(n log n), O(n²) — cada uma com um padrão de código reconhecível, que vale a pena " +
-                "memorizar pra acelerar análise de complexidade no dia a dia.",
+                "Laços aninhados sobre a mesma coleção costumam ser O(n²), mesmo quando o laço de dentro está escondido " +
+                "numa busca.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -7080,26 +7067,21 @@ export default area({
           title: "Linear Search",
           note: "O(n) — percorrer tudo",
           requires: ["Common Time Complexities", "Array"],
-          summary:
-            "Buscar um valor percorrendo os elementos um por um, do início ao fim, até encontrar (ou " +
-            "terminar a coleção) — a estratégia mais simples possível, O(n) no pior caso, e a única opção " +
-            "quando os dados não estão ordenados.",
+          summary: "Linear Search é buscar um valor comparando os elementos um por um, do início ao fim da coleção.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Linear Search percorre uma coleção elemento por elemento, comparando cada um com o valor " +
-                "procurado, até encontrar uma correspondência ou chegar ao fim. É a estratégia de busca mais " +
-                "direta possível — sem nenhuma suposição sobre a organização dos dados.",
+                "A busca termina quando encontra uma correspondência ou chega ao fim. É a estratégia mais direta possível " +
+                "— sem nenhuma suposição sobre a organização dos dados.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Linear Search percorre elemento por elemento até encontrar (ou esgotar a coleção) — O(n) no " +
-                "pior caso, simples e sem exigir ordenação prévia, mas o padrão de busca mais lento entre as " +
-                "opções deste módulo.",
+                "Se os dados não estão ordenados, percorrer tudo é o único jeito seguro de ter certeza de que o valor não " +
+                "está lá.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -7180,24 +7162,21 @@ export default area({
           requires: ["Common Time Complexities", "Binary Search Tree"],
           revisit: ["Testing & Quality Engineering / Debugging / Binary Search Debugging", "Testing & Quality Engineering / Debugging / Git Bisect"],
           summary:
-            "Buscar um valor descartando metade do espaço de busca a cada passo — exige dados ordenados, mas " +
-            "em troca entrega O(log n), muito mais rápido que percorrer tudo linearmente.",
+            "Binary Search é buscar um valor numa coleção ordenada descartando metade do espaço de busca a cada " +
+            "comparação.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Binary Search busca um valor numa coleção ordenada comparando o alvo com o elemento do " +
-                "meio: se for igual, achou; se for menor, o alvo só pode estar na metade esquerda; se for " +
-                "maior, só pode estar na direita. O mesmo princípio já visto na busca dentro de uma Binary " +
-                "Search Tree.",
+                "O alvo é comparado com o elemento do meio: se for igual, achou; se for menor, o alvo só pode estar na " +
+                "metade esquerda; se for maior, só pode estar na direita. O mesmo princípio já visto na busca dentro de " +
+                "uma Binary Search Tree.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Binary Search descarta metade do espaço de busca a cada comparação, dando O(log n) — muito " +
-                "mais rápido que Linear Search, mas exige que os dados estejam ordenados como pré-requisito.",
+              text: "Binary Search só funciona sobre dados ordenados, então o custo de ordenar precisa entrar na conta.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -7332,27 +7311,20 @@ export default area({
           title: "Sorting Fundamentals",
           note: "Ingênuo vs. eficiente",
           requires: ["Common Time Complexities"],
-          summary:
-            "Ordenar uma coleção — o problema clássico que ilustra melhor do que qualquer outro a diferença " +
-            "prática entre uma abordagem O(n²) ingênua e uma O(n log n) eficiente.",
+          summary: "Sorting é o problema de reorganizar os elementos de uma coleção numa ordem específica.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Sorting é o problema de reorganizar os elementos de uma coleção numa ordem específica. " +
-                "Existem muitos algoritmos de sort, mas eles se dividem em duas categorias de complexidade " +
-                "bem distintas: os \"ingênuos\" (O(n²), como Bubble Sort, Selection Sort) e os \"eficientes\" " +
-                "(O(n log n), como Merge Sort, Quick Sort — os mesmos usados internamente por .sort() na " +
-                "maioria das linguagens modernas).",
+                "Existem muitos algoritmos de sort, mas eles se dividem em duas categorias de complexidade bem distintas: " +
+                "os \"ingênuos\" (O(n²), como Bubble Sort, Selection Sort) e os \"eficientes\" (O(n log n), como Merge Sort, " +
+                "Quick Sort — os mesmos usados internamente por .sort() na maioria das linguagens modernas).",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Sorting divide algoritmos em ingênuos O(n²) (comparações par a par repetidas) e eficientes " +
-                "O(n log n) (que dividem o problema em vez de comparar tudo com tudo) — como a estratégia de " +
-                "um algoritmo determina sua classe de complexidade, não só o problema em si.",
+              text: "No dia a dia, use o sort da linguagem, que já é O(n log n), em vez de escrever o seu.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -7470,27 +7442,19 @@ export default area({
           note: "Chamar a si mesma",
           requires: ["Memory & Runtime / Call Stack", "Common Time Complexities"],
           revisit: ["Data Structures (traversals)"],
-          summary:
-            "Uma função que se chama a si mesma pra resolver um problema, quebrando-o em versões menores do " +
-            "mesmo problema — cada chamada empilha um frame na Call Stack, até alcançar um caso base que " +
-            "interrompe a recursão.",
+          summary: "Recursion é quando uma função se chama a si mesma para resolver versões menores do mesmo problema.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Recursion é quando uma função se chama a si mesma pra resolver um problema, dividindo-o em " +
-                "versões progressivamente menores do mesmo problema, até chegar num caso base simples o " +
-                "bastante pra resolver diretamente. Já vimos a mecânica por trás disso em Call Stack: cada " +
-                "chamada recursiva empilha um novo frame.",
+                "As chamadas continuam até chegar num caso base simples o bastante pra resolver diretamente. Já vimos a " +
+                "mecânica por trás disso em Call Stack: cada chamada recursiva empilha um novo frame.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Recursion resolve um problema chamando a própria função com uma versão menor do mesmo " +
-                "problema, até um caso base — cada chamada usa um frame da Call Stack, e toda recursão " +
-                "precisa de um caso base efetivamente alcançável, ou o resultado é um stack overflow.",
+              text: "Toda recursão precisa de um caso base que seja de fato alcançado, ou ela termina em stack overflow.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -7575,25 +7539,21 @@ export default area({
           requires: ["Recursion", "Data Structures / Hash Table", "Functional Programming / Pure Functions"],
           revisit: ["Platform / Caching"],
           summary:
-            "Guardar em cache os resultados de chamadas anteriores de uma função, pra evitar recalcular o " +
-            "mesmo resultado de novo — só funciona com segurança sobre Pure Functions, e resolve diretamente " +
-            "o problema de recursão exponencial visto em Fibonacci.",
+            "Memoization é guardar os resultados já calculados de uma função para devolvê-los quando os mesmos " +
+            "argumentos voltarem.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Memoization guarda, num cache (tipicamente uma Hash Table), os resultados já calculados de " +
-                "uma função, indexados pelos argumentos de entrada — na próxima vez que a função for chamada " +
-                "com os mesmos argumentos, o resultado é devolvido direto do cache, sem recalcular.",
+                "O cache (tipicamente uma Hash Table) é indexado pelos argumentos de entrada — na próxima vez que a " +
+                "função for chamada com os mesmos argumentos, o resultado é devolvido direto do cache, sem recalcular.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Memoization guarda resultados de chamadas anteriores num cache, evitando recalcular o mesmo " +
-                "resultado — só funciona com segurança sobre Pure Functions, e resolve diretamente a recursão " +
-                "exponencial redundante que algoritmos como Fibonacci recursivo ingênuo produzem.",
+                "Só memoize funções puras, porque só elas garantem que o resultado guardado ainda é o resultado certo.",
             },
             { type: "heading", text: "Por que importa" },
             {
