@@ -1425,6 +1425,13 @@ for (const area of model.areas()) {
     "aggregate-functions-and-group-by",
     "subqueries-and-ctes",
     "database-schema",
+    "data-modeling",
+    "relationship-cardinality-1-1-1-n-n-m",
+    "normalization",
+    "normal-forms-1nf-2nf-3nf",
+    "denormalization",
+    "natural-vs-surrogate-key",
+    "database-migration",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",

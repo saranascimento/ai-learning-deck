@@ -10049,18 +10049,1880 @@ export default area({
           requires: ["Database Fundamentals / Database Schema"],
           note: "conceitual → lógico → físico. Revisita Software Design / Domain Modeling / Entity (Entity de domínio vira tabela)",
           revisit: ["Software Design / Domain Modeling / Entity"],
+          summary:
+            "O trabalho de decidir quais dados o sistema guarda e como eles se organizam — das coisas e relações do " +
+            "negócio (modelo conceitual) às tabelas e chaves (lógico) e aos tipos e índices de um banco concreto " +
+            "(físico).",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Modelar dados é traduzir o que o negócio precisa lembrar em uma estrutura que o banco consiga guardar e " +
+                "proteger. O trabalho costuma passar por três níveis. O modelo conceitual fala a língua do negócio: quais " +
+                "são as coisas importantes (cliente, pedido, produto), o que se sabe sobre cada uma e como se relacionam. " +
+                "O modelo lógico transforma isso em tabelas, colunas, chaves e cardinalidades, ainda sem depender de um " +
+                "banco específico. O modelo físico escolhe os tipos, os índices e os detalhes do banco real, como " +
+                "PostgreSQL, MySQL ou SQLite.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "O modelo de dados nasce das perguntas que o sistema precisa responder e das regras que precisa garantir, " +
+                "e não da tela ou do formato do JSON: as telas mudam, e os dados ficam.",
+            },
+            { type: "heading", text: "Por que importa" },
+            {
+              type: "paragraph",
+              text:
+                "O esquema é a parte mais difícil de mudar em um sistema: o código se reescreve, mas os dados acumulados " +
+                "precisam ser migrados, e cada consulta, relatório e integração depende da estrutura. Decisões de " +
+                "modelagem, como o que é uma entidade própria, o que é só um atributo e o que precisa de histórico, " +
+                "definem o que o sistema vai conseguir responder daqui a anos. É também onde o domínio encontra o banco: " +
+                "uma entidade do domínio, com identidade própria, costuma virar uma tabela com chave primária, e um " +
+                "objeto de valor, como um endereço, costuma virar colunas na tabela de quem o possui.",
+            },
+            { type: "heading", text: "Como fazer" },
+            {
+              type: "list",
+              items: [
+                "Liste as coisas do negócio que têm identidade e ciclo de vida próprios (as entidades) e o que se precisa saber sobre cada uma.",
+                "Defina como elas se relacionam e em que quantidade: um cliente faz vários pedidos, e um produto aparece em vários pedidos.",
+                "Escreva as perguntas que o sistema precisa responder (\"quanto cada cliente comprou no mês?\") e confira se o modelo responde a todas.",
+                "Traduza para tabelas, chaves e constraints (modelo lógico) e depois escolha os tipos e os índices do banco real (modelo físico).",
+              ],
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "modeling.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "db.exec(\"PRAGMA foreign_keys = ON\");",
+                "",
+                "// Conceitual: um cliente faz pedidos; um pedido tem itens; cada item é de um produto.",
+                "// Lógico e físico: cada entidade vira uma tabela com chave primária; cada relação, uma chave estrangeira.",
+                "db.exec(`",
+                "  CREATE TABLE customers (",
+                "    id INTEGER PRIMARY KEY,",
+                "    name TEXT NOT NULL,",
+                "    email TEXT NOT NULL UNIQUE,",
+                "    -- o endereço é um valor, sem identidade própria: vira colunas de quem o possui",
+                "    address_street TEXT NOT NULL,",
+                "    address_city TEXT NOT NULL,",
+                "    address_postal_code TEXT NOT NULL",
+                "  );",
+                "  CREATE TABLE products (",
+                "    id INTEGER PRIMARY KEY,",
+                "    name TEXT NOT NULL,",
+                "    price_cents INTEGER NOT NULL CHECK (price_cents >= 0)",
+                "  );",
+                "  CREATE TABLE orders (",
+                "    id INTEGER PRIMARY KEY,",
+                "    customer_id INTEGER NOT NULL REFERENCES customers(id),",
+                "    placed_at TEXT NOT NULL",
+                "  );",
+                "  CREATE TABLE order_items (",
+                "    order_id INTEGER NOT NULL REFERENCES orders(id),",
+                "    product_id INTEGER NOT NULL REFERENCES products(id),",
+                "    quantity INTEGER NOT NULL CHECK (quantity > 0),",
+                "    unit_price_cents INTEGER NOT NULL,   -- o preço no momento da compra, e não o preço atual",
+                "    PRIMARY KEY (order_id, product_id)",
+                "  );",
+                "`);",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Cada decisão do esquema responde a uma regra ou a uma pergunta do negócio: o `UNIQUE` no e-mail diz que " +
+                "não há dois clientes com o mesmo, e o `unit_price_cents` no item guarda quanto se cobrou, mesmo que o " +
+                "preço do produto mude amanhã.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "Modelar a partir da tela ou do JSON da API acopla o banco à apresentação: quando a tela muda, o esquema não deveria precisar mudar junto.",
+                "Guardar só o estado atual, como um `status`, perde a história: se o negócio vai perguntar \"quando\" ou \"quem\", o modelo precisa registrar as mudanças.",
+                "Modelar genérico demais, com tabelas de \"entidades\" e \"atributos\" para qualquer coisa, troca um modelo claro por um que o banco não consegue validar nem otimizar.",
+                "O modelo do domínio e o modelo de dados não precisam ser idênticos: uma entidade pode ocupar várias tabelas, e um objeto de valor pode caber em poucas colunas.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Da entidade do domínio à tabela",
+              context: "A identidade da entidade vira a chave primária, e os valores que ela possui viram colunas.",
+              code: {
+                language: "javascript",
+                filename: "customer-mapping.js",
+                code: [
+                  "class Address {",
+                  "  constructor(street, city, postalCode) {",
+                  "    Object.assign(this, { street, city, postalCode });",
+                  "    Object.freeze(this);",
+                  "  }",
+                  "}",
+                  "",
+                  "class Customer {",
+                  "  constructor(id, name, email, address) {",
+                  "    this.id = id;            // identidade: é por ela que o cliente é reconhecido",
+                  "    this.name = name;",
+                  "    this.email = email;",
+                  "    this.address = address;  // um valor: trocado por inteiro quando muda",
+                  "  }",
+                  "}",
+                  "",
+                  "// Uma linha da tabela customers",
+                  "function toRow(customer) {",
+                  "  return {",
+                  "    id: customer.id,",
+                  "    name: customer.name,",
+                  "    email: customer.email,",
+                  "    address_street: customer.address.street,",
+                  "    address_city: customer.address.city,",
+                  "    address_postal_code: customer.address.postalCode,",
+                  "  };",
+                  "}",
+                  "",
+                  "function fromRow(row) {",
+                  "  const address = new Address(row.address_street, row.address_city, row.address_postal_code);",
+                  "  return new Customer(row.id, row.name, row.email, address);",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "A entidade é reconhecida pelo `id`, e não pelos dados: o cliente continua o mesmo se mudar de endereço. " +
+                "O endereço, um objeto de valor, não tem id próprio e mora nas colunas do cliente. Se um cliente pudesse " +
+                "ter vários endereços, eles iriam para uma tabela filha, com a chave do cliente.",
+            },
+            {
+              title: "Estado atual ou histórico?",
+              context: "Uma coluna `status` responde \"como está\", mas não \"desde quando\" nem \"quem mudou\".",
+              code: {
+                language: "javascript",
+                filename: "order-history.js",
+                code: [
+                  "db.exec(\"CREATE TABLE orders (id INTEGER PRIMARY KEY, status TEXT NOT NULL)\");",
+                  "db.prepare(\"INSERT INTO orders (id, status) VALUES (?, ?)\").run(1, \"paid\");",
+                  "",
+                  "// Só o estado atual: cada mudança apaga a anterior",
+                  "db.prepare(\"UPDATE orders SET status = ? WHERE id = ?\").run(\"shipped\", 1);",
+                  "// Quando o pedido foi pago? Não há mais como saber.",
+                  "",
+                  "// Estado atual + histórico: cada transição vira uma linha",
+                  "db.exec(`",
+                  "  CREATE TABLE order_status_changes (",
+                  "    order_id INTEGER NOT NULL REFERENCES orders(id),",
+                  "    status TEXT NOT NULL,",
+                  "    changed_at TEXT NOT NULL DEFAULT (datetime('now')),",
+                  "    changed_by TEXT NOT NULL",
+                  "  )",
+                  "`);",
+                  "db.prepare(\"INSERT INTO order_status_changes (order_id, status, changed_by) VALUES (?, ?, ?)\")",
+                  "  .run(1, \"shipped\", \"warehouse-service\");",
+                ].join("\n"),
+              },
+              explanation:
+                "Se o negócio vai perguntar quanto tempo um pedido leva do pagamento ao envio, a pergunta precisa estar " +
+                "no modelo desde o início: o histórico que não foi gravado não pode ser reconstruído depois. A coluna " +
+                "`status` pode continuar existindo, para a consulta rápida do estado atual.",
+            },
+            {
+              title: "Tipos diferentes da mesma coisa",
+              context: "Clientes pessoa física têm CPF, e clientes pessoa jurídica, CNPJ.",
+              code: {
+                language: "javascript",
+                filename: "customer-kinds.js",
+                code: [
+                  "db.exec(`",
+                  "  CREATE TABLE customers (",
+                  "    id INTEGER PRIMARY KEY,",
+                  "    kind TEXT NOT NULL CHECK (kind IN ('person', 'company')),",
+                  "    name TEXT NOT NULL,",
+                  "    cpf TEXT,",
+                  "    cnpj TEXT,",
+                  "    CHECK (",
+                  "      (kind = 'person'  AND cpf IS NOT NULL AND cnpj IS NULL) OR",
+                  "      (kind = 'company' AND cnpj IS NOT NULL AND cpf IS NULL)",
+                  "    )",
+                  "  )",
+                  "`);",
+                  "",
+                  "const insert = db.prepare(\"INSERT INTO customers (kind, name, cpf, cnpj) VALUES (?, ?, ?, ?)\");",
+                  "insert.run(\"person\", \"Ana Souza\", \"123.456.789-09\", null);",
+                  "try { insert.run(\"company\", \"Loja Azul\", \"123.456.789-09\", null); }",
+                  "catch (error) { error.message; }   // \"CHECK constraint failed: ...\" — empresa sem CNPJ",
+                ].join("\n"),
+              },
+              explanation:
+                "Com poucos campos específicos, uma tabela só e um `CHECK` que amarra cada tipo aos seus campos bastam. " +
+                "Quando cada tipo tem muitos campos próprios, uma tabela comum mais uma tabela por tipo, ligadas pela " +
+                "mesma chave, evita dezenas de colunas quase sempre vazias.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Uma escola quer um sistema de reservas de salas, e os requisitos chegaram em texto: as salas têm nome e " +
+              "capacidade; os professores reservam salas por bloco de horário; uma sala não pode ter duas reservas no " +
+              "mesmo bloco; e a secretaria quer saber quem fez cada reserva, e quando.",
+            problemCode: {
+              language: "javascript",
+              filename: "room-booking.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "db.exec(\"PRAGMA foreign_keys = ON\");",
+                "",
+                "// Requisitos:",
+                "// - salas têm nome (único) e capacidade (maior que zero)",
+                "// - professores têm nome e e-mail (único)",
+                "// - um professor reserva uma sala para um bloco de horário (ex.: \"2026-10-01 08:00\")",
+                "// - uma sala não pode ter duas reservas no mesmo bloco",
+                "// - é preciso saber quem fez cada reserva e quando ela foi feita",
+                "db.exec(`",
+                "  -- escreva aqui as tabelas",
+                "`);",
+              ].join("\n"),
+            },
+            task:
+              "Escreva o modelo: as tabelas, as chaves e as constraints que garantem as regras. Depois, mostre que uma " +
+              "segunda reserva da mesma sala, no mesmo bloco, é recusada.",
+            hint:
+              "Salas e professores são entidades; a reserva liga os dois e tem dados próprios (o bloco e o momento em " +
+              "que foi feita). A regra \"uma reserva por sala e bloco\" é um `UNIQUE` composto.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "room-booking.fixed.js",
+                code: [
+                  "db.exec(`",
+                  "  CREATE TABLE rooms (",
+                  "    id INTEGER PRIMARY KEY,",
+                  "    name TEXT NOT NULL UNIQUE,",
+                  "    capacity INTEGER NOT NULL CHECK (capacity > 0)",
+                  "  );",
+                  "  CREATE TABLE teachers (",
+                  "    id INTEGER PRIMARY KEY,",
+                  "    name TEXT NOT NULL,",
+                  "    email TEXT NOT NULL UNIQUE",
+                  "  );",
+                  "  CREATE TABLE bookings (",
+                  "    id INTEGER PRIMARY KEY,",
+                  "    room_id INTEGER NOT NULL REFERENCES rooms(id),",
+                  "    teacher_id INTEGER NOT NULL REFERENCES teachers(id),",
+                  "    slot_start TEXT NOT NULL,",
+                  "    created_at TEXT NOT NULL DEFAULT (datetime('now')),",
+                  "    UNIQUE (room_id, slot_start)",
+                  "  );",
+                  "`);",
+                  "",
+                  "db.prepare(\"INSERT INTO rooms (name, capacity) VALUES (?, ?)\").run(\"Laboratório 1\", 30);",
+                  "db.prepare(\"INSERT INTO teachers (name, email) VALUES (?, ?)\").run(\"Ana\", \"ana@escola.test\");",
+                  "db.prepare(\"INSERT INTO teachers (name, email) VALUES (?, ?)\").run(\"Bruno\", \"bruno@escola.test\");",
+                  "",
+                  "const book = db.prepare(\"INSERT INTO bookings (room_id, teacher_id, slot_start) VALUES (?, ?, ?)\");",
+                  "book.run(1, 1, \"2026-10-01 08:00\");",
+                  "try { book.run(1, 2, \"2026-10-01 08:00\"); }",
+                  "catch (error) { error.message; }   // \"UNIQUE constraint failed: bookings.room_id, bookings.slot_start\"",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada regra do texto virou uma parte do esquema: a unicidade do nome, o `CHECK` da capacidade, as chaves " +
+                "estrangeiras e o `UNIQUE` composto que impede duas reservas da mesma sala no mesmo bloco. \"Quem fez\" é a " +
+                "chave do professor, e \"quando\" é o `created_at`. Reservas com duração livre, que podem se sobrepor em " +
+                "parte, pediriam uma regra mais forte, como as constraints de exclusão do PostgreSQL.",
+            },
+          },
         }),
-        concept({ order: 20, title: "Relationship Cardinality (1:1 / 1:N / N:M)", requires: ["Database Fundamentals / Foreign Key"], subtopics: ["1:1 (quando faz sentido)", "1:N (FK no lado 'muitos')", "N:M (tabela de junção, atributos na junção)"], note: "consolidada (A4)" }),
-        concept({ order: 30, title: "Normalization", requires: ["Relationship Cardinality (1:1 / 1:N / N:M)"], note: "anomalias de inserção/atualização/remoção" }),
-        concept({ order: 40, title: "Normal Forms (1NF / 2NF / 3NF)", requires: ["Normalization"], subtopics: ["1NF: valores atômicos", "2NF: sem dependência parcial da PK", "3NF: sem dependência transitiva", "BCNF (menção)"], note: "consolidada (A5)" }),
-        concept({ order: 50, title: "Denormalization", requires: ["Normal Forms (1NF / 2NF / 3NF)"], note: "trade-off leitura × escrita/consistência — mesma tensão de Caching", revisit: ["Platform / Caching"] }),
-        concept({ order: 60, title: "Natural vs Surrogate Key", requires: ["Database Fundamentals / Primary Key"], note: "UUID vs auto-incremento; implicações de índice" }),
+        concept({
+          order: 20,
+          title: "Relationship Cardinality (1:1 / 1:N / N:M)",
+          requires: ["Database Fundamentals / Foreign Key"],
+          subtopics: ["1:1 (quando faz sentido)", "1:N (FK no lado 'muitos')", "N:M (tabela de junção, atributos na junção)"],
+          note: "consolidada (A4)",
+          summary:
+            "Quantas linhas de uma tabela podem se ligar a quantas de outra — um para um, um para muitos ou muitos " +
+            "para muitos — e onde fica, em cada caso, a chave estrangeira que registra a relação.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "A cardinalidade descreve a quantidade em uma relação entre duas entidades. Em um para muitos (1:N), um " +
+                "cliente tem vários pedidos, e cada pedido é de um só cliente. Em muitos para muitos (N:M), um aluno " +
+                "cursa várias disciplinas, e cada disciplina tem vários alunos. Em um para um (1:1), cada usuário tem no " +
+                "máximo um perfil, e cada perfil é de um só usuário. Junto da quantidade vem a obrigatoriedade: um pedido " +
+                "precisa ter um cliente, mas um cliente pode ainda não ter pedidos.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "A cardinalidade decide onde fica a chave estrangeira: no lado \"muitos\" em 1:N, em uma tabela de junção " +
+                "em N:M, e com um `UNIQUE` em 1:1.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "list",
+              items: [
+                "1:N — a chave estrangeira fica na tabela do lado \"muitos\": `orders.customer_id` aponta para `customers.id`. Se ela for `NOT NULL`, todo pedido precisa de um cliente.",
+                "N:M — nenhuma das duas tabelas consegue guardar a relação sozinha; uma tabela de junção guarda um par de chaves estrangeiras por ligação, e a chave composta impede pares repetidos.",
+                "1:1 — uma chave estrangeira com `UNIQUE`, ou que seja ela mesma a chave primária, garante que cada linha do outro lado aparece no máximo uma vez.",
+              ],
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "cardinality.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "db.exec(\"PRAGMA foreign_keys = ON\");",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE users (id INTEGER PRIMARY KEY, email TEXT NOT NULL UNIQUE);",
+                "",
+                "  -- 1:1 — a chave primária do perfil é também a chave estrangeira: no máximo um perfil por usuário",
+                "  CREATE TABLE profiles (",
+                "    user_id INTEGER PRIMARY KEY REFERENCES users(id),",
+                "    bio TEXT",
+                "  );",
+                "",
+                "  -- 1:N — a chave estrangeira fica no lado \"muitos\"",
+                "  CREATE TABLE posts (",
+                "    id INTEGER PRIMARY KEY,",
+                "    author_id INTEGER NOT NULL REFERENCES users(id),",
+                "    title TEXT NOT NULL",
+                "  );",
+                "",
+                "  -- N:M — uma tabela de junção, com uma linha por ligação",
+                "  CREATE TABLE tags (id INTEGER PRIMARY KEY, name TEXT NOT NULL UNIQUE);",
+                "  CREATE TABLE post_tags (",
+                "    post_id INTEGER NOT NULL REFERENCES posts(id),",
+                "    tag_id INTEGER NOT NULL REFERENCES tags(id),",
+                "    PRIMARY KEY (post_id, tag_id)",
+                "  );",
+                "`);",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O banco não tem um comando para \"um para muitos\": a cardinalidade é o efeito combinado de onde a chave " +
+                "estrangeira está, de ela aceitar ou não `NULL` e de haver ou não um `UNIQUE`.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "1:N é a relação mais comum: um pai com vários filhos que pertencem a um só pai, como cliente e pedidos, ou post e comentários.",
+                "N:M quando os dois lados se repetem livremente, como alunos e disciplinas, ou produtos e categorias.",
+                "1:1 para separar dados opcionais ou pouco lidos da tabela principal, ou dados com regras de acesso diferentes, como dados sensíveis.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Um 1:1 sem motivo claro só divide uma entidade em duas tabelas e acrescenta um `JOIN` a cada leitura; na dúvida, mantenha as colunas juntas.",
+                "Um N:M raramente fica \"puro\": quando a ligação ganha dados próprios, como a nota de uma matrícula, a tabela de junção vira uma entidade e merece um nome do negócio.",
+                "As chaves garantem o máximo, mas não o mínimo: \"todo pedido tem pelo menos um item\" não se expressa com chaves, e fica na aplicação, que cria os dois na mesma transação.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "A chave estrangeira no lado errado",
+              context: "Pôr a referência no lado \"um\" limita a relação a um único filho.",
+              code: {
+                language: "javascript",
+                filename: "fk-side.js",
+                code: [
+                  "// Errado: o cliente aponta para o pedido — só cabe um pedido por cliente",
+                  "const wrong = `",
+                  "  CREATE TABLE orders (id INTEGER PRIMARY KEY, placed_at TEXT NOT NULL);",
+                  "  CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL, order_id INTEGER REFERENCES orders(id));",
+                  "`;",
+                  "// O passo seguinte costuma piorar: order_id_2, order_id_3... ou uma lista de ids em texto",
+                  "",
+                  "// Certo: cada pedido aponta para o seu cliente, e um cliente pode ter quantos pedidos forem",
+                  "const right = `",
+                  "  CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
+                  "  CREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER NOT NULL REFERENCES customers(id), placed_at TEXT NOT NULL);",
+                  "`;",
+                  "db.exec(right);",
+                  "",
+                  "db.prepare(\"SELECT id, placed_at FROM orders WHERE customer_id = ?\").all(1);   // todos os pedidos do cliente 1",
+                ].join("\n"),
+              },
+              explanation:
+                "A pergunta que resolve é \"de quantos pais um filho pode ser?\". Se a resposta é um, a referência mora no " +
+                "filho: um pedido tem um só cliente, e por isso é o pedido que guarda `customer_id`.",
+            },
+            {
+              title: "Quando a ligação tem dados próprios",
+              context: "A matrícula não é só um par aluno–disciplina: ela tem semestre e nota.",
+              code: {
+                language: "javascript",
+                filename: "enrollments.js",
+                code: [
+                  "db.exec(`",
+                  "  CREATE TABLE students (id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
+                  "  CREATE TABLE courses (id INTEGER PRIMARY KEY, title TEXT NOT NULL);",
+                  "",
+                  "  -- A tabela de junção virou uma entidade do negócio: a matrícula",
+                  "  CREATE TABLE enrollments (",
+                  "    student_id INTEGER NOT NULL REFERENCES students(id),",
+                  "    course_id INTEGER NOT NULL REFERENCES courses(id),",
+                  "    term TEXT NOT NULL,                              -- ex.: \"2026.2\"",
+                  "    grade REAL CHECK (grade BETWEEN 0 AND 10),       -- vazia até o fim do semestre",
+                  "    PRIMARY KEY (student_id, course_id, term)        -- pode refazer a disciplina em outro semestre",
+                  "  );",
+                  "`);",
+                  "",
+                  "db.prepare(`",
+                  "  SELECT s.name, e.term, e.grade",
+                  "  FROM enrollments e JOIN students s ON s.id = e.student_id",
+                  "  WHERE e.course_id = ?",
+                  "  ORDER BY e.term, s.name",
+                  "`).all(1);",
+                ].join("\n"),
+              },
+              explanation:
+                "Os atributos que pertencem à ligação, e não a um dos lados, moram na tabela de junção: a nota é do aluno " +
+                "naquela disciplina, naquele semestre. Incluir `term` na chave muda a regra de negócio: o aluno pode " +
+                "cursar a mesma disciplina de novo, em outro semestre.",
+            },
+            {
+              title: "Um para um de verdade",
+              context: "Sem o `UNIQUE`, a relação que parece 1:1 aceita vários registros por usuário.",
+              code: {
+                language: "javascript",
+                filename: "one-to-one.js",
+                code: [
+                  "db.exec(`",
+                  "  CREATE TABLE users (id INTEGER PRIMARY KEY, email TEXT NOT NULL UNIQUE);",
+                  "  CREATE TABLE billing_details (",
+                  "    id INTEGER PRIMARY KEY,",
+                  "    user_id INTEGER NOT NULL UNIQUE REFERENCES users(id),   -- UNIQUE: no máximo um por usuário",
+                  "    tax_id TEXT NOT NULL",
+                  "  );",
+                  "`);",
+                  "",
+                  "db.prepare(\"INSERT INTO users (email) VALUES (?)\").run(\"ana@example.test\");",
+                  "const insert = db.prepare(\"INSERT INTO billing_details (user_id, tax_id) VALUES (?, ?)\");",
+                  "insert.run(1, \"123.456.789-09\");",
+                  "try { insert.run(1, \"987.654.321-00\"); }",
+                  "catch (error) { error.message; }   // \"UNIQUE constraint failed: billing_details.user_id\"",
+                ].join("\n"),
+              },
+              explanation:
+                "Os dados de cobrança ficam em outra tabela porque são opcionais e sensíveis, e só alguns serviços " +
+                "precisam lê-los. O `UNIQUE` na chave estrangeira é o que transforma um 1:N em 1:1; sem ele, o banco " +
+                "aceita o segundo registro sem reclamar.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Uma livraria vai registrar livros e autores. Um livro pode ter vários autores, em uma ordem definida " +
+              "(primeiro autor, segundo autor), e um autor escreve vários livros. Cada livro tem várias edições, e cada " +
+              "edição é de um só livro. A primeira versão do esquema guarda os autores nas colunas `author1`, `author2` " +
+              "e `author3`.",
+            problemCode: {
+              language: "javascript",
+              filename: "books.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE books (",
+                "    id INTEGER PRIMARY KEY,",
+                "    title TEXT NOT NULL,",
+                "    author1 TEXT,",
+                "    author2 TEXT,",
+                "    author3 TEXT,",
+                "    edition_year INTEGER   -- e a 2ª edição? outra linha com o mesmo título?",
+                "  );",
+                "`);",
+              ].join("\n"),
+            },
+            task:
+              "Identifique a cardinalidade de cada relação (livro–autor e livro–edição) e reescreva o esquema, " +
+              "guardando a ordem de autoria e sem limite de autores ou de edições. Escreva a consulta que lista os " +
+              "autores de um livro na ordem certa.",
+            hint:
+              "Livro–autor é N:M, e a ordem de autoria é um dado da ligação: vai para a tabela de junção. Livro–edição " +
+              "é 1:N: a chave estrangeira fica na edição.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "books.fixed.js",
+                code: [
+                  "import { DatabaseSync } from \"node:sqlite\";",
+                  "const db = new DatabaseSync(\":memory:\");",
+                  "db.exec(\"PRAGMA foreign_keys = ON\");",
+                  "",
+                  "db.exec(`",
+                  "  CREATE TABLE books (id INTEGER PRIMARY KEY, title TEXT NOT NULL);",
+                  "  CREATE TABLE authors (id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
+                  "",
+                  "  -- N:M, com a ordem de autoria na ligação",
+                  "  CREATE TABLE book_authors (",
+                  "    book_id INTEGER NOT NULL REFERENCES books(id),",
+                  "    author_id INTEGER NOT NULL REFERENCES authors(id),",
+                  "    position INTEGER NOT NULL CHECK (position >= 1),",
+                  "    PRIMARY KEY (book_id, author_id),",
+                  "    UNIQUE (book_id, position)            -- não há dois \"primeiros autores\"",
+                  "  );",
+                  "",
+                  "  -- 1:N: a edição aponta para o livro",
+                  "  CREATE TABLE editions (",
+                  "    id INTEGER PRIMARY KEY,",
+                  "    book_id INTEGER NOT NULL REFERENCES books(id),",
+                  "    number INTEGER NOT NULL,",
+                  "    year INTEGER NOT NULL,",
+                  "    UNIQUE (book_id, number)",
+                  "  );",
+                  "`);",
+                  "",
+                  "db.exec(`",
+                  "  INSERT INTO books (id, title) VALUES (1, 'Bancos de Dados na Prática');",
+                  "  INSERT INTO authors (id, name) VALUES (1, 'Bruno Lima'), (2, 'Ana Souza');",
+                  "  INSERT INTO book_authors (book_id, author_id, position) VALUES (1, 2, 1), (1, 1, 2);",
+                  "  INSERT INTO editions (book_id, number, year) VALUES (1, 1, 2019), (1, 2, 2024);",
+                  "`);",
+                  "",
+                  "db.prepare(`",
+                  "  SELECT a.name",
+                  "  FROM book_authors ba JOIN authors a ON a.id = ba.author_id",
+                  "  WHERE ba.book_id = ?",
+                  "  ORDER BY ba.position",
+                  "`).all(1);   // [{ name: \"Ana Souza\" }, { name: \"Bruno Lima\" }]",
+                ].join("\n"),
+              },
+              explanation:
+                "As colunas `author1` a `author3` limitavam o número de autores e obrigavam a olhar três colunas para " +
+                "responder \"quais livros este autor escreveu?\". Com a tabela de junção, a relação não tem limite, e a " +
+                "ordem é um dado da ligação, protegido por um `UNIQUE`. As edições ganharam a sua tabela e deixaram de " +
+                "repetir o título do livro.",
+            },
+          },
+        }),
+        concept({
+          order: 30,
+          title: "Normalization",
+          requires: ["Relationship Cardinality (1:1 / 1:N / N:M)"],
+          note: "anomalias de inserção/atualização/remoção",
+          summary:
+            "O processo de organizar as tabelas para que cada fato seja guardado em um só lugar — separando o que " +
+            "depende de coisas diferentes —, e assim evitar as anomalias de inserção, de atualização e de remoção.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Normalizar é reorganizar as tabelas até que cada fato fique registrado uma única vez. A ferramenta de " +
+                "análise é a dependência funcional: dizer que o professor depende da disciplina (`course_id → professor`) " +
+                "significa que, conhecida a disciplina, o professor está determinado. Quando uma tabela guarda fatos que " +
+                "dependem de coisas diferentes, ela os repete, e a normalização a divide em tabelas em que cada coluna " +
+                "depende só da chave. As formas normais (1NF, 2NF, 3NF) são as regras que tornam esse processo " +
+                "sistemático.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Cada fato em um só lugar: se a mesma informação aparece em várias linhas, uma mudança precisa acertar " +
+                "todas, e o banco não tem como garantir que isso aconteça.",
+            },
+            { type: "heading", text: "Por que importa" },
+            {
+              type: "paragraph",
+              text: "Uma tabela que mistura assuntos sofre de três anomalias:",
+            },
+            {
+              type: "list",
+              items: [
+                "Anomalia de atualização: o mesmo dado repetido em várias linhas precisa mudar em todas; se uma escapa, o banco passa a ter duas versões da verdade.",
+                "Anomalia de inserção: não é possível registrar um fato sem outro, como cadastrar uma disciplina que ainda não tem alunos.",
+                "Anomalia de remoção: apagar uma linha apaga junto um fato que só existia nela, como o professor de uma disciplina cujo único aluno saiu.",
+              ],
+            },
+            { type: "heading", text: "Na prática" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "normalization.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "// Antes: uma tabela, três assuntos (aluno, disciplina e matrícula)",
+                "// enrollments(student_id, student_name, course_id, course_title, professor, grade)",
+                "//   (1, \"Ana\",   10, \"Bancos de Dados\", \"Prof. Lima\", 9.0)",
+                "//   (2, \"Bruno\", 10, \"Bancos de Dados\", \"Prof. Lima\", 7.5)",
+                "// → trocar o professor exige alterar as duas linhas; uma disciplina sem alunos não tem onde existir",
+                "",
+                "// Depois: cada fato em um só lugar",
+                "db.exec(`",
+                "  CREATE TABLE students (id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
+                "  CREATE TABLE courses (id INTEGER PRIMARY KEY, title TEXT NOT NULL, professor TEXT NOT NULL);",
+                "  CREATE TABLE enrollments (",
+                "    student_id INTEGER NOT NULL REFERENCES students(id),",
+                "    course_id INTEGER NOT NULL REFERENCES courses(id),",
+                "    grade REAL,",
+                "    PRIMARY KEY (student_id, course_id)",
+                "  );",
+                "`);",
+                "",
+                "// Trocar o professor passa a ser uma alteração em uma linha",
+                "db.prepare(\"UPDATE courses SET professor = ? WHERE id = ?\").run(\"Prof. Rocha\", 10);",
+                "",
+                "// A visão \"achatada\" continua disponível — por consulta, e não por cópia",
+                "db.prepare(`",
+                "  SELECT s.name, c.title, c.professor, e.grade",
+                "  FROM enrollments e",
+                "  JOIN students s ON s.id = e.student_id",
+                "  JOIN courses c ON c.id = e.course_id",
+                "`).all();",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A normalização não perde informação: o `JOIN` reconstrói a tabela original a qualquer momento. O que " +
+                "muda é que cada fato tem um só dono, e a consistência deixa de depender do cuidado de quem escreve.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "Normalizar demais, separando em tabelas o que não se repete nem muda, como as partes de um nome, só acrescenta `JOIN`s, sem evitar anomalia nenhuma.",
+                "Nem toda repetição é redundância: o preço cobrado em um pedido antigo é um fato histórico, e não uma cópia do preço atual do produto.",
+                "Textos iguais não são, por si, o mesmo fato: o que indica redundância é a dependência, e não a coincidência de valores, como dois clientes com o mesmo sobrenome.",
+                "A normalização é o ponto de partida para dados que são escritos; desfazê-la de propósito, para acelerar leituras, é a denormalização, com os custos dela.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "As três anomalias, uma de cada vez",
+              context: "A tabela única de matrículas falha de três jeitos diferentes.",
+              code: {
+                language: "javascript",
+                filename: "anomalies.js",
+                code: [
+                  "db.exec(`",
+                  "  CREATE TABLE enrollments_flat (",
+                  "    student_id INTEGER, student_name TEXT,",
+                  "    course_id INTEGER, course_title TEXT, professor TEXT,",
+                  "    grade REAL",
+                  "  );",
+                  "  INSERT INTO enrollments_flat VALUES",
+                  "    (1, 'Ana',   10, 'Bancos de Dados', 'Prof. Lima', 9.0),",
+                  "    (2, 'Bruno', 10, 'Bancos de Dados', 'Prof. Lima', 7.5),",
+                  "    (2, 'Bruno', 20, 'Redes',           'Prof. Reis', 8.0);",
+                  "`);",
+                  "",
+                  "// Atualização: um UPDATE que esquece uma linha deixa dois professores na mesma disciplina",
+                  "db.exec(\"UPDATE enrollments_flat SET professor = 'Prof. Rocha' WHERE course_id = 10 AND student_id = 1\");",
+                  "db.prepare(\"SELECT DISTINCT professor FROM enrollments_flat WHERE course_id = 10\").all();",
+                  "// [{ professor: \"Prof. Rocha\" }, { professor: \"Prof. Lima\" }]",
+                  "",
+                  "// Inserção: uma disciplina nova, sem alunos, só entra com student_id nulo (uma linha \"fantasma\")",
+                  "",
+                  "// Remoção: se Bruno trancar Redes, apagar a linha dele apaga também quem era o professor de Redes",
+                  "db.exec(\"DELETE FROM enrollments_flat WHERE student_id = 2 AND course_id = 20\");",
+                  "db.prepare(\"SELECT professor FROM enrollments_flat WHERE course_id = 20\").all();   // [] — o fato sumiu",
+                ].join("\n"),
+              },
+              explanation:
+                "As três falhas têm a mesma causa: fatos sobre a disciplina (título e professor) moram na linha da " +
+                "matrícula. Com a disciplina em uma tabela própria, o professor muda em um só lugar, e a disciplina " +
+                "existe antes do primeiro aluno e depois da saída do último.",
+            },
+            {
+              title: "Dependência funcional: o que determina o quê",
+              context: "Escrever as dependências mostra onde cada coluna deveria morar.",
+              code: {
+                language: "text",
+                filename: "dependencies.txt",
+                code: [
+                  "Tabela: shipments(tracking_code, recipient_name, weight_grams, postal_code, city, state)",
+                  "Chave:  tracking_code",
+                  "",
+                  "Dependências:",
+                  "  tracking_code → recipient_name, weight_grams, postal_code",
+                  "  postal_code   → city, state          (o CEP determina a cidade e o estado)",
+                  "",
+                  "city e state não dependem da remessa, e sim do CEP: repetem-se em cada remessa para o mesmo CEP.",
+                  "",
+                  "Decomposição:",
+                  "  shipments(tracking_code, recipient_name, weight_grams, postal_code)",
+                  "  postal_codes(postal_code, city, state)",
+                ].join("\n"),
+              },
+              explanation:
+                "A pergunta \"conhecido X, Y fica determinado?\" é a mesma que as formas normais formalizam. Cada grupo de " +
+                "colunas que depende do mesmo determinante vira uma tabela, com o determinante como chave, e a tabela " +
+                "original guarda só a referência.",
+            },
+            {
+              title: "Normalizar não é criar uma tabela para cada coluna",
+              context: "Separar o que não se repete nem muda só custa `JOIN`s.",
+              code: {
+                language: "javascript",
+                filename: "over-normalized.js",
+                code: [
+                  "// Excesso: o nome do cliente em outra tabela, sem nenhum ganho",
+                  "const overNormalized = `",
+                  "  CREATE TABLE customer_names (id INTEGER PRIMARY KEY, first_name TEXT, last_name TEXT);",
+                  "  CREATE TABLE customers (id INTEGER PRIMARY KEY, name_id INTEGER REFERENCES customer_names(id), email TEXT);",
+                  "`;",
+                  "// Cada nome pertence a um só cliente: não há repetição, e portanto não há anomalia a evitar.",
+                  "",
+                  "// Suficiente: o nome é um atributo do cliente",
+                  "const enough = `",
+                  "  CREATE TABLE customers (",
+                  "    id INTEGER PRIMARY KEY,",
+                  "    first_name TEXT NOT NULL,",
+                  "    last_name TEXT NOT NULL,",
+                  "    email TEXT NOT NULL UNIQUE",
+                  "  );",
+                  "`;",
+                  "db.exec(enough);",
+                ].join("\n"),
+              },
+              explanation:
+                "A normalização remove fatos repetidos, e não colunas. Uma tabela 1:1 obrigatória, sem dados opcionais " +
+                "nem regras de acesso diferentes, costuma ser só uma entidade partida ao meio.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Uma clínica importou para o banco a planilha de consultas: cada linha tem os dados do paciente, do " +
+              "médico e da especialidade. A recepção reclama que o telefone de um mesmo paciente aparece diferente em " +
+              "consultas diferentes.",
+            problemCode: {
+              language: "javascript",
+              filename: "appointments.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE appointments (",
+                "    id INTEGER PRIMARY KEY,",
+                "    scheduled_at TEXT NOT NULL,",
+                "    patient_cpf TEXT NOT NULL,",
+                "    patient_name TEXT NOT NULL,",
+                "    patient_phone TEXT NOT NULL,",
+                "    doctor_crm TEXT NOT NULL,",
+                "    doctor_name TEXT NOT NULL,",
+                "    doctor_specialty TEXT NOT NULL",
+                "  );",
+                "`);",
+              ].join("\n"),
+            },
+            task:
+              "Liste as dependências funcionais, normalize o esquema e escreva a consulta que devolve a agenda de um " +
+              "dia com o nome e o telefone do paciente e o nome do médico. Mostre que atualizar o telefone passa a ser " +
+              "uma única alteração.",
+            hint:
+              "O CPF determina o nome e o telefone do paciente; o CRM determina o nome e a especialidade do médico. A " +
+              "consulta fica só com o que é dela: o horário e as duas referências.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "appointments.fixed.js",
+                code: [
+                  "import { DatabaseSync } from \"node:sqlite\";",
+                  "const db = new DatabaseSync(\":memory:\");",
+                  "",
+                  "// patient_cpf → patient_name, patient_phone",
+                  "// doctor_crm  → doctor_name, doctor_specialty",
+                  "db.exec(`",
+                  "  CREATE TABLE patients (",
+                  "    id INTEGER PRIMARY KEY,",
+                  "    cpf TEXT NOT NULL UNIQUE,",
+                  "    name TEXT NOT NULL,",
+                  "    phone TEXT NOT NULL",
+                  "  );",
+                  "  CREATE TABLE doctors (",
+                  "    id INTEGER PRIMARY KEY,",
+                  "    crm TEXT NOT NULL UNIQUE,",
+                  "    name TEXT NOT NULL,",
+                  "    specialty TEXT NOT NULL",
+                  "  );",
+                  "  CREATE TABLE appointments (",
+                  "    id INTEGER PRIMARY KEY,",
+                  "    scheduled_at TEXT NOT NULL,",
+                  "    patient_id INTEGER NOT NULL REFERENCES patients(id),",
+                  "    doctor_id INTEGER NOT NULL REFERENCES doctors(id)",
+                  "  );",
+                  "`);",
+                  "",
+                  "// O telefone mora em um só lugar",
+                  "db.prepare(\"UPDATE patients SET phone = ? WHERE cpf = ?\").run(\"(11) 98888-0000\", \"123.456.789-09\");",
+                  "",
+                  "// A agenda do dia, reconstruída por JOIN",
+                  "db.prepare(`",
+                  "  SELECT a.scheduled_at, p.name AS patient, p.phone, d.name AS doctor",
+                  "  FROM appointments a",
+                  "  JOIN patients p ON p.id = a.patient_id",
+                  "  JOIN doctors d ON d.id = a.doctor_id",
+                  "  WHERE date(a.scheduled_at) = ?",
+                  "  ORDER BY a.scheduled_at",
+                  "`).all(\"2026-10-01\");",
+                ].join("\n"),
+              },
+              explanation:
+                "O telefone divergia porque era copiado em cada consulta. Agora ele é um fato do paciente, guardado uma " +
+                "vez, e toda consulta o enxerga pelo `JOIN`. CPF e CRM ganharam `UNIQUE`, e as chaves primárias servem de " +
+                "referência. A especialidade poderia ir para uma tabela própria se precisasse de dados além do nome.",
+            },
+          },
+        }),
+        concept({
+          order: 40,
+          title: "Normal Forms (1NF / 2NF / 3NF)",
+          requires: ["Normalization"],
+          subtopics: ["1NF: valores atômicos", "2NF: sem dependência parcial da PK", "3NF: sem dependência transitiva", "BCNF (menção)"],
+          note: "consolidada (A5)",
+          summary:
+            "As regras que tornam a normalização verificável: valores atômicos (1NF), nenhuma coluna dependendo de só " +
+            "uma parte da chave (2NF) e nenhuma coluna dependendo de outra coluna que não é chave (3NF).",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "As formas normais são critérios cumulativos: uma tabela na 3NF também está na 2NF e na 1NF. Cada forma " +
+                "elimina um tipo de dependência que causa repetição. Na prática, chegar à terceira forma normal resolve a " +
+                "grande maioria dos problemas de um esquema transacional; as formas seguintes, como a BCNF, tratam de " +
+                "casos mais raros.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Toda coluna deve depender da chave, da chave inteira e de nada além da chave: essa frase resume a 1NF, a " +
+                "2NF e a 3NF.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "list",
+              items: [
+                "1NF — cada coluna guarda um único valor (atômico), sem listas nem grupos repetidos (`phone1`, `phone2`, `phone3`), e cada linha é identificável por uma chave.",
+                "2NF — está na 1NF, e nenhuma coluna depende de só uma parte de uma chave composta; só se aplica a tabelas cuja chave tem mais de uma coluna.",
+                "3NF — está na 2NF, e nenhuma coluna que não é chave depende de outra coluna que não é chave (a dependência transitiva `id → cep → cidade`).",
+                "BCNF — uma versão mais estrita da 3NF: todo determinante precisa ser uma chave candidata; a diferença aparece em tabelas com várias chaves candidatas que se sobrepõem.",
+              ],
+            },
+            {
+              type: "code",
+              language: "text",
+              filename: "normal-forms.txt",
+              code: [
+                "Tabela: order_items(order_id, product_id, product_name, customer_id, customer_email, unit_price_cents, quantity)",
+                "Chave:  (order_id, product_id)",
+                "",
+                "1NF ✓  valores atômicos, linhas identificáveis pela chave",
+                "2NF ✗  product_name    depende só de product_id   (parte da chave)",
+                "       customer_id     depende só de order_id     (parte da chave)",
+                "3NF ✗  customer_email  depende de customer_id     (que não é chave)",
+                "",
+                "Decomposição (3NF):",
+                "  order_items(order_id, product_id, unit_price_cents, quantity)",
+                "  products(product_id, product_name)",
+                "  orders(order_id, customer_id)",
+                "  customers(customer_id, customer_email)",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Quantidade e preço cobrado dependem do par (pedido, produto), e ficam no item. Cada uma das outras " +
+                "colunas foi para a tabela da coisa de que ela realmente depende.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Ao desenhar as tabelas de um sistema transacional, em que os dados são escritos com frequência e a consistência importa: a 3NF é o ponto de partida padrão.",
+                "Para revisar um esquema existente: percorrer as colunas perguntando \"depende da chave, da chave inteira e só da chave?\" aponta as tabelas com anomalias.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Bases analíticas (data warehouses) usam de propósito esquemas denormalizados, como o esquema estrela, porque são carregadas em lote e lidas em grandes consultas.",
+                "O que é atômico depende do uso: um endereço em uma só coluna de texto é aceitável até alguém precisar filtrar pela cidade.",
+                "As formas normais verificam dependências, e não se o modelo representa bem o negócio: uma tabela pode estar na 3NF e ainda assim modelar o conceito errado.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "1NF: o grupo repetido",
+              context: "Colunas numeradas são uma lista com tamanho fixo.",
+              code: {
+                language: "javascript",
+                filename: "first-normal-form.js",
+                code: [
+                  "// Fora da 1NF: um grupo repetido de colunas",
+                  "const before = \"CREATE TABLE contacts (id INTEGER PRIMARY KEY, name TEXT, phone1 TEXT, phone2 TEXT, phone3 TEXT)\";",
+                  "// Quem tem o telefone X? WHERE phone1 = ? OR phone2 = ? OR phone3 = ? — e o quarto telefone não cabe",
+                  "",
+                  "// Na 1NF: um telefone por linha, em uma tabela filha",
+                  "db.exec(`",
+                  "  CREATE TABLE contacts (id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
+                  "  CREATE TABLE contact_phones (",
+                  "    contact_id INTEGER NOT NULL REFERENCES contacts(id),",
+                  "    phone TEXT NOT NULL,",
+                  "    kind TEXT NOT NULL CHECK (kind IN ('mobile', 'home', 'work')),",
+                  "    PRIMARY KEY (contact_id, phone)",
+                  "  );",
+                  "`);",
+                  "",
+                  "db.prepare(`",
+                  "  SELECT c.name FROM contact_phones p JOIN contacts c ON c.id = p.contact_id WHERE p.phone = ?",
+                  "`).all(\"(11) 99999-0000\");",
+                ].join("\n"),
+              },
+              explanation:
+                "As colunas numeradas são a mesma lista separada por vírgulas, só que com um limite fixo. Na tabela " +
+                "filha, cada telefone é uma linha, que pode ter um tipo, ser indexada e ser buscada com uma condição só.",
+            },
+            {
+              title: "2NF: a dependência parcial",
+              context: "Em uma chave composta, uma coluna que depende de só uma parte dela se repete.",
+              code: {
+                language: "javascript",
+                filename: "second-normal-form.js",
+                code: [
+                  "// Chave: (employee_id, project_id)",
+                  "// hours depende da chave inteira; employee_name, só de employee_id; project_deadline, só de project_id",
+                  "const before = `",
+                  "  CREATE TABLE assignments (",
+                  "    employee_id INTEGER, project_id INTEGER,",
+                  "    employee_name TEXT, project_deadline TEXT,",
+                  "    hours INTEGER,",
+                  "    PRIMARY KEY (employee_id, project_id)",
+                  "  )`;",
+                  "",
+                  "// Na 2NF: o que depende de uma parte da chave vai para a tabela daquela parte",
+                  "db.exec(`",
+                  "  CREATE TABLE employees (id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
+                  "  CREATE TABLE projects (id INTEGER PRIMARY KEY, deadline TEXT NOT NULL);",
+                  "  CREATE TABLE assignments (",
+                  "    employee_id INTEGER NOT NULL REFERENCES employees(id),",
+                  "    project_id INTEGER NOT NULL REFERENCES projects(id),",
+                  "    hours INTEGER NOT NULL,",
+                  "    PRIMARY KEY (employee_id, project_id)",
+                  "  );",
+                  "`);",
+                ].join("\n"),
+              },
+              explanation:
+                "Na versão antiga, adiar um projeto exigia alterar uma linha por pessoa alocada nele. Uma tabela cuja " +
+                "chave tem uma coluna só está automaticamente na 2NF: a dependência parcial só existe em chaves " +
+                "compostas.",
+            },
+            {
+              title: "3NF: a dependência transitiva",
+              context: "Uma coluna que descreve outra coluna, e não a linha, está no lugar errado.",
+              code: {
+                language: "javascript",
+                filename: "third-normal-form.js",
+                code: [
+                  "// Fora da 3NF: department_name e floor dependem de department_id, e não do funcionário",
+                  "const before = \"CREATE TABLE employees (id INTEGER PRIMARY KEY, name TEXT, department_id INTEGER, department_name TEXT, floor INTEGER)\";",
+                  "//   id → department_id → (department_name, floor): uma dependência transitiva",
+                  "",
+                  "db.exec(`",
+                  "  CREATE TABLE departments (id INTEGER PRIMARY KEY, name TEXT NOT NULL, floor INTEGER NOT NULL);",
+                  "  CREATE TABLE employees (",
+                  "    id INTEGER PRIMARY KEY,",
+                  "    name TEXT NOT NULL,",
+                  "    department_id INTEGER NOT NULL REFERENCES departments(id)",
+                  "  );",
+                  "`);",
+                ].join("\n"),
+              },
+              explanation:
+                "Mudar o departamento de andar exigia alterar todos os seus funcionários, e um departamento recém-criado, " +
+                "ainda sem ninguém, não tinha onde ser registrado. Uma pista frequente da violação da 3NF é um grupo de " +
+                "colunas com o mesmo prefixo, como `department_*`, que descreve outra coisa.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Uma companhia aérea guarda as passagens em uma tabela só, com a chave formada pelo voo e pelo assento (o " +
+              "código do voo identifica um voo em uma data). Quando um voo muda de horário, é preciso alterar dezenas " +
+              "de linhas, e o modelo da aeronave aparece diferente em passagens do mesmo voo.",
+            problemCode: {
+              language: "javascript",
+              filename: "tickets.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE tickets (",
+                "    flight_code TEXT NOT NULL,",
+                "    seat TEXT NOT NULL,",
+                "    passenger_name TEXT NOT NULL,",
+                "    departure_at TEXT NOT NULL,",
+                "    aircraft_id TEXT NOT NULL,",
+                "    aircraft_model TEXT NOT NULL,",
+                "    PRIMARY KEY (flight_code, seat)",
+                "  );",
+                "`);",
+              ].join("\n"),
+            },
+            task:
+              "Classifique cada coluna: depende da chave inteira, de uma parte dela ou de outra coluna que não é chave? " +
+              "Diga qual forma normal cada caso viola e decomponha o esquema até a 3NF.",
+            hint:
+              "`passenger_name` depende do par (voo, assento). `departure_at` e `aircraft_id` dependem só do voo (2NF). " +
+              "`aircraft_model` depende da aeronave, que depende do voo (3NF).",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "tickets.fixed.js",
+                code: [
+                  "import { DatabaseSync } from \"node:sqlite\";",
+                  "const db = new DatabaseSync(\":memory:\");",
+                  "",
+                  "// passenger_name  ← (flight_code, seat)   ✓ depende da chave inteira",
+                  "// departure_at    ← flight_code           ✗ 2NF: depende de uma parte da chave",
+                  "// aircraft_id     ← flight_code           ✗ 2NF: depende de uma parte da chave",
+                  "// aircraft_model  ← aircraft_id           ✗ 3NF: depende de uma coluna que não é chave",
+                  "",
+                  "db.exec(`",
+                  "  CREATE TABLE aircraft (",
+                  "    id TEXT PRIMARY KEY,",
+                  "    model TEXT NOT NULL",
+                  "  );",
+                  "  CREATE TABLE flights (",
+                  "    code TEXT PRIMARY KEY,",
+                  "    departure_at TEXT NOT NULL,",
+                  "    aircraft_id TEXT NOT NULL REFERENCES aircraft(id)",
+                  "  );",
+                  "  CREATE TABLE tickets (",
+                  "    flight_code TEXT NOT NULL REFERENCES flights(code),",
+                  "    seat TEXT NOT NULL,",
+                  "    passenger_name TEXT NOT NULL,",
+                  "    PRIMARY KEY (flight_code, seat)",
+                  "  );",
+                  "`);",
+                  "",
+                  "// Mudar o horário de um voo: uma linha, qualquer que seja o número de passagens",
+                  "db.prepare(\"UPDATE flights SET departure_at = ? WHERE code = ?\").run(\"2026-10-01 09:30\", \"DV1234-20261001\");",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada fato agora tem um dono: o passageiro é da passagem, o horário e a aeronave são do voo, e o modelo é " +
+                "da aeronave. Remarcar um voo vira a alteração de uma linha, e o modelo da aeronave não tem mais como " +
+                "divergir entre passagens.",
+            },
+          },
+        }),
+        concept({
+          order: 50,
+          title: "Denormalization",
+          requires: ["Normal Forms (1NF / 2NF / 3NF)"],
+          note: "trade-off leitura × escrita/consistência — mesma tensão de Caching",
+          revisit: ["Platform / Caching"],
+          summary:
+            "Repetir de propósito um dado que poderia ser calculado ou buscado por `JOIN`, para tornar certas " +
+            "leituras mais rápidas, assumindo o custo de manter as cópias consistentes a cada escrita.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Denormalizar é guardar de propósito, em mais de um lugar, um dado que o modelo normalizado guardaria uma " +
+                "vez só: o número de comentários em cada post, o nome do autor ao lado do título, o total de um pedido. A " +
+                "leitura fica mais barata, sem `JOIN` nem agregação, e a escrita fica mais cara, porque cada mudança " +
+                "precisa atualizar também as cópias. É a mesma troca de um cache: ganhar velocidade na leitura em troca " +
+                "de ter de manter uma cópia em dia.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Denormalização é uma otimização, e não um ponto de partida: comece normalizado, meça, e só repita um " +
+                "dado quando uma leitura importante precisar, com um plano para manter a cópia correta.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text: "A cópia precisa ser mantida por alguém. As formas mais comuns, da mais segura para a menos:",
+            },
+            {
+              type: "list",
+              items: [
+                "Na mesma transação que altera o dado original: a cópia nunca fica diferente, e a escrita fica um pouco mais lenta.",
+                "Por um gatilho (trigger) do banco, que atualiza a cópia a cada alteração, inclusive as feitas fora da aplicação.",
+                "Por uma visão materializada, que guarda o resultado de uma consulta e é recalculada quando alguém a atualiza.",
+                "De forma assíncrona, por um processo que recalcula depois (uma fila, uma tarefa agendada): a escrita fica rápida, e a cópia fica defasada por um tempo.",
+              ],
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "denormalization.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE posts (",
+                "    id INTEGER PRIMARY KEY,",
+                "    title TEXT NOT NULL,",
+                "    comment_count INTEGER NOT NULL DEFAULT 0   -- cópia: poderia ser um COUNT(*) em comments",
+                "  );",
+                "  CREATE TABLE comments (",
+                "    id INTEGER PRIMARY KEY,",
+                "    post_id INTEGER NOT NULL REFERENCES posts(id),",
+                "    body TEXT NOT NULL",
+                "  );",
+                "`);",
+                "",
+                "function addComment(postId, body) {",
+                "  db.exec(\"BEGIN\");",
+                "  try {",
+                "    db.prepare(\"INSERT INTO comments (post_id, body) VALUES (?, ?)\").run(postId, body);",
+                "    db.prepare(\"UPDATE posts SET comment_count = comment_count + 1 WHERE id = ?\").run(postId);",
+                "    db.exec(\"COMMIT\");",
+                "  } catch (error) {",
+                "    db.exec(\"ROLLBACK\");",
+                "    throw error;",
+                "  }",
+                "}",
+                "",
+                "// A listagem lê a contagem pronta, sem JOIN nem GROUP BY",
+                "db.prepare(\"SELECT id, title, comment_count FROM posts ORDER BY id DESC LIMIT 20\").all();",
+              ].join("\n"),
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Quando uma leitura frequente e importante, como uma listagem ou um painel, fica lenta por causa de `JOIN`s ou agregações, e a medição confirma isso.",
+                "Quando o dado copiado muda pouco e é lido muito, como contadores, totais ou o nome de uma categoria.",
+                "Em modelos feitos só para leitura (relatórios, busca, um data warehouse), alimentados a partir do modelo normalizado.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Antes de medir: um índice adequado ou uma consulta melhor costumam resolver a lentidão sem criar cópias.",
+                "Toda cópia pode divergir do original: se algum caminho de escrita esquecer de atualizá-la, o banco não avisa, e é preciso uma rotina para conferir e corrigir.",
+                "Em dados que mudam muito, a denormalização multiplica as escritas e a disputa por bloqueios, e pode deixar o sistema mais lento no total.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Nem toda cópia é denormalização",
+              context: "O preço guardado no item do pedido não é uma cópia do preço do produto: é outro fato.",
+              code: {
+                language: "javascript",
+                filename: "price-snapshot.js",
+                code: [
+                  "db.exec(`",
+                  "  CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT NOT NULL, price_cents INTEGER NOT NULL);",
+                  "  CREATE TABLE order_items (",
+                  "    order_id INTEGER NOT NULL,",
+                  "    product_id INTEGER NOT NULL REFERENCES products(id),",
+                  "    quantity INTEGER NOT NULL,",
+                  "    unit_price_cents INTEGER NOT NULL,   -- quanto se cobrou, no dia da compra",
+                  "    PRIMARY KEY (order_id, product_id)",
+                  "  );",
+                  "  INSERT INTO products VALUES (1, 'Caneca', 3500);",
+                  "  INSERT INTO order_items VALUES (100, 1, 2, 3500);",
+                  "`);",
+                  "",
+                  "db.exec(\"UPDATE products SET price_cents = 4200 WHERE id = 1\");   // o preço subiu",
+                  "",
+                  "// O pedido antigo continua valendo o que foi cobrado — e é assim que deve ser",
+                  "db.prepare(\"SELECT quantity * unit_price_cents AS total_cents FROM order_items WHERE order_id = 100\").get();",
+                  "// { total_cents: 7000 }",
+                ].join("\n"),
+              },
+              explanation:
+                "Se o item só referenciasse o produto, o valor de um pedido antigo mudaria a cada reajuste. O " +
+                "`unit_price_cents` depende do item do pedido, e não do produto, e por isso não é redundância. A pergunta " +
+                "que separa os casos: se o original mudar, a cópia deveria mudar junto? Se não, é outro fato.",
+            },
+            {
+              title: "Conferir se a cópia divergiu",
+              context: "Uma consulta de reconciliação compara a cópia com o valor calculado da fonte.",
+              code: {
+                language: "javascript",
+                filename: "reconcile.js",
+                code: [
+                  "// Algum caminho (um script, uma exclusão em cascata) mexeu em comments sem atualizar a contagem?",
+                  "const drifted = db.prepare(`",
+                  "  SELECT p.id, p.comment_count, COUNT(c.id) AS actual",
+                  "  FROM posts p LEFT JOIN comments c ON c.post_id = p.id",
+                  "  GROUP BY p.id",
+                  "  HAVING p.comment_count <> COUNT(c.id)",
+                  "`).all();",
+                  "",
+                  "// Corrigir a partir da fonte da verdade, que é a tabela normalizada",
+                  "db.exec(`",
+                  "  UPDATE posts",
+                  "  SET comment_count = (SELECT COUNT(*) FROM comments WHERE comments.post_id = posts.id)",
+                  "`);",
+                ].join("\n"),
+              },
+              explanation:
+                "A tabela normalizada continua sendo a fonte da verdade, e a cópia pode ser recalculada a partir dela a " +
+                "qualquer momento. Rodar a reconciliação de tempos em tempos transforma uma divergência silenciosa em um " +
+                "alerta.",
+            },
+            {
+              title: "Manter a cópia com um gatilho",
+              context: "O banco atualiza a contagem sozinho, qualquer que seja o caminho da escrita.",
+              code: {
+                language: "javascript",
+                filename: "triggers.js",
+                code: [
+                  "db.exec(`",
+                  "  CREATE TRIGGER comments_count_insert AFTER INSERT ON comments",
+                  "  BEGIN",
+                  "    UPDATE posts SET comment_count = comment_count + 1 WHERE id = NEW.post_id;",
+                  "  END;",
+                  "",
+                  "  CREATE TRIGGER comments_count_delete AFTER DELETE ON comments",
+                  "  BEGIN",
+                  "    UPDATE posts SET comment_count = comment_count - 1 WHERE id = OLD.post_id;",
+                  "  END;",
+                  "`);",
+                  "",
+                  "db.prepare(\"INSERT INTO posts (id, title) VALUES (?, ?)\").run(1, \"Normalizar ou não?\");",
+                  "db.prepare(\"INSERT INTO comments (post_id, body) VALUES (?, ?)\").run(1, \"Ótimo texto\");",
+                  "db.prepare(\"SELECT comment_count FROM posts WHERE id = 1\").get();   // { comment_count: 1 }",
+                ].join("\n"),
+              },
+              explanation:
+                "O gatilho cobre também os scripts e as ferramentas que não passam pela aplicação. Em troca, a regra fica " +
+                "escondida no banco, e quem lê só o código não sabe que ela existe; e mover um comentário de post com um " +
+                "`UPDATE` pediria um terceiro gatilho.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A página inicial lista os 20 produtos mais recentes com a nota média das avaliações. Com milhões de " +
+              "avaliações, a consulta com `JOIN` e `AVG` ficou lenta, e a medição mostra que ela é o gargalo da página.",
+            problemCode: {
+              language: "javascript",
+              filename: "ratings.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT NOT NULL, created_at TEXT NOT NULL);",
+                "  CREATE TABLE reviews (",
+                "    id INTEGER PRIMARY KEY,",
+                "    product_id INTEGER NOT NULL REFERENCES products(id),",
+                "    rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5)",
+                "  );",
+                "`);",
+                "",
+                "const listing = db.prepare(`",
+                "  SELECT p.id, p.name, AVG(r.rating) AS average_rating",
+                "  FROM products p LEFT JOIN reviews r ON r.product_id = p.id",
+                "  GROUP BY p.id",
+                "  ORDER BY p.created_at DESC",
+                "  LIMIT 20",
+                "`);",
+                "",
+                "function addReview(productId, rating) {",
+                "  db.prepare(\"INSERT INTO reviews (product_id, rating) VALUES (?, ?)\").run(productId, rating);",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Denormalize a nota média: guarde em `products` o que for preciso para devolvê-la sem ler `reviews`, " +
+              "mantenha a cópia na mesma transação da avaliação e escreva a consulta de reconciliação.",
+            hint:
+              "Uma média pronta não tem como incorporar a próxima nota. Guarde a soma e a quantidade, e calcule a média " +
+              "na leitura.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "ratings.fixed.js",
+                code: [
+                  "db.exec(`",
+                  "  ALTER TABLE products ADD COLUMN rating_sum INTEGER NOT NULL DEFAULT 0;",
+                  "  ALTER TABLE products ADD COLUMN rating_count INTEGER NOT NULL DEFAULT 0;",
+                  "`);",
+                  "",
+                  "function addReview(productId, rating) {",
+                  "  db.exec(\"BEGIN\");",
+                  "  try {",
+                  "    db.prepare(\"INSERT INTO reviews (product_id, rating) VALUES (?, ?)\").run(productId, rating);",
+                  "    db.prepare(\"UPDATE products SET rating_sum = rating_sum + ?, rating_count = rating_count + 1 WHERE id = ?\")",
+                  "      .run(rating, productId);",
+                  "    db.exec(\"COMMIT\");",
+                  "  } catch (error) {",
+                  "    db.exec(\"ROLLBACK\");",
+                  "    throw error;",
+                  "  }",
+                  "}",
+                  "",
+                  "// A listagem não toca em reviews",
+                  "const listing = db.prepare(`",
+                  "  SELECT id, name,",
+                  "         CASE WHEN rating_count = 0 THEN NULL ELSE 1.0 * rating_sum / rating_count END AS average_rating",
+                  "  FROM products",
+                  "  ORDER BY created_at DESC",
+                  "  LIMIT 20",
+                  "`);",
+                  "",
+                  "// Reconciliação: produtos cuja cópia divergiu da fonte da verdade",
+                  "const drifted = db.prepare(`",
+                  "  SELECT p.id",
+                  "  FROM products p LEFT JOIN reviews r ON r.product_id = p.id",
+                  "  GROUP BY p.id",
+                  "  HAVING p.rating_count <> COUNT(r.id) OR p.rating_sum <> COALESCE(SUM(r.rating), 0)",
+                  "`);",
+                ].join("\n"),
+              },
+              explanation:
+                "Soma e quantidade podem ser atualizadas a cada avaliação, e a média sai delas na leitura. A transação " +
+                "garante que a avaliação e os contadores mudam juntos, e a reconciliação detecta qualquer caminho que " +
+                "escreva em `reviews` por fora. Antes de denormalizar, vale conferir o índice em `created_at`: às vezes " +
+                "ele sozinho resolve.",
+            },
+          },
+        }),
+        concept({
+          order: 60,
+          title: "Natural vs Surrogate Key",
+          requires: ["Database Fundamentals / Primary Key"],
+          note: "UUID vs auto-incremento; implicações de índice",
+          summary:
+            "A escolha da chave primária entre um dado do próprio negócio que já identifica a linha (chave natural, " +
+            "como um código ISO) e um identificador sem significado, criado só para isso (chave substituta, como um " +
+            "número sequencial ou um UUID).",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Uma chave natural é um dado que o mundo já usa para identificar a coisa: o código de uma moeda (`BRL`), " +
+                "a sigla de um estado, o ISBN de um livro. Uma chave substituta (surrogate) é um identificador sem " +
+                "significado, gerado pelo sistema: um inteiro que o banco incrementa (auto-incremento ou `IDENTITY`) ou " +
+                "um UUID. A escolha importa porque a chave primária é copiada para todas as chaves estrangeiras que " +
+                "apontam para a tabela, e o que for escolhido se espalha pelo esquema.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Na maioria das tabelas do negócio, use uma chave substituta como chave primária e proteja a chave " +
+                "natural com `UNIQUE`: a primeira dá estabilidade às referências, e a segunda impede duplicatas.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "list",
+              items: [
+                "Chave natural: tem significado, já existe fora do sistema e dispensa um `JOIN` para mostrar o código; em troca, pode mudar, pode ser longa e segue regras de fora, como o formato de um documento.",
+                "Auto-incremento: pequeno, rápido e crescente, o que é bom para o índice; em troca, só existe depois do `INSERT`, é previsível e colide quando se juntam bancos diferentes.",
+                "UUID: pode ser gerado na aplicação antes de gravar e é único entre bancos; em troca, ocupa 16 bytes, e a versão aleatória (v4) espalha as inserções pelo índice. A versão 7, ordenada pelo tempo, reduz esse problema.",
+              ],
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "keys.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "db.exec(`",
+                "  -- Tabela de referência com código estável e padronizado: chave natural",
+                "  CREATE TABLE currencies (",
+                "    code TEXT PRIMARY KEY CHECK (length(code) = 3),   -- ISO 4217: 'BRL', 'USD'",
+                "    name TEXT NOT NULL",
+                "  );",
+                "",
+                "  -- Entidade do negócio: chave substituta + chave natural protegida por UNIQUE",
+                "  CREATE TABLE customers (",
+                "    id INTEGER PRIMARY KEY,               -- substituta: estável, pequena, sem significado",
+                "    tax_id TEXT NOT NULL UNIQUE,          -- natural: impede o mesmo cliente duas vezes",
+                "    name TEXT NOT NULL,",
+                "    currency_code TEXT NOT NULL REFERENCES currencies(code)",
+                "  );",
+                "`);",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Em `customers`, `currency_code = 'BRL'` se lê sem consultar outra tabela, e o código da moeda não muda. " +
+                "Já o documento do cliente é digitado por pessoas e pode precisar de correção; por isso ele não é a " +
+                "referência que as outras tabelas copiam.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Chave natural em tabelas de referência pequenas, com códigos estáveis e padronizados, como moedas, países e idiomas.",
+                "Chave substituta nas entidades do negócio (clientes, pedidos, contas), cujos dados identificadores podem mudar ou ser corrigidos.",
+                "UUID quando o id precisa existir antes do `INSERT` ou ser único entre bancos e serviços: criação offline, requisições idempotentes, junção de bases.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Uma chave substituta sozinha não impede duplicatas: sem `UNIQUE` na chave natural, a mesma pessoa pode ser cadastrada várias vezes, com ids diferentes.",
+                "Dados que parecem estáveis mudam, como e-mails, nomes de usuário e documentos digitados com erro; como chave primária, cada mudança se propaga a todas as referências.",
+                "Ids sequenciais expostos em URLs revelam o volume de registros e permitem enumerá-los; eles não são segredo, e a autorização precisa ser verificada em cada acesso.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "A chave substituta sozinha não impede duplicatas",
+              context: "Três importações do mesmo arquivo, três clientes iguais com ids diferentes.",
+              code: {
+                language: "javascript",
+                filename: "duplicates.js",
+                code: [
+                  "db.exec(\"CREATE TABLE customers (id INTEGER PRIMARY KEY, tax_id TEXT NOT NULL, name TEXT NOT NULL)\");",
+                  "",
+                  "const insert = db.prepare(\"INSERT INTO customers (tax_id, name) VALUES (?, ?)\");",
+                  "for (let run = 0; run < 3; run++) insert.run(\"123.456.789-09\", \"Ana Souza\");",
+                  "",
+                  "db.prepare(\"SELECT id FROM customers WHERE tax_id = ?\").all(\"123.456.789-09\");",
+                  "// [{ id: 1 }, { id: 2 }, { id: 3 }] — o id é único; o cliente, não",
+                  "",
+                  "// A correção: a chave natural ganha um UNIQUE (depois de resolver as duplicatas existentes)",
+                  "// CREATE UNIQUE INDEX customers_tax_id ON customers (tax_id);",
+                ].join("\n"),
+              },
+              explanation:
+                "O id garante que cada linha é distinta, e não que cada cliente aparece uma vez. A unicidade do negócio " +
+                "precisa ser declarada à parte, sobre a chave natural.",
+            },
+            {
+              title: "O id gerado antes de gravar",
+              context: "Com um UUID, quem cria o registro já tem o id e pode repetir o envio sem duplicar.",
+              code: {
+                language: "javascript",
+                filename: "client-generated-id.js",
+                code: [
+                  "import { randomUUID } from \"node:crypto\";",
+                  "",
+                  "db.exec(\"CREATE TABLE notes (id TEXT PRIMARY KEY, body TEXT NOT NULL)\");",
+                  "",
+                  "// O aplicativo cria o id offline, antes de ter rede, e o envia junto com a nota",
+                  "const note = { id: randomUUID(), body: \"Comprar café\" };",
+                  "",
+                  "const save = db.prepare(\"INSERT INTO notes (id, body) VALUES (?, ?) ON CONFLICT (id) DO NOTHING\");",
+                  "save.run(note.id, note.body);",
+                  "save.run(note.id, note.body);   // reenvio após uma falha de rede: não duplica",
+                  "",
+                  "db.prepare(\"SELECT COUNT(*) AS total FROM notes\").get();   // { total: 1 }",
+                ].join("\n"),
+              },
+              explanation:
+                "Com auto-incremento, o id só existe depois do `INSERT`, e um reenvio cria outra linha. O UUID gerado na " +
+                "origem identifica a nota desde o começo, o que ajuda na sincronização offline e na idempotência. " +
+                "`randomUUID` gera a versão 4, aleatória; em tabelas muito grandes, a versão 7, ordenada pelo tempo, é " +
+                "mais amigável ao índice.",
+            },
+            {
+              title: "Onde a chave natural funciona bem",
+              context: "Em uma tabela de referência, o código ISO se lê sem precisar de um `JOIN`.",
+              code: {
+                language: "javascript",
+                filename: "natural-key.js",
+                code: [
+                  "db.exec(`",
+                  "  CREATE TABLE countries (code TEXT PRIMARY KEY, name TEXT NOT NULL);   -- ISO 3166: 'BR', 'PT'",
+                  "  INSERT INTO countries VALUES ('BR', 'Brasil'), ('PT', 'Portugal');",
+                  "",
+                  "  CREATE TABLE shipments (",
+                  "    id INTEGER PRIMARY KEY,",
+                  "    destination_country TEXT NOT NULL REFERENCES countries(code)",
+                  "  );",
+                  "  INSERT INTO shipments (destination_country) VALUES ('BR'), ('PT'), ('BR');",
+                  "`);",
+                  "",
+                  "// O código já diz o que é: nenhum JOIN para agrupar ou filtrar por país",
+                  "db.prepare(`",
+                  "  SELECT destination_country, COUNT(*) AS total",
+                  "  FROM shipments",
+                  "  GROUP BY destination_country",
+                  "  ORDER BY destination_country",
+                  "`).all();",
+                  "// [{ destination_country: \"BR\", total: 2 }, { destination_country: \"PT\", total: 1 }]",
+                ].join("\n"),
+              },
+              explanation:
+                "O código do país é curto, padronizado e raramente muda, e aparece legível em logs, em relatórios e na " +
+                "própria tabela de envios. Com um id numérico, cada leitura precisaria de um `JOIN` para descobrir que o " +
+                "31 é o Brasil.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Toda noite, uma rotina importa o arquivo de clientes de um parceiro. Ela faz um `INSERT` por linha, e " +
+              "cada execução repetida cria novos clientes com os mesmos documentos. As outras tabelas referenciam " +
+              "`customers.id`, e esse id não pode mudar.",
+            problemCode: {
+              language: "javascript",
+              filename: "import-customers.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE customers (",
+                "    id INTEGER PRIMARY KEY,",
+                "    tax_id TEXT NOT NULL,",
+                "    name TEXT NOT NULL,",
+                "    email TEXT NOT NULL",
+                "  );",
+                "`);",
+                "",
+                "function importCustomers(rows) {",
+                "  const insert = db.prepare(\"INSERT INTO customers (tax_id, name, email) VALUES (?, ?, ?)\");",
+                "  for (const row of rows) insert.run(row.taxId, row.name, row.email);",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Torne a importação idempotente: rodá-la de novo com o mesmo arquivo não cria linhas, e um cliente que " +
+              "mudou de e-mail é atualizado, mantendo o mesmo `id`.",
+            hint:
+              "Proteja a chave natural com `UNIQUE` e use `INSERT ... ON CONFLICT (tax_id) DO UPDATE`: o conflito é " +
+              "detectado pela chave natural, e a chave substituta não muda.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "import-customers.fixed.js",
+                code: [
+                  "import { DatabaseSync } from \"node:sqlite\";",
+                  "const db = new DatabaseSync(\":memory:\");",
+                  "",
+                  "db.exec(`",
+                  "  CREATE TABLE customers (",
+                  "    id INTEGER PRIMARY KEY,",
+                  "    tax_id TEXT NOT NULL UNIQUE,",
+                  "    name TEXT NOT NULL,",
+                  "    email TEXT NOT NULL",
+                  "  );",
+                  "`);",
+                  "",
+                  "function importCustomers(rows) {",
+                  "  const upsert = db.prepare(`",
+                  "    INSERT INTO customers (tax_id, name, email) VALUES (?, ?, ?)",
+                  "    ON CONFLICT (tax_id) DO UPDATE SET name = excluded.name, email = excluded.email",
+                  "  `);",
+                  "  db.exec(\"BEGIN\");",
+                  "  try {",
+                  "    for (const row of rows) upsert.run(row.taxId, row.name, row.email);",
+                  "    db.exec(\"COMMIT\");",
+                  "  } catch (error) {",
+                  "    db.exec(\"ROLLBACK\");",
+                  "    throw error;",
+                  "  }",
+                  "}",
+                  "",
+                  "importCustomers([{ taxId: \"123.456.789-09\", name: \"Ana Souza\", email: \"ana@example.test\" }]);",
+                  "importCustomers([{ taxId: \"123.456.789-09\", name: \"Ana Souza\", email: \"ana.souza@example.test\" }]);",
+                  "",
+                  "db.prepare(\"SELECT id, email FROM customers\").all();",
+                  "// [{ id: 1, email: \"ana.souza@example.test\" }] — uma linha, o mesmo id, o e-mail novo",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada chave faz o que sabe fazer: a natural reconhece que é o mesmo cliente, e a substituta continua a " +
+                "mesma, para que pedidos e faturas não percam a referência. Em uma base que já tem duplicatas, é preciso " +
+                "mesclá-las antes de criar o `UNIQUE`.",
+            },
+          },
+        }),
         concept({
           order: 70,
           title: "Database Migration",
           requires: ["Database Fundamentals / Database Schema"],
           note: "migrations versionadas, forward-only, expand/contract — revisita Software Craft / Incremental Migration",
           revisit: ["Software Craft / Dependency & Version Management / Incremental Migration"],
+          summary:
+            "Mudar o esquema e os dados de um banco que já está em uso por meio de passos versionados, pequenos e " +
+            "compatíveis com a aplicação no ar — incluindo a cópia de dados em lotes e o padrão expandir e contrair.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Uma migração de banco é uma mudança versionada no esquema (criar uma tabela, acrescentar uma coluna, " +
+                "criar um índice) ou nos dados (preencher uma coluna nova, converter um formato). A mecânica de scripts " +
+                "numerados, aplicados uma vez e registrados, é a do esquema. O problema difícil é outro: mudar um banco " +
+                "com dados reais enquanto a aplicação continua atendendo, sem parada e sem perder nada. É a migração " +
+                "incremental aplicada ao banco: o antigo e o novo convivem durante a transição.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Em produção, toda migração precisa funcionar com a versão da aplicação que está no ar e com a próxima: " +
+                "uma mudança incompatível vira vários passos compatíveis, separados por implantações.",
+            },
+            { type: "heading", text: "Como fazer" },
+            {
+              type: "list",
+              items: [
+                "Separe as mudanças de esquema das de dados: a de esquema é curta e transacional; a cópia de milhões de linhas roda em lotes, fora dela.",
+                "Acrescente antes de remover (expandir e contrair): coluna nova opcional, código que escreve nas duas, cópia dos dados antigos, código que lê da nova e, por fim, a remoção da antiga.",
+                "Aplique a migração antes do código que depende dela, e mantenha o código compatível com o esquema anterior até a migração estar em todos os ambientes.",
+                "Siga sempre para a frente: para desfazer, escreva uma nova migração que corrige, em vez de voltar versões.",
+              ],
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "add-required-column.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "db.exec(\"CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL)\");",
+                "// ... imagine milhões de linhas já existentes",
+                "",
+                "// Passo 1 (migração de esquema): a coluna nasce opcional, e nenhuma linha antiga é recusada",
+                "db.exec(\"ALTER TABLE customers ADD COLUMN country TEXT\");",
+                "",
+                "// Passo 2 (migração de dados): preencher em lotes, cada lote em uma transação curta",
+                "function backfillCountry(db, batchSize = 1000) {",
+                "  const update = db.prepare(`",
+                "    UPDATE customers SET country = 'BR'   -- a regra de preenchimento combinada com o negócio",
+                "    WHERE id IN (SELECT id FROM customers WHERE country IS NULL LIMIT ?)",
+                "  `);",
+                "  let changed;",
+                "  do {",
+                "    changed = Number(update.run(batchSize).changes);",
+                "  } while (changed > 0);",
+                "}",
+                "backfillCountry(db);",
+                "",
+                "// Passo 3 (migração de esquema, em uma implantação posterior): só agora a coluna vira obrigatória",
+                "// PostgreSQL: ALTER TABLE customers ALTER COLUMN country SET NOT NULL;",
+                "// (no SQLite, tornar uma coluna existente obrigatória exige recriar a tabela)",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Um único `UPDATE` em milhões de linhas seguraria bloqueios por muito tempo e geraria uma transação " +
+                "enorme. Em lotes, cada passo é curto, e a rotina pode ser interrompida e retomada, porque só pega as " +
+                "linhas que ainda faltam.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "Uma migração testada só em um banco vazio esconde os problemas reais: a duração, os bloqueios e os dados antigos que violam a regra nova. Teste com um volume parecido com o de produção.",
+                "Migrações de reversão (\"down\") raramente desfazem de verdade: depois de apagar uma coluna, criá-la de novo não traz os dados de volta.",
+                "Mudar o significado de uma coluna sem mudar o nome engana o código antigo, que continua lendo o valor com o sentido anterior.",
+                "Remover ou renomear algo que a versão no ar ainda usa derruba essa versão no instante em que a migração roda, mesmo que a próxima versão já esteja pronta.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Seguir para a frente",
+              context:
+                "A migração 12 criou o índice errado; a correção é a migração 13, e não editar nem desfazer a 12.",
+              code: {
+                language: "javascript",
+                filename: "forward-only.js",
+                code: [
+                  "const migrations = [",
+                  "  // ...",
+                  "  { id: 12, name: \"index orders by customer\", sql: \"CREATE INDEX idx_orders_customer ON orders(customer_id)\" },",
+                  "  // Depois, descobriu-se que as consultas filtram por cliente E por data — e a 12 já rodou em produção.",
+                  "",
+                  "  // Errado: editar a 12 (os bancos que já a aplicaram nunca verão a mudança)",
+                  "  // Certo: uma nova migração, que leva todos os bancos ao estado desejado",
+                  "  {",
+                  "    id: 13,",
+                  "    name: \"replace orders customer index\",",
+                  "    sql: `",
+                  "      CREATE INDEX idx_orders_customer_date ON orders(customer_id, placed_at);",
+                  "      DROP INDEX idx_orders_customer;",
+                  "    `,",
+                  "  },",
+                  "];",
+                ].join("\n"),
+              },
+              explanation:
+                "Seguir para a frente mantém uma só história para todos os ambientes: cada banco aplica as mesmas " +
+                "migrações, na mesma ordem. Muitas ferramentas oferecem migrações de reversão, mas elas só são seguras " +
+                "para mudanças sem perda, como criar um índice.",
+            },
+            {
+              title: "A ordem entre migração e implantação",
+              context: "Remover uma coluna exige que nenhum código em execução ainda a use.",
+              code: {
+                language: "text",
+                filename: "drop-column-order.txt",
+                code: [
+                  "Objetivo: remover customers.legacy_code, que a aplicação v1 ainda lê.",
+                  "",
+                  "Implantação 1  Aplicação v2: para de ler e de escrever legacy_code.",
+                  "               (o esquema ainda tem a coluna; v1 e v2 funcionam durante a troca)",
+                  "Implantação 2  Migração: DROP COLUMN legacy_code.",
+                  "               (só depois que nenhuma instância da v1 está no ar)",
+                  "",
+                  "Na ordem inversa, com a migração primeiro, as instâncias da v1 que ainda atendem",
+                  "passam a falhar com \"no such column: legacy_code\" até serem substituídas.",
+                ].join("\n"),
+              },
+              explanation:
+                "Acrescentar vem antes do código que usa; remover vem depois do código que parou de usar. Durante uma " +
+                "implantação gradual, as duas versões da aplicação rodam ao mesmo tempo, e o esquema precisa servir às " +
+                "duas.",
+            },
+            {
+              title: "Mudar o tipo de uma coluna sem parada",
+              context: "O preço, guardado em reais com casas decimais (`REAL`), precisa virar centavos inteiros.",
+              code: {
+                language: "javascript",
+                filename: "change-type.js",
+                code: [
+                  "// 1. Expandir: a coluna nova, ao lado da antiga",
+                  "db.exec(\"ALTER TABLE products ADD COLUMN price_cents INTEGER\");",
+                  "",
+                  "// 2. A aplicação (nova versão) passa a escrever nas duas",
+                  "function updatePrice(id, priceCents) {",
+                  "  db.prepare(\"UPDATE products SET price_cents = ?, price = ? WHERE id = ?\").run(priceCents, priceCents / 100, id);",
+                  "}",
+                  "",
+                  "// 3. Preencher as linhas antigas, em lotes",
+                  "const backfill = db.prepare(`",
+                  "  UPDATE products SET price_cents = CAST(ROUND(price * 100) AS INTEGER)",
+                  "  WHERE id IN (SELECT id FROM products WHERE price_cents IS NULL LIMIT 1000)",
+                  "`);",
+                  "while (Number(backfill.run().changes) > 0) {",
+                  "  // próximo lote",
+                  "}",
+                  "",
+                  "// 4. A aplicação passa a ler de price_cents",
+                  "// 5. Contrair: quando nada mais usa price, uma nova migração remove a coluna",
+                ].join("\n"),
+              },
+              explanation:
+                "É o mesmo expandir e contrair do renomear uma coluna, aplicado a uma conversão: em nenhum momento a " +
+                "versão no ar encontra um esquema que não entende. O `ROUND` antes do `CAST` evita que 19.99 × 100 vire " +
+                "1998 pelo erro do ponto flutuante.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O cadastro de usuários guarda o nome completo em `full_name`, e o time precisa separá-lo em `first_name` " +
+              "e `last_name` para ordenar por sobrenome. A tabela tem milhões de linhas, a aplicação não pode parar, e " +
+              "a primeira proposta foi uma única migração que cria as colunas, preenche tudo com um `UPDATE` e apaga " +
+              "`full_name`.",
+            problemCode: {
+              language: "javascript",
+              filename: "split-name.js",
+              code: [
+                "const migrations = [",
+                "  {",
+                "    id: 20,",
+                "    name: \"split full name\",",
+                "    sql: `",
+                "      ALTER TABLE users ADD COLUMN first_name TEXT;",
+                "      ALTER TABLE users ADD COLUMN last_name TEXT;",
+                "      UPDATE users SET",
+                "        first_name = substr(full_name, 1, instr(full_name, ' ') - 1),",
+                "        last_name  = substr(full_name, instr(full_name, ' ') + 1);",
+                "      ALTER TABLE users DROP COLUMN full_name;",
+                "    `,",
+                "  },",
+                "];",
+              ].join("\n"),
+            },
+            task:
+              "Reescreva a mudança como uma sequência de passos seguros: diga o que é migração de esquema, o que é " +
+              "migração de dados e o que é mudança de código, e em que ordem cada um é implantado. Implemente o " +
+              "preenchimento em lotes, tratando os nomes sem sobrenome.",
+            hint:
+              "Expandir (colunas novas opcionais) → código que escreve nas três colunas → preenchimento em lotes das " +
+              "linhas antigas → código que lê das novas → contrair (remover `full_name`) em uma implantação posterior.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "split-name.fixed.js",
+                code: [
+                  "// Implantação 1 — migração de esquema: só acrescenta (compatível com o código atual)",
+                  "const migrations = [",
+                  "  {",
+                  "    id: 20,",
+                  "    name: \"add first and last name\",",
+                  "    sql: \"ALTER TABLE users ADD COLUMN first_name TEXT; ALTER TABLE users ADD COLUMN last_name TEXT\",",
+                  "  },",
+                  "];",
+                  "",
+                  "// Implantação 2 — código: toda escrita preenche full_name, first_name e last_name",
+                  "function splitName(fullName) {",
+                  "  const trimmed = fullName.trim();",
+                  "  const space = trimmed.indexOf(\" \");",
+                  "  return space === -1",
+                  "    ? { firstName: trimmed, lastName: \"\" }",
+                  "    : { firstName: trimmed.slice(0, space), lastName: trimmed.slice(space + 1) };",
+                  "}",
+                  "",
+                  "// Migração de dados — em lotes e retomável: só pega as linhas que ainda faltam",
+                  "function backfillNames(db, batchSize = 1000) {",
+                  "  const select = db.prepare(\"SELECT id, full_name FROM users WHERE first_name IS NULL LIMIT ?\");",
+                  "  const update = db.prepare(\"UPDATE users SET first_name = ?, last_name = ? WHERE id = ?\");",
+                  "  for (let batch = select.all(batchSize); batch.length > 0; batch = select.all(batchSize)) {",
+                  "    db.exec(\"BEGIN\");",
+                  "    try {",
+                  "      for (const row of batch) {",
+                  "        const { firstName, lastName } = splitName(row.full_name);",
+                  "        update.run(firstName, lastName, row.id);",
+                  "      }",
+                  "      db.exec(\"COMMIT\");",
+                  "    } catch (error) {",
+                  "      db.exec(\"ROLLBACK\");",
+                  "      throw error;",
+                  "    }",
+                  "  }",
+                  "}",
+                  "",
+                  "// Implantação 3 — código: lê de first_name e last_name (ORDER BY last_name)",
+                  "// Implantação 4 — migração de esquema, quando nenhuma versão antiga está no ar:",
+                  "//   { id: 21, name: \"drop full name\", sql: \"ALTER TABLE users DROP COLUMN full_name\" }",
+                ].join("\n"),
+              },
+              explanation:
+                "A proposta original fazia tudo de uma vez: o `UPDATE` único travaria a tabela, e apagar `full_name` " +
+                "quebraria na hora a versão da aplicação que ainda o lê. Em passos, cada implantação é compatível com a " +
+                "anterior, o preenchimento pode parar e recomeçar, e a separação do nome fica em uma função testável. " +
+                "Separar nomes é, em si, uma simplificação: há sobrenomes compostos e nomes de uma palavra só.",
+            },
+          },
         }),
       ],
     }),
