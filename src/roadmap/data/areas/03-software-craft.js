@@ -7927,26 +7927,22 @@ export default area({
           order: 10,
           title: "Technical Debt",
           note: "custo de atalhos — framing da Story",
-          summary:
-            "O custo futuro acumulado por atalhos e decisões de projeto que aceleram a entrega hoje mas tornam " +
-            "cada mudança seguinte mais lenta e arriscada — uma dívida que cobra juros até ser paga.",
+          summary: "Technical Debt é o custo futuro dos atalhos e das decisões de projeto que aceleram a entrega hoje.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Technical Debt é uma metáfora financeira: escolher uma solução rápida e imperfeita agora é como " +
-                "tomar um empréstimo — você ganha velocidade hoje e passa a pagar juros depois, na forma de " +
-                "mudanças mais lentas, mais bugs e mais medo de mexer no código. O principal é o custo de " +
-                "corrigir o atalho; os juros são o custo extra pago a cada vez que se trabalha perto dele " +
-                "enquanto ele existe.",
+                "É uma metáfora financeira: escolher uma solução rápida e imperfeita agora é como tomar um empréstimo — " +
+                "você ganha velocidade hoje e passa a pagar juros depois, na forma de mudanças mais lentas, mais bugs e " +
+                "mais medo de mexer no código. O principal é o custo de corrigir o atalho; os juros são o custo extra " +
+                "pago a cada vez que se trabalha perto dele enquanto ele existe.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Dívida técnica é um empréstimo: às vezes vale a pena tomá-lo, mas só se for consciente, registrado " +
-                "e com plano — a dívida invisível é a que cobra os juros mais altos.",
+                "Tomar dívida pode ser uma boa decisão, desde que seja consciente, registrada e com um plano para pagar.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -8117,25 +8113,24 @@ export default area({
           title: "Legacy Code",
           note: "código difícil/arriscado de mudar com segurança, geralmente sem dono claro ou contexto original preservado. A associação de Feathers (\"código legado = código sem testes\") é citada como lente, não como definição universal",
           summary:
-            "Código que é difícil e arriscado de mudar com segurança — em geral sem testes, sem dono claro e sem o " +
-            "contexto original preservado — e que, mesmo assim, é o que faz o sistema funcionar hoje.",
+            "Legacy Code é código que temos medo de mudar, porque não dá para saber se uma mudança preserva o que ele " +
+            "faz.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Legacy Code não significa simplesmente \"código antigo\": é código que temos medo de mudar. Suas " +
-                "marcas são comportamento pouco claro, poucos ou nenhum teste, ausência de quem entenda o " +
-                "porquê de cada decisão e alto risco de quebrar algo ao tocar nele. Uma lente conhecida, de " +
-                "Michael Feathers, é \"código legado é código sem testes\" — útil porque sem testes não há como " +
-                "saber se uma mudança preservou o comportamento, embora não seja uma definição universal.",
+                "Não significa simplesmente \"código antigo\". Suas marcas são comportamento pouco claro, poucos ou nenhum " +
+                "teste, ausência de quem entenda o porquê de cada decisão e alto risco de quebrar algo ao tocar nele. Uma " +
+                "lente conhecida, de Michael Feathers, é \"código legado é código sem testes\" — útil porque sem testes não " +
+                "há como saber se uma mudança preservou o comportamento, embora não seja uma definição universal.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Legado é código que dá medo de mudar — não o jogue fora: proteja-o com testes, abra costuras e " +
-                "evolua em passos pequenos.",
+                "Todo código bem-sucedido vira legado um dia, porque continua sendo usado depois que o contexto dele se " +
+                "perde.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -8327,25 +8322,22 @@ export default area({
           title: "Semantic Versioning",
           note: "MAJOR.MINOR.PATCH e o que cada um comunica",
           summary:
-            "Um esquema de numeração MAJOR.MINOR.PATCH em que cada número comunica o tipo de mudança — quebra de " +
-            "compatibilidade, novidade compatível ou correção — para que quem usa saiba o risco de atualizar.",
+            "Semantic Versioning é a convenção de numerar versões como MAJOR.MINOR.PATCH, em que cada número indica o " +
+            "tipo de mudança.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Semantic Versioning (SemVer) é uma convenção para numerar versões no formato MAJOR.MINOR.PATCH, " +
-                "como 2.4.1. Cada parte tem um significado: PATCH sobe em correções de bugs compatíveis; MINOR sobe " +
-                "quando se adiciona funcionalidade compatível com a versão anterior; MAJOR sobe quando há mudanças " +
-                "incompatíveis — que podem quebrar quem usa. O número é uma promessa do que o software " +
-                "garante em cada atualização.",
+                "Um exemplo é 2.4.1. PATCH sobe em correções de bugs compatíveis; MINOR sobe quando se adiciona " +
+                "funcionalidade compatível com a versão anterior; MAJOR sobe quando há mudanças incompatíveis — que podem " +
+                "quebrar quem usa. O número é uma promessa do que o software garante em cada atualização.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "MAJOR quebra, MINOR adiciona, PATCH corrige — o número é uma promessa sobre o risco de atualizar, " +
-                "e só vale se for classificado com honestidade.",
+                "A parte difícil do SemVer não é somar um ao número, é reconhecer com honestidade o que é uma quebra.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -8520,24 +8512,20 @@ export default area({
           requires: ["Semantic Versioning"],
           note: "a propriedade que SemVer protege/comunica",
           summary:
-            "A propriedade de uma nova versão continuar funcionando com o código, os dados e os clientes feitos " +
-            "para a versão anterior — o que o SemVer promete ao subir apenas MINOR ou PATCH.",
+            "Backward Compatibility é a propriedade de uma versão nova continuar funcionando com quem foi feito para " +
+            "a anterior, sem exigir alterações.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Backward Compatibility (retrocompatibilidade) significa que uma versão nova de um software, API ou " +
-                "formato de dados continua funcionando com quem foi construído para a versão anterior, sem " +
-                "exigir alterações. É a propriedade que o SemVer comunica: subir apenas MINOR ou PATCH promete " +
-                "compatibilidade; subir MAJOR avisa que ela pode ter sido quebrada.",
+                "Vale para software, APIs e formatos de dados. É a propriedade que o SemVer comunica: subir apenas MINOR " +
+                "ou PATCH promete compatibilidade; subir MAJOR avisa que ela pode ter sido quebrada.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Evolua acrescentando, não alterando ou removendo — se a mudança faz um código antigo deixar de " +
-                "funcionar, é uma quebra e precisa ser tratada como tal.",
+              text: "Acrescentar costuma ser seguro e mudar ou remover costuma quebrar, então evolua uma API pela soma.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -8707,24 +8695,20 @@ export default area({
           requires: ["Backward Compatibility"],
           note: "processo de retirar algo preservando compatibilidade",
           summary:
-            "O processo de avisar que algo será removido, oferecer a alternativa e dar tempo para migrar — para " +
-            "poder retirar funcionalidades antigas sem quebrar quem ainda depende delas.",
+            "Deprecation é marcar algo como obsoleto, ainda funcionando, com o aviso de que será removido e do que " +
+            "usar no lugar.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Deprecation (obsolescência) é a etapa intermediária entre \"existe\" e \"foi removido\": a " +
-                "funcionalidade continua funcionando, mas é marcada como obsoleta, com um aviso claro de que será " +
-                "retirada e indicando o que usar no lugar. É o mecanismo que permite remover coisas sem quebrar " +
-                "a compatibilidade de forma abrupta.",
+                "É a etapa intermediária entre \"existe\" e \"foi removido\", e o mecanismo que permite retirar " +
+                "funcionalidades sem quebrar a compatibilidade de forma abrupta.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Não remova de surpresa: avise, ofereça o caminho novo, dê prazo e só então retire — de preferência " +
-                "em um novo MAJOR.",
+              text: "Um aviso de obsolescência só ajuda se disser o que usar no lugar, por que e até quando.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -8902,24 +8886,22 @@ export default area({
           requires: ["Semantic Versioning"],
           note: "gerenciar versões/dependências de terceiros: lockfiles, ranges de versão, grafo de dependências",
           summary:
-            "Declarar, travar e atualizar de forma controlada as bibliotecas de terceiros de que o projeto depende — " +
-            "porque cada dependência traz benefícios e também riscos de segurança, compatibilidade e manutenção.",
+            "Dependency Management é o conjunto de práticas para declarar, travar e atualizar as bibliotecas de " +
+            "terceiros de um projeto.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Quase todo projeto usa bibliotecas de terceiros, e cada uma delas depende de outras. Dependency " +
-                "Management é o conjunto de práticas para controlar isso: declarar do que o projeto depende (o " +
-                "manifesto, como package.json), travar as versões exatas que foram resolvidas (o lockfile), " +
-                "entender o grafo de dependências (as diretas e as transitivas) e atualizar de forma planejada.",
+                "Quase todo projeto usa bibliotecas de terceiros, e cada uma delas depende de outras. As práticas são " +
+                "declarar do que o projeto depende (o manifesto, como package.json), travar as versões exatas que foram " +
+                "resolvidas (o lockfile), entender o grafo de dependências (as diretas e as transitivas) e atualizar de " +
+                "forma planejada.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "O manifesto diz o que é aceitável, o lockfile diz o que foi instalado — versionem os dois, " +
-                "atualizem em pequenos passos e tratem cada dependência nova como um compromisso.",
+              text: "Uma vulnerabilidade na dependência da sua dependência é uma vulnerabilidade sua.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -9095,24 +9077,23 @@ export default area({
           requires: ["Legacy Code", "Backward Compatibility"],
           note: "capstone: técnica para evoluir código legado/dependências com segurança",
           summary:
-            "Trocar uma parte do sistema por outra em passos pequenos e reversíveis, com o antigo e o novo " +
-            "convivendo durante a transição — em vez de uma substituição total e arriscada de uma só vez.",
+            "Incremental Migration é trocar uma parte do sistema por etapas, com o antigo e o novo convivendo durante " +
+            "a transição.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Incremental Migration é a técnica de evoluir código legado, uma dependência ou uma tecnologia por " +
-                "etapas: o sistema antigo e o novo coexistem, o tráfego ou o uso migra aos poucos, e o antigo só " +
-                "é removido quando ninguém mais depende dele. Em cada passo o sistema continua funcionando e cada " +
-                "mudança pode ser desfeita.",
+                "O uso migra aos poucos, e o antigo só é removido quando ninguém mais depende dele. Vale para código " +
+                "legado, dependências e tecnologias. Em cada passo o sistema continua funcionando e cada mudança pode ser " +
+                "desfeita.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Não troque tudo de uma vez — deixe o antigo e o novo conviverem, migre aos poucos e remova o antigo " +
-                "só quando ninguém mais o usar.",
+                "Uma troca de uma vez concentra todo o risco num único momento, e migrar aos poucos o divide em passos " +
+                "que se desfazem.",
             },
             { type: "heading", text: "Por que importa" },
             {
