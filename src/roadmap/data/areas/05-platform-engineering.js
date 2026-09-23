@@ -16012,26 +16012,23 @@ export default area({
           note: "canônico p/ todo o roadmap. Memoization = cache em processo (revisita Programming Foundations / Algorithms & Complexity). Absorve Cache Hit / Miss",
           revisit: ["Programming Foundations / Algorithms & Complexity / Memoization"],
           summary:
-            "Uma cópia de dados guardada num lugar mais rápido ou mais próximo de quem lê, para responder de novo sem " +
-            "refazer um trabalho caro — ao custo de a cópia poder estar desatualizada em relação à fonte.",
+            "Um Cache é uma cópia de dados guardada num lugar mais rápido ou mais próximo de quem lê, para não " +
+            "refazer um trabalho caro.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Um cache guarda o resultado de algo caro — uma consulta, uma chamada a outra API, um cálculo, um arquivo " +
-                "distante — para reaproveitá-lo nas próximas vezes. Quando o dado pedido está no cache, é um acerto " +
-                "(hit); quando não está, é uma falta (miss), e o dado vem da fonte e costuma ser guardado para a próxima. " +
-                "A proporção de acertos (hit ratio) mede quanto o cache ajuda. Caches existem em todas as camadas: a " +
-                "memoização dentro de uma função, a memória do processo, um servidor como o Redis, o navegador e as CDNs.",
+                "O trabalho caro pode ser uma consulta, uma chamada a outra API, um cálculo, um arquivo distante. Quando " +
+                "o dado pedido está no cache, é um acerto (hit); quando não está, é uma falta (miss), e o dado vem da " +
+                "fonte e costuma ser guardado para a próxima. A proporção de acertos (hit ratio) mede quanto o cache " +
+                "ajuda. Caches existem em todas as camadas: a memoização dentro de uma função, a memória do processo, um " +
+                "servidor como o Redis, o navegador e as CDNs.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Todo cache troca atualidade por velocidade: ele responde mais rápido porque não pergunta à fonte, e por " +
-                "isso pode devolver algo que já mudou — a pergunta de projeto é quanto tempo de defasagem cada dado " +
-                "tolera.",
+              text: "Todo cache troca atualidade por velocidade.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -16228,25 +16225,22 @@ export default area({
           note: "tempo de vida de uma entrada de cache — depois dele, a cópia é descartada ou revalidada",
           collision: "TTL de cache ≠ TTL de DNS (Web Fundamentals) ≠ TTL de pacote IP",
           summary:
-            "O tempo de vida de uma entrada no cache: passado esse prazo, ela deixa de valer e a próxima leitura vai " +
-            "à fonte — a forma mais simples de limitar por quanto tempo um dado em cache pode estar desatualizado.",
+            "TTL (time to live) é o prazo de validade de uma entrada no cache, depois do qual a próxima leitura vai à " +
+            "fonte.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "TTL (time to live) é o prazo de validade de cada entrada. Ao guardar um valor, o cache anota até quando " +
-                "ele vale; ao ler, confere o prazo e trata uma entrada vencida como se não existisse. O TTL não descobre " +
-                "que a fonte mudou: ele só garante que nenhuma cópia fica mais velha do que o prazo. O mesmo nome aparece " +
-                "em outros lugares com sentidos parecidos, como o tempo que um resolvedor guarda uma resposta de DNS e o " +
-                "número de saltos de um pacote IP.",
+                "Ao guardar um valor, o cache anota até quando ele vale; ao ler, confere o prazo e trata uma entrada " +
+                "vencida como se não existisse. O TTL não descobre que a fonte mudou: ele só garante que nenhuma cópia " +
+                "fica mais velha do que o prazo. O mesmo nome aparece em outros lugares com sentidos parecidos, como o " +
+                "tempo que um resolvedor guarda uma resposta de DNS e o número de saltos de um pacote IP.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "O TTL é o máximo de defasagem que se aceita para um dado: escolha-o pela pergunta \"por quanto tempo tudo " +
-                "bem mostrar o valor antigo?\", dado a dado, e não por um número padrão para o cache inteiro.",
+              text: "Escolha o TTL de cada dado perguntando por quanto tempo tudo bem mostrar o valor antigo.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -16438,27 +16432,25 @@ export default area({
           requires: ["Cache"],
           note: "o problema difícil; invalidação por evento × por tempo",
           summary:
-            "Tirar do cache — ou marcar como velha — uma cópia cujo dado mudou na fonte, seja por tempo (TTL), seja " +
-            "por evento (a escrita avisa o cache), e fazer isso sem corridas que deixem uma cópia antiga para trás.",
+            "Cache Invalidation é garantir que, depois que o dado muda na fonte, o cache pare de devolver a cópia " +
+            "antiga.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Invalidar é garantir que, depois que a fonte muda, o cache pare de devolver o valor antigo. Há dois " +
-                "caminhos. Por tempo: cada cópia tem um TTL e some sozinha, com a defasagem limitada pelo prazo. Por " +
-                "evento: quem altera o dado apaga (ou atualiza) as cópias afetadas, e a defasagem cai para quase zero. A " +
-                "parte difícil é saber quais cópias um dado afeta — o produto aparece na sua página, na listagem da " +
-                "categoria, na busca, no carrinho — e fazer a remoção sem que uma leitura concorrente grave de volta o " +
+                "Há dois caminhos. Por tempo: cada cópia tem um TTL e some sozinha, com a defasagem limitada pelo prazo. " +
+                "Por evento: quem altera o dado apaga (ou atualiza) as cópias afetadas, e a defasagem cai para quase " +
+                "zero. A parte difícil é saber quais cópias um dado afeta — o produto aparece na sua página, na listagem " +
+                "da categoria, na busca, no carrinho — e fazer a remoção sem que uma leitura concorrente grave de volta o " +
                 "valor antigo.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Prefira apagar a cópia a atualizá-la, invalide tudo o que deriva do dado alterado e mantenha um TTL como " +
-                "rede de segurança: a invalidação por evento vai falhar em algum momento, e o prazo limita quanto tempo o " +
-                "erro dura.",
+                "Mesmo com invalidação por evento, mantenha um TTL, porque um dia o evento falha e o prazo limita o " +
+                "estrago.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -16678,29 +16670,25 @@ export default area({
           requires: ["Cache"],
           subtopics: ["LRU", "LFU", "FIFO", "random", "pressão de memória × staleness"],
           note: "consolidada (A12) — absorve LRU",
-          summary:
-            "A regra que decide o que sai do cache quando ele fica cheio — o menos usado recentemente (LRU), o menos " +
-            "usado no total (LFU), o mais antigo (FIFO) ou um aleatório —, diferente da expiração, que tira o que " +
-            "ficou velho.",
+          summary: "Cache Eviction é a regra que decide o que sai do cache quando ele fica cheio.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Um cache tem memória limitada. Quando ela acaba e é preciso guardar algo novo, uma política de despejo " +
-                "(eviction) escolhe o que sai. LRU (least recently used) tira o item lido há mais tempo, apostando que o " +
-                "que foi usado há pouco será usado de novo. LFU (least frequently used) tira o menos lido no total, " +
-                "protegendo os itens populares. FIFO (first in, first out) tira o mais antigo, sem olhar o uso. Aleatório " +
-                "é o mais simples e, em muitos casos, surpreendentemente bom. Despejo e expiração são coisas diferentes: " +
-                "a expiração remove o que está velho, e o despejo remove o que não cabe, mesmo que ainda esteja válido.",
+                "Quando a memória acaba e é preciso guardar algo novo, a política de despejo escolhe o que sai. LRU " +
+                "(least recently used) tira o item lido há mais tempo, apostando que o que foi usado há pouco será usado " +
+                "de novo. LFU (least frequently used) tira o menos lido no total, protegendo os itens populares. FIFO " +
+                "(first in, first out) tira o mais antigo, sem olhar o uso. Aleatório é o mais simples e, em muitos " +
+                "casos, surpreendentemente bom. Despejo e expiração são coisas diferentes: a expiração remove o que está " +
+                "velho, e o despejo remove o que não cabe, mesmo que ainda esteja válido.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "A política de despejo é uma aposta sobre o futuro: LRU aposta que o que foi usado há pouco volta a ser " +
-                "usado, LFU que o popular continua popular — e a melhor é a que acerta sobre o padrão real de acesso, o " +
-                "que se mede pela taxa de acertos.",
+                "A melhor política de despejo é a que acerta sobre o seu padrão de acesso, e quem diz isso é a taxa de " +
+                "acertos medida.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -16911,26 +16899,25 @@ export default area({
           requires: ["Cache Invalidation"],
           note: "padrão mais comum; app orquestra",
           summary:
-            "O padrão em que a aplicação consulta o cache primeiro e, numa falta, busca na fonte e guarda o " +
-            "resultado; na escrita, grava na fonte e apaga a cópia — o cache fica ao lado, e é a aplicação que " +
-            "coordena os dois.",
+            "Cache-Aside é o padrão em que a aplicação consulta o cache primeiro e, numa falta, busca na fonte e " +
+            "guarda a cópia.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "No cache-aside (também chamado de lazy loading), o cache não sabe nada sobre o banco: ele é só um lugar " +
-                "onde a aplicação guarda cópias. Na leitura, a aplicação pergunta ao cache; num acerto, devolve a cópia; " +
-                "numa falta, busca na fonte, guarda a cópia com um TTL e devolve. Na escrita, a aplicação grava na fonte " +
-                "e apaga a cópia, para que a próxima leitura a recarregue. Só entra no cache o que alguém de fato leu, e " +
+                "Também chamado de lazy loading, ele deixa o cache sem saber nada sobre o banco: é só um lugar onde a " +
+                "aplicação guarda cópias. Na leitura, a aplicação pergunta ao cache; num acerto, devolve a cópia; numa " +
+                "falta, busca na fonte, guarda a cópia com um TTL e devolve. Na escrita, a aplicação grava na fonte e " +
+                "apaga a cópia, para que a próxima leitura a recarregue. Só entra no cache o que alguém de fato leu, e " +
                 "uma falha do cache não impede a aplicação de funcionar.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Na leitura, cache primeiro e fonte na falta; na escrita, fonte primeiro e depois apagar a cópia — e " +
-                "sempre com TTL, para que qualquer cópia errada tenha prazo para sumir.",
+                "Na escrita, apague a cópia em vez de atualizá-la, e deixe a próxima leitura trazer o valor novo da " +
+                "fonte.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -17171,28 +17158,25 @@ export default area({
           subtopics: ["read-through", "write-through", "write-behind/write-back (risco de perda)"],
           note: "consolidada (A19)",
           summary:
-            "Padrões em que o próprio cache conversa com a fonte: na leitura, ele busca o que falta (read-through); " +
-            "na escrita, grava na fonte junto com a cópia (write-through) ou acumula e grava depois (write-behind), " +
-            "trocando segurança por velocidade.",
+            "Read-Through, Write-Through e Write-Behind são padrões em que o próprio cache conversa com a fonte, e a " +
+            "aplicação fala só com ele.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "No cache-aside, a aplicação coordena cache e fonte. Nos padrões \"through\", a aplicação fala só com o " +
-                "cache, e ele sabe falar com a fonte. Read-through: numa falta, o próprio cache chama a função que " +
-                "carrega o dado. Write-through: a escrita vai ao cache, que grava na fonte e atualiza a cópia antes de " +
-                "responder, mantendo os dois sempre iguais. Write-behind (ou write-back): o cache responde logo e grava " +
-                "na fonte depois, em lotes — as escritas ficam rápidas, mas o que ainda não foi gravado se perde se o " +
-                "cache cair.",
+                "No cache-aside, a aplicação coordena cache e fonte; aqui, o cache sabe falar com a fonte. Read-through: " +
+                "numa falta, o próprio cache chama a função que carrega o dado. Write-through: a escrita vai ao cache, " +
+                "que grava na fonte e atualiza a cópia antes de responder, mantendo os dois sempre iguais. Write-behind " +
+                "(ou write-back): o cache responde logo e grava na fonte depois, em lotes — as escritas ficam rápidas, " +
+                "mas o que ainda não foi gravado se perde se o cache cair.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Read-through e write-through tiram da aplicação a coordenação com a fonte sem abrir mão da segurança; " +
-                "write-behind troca durabilidade por velocidade de escrita, e só serve a dados que podem ser perdidos ou " +
-                "reconstruídos.",
+                "Use write-behind só para dados que podem ser perdidos ou reconstruídos, porque uma queda do cache leva " +
+                "as escritas pendentes.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -17407,29 +17391,26 @@ export default area({
           subtopics: ["Redis", "Valkey", "Memcached"],
           note: "arquétipo: single-thread, estruturas de dados, persistência, uso como cache × store",
           summary:
-            "Um servidor que guarda os dados em memória e os serve pela rede, com latência de fração de milissegundo " +
-            "— usado como cache compartilhado entre instâncias e, graças às suas estruturas de dados e operações " +
-            "atômicas, também para contadores, filas, rankings e sessões.",
+            "Um In-Memory Data Store é um servidor que guarda os dados na memória e os serve pela rede com latência " +
+            "de fração de milissegundo.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Um banco em memória, como o Redis, o Valkey (um fork aberto do Redis) ou o Memcached, mantém todos os " +
-                "dados na RAM e responde a comandos pela rede. Por estar fora do processo da aplicação, ele é " +
-                "compartilhado por todas as instâncias e sobrevive aos deploys. O Memcached é um cache de chave-valor " +
-                "simples. O Redis e o Valkey vão além: oferecem estruturas de dados (strings, hashes, listas, conjuntos, " +
-                "conjuntos ordenados) com operações atômicas sobre elas, expiração por chave e, opcionalmente, " +
-                "persistência em disco. Eles executam os comandos um de cada vez, numa única thread, e por isso cada " +
-                "comando é atômico sem precisar de locks.",
+                "Exemplos são o Redis, o Valkey (um fork aberto do Redis) e o Memcached. Por estar fora do processo da " +
+                "aplicação, ele é compartilhado por todas as instâncias e sobrevive aos deploys. O Memcached é um cache " +
+                "de chave-valor simples. O Redis e o Valkey vão além: oferecem estruturas de dados (strings, hashes, " +
+                "listas, conjuntos, conjuntos ordenados) com operações atômicas sobre elas, expiração por chave e, " +
+                "opcionalmente, persistência em disco. Eles executam os comandos um de cada vez, numa única thread, e por " +
+                "isso cada comando é atômico sem precisar de locks.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Use o banco em memória pelas operações que ele faz de forma atômica e rápida — incrementar, adicionar a " +
-                "um ranking, expirar —, e decida explicitamente se ele é cache (pode perder dados) ou armazenamento (não " +
-                "pode), porque a configuração é diferente em cada caso.",
+                "Decida se o banco em memória é cache, que pode perder dados, ou armazenamento, que não pode, porque a " +
+                "configuração muda.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -17630,9 +17611,8 @@ export default area({
           note: "consolidada (B2) — revisita Web Fundamentals / HTTP Headers",
           revisit: ["Platform / Web Fundamentals / HTTP Headers"],
           summary:
-            "O cache definido pelo próprio HTTP: o servidor diz, nos cabeçalhos de cada resposta, se ela pode ser " +
-            "guardada, por quem (só o navegador ou também caches compartilhados) e por quanto tempo, e como conferir " +
-            "depois se a cópia ainda vale.",
+            "O HTTP Cache é o cache definido pelo próprio HTTP, em que cada resposta diz nos cabeçalhos se, por quem " +
+            "e por quanto tempo pode ser guardada.",
           content: [
             { type: "heading", text: "Conceito" },
             {
@@ -17650,8 +17630,7 @@ export default area({
               type: "callout",
               title: "Ideia principal",
               text:
-                "Cada tipo de resposta pede uma política própria: arquivos com hash no nome ficam em cache por um ano, " +
-                "HTML e dados de API revalidam a cada uso, dados pessoais são `private` e dados sensíveis são `no-store`.",
+                "Um arquivo com hash no nome pode ficar em cache por um ano, porque qualquer mudança gera um nome novo.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -17847,26 +17826,24 @@ export default area({
           requires: ["Browser & HTTP Cache"],
           note: "edge, origin pull/push, invalidação/purge, TTL de borda. Architecture / Caching at Scale revisita",
           summary:
-            "Uma rede de servidores de cache espalhados pelo mundo (a borda, ou edge) que guarda cópias das respostas " +
-            "perto de quem as pede — reduzindo a latência para os usuários e a carga sobre o servidor de origem.",
+            "Uma CDN (content delivery network) é uma rede de servidores de cache espalhados pelo mundo, que guardam " +
+            "cópias das respostas perto de quem as pede.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Uma CDN (content delivery network) coloca servidores de cache em dezenas ou centenas de lugares. O " +
-                "domínio do site aponta para a CDN, e cada pessoa é atendida pelo ponto mais próximo. Num acerto, a " +
-                "resposta sai da borda, a poucos milissegundos de quem pediu; numa falta, a borda busca no servidor de " +
-                "origem (origin pull), guarda a cópia e responde. Quanto tempo a borda guarda cada resposta segue os " +
-                "cabeçalhos HTTP (`s-maxage` vale só para caches compartilhados) ou regras da própria CDN. Quando o " +
-                "conteúdo muda antes do prazo, uma purga (purge) remove as cópias da borda, por URL ou por etiqueta.",
+                "Esses servidores formam a borda (edge), em dezenas ou centenas de lugares. O domínio do site aponta para " +
+                "a CDN, e cada pessoa é atendida pelo ponto mais próximo. Num acerto, a resposta sai da borda, a poucos " +
+                "milissegundos de quem pediu; numa falta, a borda busca no servidor de origem (origin pull), guarda a " +
+                "cópia e responde. Quanto tempo a borda guarda cada resposta segue os cabeçalhos HTTP (`s-maxage` vale só " +
+                "para caches compartilhados) ou regras da própria CDN. Quando o conteúdo muda antes do prazo, uma purga " +
+                "(purge) remove as cópias da borda, por URL ou por etiqueta.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "A CDN é um cache HTTP compartilhado e distribuído: tudo o que vale para o cache HTTP vale para ela, e o " +
-                "erro mais caro é deixá-la guardar uma resposta que era de uma pessoa só.",
+              text: "O erro mais caro numa CDN é deixá-la guardar uma resposta que era de uma pessoa só.",
             },
             { type: "heading", text: "Como funciona" },
             {
