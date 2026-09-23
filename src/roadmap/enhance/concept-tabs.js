@@ -188,6 +188,9 @@ function wireTocSpy() {
     return document.getElementById(a.getAttribute("href").slice(1));
   });
   let frame = 0;
+  // Item clicado em "Neste conteúdo": vale até a próxima rolagem feita pela pessoa (roda, toque, teclado).
+  // Sem isso, clicar numa seção curta perto do fim destacaria outra (a última visível).
+  let pinned = -1;
   function spy() {
     frame = 0;
     let current = -1;
@@ -196,6 +199,14 @@ function wireTocSpy() {
       if (el && el.offsetParent !== null && el.getBoundingClientRect().top < 140) current = i;
     });
     if (current === -1 && targets[0] && targets[0].offsetParent !== null) current = 0;
+    // No fim da página as últimas seções (curtas) nunca chegam ao topo: vale a última cujo título está na tela.
+    const root = document.documentElement;
+    if (current !== -1 && innerHeight + scrollY >= root.scrollHeight - 2) {
+      targets.forEach(function (el, i) {
+        if (el && el.offsetParent !== null && el.getBoundingClientRect().top < innerHeight) current = i;
+      });
+    }
+    if (current !== -1 && pinned !== -1) current = pinned;
     links.forEach(function (a, i) {
       if (i === current) a.setAttribute("aria-current", "location");
       else a.removeAttribute("aria-current");
@@ -204,9 +215,24 @@ function wireTocSpy() {
   function schedule() {
     if (!frame) frame = requestAnimationFrame(spy);
   }
+  function unpin() {
+    if (pinned !== -1) {
+      pinned = -1;
+      schedule();
+    }
+  }
+  links.forEach(function (a, i) {
+    a.addEventListener("click", function () {
+      pinned = i;
+    });
+  });
   spy();
   addEventListener("scroll", schedule, { passive: true });
-  document.addEventListener("click", function () {
+  addEventListener("wheel", unpin, { passive: true });
+  addEventListener("touchmove", unpin, { passive: true });
+  addEventListener("keydown", unpin);
+  document.addEventListener("click", function (event) {
+    if (!event.target.closest(".doc-toc a")) pinned = -1; // outro clique (ex.: trocar de aba) volta ao automático
     setTimeout(spy, 50); // troca de aba muda o que está visível
   });
 }
