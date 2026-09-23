@@ -3015,23 +3015,22 @@ export default area({
           title: "Command-Query Separation (CQS)",
           note: "um método pergunta OU muda estado, não os dois",
           summary:
-            "Cada método ou faz uma pergunta (query), devolvendo um valor sem alterar nada, ou dá uma ordem " +
-            "(command), alterando o estado sem devolver dados — nunca as duas coisas ao mesmo tempo.",
+            "Command-Query Separation é o princípio de que cada método ou devolve um valor sem alterar nada, ou " +
+            "altera o estado sem devolver dados.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Command-Query Separation, formulado por Bertrand Meyer, divide os métodos de um objeto em dois tipos. " +
-                "Uma query devolve um valor e não altera o estado observável do objeto: perguntar não muda a resposta. " +
-                "Um command altera o estado e não devolve dados sobre ele: dá uma ordem, e o que muda está no objeto.",
+                "Formulado por Bertrand Meyer, ele divide os métodos em dois tipos. Uma query devolve um valor e não " +
+                "altera o estado observável do objeto: perguntar não muda a resposta. Um command altera o estado e não " +
+                "devolve dados sobre ele: dá uma ordem, e o que muda está no objeto.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Um método pergunta OU muda estado, não os dois: quem consulta pode chamar quantas vezes quiser sem " +
-                "efeito, e quem altera deixa claro que existe um efeito.",
+                "Se chamar um método duas vezes para ler um valor muda o resultado, ele é um command disfarçado de query.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -3227,25 +3226,22 @@ export default area({
           requires: ["Programming Foundations / Programming Fundamentals / Encapsulation"],
           note: "isolar o ponto de variação — aplica Encapsulation",
           summary:
-            "Identifique a parte do código que muda com frequência e isole-a atrás de uma fronteira estável, para " +
-            "que o restante do sistema não precise mudar junto.",
+            "Encapsulate What Varies é isolar a parte do código que muda com frequência atrás de uma fronteira " +
+            "estável.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Encapsulate What Varies pede duas coisas: descobrir o que muda (regras de imposto, formatos de saída, " +
-                "provedores, canais de envio) e separar isso do que permanece. A parte que varia fica atrás de uma " +
-                "fronteira estável, uma função ou um contrato, e o resto do código conversa só com essa fronteira. É a " +
-                "aplicação de Encapsulation e de Information Hiding (módulo Programming Fundamentals) a um ponto " +
-                "específico: o que tem chance de mudar.",
+                "O princípio pede duas coisas: descobrir o que muda (regras de imposto, formatos de saída, provedores, " +
+                "canais de envio) e separar isso do que permanece. O resto do código conversa só com a fronteira, que " +
+                "pode ser uma função ou um contrato. É a aplicação de Encapsulation e de Information Hiding (módulo " +
+                "Programming Fundamentals) a um ponto específico: o que tem chance de mudar.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Descubra o que muda e coloque uma fronteira em volta: o que é estável não precisa ser reescrito " +
-                "toda vez que o que varia mudar.",
+              text: "Quando a mesma condição sobre um caso aparece em vários arquivos, a variação ainda não foi isolada.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -3432,25 +3428,23 @@ export default area({
           requires: ["Programming Foundations / Programming Fundamentals / Interface"],
           note: "depender do contrato, não da implementação — revisita também Type Systems / Structural Typing (Epic 01)",
           summary:
-            "Escreva o código para depender do contrato (o que algo faz), não de uma implementação concreta (como " +
-            "ela faz) — assim a implementação pode ser trocada sem mexer em quem a usa.",
+            "Program to an Interface é fazer o código depender do contrato que algo cumpre, e não de uma " +
+            "implementação concreta.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Program to an Interface diz que o código deve depender do que algo promete fazer, e não de qual " +
-                "classe concreta o faz. \"Interface\" aqui é o contrato (Interface e Contract, módulo Programming " +
-                "Fundamentals), não a palavra-chave de uma linguagem. Em JavaScript, ele aparece como o formato que a " +
-                "função espera: qualquer objeto com o método `write()`, e não uma classe específica. É a mesma ideia " +
-                "de Structural Typing (módulo Type Systems), em que basta ter a forma certa.",
+                "\"Interface\" aqui é o contrato (Interface e Contract, módulo Programming Fundamentals), não a " +
+                "palavra-chave de uma linguagem. Em JavaScript, ele aparece como o formato que a função espera: qualquer " +
+                "objeto com o método `write()`, e não uma classe específica. É a mesma ideia de Structural Typing (módulo " +
+                "Type Systems), em que basta ter a forma certa.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Dependa do que algo faz, e não do que ele é: a implementação passa a poder mudar sem que quem a usa " +
-                "perceba.",
+                "Se trocar de fornecedor obriga a editar quem o usa, o código depende do concreto, e não do contrato.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -3647,24 +3641,24 @@ export default area({
           ],
           note: "heurística realocada do Epic 01 — escolhe entre os dois mecanismos já ensinados",
           summary:
-            "Prefira montar comportamento combinando objetos menores (tem-um) a herdá-lo de uma classe base " +
-            "(é-um): a herança prende as classes umas às outras, e a composição permite trocar e combinar as peças.",
+            "Composition over Inheritance é a heurística de preferir montar comportamento combinando objetos a " +
+            "herdá-lo de uma classe base.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Composition over Inheritance é uma heurística para escolher entre dois mecanismos já vistos no módulo " +
-                "Programming Fundamentals: Inheritance, em que uma subclasse herda da base (é-um), e Composition, em " +
-                "que um objeto usa outros e delega a eles (tem-um). A heurística diz para começar pela composição e " +
-                "reservar a herança para quando a relação é de fato \"é um\" e a subclasse cumpre todo o contrato da base.",
+                "Ela escolhe entre dois mecanismos já vistos no módulo Programming Fundamentals: Inheritance, em que uma " +
+                "subclasse herda da base (é-um), e Composition, em que um objeto usa outros e delega a eles (tem-um). A " +
+                "recomendação é começar pela composição e reservar a herança para quando a relação é de fato \"é um\" e a " +
+                "subclasse cumpre todo o contrato da base.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Comece por composição: use herança só quando a relação é realmente \"é um\" e a subclasse cumpre todo o " +
-                "contrato da classe base.",
+                "Herança prende uma classe à outra para sempre, e composição deixa você trocar a peça quando o requisito " +
+                "mudar.",
             },
             { type: "heading", text: "Por que importa" },
             {
