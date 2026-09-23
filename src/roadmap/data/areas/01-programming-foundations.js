@@ -3955,25 +3955,23 @@ export default area({
           note: "Declarativo vs. imperativo",
           requires: ["Programming Fundamentals / Abstraction"],
           summary:
-            "Duas formas de descrever o que um programa faz: dizer passo a passo como chegar no resultado " +
-            "(imperativo), ou dizer o que se quer e deixar a implementação decidir o como (declarativo).",
+            "Declarative vs Imperative é a diferença entre descrever o resultado que se quer e descrever os passos " +
+            "para chegar nele.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Código Imperativo descreve uma sequência de passos explícitos que mudam o estado do programa " +
-                "até chegar no resultado — \"faça isso, depois isso, depois aquilo\". Código Declarativo " +
-                "descreve o resultado desejado, sem especificar os passos — \"eu quero isto\", deixando pra " +
-                "implementação decidir como chegar lá.",
+                "No código imperativo, você escreve passos explícitos que mudam o estado do programa até chegar no " +
+                "resultado — \"faça isso, depois isso, depois aquilo\". No declarativo, você diz \"eu quero isto\" e deixa " +
+                "pra implementação decidir como chegar lá.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Imperativo descreve os passos; Declarativo descreve o resultado desejado. Boa parte de " +
-                "Functional Programming é sobre escrever mais no estilo declarativo — os próximos Concepts " +
-                "são ferramentas concretas pra isso.",
+                "Se um loop só existe para montar um resultado, troque os passos por uma descrição do resultado que você " +
+                "quer.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -4068,27 +4066,22 @@ export default area({
           title: "First-Class Functions",
           note: "Funções de primeira classe",
           requires: ["Declarative vs Imperative"],
-          summary:
-            "Funções tratadas como qualquer outro valor — podem ser guardadas em variáveis, passadas como " +
-            "argumento, devolvidas por outra função. O recurso de linguagem que torna todo o resto de " +
-            "Functional Programming possível.",
+          summary: "First-Class Functions são funções que a linguagem trata como qualquer outro valor.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Numa linguagem com First-Class Functions, uma função pode ser tratada exatamente como " +
-                "qualquer outro valor: guardada numa variável, passada como argumento pra outra função, " +
-                "devolvida como resultado, guardada dentro de um array ou objeto. Não existe uma categoria " +
-                "especial de \"função\" separada dos outros valores.",
+                "Uma função pode ser guardada numa variável, passada como argumento pra outra função, devolvida como " +
+                "resultado, guardada dentro de um array ou objeto. Não existe uma categoria especial de \"função\" separada " +
+                "dos outros valores.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "First-Class Functions trata função como qualquer outro valor — guardável, passável, " +
-                "retornável. É o alicerce que torna Closures, Higher-Order Functions e todo o resto de " +
-                "Functional Programming possível.",
+                "Sem First-Class Functions não existem Closures nem Higher-Order Functions, porque os dois dependem de " +
+                "tratar funções como valores.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -4182,27 +4175,20 @@ export default area({
           isNew: true,
           requires: ["First-Class Functions"],
           revisit: ["Asynchronous Programming / Callback"],
-          summary:
-            "Uma função que \"lembra\" o ambiente léxico onde foi criada, mesmo depois que esse ambiente já " +
-            "deveria ter deixado de existir — a técnica por trás de estado privado, callbacks com contexto, e " +
-            "Encapsulation fora de classes.",
+          summary: "Um Closure é uma função junto com as variáveis do lugar onde ela foi criada.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Um Closure é uma função combinada com o ambiente léxico — as variáveis — de onde ela foi " +
-                "criada. Mesmo depois que a função externa que criou esse ambiente já retornou, a função " +
-                "interna continua tendo acesso a essas variáveis. Já vimos isso em Stack vs Heap: um closure é " +
-                "o que força uma variável local a sobreviver no heap além do frame que a criou.",
+                "Mesmo depois que a função externa que criou esse ambiente já retornou, a função interna continua tendo " +
+                "acesso a essas variáveis. Já vimos isso em Stack vs Heap: um closure é o que força uma variável local a " +
+                "sobreviver no heap além do frame que a criou.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Closure é uma função que carrega consigo o ambiente léxico onde foi criada — permite estado " +
-                "privado e contexto persistente sem precisar de uma classe, e é a base de como callbacks " +
-                "lembram de dados relevantes.",
+              text: "Quando você precisa de estado privado sem criar uma classe, um Closure resolve.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -4331,27 +4317,22 @@ export default area({
           note: "Efeitos colaterais",
           requires: ["Programming Fundamentals / Encapsulation"],
           revisit: ["Concurrency / Shared State", "AI Engineering / Model Inference / Deterministic vs Stochastic Output"],
-          summary:
-            "Qualquer interação de uma função com o mundo fora dela — mudar uma variável externa, escrever num " +
-            "arquivo, fazer uma requisição de rede. Entender o que é um efeito colateral é o pré-requisito pra " +
-            "entender o que uma Pure Function evita.",
+          summary: "Um Side Effect é qualquer coisa que uma função faz além de calcular e devolver um valor.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Um Side Effect é qualquer coisa que uma função faz além de calcular e devolver um valor — " +
-                "modificar uma variável fora do seu escopo, mudar um objeto recebido por referência, escrever " +
-                "num arquivo, fazer uma chamada de rede, imprimir no console, ler a hora atual. Se a função " +
-                "\"toca\" o mundo fora dela, ou depende de algo fora dela que pode mudar, isso é um efeito colateral.",
+                "Modificar uma variável fora do seu escopo, mudar um objeto recebido por referência, escrever num " +
+                "arquivo, fazer uma chamada de rede, imprimir no console, ler a hora atual: se a função \"toca\" o mundo " +
+                "fora dela, ou depende de algo fora dela que pode mudar, isso é um efeito colateral.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Side Effect é qualquer interação de uma função com algo fora dela — variável externa, objeto " +
-                "mutado, I/O. Nomear isso explicitamente é o primeiro passo pra decidir onde, no seu programa, " +
-                "isso deveria (ou não) acontecer.",
+                "Efeitos colaterais não são proibidos, mas precisam de um lugar escolhido no programa em vez de aparecer " +
+                "em qualquer função.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -4451,24 +4432,20 @@ export default area({
           requires: ["Side Effects"],
           revisit: ["Testing & Quality Engineering / Testing Strategy / Testability", "Algorithms & Complexity / Memoization"],
           summary:
-            "Uma função que, pro mesmo input, sempre devolve o mesmo output, e não produz nenhum efeito " +
-            "colateral — previsível, testável isoladamente, e segura de chamar quantas vezes for preciso.",
+            "Uma Pure Function é uma função que sempre devolve o mesmo resultado para o mesmo input e não produz " +
+            "nenhum Side Effect.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Uma Pure Function satisfaz duas regras: pro mesmo input, sempre devolve o mesmo output — " +
-                "nunca depende de nada externo que possa variar; e não produz nenhum Side Effect — não muta " +
-                "nada fora dela, não faz I/O, não depende de estado externo mutável.",
+                "Na prática, isso vira duas regras: nunca depender de nada externo que possa variar, e nunca mutar nada " +
+                "fora dela, fazer I/O ou depender de estado externo mutável.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Pure Function devolve sempre o mesmo output pro mesmo input, e não produz efeito colateral " +
-                "nenhum. Isso as torna previsíveis, fáceis de testar isoladamente, e seguras de otimizar " +
-                "(cache, memoization) sem medo de resultado errado.",
+              text: "Uma Pure Function pode ser testada, cacheada e chamada quantas vezes for preciso sem surpresa.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -4574,24 +4551,20 @@ export default area({
           note: "Transparência referencial",
           requires: ["Pure Functions"],
           summary:
-            "A propriedade de uma expressão poder ser substituída pelo seu valor resultante sem mudar o " +
-            "comportamento do programa — uma consequência direta de trabalhar só com Pure Functions.",
+            "Referential Transparency é a propriedade de uma expressão que pode ser trocada pelo seu valor sem mudar " +
+            "o comportamento do programa.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Uma expressão tem Referential Transparency se ela pode ser substituída pelo valor que produz, " +
-                "em qualquer lugar do programa, sem mudar o comportamento de nada. add(2, 3) tem transparência " +
-                "referencial porque você pode trocar cada ocorrência dela por 5 em qualquer lugar, e o " +
-                "programa continua funcionando exatamente igual.",
+                "add(2, 3) tem transparência referencial porque você pode trocar cada ocorrência dela por 5 em qualquer " +
+                "lugar, e o programa continua funcionando exatamente igual.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Referential Transparency significa que uma chamada de função pode ser trocada pelo valor que " +
-                "ela produz, sem mudar o comportamento do programa. É o que Pure Functions garantem.",
+              text: "Se trocar uma chamada pelo seu resultado muda o programa, aquela função não é pura.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -4708,25 +4681,20 @@ export default area({
           note: "Imutabilidade",
           requires: ["Side Effects", "Memory & Runtime / Value vs Reference"],
           revisit: ["Concurrency / Thread Safety", "Software Design / Mutable vs Immutable Objects", "Architecture / Event Sourcing"],
-          summary:
-            "Dados que, uma vez criados, nunca mudam — em vez de alterar um valor existente, qualquer " +
-            "\"mudança\" cria um valor novo. Elimina uma categoria inteira de bug de estado compartilhado inesperado.",
+          summary: "Immutability é a regra de que um dado, depois de criado, nunca é alterado.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Immutability significa que um dado, depois de criado, nunca é alterado — qualquer operação " +
-                "que \"pareça\" mudar esse dado, na verdade, cria e devolve uma versão nova, deixando o " +
+                "Qualquer operação que \"pareça\" mudar esse dado, na verdade, cria e devolve uma versão nova, deixando o " +
                 "original intocado. Em Value vs Reference vimos o problema que isso resolve: mudar um objeto " +
                 "compartilhado através de uma referência afeta todo mundo que também a tem.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Immutability significa nunca alterar um dado existente — qualquer \"mudança\" cria um valor " +
-                "novo. Elimina o bug de estado compartilhado inesperado pela raiz, ao custo de criar mais objetos.",
+              text: "Dado que nunca muda pode ser compartilhado à vontade, pagando o preço de criar mais objetos.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -4835,23 +4803,20 @@ export default area({
           note: "Funções de alta ordem",
           requires: ["First-Class Functions", "Closure"],
           summary:
-            "Uma função que recebe outra função como argumento, devolve uma função como resultado, ou as duas " +
-            "coisas — a categoria que engloba Map, Filter, Reduce e Function Composition.",
+            "Uma Higher-Order Function é uma função que recebe outra função como argumento, devolve uma função, ou " +
+            "faz as duas coisas.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Uma Higher-Order Function (HOF) é uma função que faz pelo menos uma destas duas coisas: " +
-                "recebe outra função como argumento, ou devolve uma função como resultado. Só é possível " +
-                "porque funções são First-Class.",
+                "Basta uma das duas coisas para a função entrar na categoria. Só é possível porque funções são " +
+                "First-Class.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Higher-Order Function é qualquer função que recebe função como argumento, devolve função como " +
-                "resultado, ou as duas — a categoria que engloba Map/Filter/Reduce e Function Composition.",
+              text: "Uma Higher-Order Function guarda o padrão que se repete, e quem chama entrega só a parte que muda.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -4955,24 +4920,22 @@ export default area({
           requires: ["Higher-Order Functions", "Pure Functions"],
           collision: "≠ Composition (Programming Fundamentals, objetos). f∘g",
           summary:
-            "Combinar funções menores em uma maior, encadeando a saída de uma como entrada da próxima (f∘g) — " +
-            "o mesmo espírito de Composition (objetos), aplicado a comportamento em vez de estado.",
+            "Function Composition é combinar funções numa nova função, em que a saída de uma vira a entrada da " +
+            "próxima.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Function Composition é combinar duas ou mais funções em uma nova função, onde a saída de uma " +
-                "vira a entrada da próxima — matematicamente notado f∘g, que significa \"primeiro g, depois f " +
-                "com o resultado\". O resultado é uma função nova, feita a partir de peças menores.",
+                "Na notação matemática, f∘g significa \"primeiro g, depois f com o resultado\". O resultado é uma função " +
+                "nova, feita a partir de peças menores.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Function Composition combina funções pequenas e puras numa transformação maior, encadeando " +
-                "saída→entrada. Mesmo espírito de Composition: montar o complexo a partir de peças simples e " +
-                "testáveis isoladamente.",
+                "Funções pequenas e puras se encaixam como peças, e cada uma pode ser testada antes de entrar na " +
+                "composição.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -5098,23 +5061,20 @@ export default area({
           note: "Transformar cada item",
           requires: ["Higher-Order Functions"],
           summary:
-            "Uma Higher-Order Function que aplica uma transformação a cada item de uma coleção, devolvendo " +
-            "uma coleção nova do mesmo tamanho — o padrão declarativo mais comum pra \"fazer algo com cada elemento\".",
+            "Map é a Higher-Order Function que aplica uma transformação a cada item de uma coleção e devolve uma " +
+            "coleção nova.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                ".map() recebe uma função de transformação e a aplica a cada item de uma coleção, devolvendo " +
-                "uma coleção nova — imutável, o original não é tocado — com o mesmo número de elementos, cada " +
-                "um transformado.",
+                ".map() recebe a função de transformação como argumento. O original não é tocado, e a coleção nova tem o " +
+                "mesmo número de elementos, cada um transformado.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                ".map() transforma cada item de uma coleção numa coleção nova do mesmo tamanho — a expressão " +
-                "declarativa mais direta de \"aplique isso a cada elemento\", sem mutar o original.",
+              text: "Se a saída tem um item para cada item da entrada, o que você quer é um map.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -5195,25 +5155,20 @@ export default area({
           note: "Manter só o que satisfaz",
           requires: ["Map"],
           summary:
-            "Uma Higher-Order Function que mantém só os itens de uma coleção que satisfazem uma condição, " +
-            "devolvendo uma coleção nova (possivelmente menor) — o complemento natural de Map para selecionar, " +
-            "em vez de transformar.",
+            "Filter é a Higher-Order Function que devolve uma coleção nova só com os itens que satisfazem uma " +
+            "condição.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                ".filter() recebe uma função que devolve true/false (um predicado) e a aplica a cada item de " +
-                "uma coleção, devolvendo uma coleção nova contendo só os itens pros quais o predicado devolveu " +
-                "true. Diferente de .map() (que transforma cada item, mantendo o tamanho), .filter() seleciona " +
-                "um subconjunto.",
+                ".filter() recebe uma função que devolve true/false (um predicado) e a aplica a cada item. Diferente de " +
+                ".map() (que transforma cada item, mantendo o tamanho), .filter() seleciona um subconjunto.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                ".filter() seleciona um subconjunto de uma coleção com base numa condição, devolvendo uma " +
-                "coleção nova (possivelmente menor). É o complemento de .map(): filter seleciona, map transforma.",
+              text: "Se você quer menos itens, e não itens diferentes, o que você quer é um filter.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -5299,24 +5254,19 @@ export default area({
           title: "Reduce",
           note: "O caso geral",
           requires: ["Map", "Filter"],
-          summary:
-            "A Higher-Order Function mais geral de todas: acumula os itens de uma coleção num único resultado " +
-            "— Map e Filter podem, inclusive, ser implementados em cima de Reduce.",
+          summary: "Reduce é a Higher-Order Function que percorre uma coleção acumulando os itens num único resultado.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                ".reduce() percorre uma coleção acumulando um resultado — a cada item, chama uma função que " +
-                "recebe o valor acumulado até agora e o item atual, e devolve o novo valor acumulado. No fim, " +
-                "sobra um único resultado — um número, um objeto, um array, qualquer coisa.",
+                "A cada item, ela chama uma função que recebe o valor acumulado até agora e o item atual, e devolve o " +
+                "novo valor acumulado. No fim, sobra um único resultado — um número, um objeto, um array, qualquer coisa.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Reduce acumula os itens de uma coleção num único resultado — é o caso mais geral de todos, e " +
-                "a ferramenta certa sempre que o objetivo é \"resumir\" uma coleção inteira.",
+              text: "Quando o objetivo é resumir uma coleção inteira num valor só, a ferramenta é o reduce.",
             },
             { type: "heading", text: "Por que importa" },
             {
