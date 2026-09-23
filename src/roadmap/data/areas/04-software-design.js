@@ -3860,25 +3860,21 @@ export default area({
           title: "Inversion of Control (IoC)",
           note: "guarda-chuva: quem controla o fluxo e a criação de dependências",
           summary:
-            "Em vez de o seu código controlar quando as coisas acontecem e criar tudo o que usa, ele entrega o " +
-            "controle a alguém de fora — um framework, um contêiner, um chamador — que decide quando e com o que chamá-lo.",
+            "Inversion of Control é o princípio em que o controle do fluxo, ou da criação das dependências, sai do " +
+            "seu código e vai para quem o usa.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Inversion of Control é um princípio guarda-chuva: o controle do fluxo, ou da criação das " +
-                "dependências, sai do seu código e vai para outro lugar. No fluxo normal, você chama a biblioteca " +
-                "quando quer. Com IoC, você entrega uma função ou um objeto e quem controla chama você quando for a " +
-                "hora — o \"princípio de Hollywood\": não nos chame, nós chamamos você. Callbacks, manipuladores de " +
-                "eventos, frameworks e Dependency Injection são formas de IoC.",
+                "No fluxo normal, você chama a biblioteca quando quer. Com IoC, você entrega uma função ou um objeto e " +
+                "quem controla chama você quando for a hora — o \"princípio de Hollywood\": não nos chame, nós chamamos " +
+                "você. Callbacks, manipuladores de eventos, frameworks e Dependency Injection são formas de IoC.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Não é o seu código que chama e monta tudo: ele declara o que oferece e do que precisa, e quem " +
-                "controla decide quando e com o que ligá-lo.",
+              text: "Um handler que não sabe quem o chama nem quando pode ser reutilizado e testado sozinho.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -4054,24 +4050,24 @@ export default area({
             "a técnica concreta — forma mais comum de aplicar IoC. DI é aplicação da testabilidade (via inversa já registrada no Epic 02), não o contrário",
           revisit: ["Testing & Quality Engineering / Testing Strategy / Testability"],
           summary:
-            "Um objeto recebe de fora as dependências de que precisa, em vez de criá-las por dentro — a forma mais " +
-            "comum de aplicar Inversion of Control.",
+            "Dependency Injection é a técnica em que um objeto recebe de fora as dependências de que precisa, em vez " +
+            "de criá-las.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Dependency Injection é a técnica em que um objeto recebe as suas dependências (o banco, o serviço de " +
-                "e-mail, o relógio) de quem o cria, em vez de instanciá-las com `new` dentro de si. Quem monta o objeto " +
-                "decide qual implementação entregar. É a forma mais comum de aplicar Inversion of Control e o que torna " +
-                "prático seguir o Dependency Inversion Principle e a testabilidade (Testability, módulo Testing Strategy).",
+                "O banco, o serviço de e-mail e o relógio chegam de quem cria o objeto, em vez de serem instanciados com " +
+                "`new` dentro dele. Quem monta o objeto decide qual implementação entregar. É a forma mais comum de " +
+                "aplicar Inversion of Control e o que torna prático seguir o Dependency Inversion Principle e a " +
+                "testabilidade (Testability, módulo Testing Strategy).",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Não crie as suas dependências: receba-as. Assim a classe declara do que precisa, e quem a monta " +
-                "escolhe o quê — uma implementação real em produção e uma falsa em um teste.",
+                "Uma classe que recebe as dependências pode usar a implementação real em produção e uma falsa no teste, " +
+                "sem mudar uma linha.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -4267,24 +4263,21 @@ export default area({
           requires: ["Dependency Injection"],
           note: "a forma mais comum de DI",
           summary:
-            "Declarar as dependências como parâmetros do construtor: o objeto só existe com tudo de que precisa, e " +
-            "fica completo e pronto para uso desde a criação.",
+            "Constructor Injection é a forma de Dependency Injection em que as dependências obrigatórias entram pelo " +
+            "construtor.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Constructor Injection é a forma de Dependency Injection em que as dependências obrigatórias são " +
-                "recebidas no construtor e guardadas no objeto. A assinatura do construtor passa a ser a lista honesta " +
-                "do que a classe precisa, e um objeto só pode ser criado se todas forem fornecidas. Depois de construído, " +
-                "ele já está pronto para uso, sem nenhuma etapa de configuração pendente.",
+                "Elas são guardadas no objeto, e a assinatura do construtor passa a ser a lista honesta do que a classe " +
+                "precisa. Um objeto só pode ser criado se todas forem fornecidas e, depois de construído, já está pronto " +
+                "para uso, sem nenhuma etapa de configuração pendente.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Tudo o que o objeto precisa entra pelo construtor: ele nasce completo, com dependências explícitas e " +
-                "sem estados \"quase prontos\".",
+              text: "Um construtor que pede coisas demais está dizendo que a classe tem responsabilidades demais.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -4485,24 +4478,23 @@ export default area({
           requires: ["Dependency Injection"],
           note: "automatiza a montagem do grafo de dependências",
           summary:
-            "Um componente que sabe como construir cada dependência e monta, sozinho, o grafo de objetos inteiro — " +
-            "com controle do ciclo de vida de cada um.",
+            "Um Dependency Injection Container é um componente que sabe criar cada dependência e monta sozinho o " +
+            "grafo de objetos inteiro.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Um Dependency Injection Container (ou IoC container) registra como criar cada dependência e, ao ser " +
-                "pedido um objeto, resolve recursivamente tudo de que ele precisa. Em vez de escrever à mão a cadeia " +
-                "de `new` do ponto de composição, você a descreve uma vez, e o container a executa. Ele também " +
-                "controla o ciclo de vida: um único objeto compartilhado (singleton) ou um novo a cada pedido.",
+                "Também chamado de IoC container, ele registra como criar cada dependência e, ao ser pedido um objeto, " +
+                "resolve recursivamente tudo de que ele precisa. Em vez de escrever à mão a cadeia de `new` do ponto de " +
+                "composição, você a descreve uma vez, e o container a executa. Ele também controla o ciclo de vida: um " +
+                "único objeto compartilhado (singleton) ou um novo a cada pedido.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "O container automatiza a montagem do grafo de dependências que você faria à mão — e só vale a " +
-                "pena quando esse grafo é grande o bastante para justificar a automação.",
+                "Comece montando o grafo à mão, e só adote um container quando essa montagem ficar grande e repetida.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -4695,25 +4687,24 @@ export default area({
           requires: ["Dependency Injection"],
           note: "alternativa/anti-padrão comum a DI — ensinado em contraste",
           summary:
-            "Um registro central de onde as classes buscam por conta própria o que precisam — o oposto de Dependency " +
-            "Injection, em que as dependências são entregues de fora.",
+            "Um Service Locator é um registro global ao qual as classes pedem, por conta própria, as dependências de " +
+            "que precisam.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Service Locator é um registro global ao qual uma classe pede as dependências de que precisa: " +
-                "`locator.get(\"mailer\")`. Ele também inverte a criação (a classe não usa `new`), mas de outra forma: " +
-                "com Dependency Injection, as dependências são empurradas para dentro pelo construtor; com o Locator, " +
-                "a classe vai buscá-las. É ensinado aqui em contraste, porque é a alternativa mais comum, e muitas vezes " +
-                "considerada um anti-padrão.",
+                "A chamada é algo como `locator.get(\"mailer\")`. Ele também inverte a criação (a classe não usa `new`), " +
+                "mas de outra forma: com Dependency Injection, as dependências são empurradas para dentro pelo " +
+                "construtor; com o Locator, a classe vai buscá-las. É ensinado aqui em contraste, porque é a alternativa " +
+                "mais comum, e muitas vezes considerada um anti-padrão.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "DI mostra do que a classe precisa; o Service Locator esconde: quem lê o construtor não vê as " +
-                "dependências, e só descobre quando o código executa e falha.",
+                "Com um Service Locator, o construtor mente sobre o que a classe precisa, e a verdade só aparece quando o " +
+                "código roda.",
             },
             { type: "heading", text: "Como funciona" },
             {
