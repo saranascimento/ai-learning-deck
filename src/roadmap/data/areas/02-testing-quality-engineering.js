@@ -1645,9 +1645,7 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Um dummy bem nomeado avisa a quem lê o teste que aquele parâmetro não importa para o que está sendo " +
-                "verificado.",
+              text: "Um dummy que acaba sendo chamado revela que aquele parâmetro importava, afinal.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -1822,8 +1820,8 @@ export default area({
               type: "callout",
               title: "Ideia principal",
               text:
-                "Use um stub quando o que você quer controlar é a resposta da dependência, e não o jeito como ela é " +
-                "chamada.",
+                "Um stub só sabe devolver respostas prontas, então quando o cenário precisa lembrar de algo, ele deixa de " +
+                "servir.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -4595,7 +4593,8 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text: "Ao fim de uma boa depuração, você sabe por que o bug acontecia, e não só que ele parou.",
+              text:
+                "Escreva a previsão antes de rodar o código, porque é ela que transforma uma tentativa num experimento.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -4932,7 +4931,7 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text: "Use um breakpoint quando o problema não é um erro lançado, e sim um valor que chega errado.",
+              text: "Com um breakpoint condicional, dá para pausar só na iteração em que o valor fica errado.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -5084,7 +5083,7 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text: "Num espaço de busca grande, testar o meio rende mais do que olhar tudo em ordem.",
+              text: "Dividir ao meio só funciona se cada metade puder ser testada sem depender da outra.",
             },
             { type: "heading", text: "Por que importa" },
             {
