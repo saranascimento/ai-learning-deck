@@ -181,13 +181,28 @@ main#main > .masthead {
   padding: 0.5rem 0.6rem;
   color: var(--color-text-muted);
 }
-/* "Buscar … em todas as Áreas": leva a busca da Área para a Home. */
+/* "Buscar … em todas as Áreas" / "Mostrar só nesta Área": troca o escopo da lista, na própria página. */
 .search__all {
   margin-top: 0.25rem;
   padding-top: 0.25rem;
   border-top: 1px solid var(--color-border);
 }
-.search__results .search__all a {
+.search__all button {
+  display: block;
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  border: 0;
+  border-radius: 0.35rem;
+  background: none;
   color: var(--color-text-muted);
+  font: inherit;
   font-size: 0.8rem;
+  text-align: left;
+  cursor: pointer;
+}
+.search__all button:hover,
+.search__all button:focus-visible {
+  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+  color: var(--color-text);
+  outline: none;
 }

@@ -1901,6 +1901,7 @@ const searchIndexJson = JSON.stringify(searchIndex);
     expect(g, `busca «${q}» → 1º resultado`, first(q), want);
   }
   record(g, "consulta sem correspondência → nenhum resultado", search(prepared, "xyzwq").length === 0);
+  record(g, "palavra longa não puxa palavra curta a 2 letras («refactor» ↛ Multi-Factor Authentication)", !search(prepared, "refactor").some((e) => /Multi-Factor/.test(e.t)));
   record(g, "palavra curta não puxa começo de palavra parecido («join» ↛ Single Point of Failure)", !search(prepared, "join").some((e) => e.t === "Single Point of Failure"));
   {
     const inArea = search(prepared, "test", { area: "software-craft" });

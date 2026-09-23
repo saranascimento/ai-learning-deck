@@ -12,13 +12,14 @@
  *
  * Busca: ignora acentos e maiúsculas; todas as palavras digitadas precisam aparecer
  * (no título, no contexto, na nota/subtópicos ou no resumo). Palavras com 4+ letras
- * toleram erro de digitação nas palavras do título (1 erro; 2 a partir de 8 letras) —
+ * toleram erro de digitação nas palavras do título (1 erro; 2 entre palavras de 8+ letras) —
  * trocar, faltar, sobrar ou inverter uma letra; com 5+ letras vale também contra o começo
  * da palavra (para quem ainda está digitando).
  *
  * Escopo: no menu lateral a busca fica restrita à Área da página (`data-search-area`) e
- * termina com um link "em todas as Áreas", que leva a mesma busca para a Home (`?q=`);
- * na Home ela procura em todas as Áreas.
+ * termina com o botão "Buscar em todas as Áreas", que troca a mesma lista para o
+ * resultado global, sem sair da página (e "Mostrar só nesta Área" desfaz); apagar o
+ * texto volta ao escopo da Área. Na Home ela procura sempre em todas as Áreas.
  *
  * Teclado: "/" foca a busca; ↓/↑ percorrem os resultados; Enter abre o primeiro;
  * Esc limpa. Nas Concept Pages é importado por concept-tabs.js (um script só por página).
@@ -77,9 +78,10 @@ function editDistance(a, b, limit) {
 // menos erros valem mais, e a palavra inteira vale mais que só o começo dela; 0 = sem correspondência.
 function fuzzyTitleScore(token, titleWords) {
   if (token.length < 4) return 0;
-  const limit = token.length >= 8 ? 2 : 1;
   let best = 0;
   for (const w of titleWords) {
+    // 2 erros só entre palavras longas (8+ letras, as duas): "refactor" não deve achar "factor"
+    const limit = token.length >= 8 && w.length >= 8 ? 2 : 1;
     const whole = editDistance(token, w, limit);
     if (whole <= limit) best = Math.max(best, 2.5 - 0.5 * whole);
     // começo da palavra só a partir de 5 letras: com 4, "join" acharia "poin(t)"
@@ -171,15 +173,19 @@ function mount(slot) {
   wrap.append(label, field, status, list);
   slot.append(wrap);
 
+  let everywhere = false; // na sidebar: a pessoa pediu "em todas as Áreas"
+
   async function run() {
     const q = input.value.trim();
     list.replaceChildren();
     if (!q) {
+      everywhere = false;
       list.hidden = true;
       status.textContent = "";
       return;
     }
-    const results = search(await loadIndex(), q, { area });
+    const scoped = area && !everywhere;
+    const results = search(await loadIndex(), q, { area: scoped ? area : null });
     if (input.value.trim() !== q) return; // a pessoa continuou digitando
     for (const e of results) {
       const li = document.createElement("li");
@@ -199,30 +205,30 @@ function mount(slot) {
     if (!results.length) {
       const li = document.createElement("li");
       li.className = "search__none";
-      li.textContent = area ? `Nada sobre “${q}” nesta Área.` : `Nenhum resultado para “${q}”.`;
+      li.textContent = scoped ? `Nada sobre “${q}” nesta Área.` : `Nenhum resultado para “${q}”.`;
       list.append(li);
     }
     if (area) {
-      // A mesma busca em todas as Áreas, na Home.
+      // Troca o escopo da mesma lista, sem sair da página.
       const li = document.createElement("li");
       li.className = "search__all";
-      const a = document.createElement("a");
-      a.href = new URL("?q=" + encodeURIComponent(q), SITE_ROOT).href;
-      a.textContent = `Buscar “${q}” em todas as Áreas →`;
-      li.append(a);
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = scoped ? `Buscar “${q}” em todas as Áreas` : `Mostrar só nesta Área (${areaTitle})`;
+      button.addEventListener("click", () => {
+        everywhere = !everywhere;
+        input.focus(); // o botão vai ser recriado: o foco volta ao campo antes, para a lista não fechar
+        run();
+      });
+      li.append(button);
       list.append(li);
     }
     list.hidden = false;
-    status.textContent = results.length ? `${results.length} resultado${results.length > 1 ? "s" : ""}` : "Nenhum resultado";
+    const count = results.length ? `${results.length} resultado${results.length > 1 ? "s" : ""}` : "Nenhum resultado";
+    status.textContent = area ? `${count} ${scoped ? "nesta Área" : "em todas as Áreas"}` : count;
   }
 
   input.addEventListener("focus", loadIndex, { once: true });
-  // Home: chega com a busca vinda do menu de uma Área (`?q=`) já preenchida.
-  const incoming = !area && new URLSearchParams(location.search).get("q");
-  if (incoming) {
-    input.value = incoming;
-    run();
-  }
   input.addEventListener("input", run);
 
   // Clicar fora da busca, ou sair dela com Tab, fecha a lista; o texto fica no campo, e voltar a
@@ -242,9 +248,10 @@ function mount(slot) {
 
   input.addEventListener("keydown", (ev) => {
     const first = list.querySelector("a");
-    if (ev.key === "ArrowDown" && first) {
+    const firstItem = list.querySelector("a, button");
+    if (ev.key === "ArrowDown" && firstItem) {
       ev.preventDefault();
-      first.focus();
+      firstItem.focus();
     } else if (ev.key === "Enter" && first) {
       ev.preventDefault();
       first.click();
@@ -254,7 +261,7 @@ function mount(slot) {
     }
   });
   list.addEventListener("keydown", (ev) => {
-    const links = [...list.querySelectorAll("a")];
+    const links = [...list.querySelectorAll("a, button")];
     const i = links.indexOf(document.activeElement);
     if (ev.key === "ArrowDown" && i < links.length - 1) {
       ev.preventDefault();
