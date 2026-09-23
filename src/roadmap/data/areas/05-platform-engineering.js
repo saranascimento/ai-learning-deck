@@ -18039,9 +18039,8 @@ export default area({
           title: "Authentication vs Authorization",
           note: "framing; 'quem é você' × 'o que você pode'",
           summary:
-            "Autenticação responde \"quem é você?\" — confirma a identidade de quem faz a requisição —; autorização " +
-            "responde \"o que você pode fazer?\" — decide, para essa identidade, se a ação é permitida. São etapas " +
-            "diferentes, nessa ordem.",
+            "Authentication vs Authorization é a diferença entre confirmar quem faz a requisição e decidir o que essa " +
+            "identidade pode fazer.",
           content: [
             { type: "heading", text: "Conceito" },
             {
@@ -18059,8 +18058,8 @@ export default area({
               type: "callout",
               title: "Ideia principal",
               text:
-                "Autenticar é descobrir quem é; autorizar é decidir o que essa pessoa pode fazer — e a identidade usada " +
-                "na decisão deve vir sempre da autenticação, nunca de um campo enviado pelo próprio cliente.",
+                "A identidade usada para autorizar vem sempre da autenticação, e nunca de um campo que o próprio cliente " +
+                "enviou.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -18259,28 +18258,26 @@ export default area({
           title: "Password Hashing",
           note: "bcrypt/scrypt/argon2, salt, fator de custo; nunca reversível",
           summary:
-            "Guardar senhas como o resultado de uma função de hash lenta e com sal (salt), feita para isso — " +
-            "Argon2id, scrypt ou bcrypt —, de modo que nem quem tem acesso ao banco consiga descobrir as senhas, e " +
-            "testá-las por tentativa seja caro.",
+            "Password Hashing é guardar senhas como o resultado de uma função de hash lenta, com sal, feita " +
+            "especialmente para senhas.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Uma senha nunca é guardada como texto, nem criptografada (o que permitiria decifrá-la). Guarda-se o " +
-                "resultado de uma função de hash de senha: uma função de mão única, lenta de propósito e configurável. " +
-                "Cada senha recebe um sal (salt), um valor aleatório guardado junto do hash, para que duas pessoas com a " +
-                "mesma senha tenham hashes diferentes e tabelas pré-calculadas não sirvam. O custo configurável (memória, " +
-                "tempo, iterações) faz cada tentativa de adivinhação custar caro, o que protege as senhas se o banco " +
-                "vazar. As funções recomendadas são Argon2id, scrypt e bcrypt; hashes rápidos como MD5 e SHA-256 não " +
-                "servem para senhas.",
+                "Uma senha nunca é guardada como texto, nem criptografada (o que permitiria decifrá-la). A função de hash " +
+                "de senha é de mão única, lenta de propósito e configurável. Cada senha recebe um sal (salt), um valor " +
+                "aleatório guardado junto do hash, para que duas pessoas com a mesma senha tenham hashes diferentes e " +
+                "tabelas pré-calculadas não sirvam. O custo configurável (memória, tempo, iterações) faz cada tentativa " +
+                "de adivinhação custar caro, o que protege as senhas se o banco vazar. As funções recomendadas são " +
+                "Argon2id, scrypt e bcrypt; hashes rápidos como MD5 e SHA-256 não servem para senhas.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Senha se guarda com uma função de hash de senha — lenta, com sal e com custo ajustável —, e não com um " +
-                "hash comum nem com criptografia: o objetivo é que um vazamento do banco não revele as senhas.",
+                "Para senhas, a lentidão do hash é uma proteção, e não um defeito: é ela que torna caro adivinhar depois " +
+                "de um vazamento.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -18508,28 +18505,25 @@ export default area({
           note: "o servidor guarda quem está logado; o navegador só carrega o id da sessão num cookie",
           collision: "usa Sessions (Web Fundamentals) como mecanismo",
           summary:
-            "Autenticar uma vez, no login, e registrar no servidor uma sessão ligada ao usuário, cujo identificador " +
-            "vai para o navegador num cookie — a cada requisição, o servidor encontra a sessão e sabe quem é, e pode " +
-            "encerrá-la quando quiser.",
+            "Session-Based Authentication é autenticar uma vez, no login, e manter no servidor uma sessão ligada ao " +
+            "usuário, identificada por um cookie.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Na autenticação baseada em sessão, o login verifica a credencial (senha e, se houver, o segundo fator) e " +
-                "cria uma sessão no servidor: um registro com o id do usuário, o momento do login e a validade. O " +
-                "navegador recebe só o identificador da sessão, num cookie `HttpOnly`, e o devolve em toda requisição. O " +
-                "servidor procura a sessão e, se ela existe e está válida, sabe quem está fazendo a requisição. Como o " +
-                "estado fica no servidor, encerrar o acesso é imediato: apagar a sessão desloga a pessoa na próxima " +
-                "requisição.",
+                "O login verifica a credencial (senha e, se houver, o segundo fator) e cria no servidor um registro com o " +
+                "id do usuário, o momento do login e a validade. O navegador recebe só o identificador da sessão, num " +
+                "cookie `HttpOnly`, e o devolve em toda requisição. O servidor procura a sessão e, se ela existe e está " +
+                "válida, sabe quem está fazendo a requisição. Como o estado fica no servidor, encerrar o acesso é " +
+                "imediato: apagar a sessão desloga a pessoa na próxima requisição.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Com sessões, quem decide se alguém está logado é o servidor, a cada requisição: isso torna simples o " +
-                "logout, a revogação e o \"sair de todos os dispositivos\", em troca de guardar e consultar o estado das " +
-                "sessões.",
+                "Com sessões, logout, revogação e \"sair de todos os dispositivos\" são simples, e o preço é guardar e " +
+                "consultar o estado.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -18759,28 +18753,26 @@ export default area({
           requires: ["Web Fundamentals / Cookies"],
           note: "stateless; onde guardar o token (cookie vs storage)",
           summary:
-            "Autenticar cada requisição por um token que o cliente envia, em geral no cabeçalho `Authorization: " +
-            "Bearer` — um valor aleatório que o servidor procura (token opaco) ou um documento assinado que ele só " +
-            "precisa verificar (token autocontido).",
+            "Token-Based Authentication é autenticar cada requisição por um token que o cliente envia, em geral no " +
+            "cabeçalho `Authorization: Bearer`.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Na autenticação por token, depois de provar a identidade o cliente recebe um token e o apresenta em cada " +
-                "requisição, normalmente como `Authorization: Bearer <token>`. \"Bearer\" significa portador: quem tiver o " +
-                "token é tratado como o dono dele. Há dois tipos. O token opaco é um valor aleatório sem significado, e o " +
-                "servidor precisa consultar um registro para saber a quem ele pertence — como uma sessão, só que enviado " +
-                "num cabeçalho. O token autocontido, como o JWT, carrega os dados e uma assinatura, e o servidor o valida " +
-                "sem consultar nada, o que permite validar em qualquer serviço mas dificulta revogar antes do prazo.",
+                "Depois de provar a identidade, o cliente recebe o token e o apresenta em cada requisição, normalmente " +
+                "como `Authorization: Bearer <token>`. \"Bearer\" significa portador: quem tiver o token é tratado como o " +
+                "dono dele. Há dois tipos. O token opaco é um valor aleatório sem significado, e o servidor precisa " +
+                "consultar um registro para saber a quem ele pertence — como uma sessão, só que enviado num cabeçalho. O " +
+                "token autocontido, como o JWT, carrega os dados e uma assinatura, e o servidor o valida sem consultar " +
+                "nada, o que permite validar em qualquer serviço mas dificulta revogar antes do prazo.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Um token de portador é uma credencial completa: quem o obtém age como o dono até ele expirar — por isso " +
-                "ele precisa de prazo curto, transporte só por HTTPS e um lugar para ficar guardado que um script " +
-                "malicioso não alcance.",
+                "Quem pega um token de portador age como o dono até ele expirar, então o prazo curto é a principal " +
+                "defesa.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -18980,29 +18972,25 @@ export default area({
           requires: ["Token-Based Authentication"],
           note: "header/payload/signature; claims; JWT ≠ criptografado por padrão",
           summary:
-            "JSON Web Token: um token autocontido em três partes — cabeçalho, conteúdo (claims) e assinatura, em " +
-            "Base64URL — que qualquer um pode ler e que só quem tem a chave pode ter produzido, desde que a " +
-            "assinatura e as claims sejam verificadas.",
+            "Um JWT (JSON Web Token) é um token autocontido com cabeçalho, conteúdo (claims) e assinatura, cada parte " +
+            "em Base64URL.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Um JWT tem a forma `cabeçalho.conteúdo.assinatura`, cada parte codificada em Base64URL. O cabeçalho diz " +
-                "o algoritmo (`alg`), o conteúdo traz as claims — afirmações como `sub` (de quem é o token), `exp` " +
-                "(quando expira), `iss` (quem emitiu) e `aud` (para quem) — e a assinatura é calculada sobre as duas " +
-                "primeiras partes. Com HMAC (HS256), emissor e verificador compartilham um segredo; com assinatura " +
-                "assimétrica (RS256, ES256), o emissor assina com a chave privada e qualquer serviço verifica com a " +
-                "pública. O conteúdo não é criptografado: qualquer pessoa com o token lê as claims. A assinatura só " +
-                "garante que ninguém as alterou.",
+                "A forma é `cabeçalho.conteúdo.assinatura`. O cabeçalho diz o algoritmo (`alg`), o conteúdo traz as " +
+                "claims — afirmações como `sub` (de quem é o token), `exp` (quando expira), `iss` (quem emitiu) e `aud` " +
+                "(para quem) — e a assinatura é calculada sobre as duas primeiras partes. Com HMAC (HS256), emissor e " +
+                "verificador compartilham um segredo; com assinatura assimétrica (RS256, ES256), o emissor assina com a " +
+                "chave privada e qualquer serviço verifica com a pública. O conteúdo não é criptografado: qualquer pessoa " +
+                "com o token lê as claims. A assinatura só garante que ninguém as alterou.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Um JWT é assinado, e não secreto: nunca coloque nele o que não pode ser lido, e nunca confie nele sem " +
-                "verificar a assinatura com o algoritmo esperado, a validade (`exp`), o emissor (`iss`) e o destinatário " +
-                "(`aud`).",
+                "Um JWT é assinado, e não secreto, então nunca coloque nele o que não pode ser lido por quem o tiver.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -19228,28 +19216,25 @@ export default area({
           subtopics: ["access (curto)", "refresh (longo, rotação, revogação)"],
           note: "consolidada (B3)",
           summary:
-            "Um par de tokens: o de acesso, de vida curta, enviado a cada requisição às APIs; e o de renovação " +
-            "(refresh), de vida longa, guardado com mais cuidado e usado só para obter um novo token de acesso — e " +
-            "que pode ser revogado.",
+            "Access e Refresh Token são um par: o token de acesso, de vida curta, vai nas requisições, e o de " +
+            "renovação, de vida longa, serve só para obter outro.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Tokens autocontidos são práticos de validar e difíceis de revogar. O par de tokens separa as duas " +
-                "necessidades. O token de acesso vale poucos minutos e vai em toda requisição; se vazar, funciona por " +
-                "pouco tempo. O token de renovação vale dias ou semanas, é enviado só ao servidor de autenticação e fica " +
-                "registrado nele, o que permite revogá-lo. Quando o token de acesso expira, o cliente usa o de renovação " +
-                "para pedir outro, sem que a pessoa precise fazer login de novo. Na rotação, cada renovação devolve " +
-                "também um novo token de renovação e invalida o anterior.",
+                "Tokens autocontidos são práticos de validar e difíceis de revogar, e o par separa as duas necessidades. " +
+                "O token de acesso vale poucos minutos e vai em toda requisição; se vazar, funciona por pouco tempo. O " +
+                "token de renovação vale dias ou semanas, é enviado só ao servidor de autenticação e fica registrado " +
+                "nele, o que permite revogá-lo. Quando o token de acesso expira, o cliente usa o de renovação para pedir " +
+                "outro, sem que a pessoa precise fazer login de novo. Na rotação, cada renovação devolve também um novo " +
+                "token de renovação e invalida o anterior.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "O token de acesso é curto porque não pode ser revogado; o de renovação pode ser revogado porque fica " +
-                "registrado no servidor — e, com rotação, o reuso de um token de renovação já trocado é o sinal de que " +
-                "ele foi roubado.",
+                "O token de acesso é curto porque não pode ser revogado, e o de renovação pode ser longo porque pode.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -19450,28 +19435,27 @@ export default area({
           requires: ["Token-Based Authentication"],
           note: "papéis, Authorization Code + PKCE; autorização delegada, não login",
           summary:
-            "O protocolo que permite a uma aplicação agir em nome de uma pessoa em outro serviço, com o consentimento " +
-            "dela e sem receber a sua senha — por meio de um token de acesso com escopo limitado, emitido pelo " +
-            "servidor de autorização daquele serviço.",
+            "OAuth 2.0 é o protocolo que permite a uma aplicação agir em nome de uma pessoa em outro serviço, sem " +
+            "receber a senha dela.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "OAuth 2.0 resolve a autorização delegada: um app de agenda quer ler os seus eventos do Google Calendar " +
-                "sem conhecer a sua senha do Google. Há quatro papéis: o dono do recurso (a pessoa), o cliente (o app), o " +
-                "servidor de autorização (quem autentica a pessoa e emite tokens) e o servidor de recursos (a API com os " +
-                "dados). O fluxo recomendado hoje para quase todos os clientes é o Authorization Code com PKCE: o app " +
-                "redireciona a pessoa ao servidor de autorização, ela faz login e consente com os escopos pedidos, volta " +
-                "ao app com um código de uso único, e o app troca esse código por um token de acesso. O PKCE garante que " +
-                "só quem iniciou o fluxo consegue trocar o código.",
+                "Ele resolve a autorização delegada: um app de agenda quer ler os seus eventos do Google Calendar sem " +
+                "conhecer a sua senha do Google. O acesso vem num token com escopo limitado, emitido com o consentimento " +
+                "da pessoa. Há quatro papéis: o dono do recurso (a pessoa), o cliente (o app), o servidor de autorização " +
+                "(quem autentica a pessoa e emite tokens) e o servidor de recursos (a API com os dados). O fluxo " +
+                "recomendado hoje para quase todos os clientes é o Authorization Code com PKCE: o app redireciona a " +
+                "pessoa ao servidor de autorização, ela faz login e consente com os escopos pedidos, volta ao app com um " +
+                "código de uso único, e o app troca esse código por um token de acesso. O PKCE garante que só quem " +
+                "iniciou o fluxo consegue trocar o código.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "OAuth delega acesso, e não identidade: o token diz o que o app pode fazer em nome de alguém, com escopo " +
-                "e prazo — para saber quem é a pessoa, usa-se o OpenID Connect, a camada construída sobre ele.",
+                "OAuth delega acesso, e não identidade: para saber quem é a pessoa, é preciso o OpenID Connect por cima.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -19728,29 +19712,27 @@ export default area({
           requires: ["OAuth 2.0"],
           note: "camada de identidade sobre OAuth; id_token",
           summary:
-            "Uma camada de identidade sobre o OAuth 2.0: além do token de acesso, o provedor devolve um `id_token` — " +
-            "um JWT assinado, emitido para o seu app, que diz quem é a pessoa (`sub`), quem a autenticou (`iss`) e " +
-            "quando.",
+            "OpenID Connect é uma camada de identidade sobre o OAuth 2.0, que acrescenta um `id_token` dizendo quem é " +
+            "a pessoa.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "O OpenID Connect usa o mesmo fluxo do OAuth (Authorization Code com PKCE), pedindo o escopo `openid`, e " +
-                "acrescenta o `id_token`. Esse token é um JWT assinado pelo provedor, com claims padronizadas: `iss` (o " +
-                "provedor), `sub` (o identificador da pessoa naquele provedor), `aud` (o `client_id` do seu app), `exp` e " +
-                "`iat`, `nonce` (o valor que o seu app enviou no início) e, conforme os escopos, dados de perfil como " +
-                "`email` e `name`. O provedor publica um documento de descoberta com os seus endereços e as chaves " +
-                "públicas (JWKS) para verificar a assinatura. É o que está por trás de \"Entrar com Google\", \"Entrar com " +
-                "Microsoft\" e dos provedores corporativos de identidade.",
+                "Ele usa o mesmo fluxo do OAuth (Authorization Code com PKCE), pedindo o escopo `openid`. O `id_token` é " +
+                "um JWT assinado pelo provedor, com claims padronizadas: `iss` (o provedor), `sub` (o identificador da " +
+                "pessoa naquele provedor), `aud` (o `client_id` do seu app), `exp` e `iat`, `nonce` (o valor que o seu " +
+                "app enviou no início) e, conforme os escopos, dados de perfil como `email` e `name`. O provedor publica " +
+                "um documento de descoberta com os seus endereços e as chaves públicas (JWKS) para verificar a " +
+                "assinatura. É o que está por trás de \"Entrar com Google\", \"Entrar com Microsoft\" e dos provedores " +
+                "corporativos de identidade.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "O `id_token` é a prova de login para o seu app: ele só vale depois de verificar assinatura, `iss`, `aud` " +
-                "(o seu `client_id`), `exp` e `nonce` — e a pessoa é identificada pelo par (`iss`, `sub`), e não pelo " +
-                "e-mail.",
+                "Um `id_token` só prova o login depois que você confere a assinatura, o emissor, o destinatário, o prazo " +
+                "e o nonce.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -19959,29 +19941,27 @@ export default area({
           requires: ["Authentication vs Authorization"],
           note: "IdP, SAML (menção) × OIDC",
           summary:
-            "Fazer login uma vez num provedor de identidade central (IdP) e, com essa autenticação, entrar em vários " +
-            "sistemas sem digitar a senha em cada um — com as contas, senhas e políticas de acesso geridas num só " +
-            "lugar.",
+            "Single Sign-On é fazer login uma vez num provedor de identidade central e, com isso, entrar em vários " +
+            "sistemas.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "No SSO, os sistemas (provedores de serviço, ou SPs) não autenticam as pessoas por conta própria: eles as " +
-                "enviam ao provedor de identidade (IdP) da organização, que autentica uma vez e mantém uma sessão " +
-                "própria. Os logins seguintes, em outros sistemas, encontram essa sessão e voltam aprovados sem pedir " +
-                "nada. Os protocolos mais usados são o SAML 2.0, baseado em XML e comum em sistemas corporativos mais " +
-                "antigos, e o OpenID Connect, baseado em JSON e JWT. Para a organização, o ganho está em gerir num lugar " +
-                "só as contas, a política de senhas, o MFA e, principalmente, o desligamento: desativar a pessoa no IdP " +
-                "corta o acesso a todos os sistemas.",
+                "Os sistemas (provedores de serviço, ou SPs) não autenticam as pessoas por conta própria: eles as enviam " +
+                "ao provedor de identidade (IdP) da organização, que autentica uma vez e mantém uma sessão própria. Os " +
+                "logins seguintes, em outros sistemas, encontram essa sessão e voltam aprovados sem pedir nada. Os " +
+                "protocolos mais usados são o SAML 2.0, baseado em XML e comum em sistemas corporativos mais antigos, e o " +
+                "OpenID Connect, baseado em JSON e JWT. Para a organização, o ganho está em gerir num lugar só as contas, " +
+                "a política de senhas, o MFA e, principalmente, o desligamento: desativar a pessoa no IdP corta o acesso " +
+                "a todos os sistemas.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "O valor do SSO está na gestão central: um lugar para entrar, um lugar para exigir MFA e um lugar para " +
-                "desligar alguém — e cada sistema continua responsável por decidir o que cada pessoa pode fazer dentro " +
-                "dele.",
+                "O SSO centraliza quem entra, mas cada sistema continua responsável por decidir o que a pessoa pode fazer " +
+                "dentro dele.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -20175,28 +20155,26 @@ export default area({
           requires: ["Authentication vs Authorization"],
           note: "fatores; TOTP, WebAuthn/passkeys (menção)",
           summary:
-            "Exigir, no login, provas de duas ou mais categorias diferentes — algo que a pessoa sabe (senha), algo " +
-            "que ela tem (celular, chave de segurança) ou algo que ela é (biometria) —, para que o vazamento de uma " +
-            "delas não baste para entrar na conta.",
+            "Multi-Factor Authentication é exigir, no login, provas de duas ou mais categorias diferentes: algo que " +
+            "se sabe, algo que se tem ou algo que se é.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Autenticação multifator combina fatores de categorias diferentes: conhecimento (senha, PIN), posse (um " +
-                "app autenticador, uma chave física, um celular) e inerência (digital, rosto). Duas senhas são o mesmo " +
-                "fator; senha mais um código gerado no celular são dois. O fator de posse mais comum é o TOTP: o app e o " +
-                "servidor compartilham um segredo, e a cada 30 segundos os dois calculam o mesmo código de 6 dígitos a " +
-                "partir do segredo e da hora. Os métodos mais fortes, WebAuthn e passkeys, usam criptografia de chave " +
-                "pública ligada ao endereço do site, o que os torna resistentes a phishing.",
+                "As categorias são conhecimento (senha, PIN), posse (um app autenticador, uma chave física, um celular) e " +
+                "inerência (digital, rosto). Duas senhas são o mesmo fator; senha mais um código gerado no celular são " +
+                "dois. O fator de posse mais comum é o TOTP: o app e o servidor compartilham um segredo, e a cada 30 " +
+                "segundos os dois calculam o mesmo código de 6 dígitos a partir do segredo e da hora. Os métodos mais " +
+                "fortes, WebAuthn e passkeys, usam criptografia de chave pública ligada ao endereço do site, o que os " +
+                "torna resistentes a phishing.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "MFA faz o roubo de uma senha deixar de bastar — mas nem todo segundo fator protege igual: códigos por " +
-                "SMS e TOTP podem ser capturados por um site falso, enquanto WebAuthn e passkeys não funcionam fora do " +
-                "site verdadeiro.",
+                "Nem todo segundo fator protege igual: um código por SMS ou TOTP pode ser capturado por um site falso, e " +
+                "uma passkey não.",
             },
             { type: "heading", text: "Como funciona" },
             {
