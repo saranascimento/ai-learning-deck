@@ -6961,7 +6961,8 @@ export default area({
                 "args, context, info)`: `parent` é o resultado do resolver do campo pai, `args` são os argumentos da " +
                 "consulta, `context` é um objeto compartilhado durante a requisição (usuário, conexões, loaders), e " +
                 "`info` descreve a consulta. Quando não há um resolver explícito, o padrão devolve `parent[nomeDoCampo]`. " +
-                "A execução percorre a consulta em cadeia, do topo para as folhas.",
+                "A execução percorre a consulta em cadeia: o resolver de `order` devolve o pedido, e o de " +
+                "`order.customer` recebe esse pedido.",
             },
             {
               type: "callout",
@@ -7405,7 +7406,7 @@ export default area({
                 "posts ... } } }`), listas grandes, ou centenas de campos repetidos com aliases. Sem controle, uma " +
                 "requisição bem construída esgota o servidor, o que a torna uma superfície de negação de serviço. Os " +
                 "limites costumam ser de profundidade, de tamanho e de custo estimado. Difere do Rate Limiting, que " +
-                "controla quantas requisições chegam.",
+                "controla quantas requisições chegam, e não o custo de cada uma.",
             },
             {
               type: "callout",
@@ -8876,7 +8877,8 @@ export default area({
                 "`NOT NULL` proíbe valores ausentes, `UNIQUE` proíbe repetições, `CHECK` exige que uma condição sobre a " +
                 "linha seja verdadeira, e `DEFAULT` preenche um valor quando nenhum é informado (a chave primária e a " +
                 "chave estrangeira também são constraints). Elas valem para toda escrita, venha da aplicação, de um " +
-                "script, de outro serviço ou de alguém com um terminal aberto.",
+                "script, de outro serviço ou de alguém com um terminal aberto, e por isso são a última linha de defesa da " +
+                "qualidade dos dados.",
             },
             {
               type: "callout",
@@ -9509,7 +9511,8 @@ export default area({
                 "...)`), como teste de existência (`EXISTS`) ou como uma tabela temporária no `FROM`. Ela é não " +
                 "correlacionada quando roda de forma independente da consulta externa, e correlacionada quando depende da " +
                 "linha externa. A CTE (Common Table Expression, `WITH nome AS (...)`) permite escrever a consulta como " +
-                "uma sequência de passos legíveis, e a CTE recursiva se refere a si mesma.",
+                "uma sequência de passos legíveis. A CTE recursiva se refere a si mesma e percorre estruturas " +
+                "hierárquicas.",
             },
             {
               type: "callout",
