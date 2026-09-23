@@ -249,7 +249,7 @@ const extraCss = (logicalPath, file) => relativize(logicalPath, HOME_PATH) + "cs
 function sidebarFor(pagePath, area, currentModule = null, currentConcept = null) {
   const href = (node) => relativize(pagePath, pathFor(node));
   return {
-    area: { title: area.title, href: href(area), color: area.color, current: !currentModule },
+    area: { title: area.title, slug: area.slug, href: href(area), color: area.color, current: !currentModule },
     modules: model.modules(area).map((m) => {
       const open = m === currentModule;
       return {
@@ -1847,14 +1847,16 @@ for (const area of model.areas()) {
 const searchIndex = [];
 for (const area of model.areas()) {
   const u = (node) => pathFor(node).replace(/^\//, "");
-  searchIndex.push({ k: "area", t: area.title, a: area.title, m: "", s: area.summary || "", x: "", u: u(area) });
+  const as = area.slug;
+  searchIndex.push({ k: "area", t: area.title, a: area.title, as, m: "", s: area.summary || "", x: "", u: u(area) });
   for (const module of model.modules(area)) {
-    searchIndex.push({ k: "module", t: module.title, a: area.title, m: module.title, s: module.summary || "", x: "", u: u(module) });
+    searchIndex.push({ k: "module", t: module.title, a: area.title, as, m: module.title, s: module.summary || "", x: "", u: u(module) });
     for (const concept of model.concepts(module)) {
       searchIndex.push({
         k: "concept",
         t: concept.title,
         a: area.title,
+        as,
         m: module.title,
         s: concept.summary || "",
         x: [concept.note || "", ...(concept.subtopics || [])].join(" · "),
@@ -1873,7 +1875,14 @@ const searchIndexJson = JSON.stringify(searchIndex);
   record(g, "todo link do índice aponta para uma página gerada", searchIndex.every((e) => generated.has(e.u + "index.html")));
   record(g, `revisitas marcadas no índice (${searchIndex.filter((e) => e.r).length} = dataset 15)`, searchIndex.filter((e) => e.r).length === 15);
   record(g, `peso do índice: ${Math.round(Buffer.byteLength(searchIndexJson) / 1024)} KB (carregado só ao focar a busca)`, Buffer.byteLength(searchIndexJson) < 400 * 1024);
-  record(g, "espaço da busca no topo do menu lateral, fora do <details> do menu (764 páginas)", [...areaPages, ...modulePages, ...conceptPages].every((p) => p.html.includes('<div class="doc-search" data-search-slot=""></div>\n      <details class="doc-menu">')));
+  record(
+    g,
+    "espaço da busca no topo do menu lateral, fora do <details> do menu, restrito à Área da página (764 páginas)",
+    [...areaPages, ...modulePages, ...conceptPages].every((p) =>
+      p.html.includes(`<div class="doc-search" data-search-slot="" data-search-area="${p.area.slug}" data-search-area-title="${escapeAttr(p.area.title)}"></div>\n      <details class="doc-menu">`)
+    )
+  );
+  record(g, "Home: busca em todas as Áreas (espaço sem data-search-area)", indexHtml.includes('<div class="home-search" data-search-slot=""></div>'));
   record(g, "Concept Pages: a busca vem por import em concept-tabs.js (1 <script> por página)", readFileSync(join(ROOT, ENHANCE_SRC), "utf8").includes('import "./search.js";'));
   // ranking e tolerância a erro de digitação, com o índice real
   const { search, prepare } = await import("../" + SEARCH_SRC);
@@ -1893,6 +1902,12 @@ const searchIndexJson = JSON.stringify(searchIndex);
   }
   record(g, "consulta sem correspondência → nenhum resultado", search(prepared, "xyzwq").length === 0);
   record(g, "palavra curta não puxa começo de palavra parecido («join» ↛ Single Point of Failure)", !search(prepared, "join").some((e) => e.t === "Single Point of Failure"));
+  {
+    const inArea = search(prepared, "test", { area: "software-craft" });
+    const everywhere = search(prepared, "error");
+    record(g, "busca da Área só devolve itens dessa Área («test» em Software Craft)", inArea.length > 0 && inArea.every((e) => e.as === "software-craft"));
+    record(g, "busca da Home devolve itens de várias Áreas («error»)", new Set(everywhere.map((e) => e.as)).size > 1);
+  }
   record(g, "revisita aparece depois do Concept original («entity»)", search(prepared, "entity").slice(0, 2).map((e) => !!e.r).join(",") === "false,true");
 }
 

@@ -7,7 +7,8 @@
  * ficam num <details> no fim.
  *
  * No topo, fora do menu (visível mesmo com o menu fechado no celular), o espaço da busca:
- * `[data-search-slot]` vazio, preenchido por enhance/search.js.
+ * `[data-search-slot]` vazio, preenchido por enhance/search.js — restrito à Área atual
+ * (data-search-area); a Home busca em todas.
  *
  * Tudo é HTML: o menu é um <details class="doc-menu"> fechado. No desktop o CSS mostra o
  * conteúdo e esconde o botão (::details-content, com @supports); no celular ele é um
@@ -25,7 +26,7 @@ function count(n) {
 
 /**
  * renderSidebar(nav) → <aside> (string).
- *   nav.area       : { title, href, color, current }        current = esta página é a da Área
+ *   nav.area       : { title, slug, href, color, current }  current = esta página é a da Área
  *   nav.modules[]  : { title, href, conceptCount, current, open, concepts[]? }
  *                    current = esta página é a do Módulo · open = Módulo desta página (Módulo ou Concept)
  *                    concepts[] (só no Módulo aberto): { title, href, current }
@@ -43,7 +44,7 @@ export function renderSidebar({ area, modules, otherAreas }) {
 
   return [
     `    <aside class="doc-sidebar" aria-label="Menu da Área" style="--area-color: ${escapeAttr(area.color)}">`,
-    '      <div class="doc-search" data-search-slot=""></div>',
+    `      <div class="doc-search" data-search-slot="" data-search-area="${escapeAttr(area.slug)}" data-search-area-title="${escapeAttr(area.title)}"></div>`,
     '      <details class="doc-menu">',
     `        <summary class="doc-menu__toggle"><span>Menu</span><span class="doc-menu__area">${escapeHtml(area.title)}</span></summary>`,
     `        <nav aria-label="Módulos de ${escapeAttr(area.title)}">`,

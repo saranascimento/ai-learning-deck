@@ -7,7 +7,7 @@
  *
  * Índice: `search-index.json`, ao lado deste arquivo (gerado pelo build), carregado só
  * quando a pessoa foca o campo. Cada entrada: { k: area|module|concept, t: título,
- * a: Área, m: Módulo, s: resumo, x: nota + subtópicos, u: caminho a partir da raiz,
+ * a: Área, as: slug da Área, m: Módulo, s: resumo, x: nota + subtópicos, u: caminho a partir da raiz,
  * r: 1 se é revisita }.
  *
  * Busca: ignora acentos e maiúsculas; todas as palavras digitadas precisam aparecer
@@ -15,6 +15,10 @@
  * toleram erro de digitação nas palavras do título (1 erro; 2 a partir de 8 letras) —
  * trocar, faltar, sobrar ou inverter uma letra; com 5+ letras vale também contra o começo
  * da palavra (para quem ainda está digitando).
+ *
+ * Escopo: no menu lateral a busca fica restrita à Área da página (`data-search-area`) e
+ * termina com um link "em todas as Áreas", que leva a mesma busca para a Home (`?q=`);
+ * na Home ela procura em todas as Áreas.
  *
  * Teclado: "/" foca a busca; ↓/↑ percorrem os resultados; Enter abre o primeiro;
  * Esc limpa. Nas Concept Pages é importado por concept-tabs.js (um script só por página).
@@ -99,12 +103,14 @@ function scoreToken(e, tk) {
   return 0;
 }
 
-export function search(index, query) {
+// area (opcional): slug da Área — só itens dela entram.
+export function search(index, query, { area = null } = {}) {
   const q = norm(query).trim();
   const tokens = words(q);
   if (!tokens.length) return [];
   const out = [];
   for (const e of index) {
+    if (area && e.as !== area) continue;
     let score = 0;
     let all = true;
     for (const tk of tokens) {
@@ -127,6 +133,8 @@ export function search(index, query) {
 let uid = 0;
 function mount(slot) {
   const id = "dx-search-" + ++uid;
+  const area = slot.getAttribute("data-search-area") || null;
+  const areaTitle = slot.getAttribute("data-search-area-title") || "";
   const wrap = document.createElement("div");
   wrap.className = "search";
   wrap.setAttribute("role", "search");
@@ -134,13 +142,13 @@ function mount(slot) {
   const label = document.createElement("label");
   label.className = "visually-hidden";
   label.htmlFor = id;
-  label.textContent = "Buscar conceito, módulo ou área";
+  label.textContent = area ? `Buscar em ${areaTitle}` : "Buscar conceito, módulo ou área em todas as Áreas";
 
   const input = document.createElement("input");
   input.id = id;
   input.className = "search__input";
   input.type = "search";
-  input.placeholder = "Buscar…";
+  input.placeholder = area ? "Buscar nesta Área…" : "Buscar em todas as Áreas…";
   input.autocomplete = "off";
   input.spellcheck = false;
 
@@ -171,7 +179,7 @@ function mount(slot) {
       status.textContent = "";
       return;
     }
-    const results = search(await loadIndex(), q);
+    const results = search(await loadIndex(), q, { area });
     if (input.value.trim() !== q) return; // a pessoa continuou digitando
     for (const e of results) {
       const li = document.createElement("li");
@@ -191,7 +199,17 @@ function mount(slot) {
     if (!results.length) {
       const li = document.createElement("li");
       li.className = "search__none";
-      li.textContent = `Nenhum resultado para “${q}”.`;
+      li.textContent = area ? `Nada sobre “${q}” nesta Área.` : `Nenhum resultado para “${q}”.`;
+      list.append(li);
+    }
+    if (area) {
+      // A mesma busca em todas as Áreas, na Home.
+      const li = document.createElement("li");
+      li.className = "search__all";
+      const a = document.createElement("a");
+      a.href = new URL("?q=" + encodeURIComponent(q), SITE_ROOT).href;
+      a.textContent = `Buscar “${q}” em todas as Áreas →`;
+      li.append(a);
       list.append(li);
     }
     list.hidden = false;
@@ -199,6 +217,12 @@ function mount(slot) {
   }
 
   input.addEventListener("focus", loadIndex, { once: true });
+  // Home: chega com a busca vinda do menu de uma Área (`?q=`) já preenchida.
+  const incoming = !area && new URLSearchParams(location.search).get("q");
+  if (incoming) {
+    input.value = incoming;
+    run();
+  }
   input.addEventListener("input", run);
   input.addEventListener("keydown", (ev) => {
     const first = list.querySelector("a");

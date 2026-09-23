@@ -116,11 +116,13 @@ main#main > .masthead {
 .search__input::placeholder {
   color: var(--color-text-muted);
 }
-/* Contorno por dentro: o menu lateral rola e recortaria um contorno por fora. Cor neutra
-   (a cor da Área, em vermelho, pareceria erro). */
+/* Foco na própria borda do campo (e não com outline): o menu lateral rola e recortaria qualquer
+   contorno por fora. Cor neutra — a cor da Área, em vermelho, pareceria erro. */
+.search__input:focus,
 .search__input:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: -2px;
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
 }
 /* Tecla de atalho "/" no canto do campo; some enquanto se digita. */
 .search__key {
@@ -178,4 +180,14 @@ main#main > .masthead {
 .search__none {
   padding: 0.5rem 0.6rem;
   color: var(--color-text-muted);
+}
+/* "Buscar … em todas as Áreas": leva a busca da Área para a Home. */
+.search__all {
+  margin-top: 0.25rem;
+  padding-top: 0.25rem;
+  border-top: 1px solid var(--color-border);
+}
+.search__results .search__all a {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
 }
