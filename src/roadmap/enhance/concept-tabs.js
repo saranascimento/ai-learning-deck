@@ -191,20 +191,44 @@ function wireTocSpy() {
   // Item clicado em "Neste conteúdo": vale até a próxima rolagem feita pela pessoa (roda, toque, teclado).
   // Sem isso, clicar numa seção curta perto do fim destacaria outra (a última visível).
   let pinned = -1;
+  const LINE = 140; // "linha de leitura": a seção ativa é a última cujo título já passou dela
+  const SLICE = 60; // rolagem mínima (px) de cada seção final que não alcança a linha
   function spy() {
     frame = 0;
-    let current = -1;
-    targets.forEach(function (el, i) {
-      // offsetParent null = painel oculto (outra aba ativa): nada a destacar
-      if (el && el.offsetParent !== null && el.getBoundingClientRect().top < 140) current = i;
+    const visible = targets.map(function (el) {
+      return !!el && el.offsetParent !== null; // offsetParent null = painel oculto (outra aba ativa)
     });
-    if (current === -1 && targets[0] && targets[0].offsetParent !== null) current = 0;
-    // No fim da página as últimas seções (curtas) nunca chegam ao topo: vale a última cujo título está na tela.
-    const root = document.documentElement;
-    if (current !== -1 && innerHeight + scrollY >= root.scrollHeight - 2) {
-      targets.forEach(function (el, i) {
-        if (el && el.offsetParent !== null && el.getBoundingClientRect().top < innerHeight) current = i;
+    if (!visible[0]) {
+      links.forEach(function (a) {
+        a.removeAttribute("aria-current");
       });
+      return;
+    }
+    // Perto do fim, as últimas seções (curtas) nunca chegam à linha do topo. Então o trecho final da rolagem —
+    // desde que a última seção alcançável cruza a linha até o fim da página — é dividido em partes iguais,
+    // uma para cada seção dali em diante: todas ganham a sua vez, na ordem (3 → 4 → 5), sem saltos.
+    const tops = targets.map(function (el, i) {
+      return visible[i] ? el.getBoundingClientRect().top + scrollY : Infinity;
+    });
+    const maxScroll = document.documentElement.scrollHeight - innerHeight;
+    const firstUnreachable = tops.findIndex(function (t) {
+      return t !== Infinity && t - LINE > maxScroll;
+    });
+    let current = 0;
+    tops.forEach(function (t, i) {
+      if (visible[i] && t - scrollY < LINE) current = i;
+    });
+    if (firstUnreachable !== -1 && maxScroll > 0) {
+      const from = Math.max(0, firstUnreachable - 1); // a última seção que ainda alcança a linha
+      const last = tops.length - 1;
+      // Cada seção final ganha pelo menos SLICE px de rolagem; se sobra pouca página, o trecho começa antes,
+      // mas nunca antes de a seção anterior a `from` ter tido a sua vez.
+      const floor = from > 0 ? tops[from - 1] - LINE + SLICE : 0;
+      const start = Math.min(Math.max(floor, Math.min(tops[from] - LINE, maxScroll - (last - from + 1) * SLICE)), maxScroll - 1);
+      if (scrollY > start) {
+        const progress = Math.min(1, (scrollY - start) / (maxScroll - start));
+        current = Math.max(current, from + Math.min(last - from, Math.floor(progress * (last - from + 1))));
+      }
     }
     if (current !== -1 && pinned !== -1) current = pinned;
     links.forEach(function (a, i) {
