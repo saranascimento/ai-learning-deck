@@ -7053,25 +7053,24 @@ export default area({
           title: "Strategy",
           note: "algoritmos intercambiáveis atrás de um mesmo contrato",
           summary:
-            "Define uma família de algoritmos intercambiáveis atrás de um mesmo contrato, para que quem os usa " +
-            "escolha, ou troque, qual aplicar sem alterar o seu próprio código.",
+            "Strategy é um padrão comportamental em que cada variação de um algoritmo vive numa peça própria, todas " +
+            "com o mesmo contrato.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Strategy é um padrão comportamental em que cada variação de um algoritmo, um cálculo de desconto, uma " +
-                "regra de ordenação, uma forma de validar, vive em um objeto ou função própria, todos com o mesmo " +
-                "contrato. O código que precisa do algoritmo recebe uma estratégia e a executa, sem saber qual é. É a " +
-                "aplicação direta de Encapsulate What Varies e de Program to an Interface: o que varia é a estratégia, " +
-                "e o restante depende só do contrato.",
+                "A variação pode ser um cálculo de desconto, uma regra de ordenação, uma forma de validar, num objeto ou " +
+                "numa função. O código que precisa do algoritmo recebe uma estratégia e a executa, sem saber qual é. É a " +
+                "aplicação direta de Encapsulate What Varies e de Program to an Interface: o que varia é a estratégia, e " +
+                "o restante depende só do contrato.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Coloque cada variação do algoritmo em uma peça com o mesmo contrato e entregue a peça a quem a usa: " +
-                "trocar o comportamento é trocar a estratégia, sem `if` nem herança.",
+                "Um `if` que escolhe entre fórmulas é uma lista de estratégias esperando para sair do código de quem as " +
+                "usa.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -7244,24 +7243,24 @@ export default area({
           title: "Observer",
           note: "notifica quem se interessou, sem conhecê-lo",
           summary:
-            "Permite que um objeto notifique automaticamente outros quando algo muda ou acontece, sem conhecê-los " +
-            "nem depender deles — quem tem interesse se inscreve.",
+            "Observer é um padrão comportamental em que um objeto avisa os interessados inscritos quando algo " +
+            "acontece, sem saber quem eles são.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Observer é um padrão comportamental em que um objeto, o sujeito, mantém uma lista de interessados, os " +
-                "observadores, e os avisa quando algo acontece. O sujeito só conhece o contrato de quem se inscreve (uma " +
-                "função ou um método de notificação), e não quem são nem quantos são. É uma forma de Inversion of " +
-                "Control: em vez de o sujeito chamar cada parte interessada, elas se registram e são chamadas.",
+                "O objeto que avisa é o sujeito, e os interessados são os observadores. O sujeito só conhece o contrato " +
+                "de quem se inscreve (uma função ou um método de notificação), e não quem são nem quantos são. É uma " +
+                "forma de Inversion of Control: em vez de o sujeito chamar cada parte interessada, elas se registram e " +
+                "são chamadas.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Quem gera o evento não conhece quem reage a ele: os interessados se inscrevem, e são avisados quando " +
-                "algo acontece.",
+                "Use Observer quando várias partes do sistema precisam reagir a um mesmo fato sem que ele precise " +
+                "conhecê-las.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -7451,26 +7450,23 @@ export default area({
           note: "uma ação transformada em objeto: pode ser guardada, enfileirada e desfeita",
           collision: "≠ Command-Query Separation (Design Principles) — padrão de objeto que encapsula uma ação × princípio de separar leitura de escrita",
           summary:
-            "Transforma uma ação em um objeto, com tudo o que é preciso para executá-la — o que permite guardá-la, " +
-            "enfileirá-la, registrá-la e até desfazê-la.",
+            "Command é um padrão comportamental que transforma uma ação, com os seus dados, num objeto com uma " +
+            "operação `execute()`.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Command é um padrão comportamental que encapsula uma requisição, uma ação com os seus dados, em um " +
-                "objeto com uma operação `execute()`. Quem pede a ação não a executa diretamente: cria ou recebe o " +
-                "comando, e outro componente decide quando executá-lo. Como a ação virou um valor, ela pode ser " +
-                "guardada, colocada em uma fila, registrada e desfeita. Não é o mesmo que Command-Query Separation: " +
-                "aquele é um princípio sobre separar leitura de escrita nos métodos, e este é um padrão para " +
-                "representar ações como objetos.",
+                "Quem pede a ação não a executa diretamente: cria ou recebe o comando, e outro componente decide quando " +
+                "executá-lo. Como a ação virou um valor, ela pode ser guardada, colocada em uma fila, registrada e " +
+                "desfeita. Não é o mesmo que Command-Query Separation: aquele é um princípio sobre separar leitura de " +
+                "escrita nos métodos, e este é um padrão para representar ações como objetos.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Trate a ação como um objeto: quem a pede fica separado de quem a executa, e ela pode ser guardada, " +
-                "enfileirada, registrada ou desfeita.",
+                "Um desfazer e refazer quase sempre começa por transformar cada ação num Command que sabe se reverter.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -7677,25 +7673,23 @@ export default area({
           requires: ["Strategy"],
           note: "estruturalmente idêntico a Strategy (troca de comportamento em runtime) — ensinado em par por contraste de intenção",
           summary:
-            "Permite que um objeto mude o seu comportamento quando o seu estado interno muda, delegando cada estado " +
-            "a um objeto próprio que também decide as transições.",
+            "State é um padrão comportamental em que cada estado de um objeto vira um objeto próprio, com o " +
+            "comportamento daquele estado.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "State é um padrão comportamental para objetos cujo comportamento depende do estado em que estão: um " +
-                "pedido pendente, pago ou enviado responde de modo diferente ao mesmo `cancel()`. Em vez de espalhar " +
-                "`if (status === ...)` por todos os métodos, cada estado vira um objeto que implementa o comportamento " +
-                "daquele estado. O objeto principal delega a chamada ao estado atual, e cada estado decide para qual " +
-                "vai a seguir.",
+                "Ele serve para objetos que respondem de modo diferente conforme o estado: um pedido pendente, pago ou " +
+                "enviado reage de forma diferente ao mesmo `cancel()`. Em vez de espalhar `if (status === ...)` por todos " +
+                "os métodos, o objeto principal delega a chamada ao estado atual, e cada estado decide para qual vai a " +
+                "seguir.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Cada estado é um objeto com o seu próprio comportamento, e a transição acontece por dentro: o " +
-                "objeto muda de estado, e com isso muda de comportamento.",
+                "Se o mesmo `if (status === ...)` aparece em vários métodos, cada ramo dele quer ser um objeto de estado.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -7928,24 +7922,23 @@ export default area({
           title: "Template Method",
           note: "o esqueleto do algoritmo na base, os passos nas subclasses",
           summary:
-            "Define o esqueleto de um algoritmo em uma classe base e deixa que as subclasses preencham passos " +
-            "específicos, sem alterar a ordem geral das etapas.",
+            "Template Method é um padrão comportamental em que uma classe base define a sequência de um algoritmo e " +
+            "deixa alguns passos para as subclasses.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Template Method é um padrão comportamental em que uma classe base define, em um método, a sequência " +
-                "de um algoritmo, e delega alguns passos a métodos que as subclasses implementam ou sobrescrevem. A " +
-                "ordem e a estrutura ficam na base, e cada subclasse só fornece o que varia. É o \"princípio de " +
-                "Hollywood\" (Inversion of Control) em forma de herança: a classe base chama as subclasses, e não o contrário.",
+                "A ordem e a estrutura ficam na base, e cada subclasse só fornece o que varia, implementando ou " +
+                "sobrescrevendo os passos delegados. É o \"princípio de Hollywood\" (Inversion of Control) em forma de " +
+                "herança: a classe base chama as subclasses, e não o contrário.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "A classe base controla o fluxo e chama os passos; as subclasses só dizem como cada passo é feito, " +
-                "sem poder mudar a ordem.",
+                "Use o Template Method quando a ordem das etapas é regra fixa, e só o conteúdo de algumas delas muda de " +
+                "caso para caso.",
             },
             { type: "heading", text: "Como funciona" },
             {
