@@ -5970,25 +5970,24 @@ export default area({
           title: "Adapter",
           note: "traduz uma interface para a que o cliente espera",
           summary:
-            "Converte a interface de uma classe ou serviço na interface que o código cliente espera, para que peças " +
-            "com contratos diferentes possam trabalhar juntas sem serem alteradas.",
+            "Adapter é um padrão estrutural que traduz a interface de uma peça para a interface que o código cliente " +
+            "espera.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Adapter é um padrão estrutural que faz a ponte entre duas interfaces incompatíveis. Seu código espera " +
-                "um contrato (`charge(amount)`), mas a biblioteca de terceiros, ou o código legado, oferece outro " +
-                "(`sendPayment(cents, currency)`). Em vez de alterar um dos lados, ou espalhar a conversão pelo " +
-                "sistema, um objeto intermediário, o adapter, traduz as chamadas de um contrato para o outro. É a " +
+                "Seu código espera um contrato (`charge(amount)`), mas a biblioteca de terceiros, ou o código legado, " +
+                "oferece outro (`sendPayment(cents, currency)`). Em vez de alterar um dos lados, ou espalhar a conversão " +
+                "pelo sistema, um objeto intermediário, o adapter, traduz as chamadas de um contrato para o outro. É a " +
                 "ferramenta natural para Program to an Interface quando a implementação não é sua.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Não mude o que já existe nem deixe a diferença de contratos vazar: um adapter em volta traduz o " +
-                "que o cliente pede para o que o outro lado entende.",
+                "Envolver uma biblioteca de terceiros num adapter seu é o que permite trocá-la depois sem tocar no resto " +
+                "do sistema.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -6176,25 +6175,24 @@ export default area({
           title: "Decorator",
           note: "acrescenta comportamento envolvendo o objeto, sem herança",
           summary:
-            "Acrescenta comportamento a um objeto envolvendo-o em outro com a mesma interface — uma alternativa " +
-            "flexível à herança para combinar funcionalidades.",
+            "Decorator é um padrão estrutural em que um objeto envolve outro com a mesma interface para acrescentar " +
+            "comportamento.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Decorator é um padrão estrutural em que um objeto envolve outro que tem o mesmo contrato e acrescenta " +
-                "comportamento antes ou depois de repassar a chamada. Como o decorador tem a mesma interface do objeto " +
-                "envolvido, o cliente não percebe a diferença, e vários decoradores podem ser empilhados. É a aplicação " +
-                "mais clara de Composition over Inheritance: em vez de uma subclasse para cada combinação de " +
-                "funcionalidades (com log, com cache, com os dois), cada funcionalidade é uma peça combinável.",
+                "O decorador age antes ou depois de repassar a chamada. Como tem a mesma interface do objeto envolvido, o " +
+                "cliente não percebe a diferença, e vários decoradores podem ser empilhados. É a aplicação mais clara de " +
+                "Composition over Inheritance: em vez de uma subclasse para cada combinação de funcionalidades (com log, " +
+                "com cache, com os dois), cada funcionalidade é uma peça combinável.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Envolva o objeto em outro com a mesma interface para acrescentar comportamento: as funcionalidades " +
-                "viram peças que se empilham, e não subclasses.",
+                "Trate cada funcionalidade transversal como uma camada que se põe e se tira, e não como mais uma " +
+                "subclasse.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -6390,24 +6388,20 @@ export default area({
           title: "Facade",
           note: "uma interface simples na frente de um subsistema complexo",
           summary:
-            "Oferece uma interface simples e única na frente de um subsistema com muitas peças, para que quem o usa " +
-            "não precise conhecer nem coordenar cada uma delas.",
+            "Facade é um padrão estrutural que põe uma interface simples na frente de um subsistema com muitas peças.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Facade é um padrão estrutural que põe uma interface simples na frente de um conjunto de classes " +
-                "complexo. Em vez de o cliente conhecer o estoque, o pagamento, o frete e o e-mail, e chamá-los na " +
-                "ordem certa, ele chama uma operação da fachada, `placeOrder(order)`, e ela coordena o resto. Não " +
-                "adiciona funcionalidade nem traduz contratos, como o Adapter: só reduz o que quem usa precisa saber.",
+                "Em vez de o cliente conhecer o estoque, o pagamento, o frete e o e-mail, e chamá-los na ordem certa, ele " +
+                "chama uma operação da fachada, `placeOrder(order)`, e ela coordena o resto. Não adiciona funcionalidade " +
+                "nem traduz contratos, como o Adapter: só reduz o que quem usa precisa saber.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Uma porta de entrada simples para um subsistema complicado: quem usa faz uma chamada, e a fachada " +
-                "coordena as peças.",
+              text: "Quando o subsistema muda, o ajuste fica na fachada, e nenhum dos clientes percebe.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -6598,24 +6592,22 @@ export default area({
           title: "Proxy",
           note: "um substituto que controla o acesso ao objeto real",
           summary:
-            "Um substituto com a mesma interface do objeto real, que controla o acesso a ele — para adiar a criação, " +
-            "checar permissões, guardar em cache ou registrar chamadas.",
+            "Proxy é um padrão estrutural em que um substituto com a mesma interface fica na frente do objeto real e " +
+            "controla o acesso a ele.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Proxy é um padrão estrutural em que um objeto substituto, com a mesma interface do objeto real, fica " +
-                "na frente dele e decide se, quando e como a chamada chega. O cliente usa o proxy como se fosse o " +
-                "objeto real. Tem a mesma estrutura do Decorator, mas outra intenção: o decorador acrescenta " +
-                "comportamento, e o proxy controla o acesso, muitas vezes cuidando de criar ou de alcançar o objeto real.",
+                "O substituto decide se, quando e como a chamada chega, e o cliente o usa como se fosse o objeto real. " +
+                "Tem a mesma estrutura do Decorator, mas outra intenção: o decorador acrescenta comportamento, e o proxy " +
+                "controla o acesso, muitas vezes cuidando de criar ou de alcançar o objeto real.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Um substituto com a mesma interface controla o acesso ao objeto real: ele decide se, quando e como a " +
-                "chamada chega até lá.",
+                "Com um proxy virtual, o custo do objeto pesado só é pago na primeira vez que alguém realmente o usa.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -6820,25 +6812,24 @@ export default area({
           title: "Composite",
           note: "relaciona-se com Data Structures / Tree (Epic 01) — aplicação, não Requires",
           summary:
-            "Permite tratar objetos individuais e grupos de objetos do mesmo jeito, organizando-os em uma estrutura " +
-            "de árvore em que cada nó, folha ou grupo, responde à mesma interface.",
+            "Composite é um padrão estrutural que organiza objetos em árvore para que um item e um grupo de itens " +
+            "respondam à mesma interface.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Composite é um padrão estrutural para estruturas parte-todo: um grupo contém outros elementos, que " +
-                "podem ser folhas ou outros grupos, e tanto a folha quanto o grupo cumprem o mesmo contrato. O cliente " +
-                "chama uma operação, como `size()`, sem precisar saber se está diante de um item ou de um conjunto: " +
-                "o grupo aplica a operação a cada filho e combina os resultados. É a aplicação de uma Tree (módulo " +
-                "Data Structures) com um contrato uniforme entre os nós.",
+                "Um grupo contém outros elementos, que podem ser folhas ou outros grupos, e os dois cumprem o mesmo " +
+                "contrato. O cliente chama uma operação, como `size()`, sem precisar saber se está diante de um item ou " +
+                "de um conjunto: o grupo aplica a operação a cada filho e combina os resultados. É a aplicação de uma " +
+                "Tree (módulo Data Structures) com um contrato uniforme entre os nós.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Folha e grupo têm a mesma interface: quem usa a estrutura trata os dois do mesmo jeito, e o grupo " +
-                "propaga a operação aos seus filhos.",
+                "Se o código cliente precisa de um `if` para saber se tem um item ou um grupo nas mãos, falta um " +
+                "Composite.",
             },
             { type: "heading", text: "Como funciona" },
             {
