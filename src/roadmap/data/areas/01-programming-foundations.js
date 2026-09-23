@@ -5401,25 +5401,19 @@ export default area({
           title: "Array",
           note: "Memória contígua",
           summary:
-            "Uma coleção de elementos armazenados em posições contíguas de memória, acessíveis por índice " +
-            "numérico em tempo O(1) — a estrutura de dados mais fundamental, direto sobre o que Memory já ensinou.",
+            "Um Array é uma coleção de elementos guardados lado a lado na memória e acessados por um índice numérico.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Um Array guarda elementos em posições contíguas de memória — um do lado do outro, sem " +
-                "lacunas — e cada elemento é acessado por um índice numérico. Como o tamanho de cada elemento " +
-                "é conhecido e fixo, o endereço de qualquer posição pode ser calculado diretamente, sem " +
-                "precisar percorrer nada.",
+                "Não há lacunas entre os elementos. Como o tamanho de cada elemento é conhecido e fixo, o endereço de " +
+                "qualquer posição pode ser calculado diretamente, sem precisar percorrer nada.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Array armazena elementos contíguos na memória, com acesso por índice em O(1) — a vantagem " +
-                "que a contiguidade compra é acesso direto e rápido; o custo é que inserir/remover no meio ou " +
-                "no início exige deslocar elementos.",
+              text: "Array é imbatível para ler por posição, mas cobra caro por inserir ou remover no início e no meio.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -5509,24 +5503,20 @@ export default area({
           title: "Linked List",
           note: "Nós encadeados",
           requires: ["Array"],
-          summary:
-            "Uma sequência de nós, cada um apontando pro próximo, sem exigir memória contígua — o contraste " +
-            "direto com Array: troca acesso O(1) por índice por inserção/remoção O(1) nas pontas.",
+          summary: "Uma Linked List é uma sequência de nós em que cada nó guarda um valor e uma referência para o próximo.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Uma Linked List é uma sequência de nós, onde cada nó guarda um valor e um ponteiro/referência " +
-                "pro próximo nó. Diferente de Array, os nós não precisam estar em posições contíguas de " +
-                "memória — podem estar espalhados em qualquer lugar do heap, conectados só pelos ponteiros.",
+                "Diferente de Array, os nós não precisam estar em posições contíguas de memória — podem estar espalhados " +
+                "em qualquer lugar do heap, conectados só pelos ponteiros.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Linked List troca acesso O(1) por índice (que Array tem) por inserção/remoção O(1) nas pontas " +
-                "(que Array não tem) — a estrutura certa depende de qual operação seu caso de uso faz mais.",
+                "Escolha Linked List quando o que mais acontece é inserir e remover nas pontas, e não ler por índice.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -5632,26 +5622,20 @@ export default area({
           note: "LIFO",
           requires: ["Array", "Linked List"],
           collision: "≠ Call Stack (Memory & Runtime)",
-          summary:
-            "Uma estrutura de dados onde o último elemento inserido é o primeiro a ser removido (LIFO) — " +
-            "implementável tanto sobre Array quanto sobre Linked List, e a inspiração de nome (mas não a mesma " +
-            "coisa) da Call Stack do runtime.",
+          summary: "Uma Stack é uma estrutura de dados em que o último elemento que entra é o primeiro que sai (LIFO).",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Stack (ADT) é uma estrutura de dados com duas operações principais: push (adiciona no topo) " +
-                "e pop (remove do topo) — sempre respeitando LIFO (Last In, First Out): o último elemento que " +
-                "entrou é sempre o primeiro que sai.",
+                "Ela tem duas operações principais: push (adiciona no topo) e pop (remove do topo). Pode ser implementada " +
+                "sobre Array ou Linked List, e não é a mesma coisa que a Call Stack do runtime, que só segue a mesma " +
+                "disciplina.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Stack é LIFO — o último elemento inserido é o primeiro a sair. Pode ser implementado sobre " +
-                "Array ou Linked List; não confundir com a Call Stack do runtime, que segue a mesma disciplina " +
-                "mas é uma coisa diferente.",
+              text: "Sempre que o problema pede para desfazer ou voltar pelo caminho inverso, pense em uma Stack.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -5758,25 +5742,19 @@ export default area({
           note: "FIFO",
           requires: ["Stack"],
           revisit: ["Asynchronous Programming / Task Queue", "Architecture / Message Queue"],
-          summary:
-            "Uma estrutura de dados onde o primeiro elemento inserido é o primeiro a ser removido (FIFO) — o " +
-            "par natural de Stack, ensinado junto por serem opostos na mesma pergunta: qual elemento sai primeiro?",
+          summary: "Uma Queue é uma estrutura de dados em que o primeiro elemento que entra é o primeiro que sai (FIFO).",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Queue é uma estrutura de dados com duas operações principais: enqueue (adiciona no final) e " +
-                "dequeue (remove do início) — sempre respeitando FIFO (First In, First Out): o primeiro " +
-                "elemento que entrou é o primeiro que sai.",
+                "Ela tem duas operações principais: enqueue (adiciona no final) e dequeue (remove do início). É o par de " +
+                "Stack: as duas respondem de forma oposta à mesma pergunta, qual elemento sai primeiro.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Queue é FIFO — o primeiro elemento inserido é o primeiro a sair. É o par de Stack: as duas " +
-                "respondem à mesma pergunta de forma oposta, e cada uma serve a um tipo diferente de problema " +
-                "de ordenação de processamento.",
+              text: "Quando a ordem de chegada precisa ser respeitada no processamento, a estrutura é uma Queue.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -5898,24 +5876,20 @@ export default area({
           requires: ["Array"],
           revisit: ["Architecture / Consistent Hashing", "Platform / Database Performance / Index"],
           summary:
-            "Uma estrutura que mapeia chaves a valores usando uma função hash pra calcular onde cada par " +
-            "deveria estar num array por trás — busca, inserção e remoção em O(1) na média, ao custo de perder " +
-            "qualquer noção de ordem.",
+            "Uma Hash Table é uma estrutura que guarda pares chave-valor e usa uma função hash para calcular onde " +
+            "cada par fica.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Uma Hash Table guarda pares chave-valor e usa uma função hash pra transformar cada chave num " +
-                "índice de um Array interno — o \"endereço\" onde aquele par deveria estar. Buscar um valor não " +
-                "exige percorrer nada: a função hash calcula direto onde procurar.",
+                "A função hash transforma cada chave num índice de um Array interno — o \"endereço\" onde aquele par " +
+                "deveria estar. Buscar um valor não exige percorrer nada: a função hash calcula direto onde procurar.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Hash Table mapeia chaves a valores usando uma função hash pra calcular a posição, dando " +
-                "busca/inserção/remoção O(1) na média — o preço é perder qualquer noção de ordem entre os elementos.",
+              text: "Hash Table dá busca por chave em O(1) na média, mas não guarda nenhuma ordem entre os elementos.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -6009,25 +5983,19 @@ export default area({
           title: "Set",
           note: "Sem duplicatas",
           requires: ["Hash Table"],
-          summary:
-            "Uma coleção que garante que cada elemento aparece no máximo uma vez — normalmente implementada " +
-            "por cima de uma Hash Table, aproveitando o mesmo acesso O(1) que ela oferece.",
+          summary: "Um Set é uma coleção em que cada elemento aparece no máximo uma vez.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Um Set é uma coleção onde cada elemento pode aparecer no máximo uma vez — adicionar um valor " +
-                "já presente não tem efeito nenhum. As operações principais são add, has (verificar presença) " +
-                "e delete.",
+                "Adicionar um valor já presente não tem efeito nenhum. As operações principais são add, has (verificar " +
+                "presença) e delete.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Set garante que cada elemento aparece no máximo uma vez, e oferece teste de pertencimento " +
-                "O(1) na média — normalmente implementado por cima de uma Hash Table, herdando as mesmas " +
-                "vantagens e o mesmo trade-off (sem ordem significativa).",
+              text: "Para eliminar duplicatas ou perguntar \"isto já apareceu?\", um Set responde em O(1) na média.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -6115,25 +6083,23 @@ export default area({
           note: "Nós hierárquicos",
           requires: ["Linked List"],
           summary:
-            "Uma estrutura hierárquica de nós conectados, onde cada nó pode ter múltiplos filhos — uma " +
-            "generalização de Linked List (cada nó tem só um \"próximo\") pra representar relações de " +
-            "hierarquia, não só sequência.",
+            "Uma Tree é uma coleção de nós organizados em hierarquia, a partir de uma raiz, em que cada nó pode ter " +
+            "vários filhos.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Uma Tree é uma coleção de nós conectados hierarquicamente: existe um nó raiz (root), e cada " +
-                "nó pode ter zero ou mais nós filhos. Diferente de Linked List, um nó de Tree pode apontar pra " +
-                "vários filhos — a estrutura generaliza de sequência linear pra hierarquia ramificada.",
+                "Existe um nó raiz (root), e cada nó pode ter zero ou mais nós filhos. Diferente de Linked List, um nó de " +
+                "Tree pode apontar pra vários filhos — a estrutura generaliza de sequência linear pra hierarquia " +
+                "ramificada.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Tree generaliza Linked List de sequência linear pra hierarquia ramificada — cada nó pode ter " +
-                "múltiplos filhos, em vez de um único \"próximo\". A estrutura natural pra representar qualquer " +
-                "relação de hierarquia.",
+                "Sempre que os dados têm pai e filhos, como pastas ou menus, a forma natural de representá-los é uma " +
+                "Tree.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -6239,24 +6205,21 @@ export default area({
           requires: ["Tree"],
           revisit: ["Platform / Database Performance / Index"],
           summary:
-            "Uma Tree onde cada nó tem no máximo dois filhos, e todo valor à esquerda é menor, todo valor à " +
-            "direita é maior — essa invariante de ordenação permite busca, inserção e remoção em O(log n), " +
-            "quando a árvore está balanceada.",
+            "Uma Binary Search Tree é uma Tree em que cada nó tem no máximo dois filhos, com os menores à esquerda e " +
+            "os maiores à direita.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Uma Binary Search Tree (BST) é uma Tree com duas restrições: cada nó tem no máximo dois " +
-                "filhos (esquerdo e direito), e existe um invariante de ordenação — pra qualquer nó, todos os " +
-                "valores na sub-árvore esquerda são menores, e todos na sub-árvore direita são maiores.",
+                "São duas restrições: no máximo dois filhos (esquerdo e direito) e um invariante de ordenação — pra " +
+                "qualquer nó, todos os valores na sub-árvore esquerda são menores, e todos na sub-árvore direita são " +
+                "maiores.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Binary Search Tree é uma Tree com invariante de ordenação — isso permite busca O(log n) " +
-                "quando balanceada, o mesmo princípio de busca binária aplicado a uma estrutura de nós.",
+              text: "A busca em O(log n) só vale enquanto a árvore estiver balanceada.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -6366,26 +6329,22 @@ export default area({
           title: "Heap",
           note: "Árvore em array",
           requires: ["Tree", "Array"],
-          summary:
-            "Uma Tree binária completa, guardada de forma compacta dentro de um Array (sem ponteiros), que " +
-            "garante acesso O(1) ao maior (ou menor) elemento — a estrutura por trás de Priority Queue.",
+          summary: "Um Heap é uma Tree binária completa em que todo nó é maior (ou menor) que os seus filhos.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Um Heap é uma Tree binária completa (todos os níveis preenchidos, exceto talvez o último, " +
-                "preenchido da esquerda pra direita) que respeita o invariante de heap: em um Max-Heap, todo " +
-                "nó é maior ou igual aos seus filhos. Por ser completa, um Heap pode ser guardado de forma " +
-                "compacta dentro de um Array, usando aritmética de índice pra navegar entre pai e filhos.",
+                "Completa quer dizer que todos os níveis estão preenchidos, exceto talvez o último, preenchido da " +
+                "esquerda pra direita. Em um Max-Heap, todo nó é maior ou igual aos seus filhos. Por ser completa, um " +
+                "Heap pode ser guardado de forma compacta dentro de um Array, usando aritmética de índice pra navegar " +
+                "entre pai e filhos.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Heap é uma Tree completa guardada de forma compacta num Array, garantindo acesso O(1) ao " +
-                "maior (ou menor) elemento e inserção/remoção O(log n) — ideal quando você só precisa do " +
-                "\"topo\" de uma coleção que muda com frequência.",
+                "Quando você só precisa do maior ou do menor elemento de uma coleção que muda o tempo todo, use um Heap.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -6498,25 +6457,20 @@ export default area({
           note: "O caso mais geral",
           requires: ["Tree", "Hash Table"],
           revisit: ["AI / Vector Search (HNSW)"],
-          summary:
-            "A estrutura de dados mais geral de todas: nós conectados por arestas, sem as restrições de " +
-            "hierarquia de Tree — qualquer nó pode se conectar a qualquer outro, inclusive formando ciclos.",
+          summary: "Um Graph é uma coleção de nós (vértices) ligados por arestas, sem hierarquia obrigatória.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Um Graph é uma coleção de nós (vértices) conectados por arestas — sem a restrição hierárquica " +
-                "de Tree (que exige uma raiz e proíbe ciclos). Num Graph, qualquer nó pode se conectar a " +
-                "qualquer outro, inclusive formando ciclos.",
+                "Não há a restrição de Tree, que exige uma raiz e proíbe ciclos. Num Graph, qualquer nó pode se conectar " +
+                "a qualquer outro, inclusive formando ciclos.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Graph é a estrutura mais geral de todas — nós conectados por arestas, sem restrição de " +
-                "hierarquia ou proibição de ciclos. Tree e Linked List são casos particulares e mais " +
-                "restritos de Graph.",
+                "Se as relações entre os dados podem formar ciclos ou ter vários caminhos, o modelo certo é um Graph.",
             },
             { type: "heading", text: "Por que importa" },
             {
