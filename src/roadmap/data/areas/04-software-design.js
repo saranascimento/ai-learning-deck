@@ -1923,24 +1923,21 @@ export default area({
           title: "Single Responsibility Principle (SRP)",
           note: "uma razão para mudar. Aplica informalmente Cohesion (Epic 01) — sem Requires estrito, é heurística própria",
           summary:
-            "Cada módulo ou classe deve ter uma única razão para mudar — ou seja, responder a um único assunto ou " +
-            "grupo de interessados, para que uma mudança em um não arraste (nem quebre) o outro.",
+            "O Single Responsibility Principle diz que uma classe, um módulo ou uma função deve ter uma única razão " +
+            "para mudar.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "O Princípio da Responsabilidade Única diz que uma classe (ou módulo, ou função) deve ter uma, e só " +
-                "uma, razão para mudar. Não significa \"faz uma coisa só\" no sentido de ter poucas linhas: " +
-                "significa que tudo o que está ali muda pelo mesmo motivo — geralmente porque atende ao mesmo " +
-                "assunto de negócio ou ao mesmo grupo de pessoas que pedem mudanças.",
+                "Não significa \"faz uma coisa só\" no sentido de ter poucas linhas: significa que tudo o que está ali muda " +
+                "pelo mesmo motivo — geralmente porque atende ao mesmo assunto de negócio ou ao mesmo grupo de pessoas " +
+                "que pedem mudanças.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Uma classe, uma razão para mudar: agrupe o que muda junto e separe o que muda por motivos diferentes — " +
-                "sem dividir a ponto de espalhar um assunto único.",
+              text: "Pergunte quem pediria a mudança: se são pessoas diferentes, são responsabilidades diferentes.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -2155,26 +2152,23 @@ export default area({
           order: 20,
           title: "Open/Closed Principle (OCP)",
           note: "aberto para extensão, fechado para modificação",
-          summary:
-            "Um módulo deve permitir novos comportamentos por meio de código novo (extensão), sem exigir que o " +
-            "código existente e já testado seja editado (modificação).",
+          summary: "O Open/Closed Principle diz que o código deve ser aberto para extensão e fechado para modificação.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "O Princípio Aberto/Fechado diz que o código deve ser aberto para extensão e fechado para modificação: " +
-                "quando surge um novo requisito do mesmo tipo (mais uma forma de pagamento, mais uma regra de " +
-                "desconto), você o atende adicionando código novo, e não abrindo e alterando o que já funciona. " +
-                "O mecanismo habitual é o polimorfismo: o código estável depende de um contrato, e cada novo " +
-                "comportamento é uma nova implementação desse contrato.",
+                "Quando surge um novo requisito do mesmo tipo (mais uma forma de pagamento, mais uma regra de desconto), " +
+                "você o atende adicionando código novo, e não abrindo e alterando o que já funciona. O mecanismo habitual " +
+                "é o polimorfismo: o código estável depende de um contrato, e cada novo comportamento é uma nova " +
+                "implementação desse contrato.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Projete o ponto de variação para que o novo comportamento seja código adicionado, não editado — mas " +
-                "só depois que a variação for real, não por antecipação.",
+                "Se cada nova forma de pagamento exige abrir o mesmo arquivo, o código ainda não está fechado para " +
+                "modificação.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -2365,24 +2359,20 @@ export default area({
           ],
           note: "substitutabilidade de subtipos — definida sobre esses dois mecanismos, não dá para entender sem eles",
           summary:
-            "Um subtipo deve poder ser usado no lugar do tipo base sem que o código que o usa quebre ou precise " +
-            "saber qual é o subtipo — herdar exige respeitar o contrato, não só reaproveitar código.",
+            "O Liskov Substitution Principle diz que um subtipo deve poder ocupar o lugar do tipo base sem que o " +
+            "programa passe a se comportar de forma incorreta.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "O Princípio da Substituição de Liskov afirma que, onde um objeto do tipo base é esperado, qualquer " +
-                "subtipo deve poder ser colocado sem que o programa se comporte de forma incorreta. Em outras palavras: " +
-                "uma subclasse não pode apenas ter os mesmos métodos — precisa manter as mesmas promessas. Ele dá " +
+                "Uma subclasse não pode apenas ter os mesmos métodos — precisa manter as mesmas promessas. O princípio dá " +
                 "um critério para usar Inheritance e Polymorphism (módulo Programming Fundamentals) sem armadilhas.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Só herde se o subtipo cumprir todas as promessas do tipo base — se substituir quebra o código que o " +
-                "usa, a hierarquia está errada, por mais que \"faça sentido\" no mundo real.",
+              text: "Se o código que usa o tipo base precisa checar qual subtipo recebeu, a substituição já falhou.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -2588,24 +2578,23 @@ export default area({
           requires: ["Programming Foundations / Programming Fundamentals / Interface"],
           note: "interfaces enxutas e coesas",
           summary:
-            "Nenhum cliente deve ser forçado a depender de métodos que não usa — prefira várias interfaces pequenas e " +
-            "coesas a uma interface grande que serve a todos.",
+            "O Interface Segregation Principle diz que nenhum cliente deve ser forçado a depender de operações que " +
+            "não usa.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "O Princípio da Segregação de Interfaces diz que quem usa um contrato não deve depender de operações " +
-                "que não precisa. Uma interface (Interface, módulo Programming Fundamentals) grande, que reúne " +
-                "responsabilidades variadas, obriga cada implementação e cada cliente a lidar com o conjunto inteiro. " +
-                "A alternativa são interfaces pequenas, cada uma descrevendo um papel coeso.",
+                "Uma interface (Interface, módulo Programming Fundamentals) grande, que reúne responsabilidades variadas, " +
+                "obriga cada implementação e cada cliente a lidar com o conjunto inteiro. A alternativa são interfaces " +
+                "pequenas, cada uma descrevendo um papel coeso.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Contratos pequenos e coesos: cada cliente depende só do que usa, e cada implementação promete só o " +
-                "que consegue cumprir.",
+                "Uma implementação que lança \"não suportado\" num método da interface está avisando que a interface é " +
+                "grande demais.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -2804,25 +2793,25 @@ export default area({
           requires: ["Programming Foundations / Programming Fundamentals / Interface"],
           note: "depender de abstrações, não de implementações concretas — fecha a Story e abre Dependency Injection & IoC",
           summary:
-            "Os módulos de alto nível (regras de negócio) não devem depender dos de baixo nível (banco, rede, " +
-            "bibliotecas): ambos devem depender de abstrações — e é o alto nível que define o contrato.",
+            "O Dependency Inversion Principle diz que as regras de negócio e a infraestrutura devem depender de " +
+            "abstrações, e não uma da outra.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "O Princípio da Inversão de Dependência tem duas partes: módulos de alto nível não devem depender de " +
-                "módulos de baixo nível — ambos devem depender de abstrações; e abstrações não devem depender de " +
-                "detalhes, os detalhes é que dependem das abstrações. Em termos práticos: sua regra de negócio não " +
-                "deve importar diretamente o cliente do Stripe ou o driver do MySQL; ela declara o que precisa " +
-                "(\"algo que cobra um valor\") e a infraestrutura se adapta a esse contrato.",
+                "O princípio tem duas partes: módulos de alto nível não devem depender de módulos de baixo nível — ambos " +
+                "devem depender de abstrações; e abstrações não devem depender de detalhes, os detalhes é que dependem " +
+                "das abstrações. Em termos práticos: sua regra de negócio não deve importar diretamente o cliente do " +
+                "Stripe ou o driver do MySQL; ela declara o que precisa (\"algo que cobra um valor\") e a infraestrutura se " +
+                "adapta a esse contrato.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Faça as regras de negócio definirem o contrato de que precisam e a infraestrutura se adaptar a ele — " +
-                "assim o que é estável não fica preso ao que muda.",
+                "A inversão está em quem desenha o contrato: é a regra de negócio que diz o que precisa, e não o banco " +
+                "que diz o que oferece.",
             },
             { type: "heading", text: "Por que importa" },
             {
