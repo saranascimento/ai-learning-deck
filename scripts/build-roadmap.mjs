@@ -1505,6 +1505,13 @@ for (const area of model.areas()) {
     "read-phenomena-dirty-non-repeatable-phantom",
     "optimistic-locking",
     "pessimistic-locking",
+    "index",
+    "composite-index",
+    "query-execution-plan",
+    "query-optimization",
+    "n-plus-1-query-problem",
+    "connection-pool",
+    "slow-query-analysis",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",

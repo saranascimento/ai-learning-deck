@@ -13663,23 +13663,1561 @@ export default area({
           subtopics: ["Index Selectivity — cardinalidade, quando um índice não ajuda"],
           note: "B-tree × hash index — revisita Programming Foundations / Data Structures / BST, Hash Table (absorve o B-Tree só citado antes)",
           revisit: ["Programming Foundations / Data Structures / Binary Search Tree", "Programming Foundations / Data Structures / Hash Table"],
+          summary:
+            "Uma estrutura auxiliar, mantida pelo banco, que guarda os valores de uma ou mais colunas em ordem e " +
+            "aponta para as linhas — para encontrar registros sem ler a tabela inteira, em troca de espaço e de " +
+            "escritas mais caras.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Sem índice, encontrar as linhas com um valor exige ler a tabela inteira (uma varredura, ou scan). Um " +
+                "índice é uma cópia organizada de uma ou mais colunas, com um ponteiro para cada linha, que o banco " +
+                "atualiza a cada escrita. O tipo mais comum é a árvore B (B-tree), parente da árvore binária de busca, " +
+                "mas com muitos filhos por nó para caber em páginas de disco: ela mantém os valores em ordem e responde a " +
+                "buscas por igualdade, por intervalo e por prefixo, e ainda entrega os dados já ordenados. Há também " +
+                "índices hash, que, como uma tabela hash, só servem para igualdade.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Um índice troca escrita e espaço por leitura: ele faz uma consulta frequente deixar de ler a tabela " +
+                "toda, mas cada `INSERT`, `UPDATE` e `DELETE` passa a atualizá-lo também — por isso se cria índice para " +
+                "as consultas que existem, e não para todas as colunas.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "index.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "const plan = (sql) => db.prepare(`EXPLAIN QUERY PLAN ${sql}`).all().map((row) => row.detail);",
+                "",
+                "db.exec(\"CREATE TABLE users (id INTEGER PRIMARY KEY, email TEXT NOT NULL, name TEXT NOT NULL)\");",
+                "",
+                "plan(\"SELECT * FROM users WHERE email = 'ana@example.test'\");",
+                "// [\"SCAN users\"] — lê todas as linhas e confere uma a uma",
+                "",
+                "db.exec(\"CREATE UNIQUE INDEX idx_users_email ON users(email)\");",
+                "",
+                "plan(\"SELECT * FROM users WHERE email = 'ana@example.test'\");",
+                "// [\"SEARCH users USING INDEX idx_users_email (email=?)\"] — vai direto ao valor na árvore",
+                "",
+                "plan(\"SELECT * FROM users WHERE email >= 'a' AND email < 'b' ORDER BY email\");",
+                "// [\"SEARCH users USING INDEX idx_users_email (email>? AND email<?)\"] — intervalo, já em ordem",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A chave primária e as colunas `UNIQUE` ganham um índice automaticamente, porque o banco precisa dele " +
+                "para conferir a unicidade. As chaves estrangeiras, na maioria dos bancos, não ganham: o índice delas " +
+                "precisa ser criado à mão.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Em colunas usadas com frequência em `WHERE`, `JOIN` e `ORDER BY` de consultas importantes, como a busca de um usuário pelo e-mail.",
+                "Quando a condição é seletiva, isto é, separa poucas linhas de muitas: um e-mail aponta para uma pessoa, e não para metade da tabela.",
+                "Para garantir unicidade (`UNIQUE`), o que também acelera a busca por aquele valor.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Colunas pouco seletivas, como um booleano ou um status com dois valores, raramente se beneficiam: ler metade da tabela pelo índice custa mais que varrê-la.",
+                "Cada índice torna as escritas mais lentas e ocupa espaço; tabelas com muita escrita e pouca leitura pagam caro por índices que ninguém usa.",
+                "Um índice sobre uma coluna não ajuda uma condição que aplica uma função sobre ela, como `lower(email) = ?`, a menos que o índice seja sobre essa mesma expressão.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Seletividade: quando o índice não compensa",
+              context: "O banco escolhe entre o índice e a varredura estimando quantas linhas a condição devolve.",
+              code: {
+                language: "text",
+                filename: "selectivity.txt",
+                code: [
+                  "Tabela orders: 1.000.000 de linhas. Índices em email_confirmed e em customer_id.",
+                  "",
+                  "WHERE customer_id = 42          -- ~10 linhas (0,001%)",
+                  "  Index Scan using idx_orders_customer on orders ...",
+                  "  → poucas páginas lidas; o índice vale muito.",
+                  "",
+                  "WHERE email_confirmed = true    -- ~600.000 linhas (60%)",
+                  "  Seq Scan on orders  Filter: email_confirmed",
+                  "  → o PostgreSQL IGNORA o índice: buscar 600 mil linhas uma a uma pelo índice",
+                  "    exigiria mais leituras aleatórias do que ler a tabela inteira em sequência.",
+                  "",
+                  "Seletividade = quantas linhas a condição separa. Quanto menos linhas, mais o índice ajuda.",
+                ].join("\n"),
+              },
+              explanation:
+                "O índice não é usado só porque existe: o otimizador compara o custo estimado das alternativas. Para " +
+                "colunas com poucos valores distintos, um índice parcial (`WHERE email_confirmed = false`) ou um índice " +
+                "composto com uma coluna mais seletiva costuma ser a saída.",
+            },
+            {
+              title: "O custo de cada índice na escrita",
+              context: "Cada índice é mais uma estrutura para atualizar em cada `INSERT`, `UPDATE` e `DELETE`.",
+              code: {
+                language: "javascript",
+                filename: "write-cost.js",
+                code: [
+                  "db.exec(`",
+                  "  CREATE TABLE events (id INTEGER PRIMARY KEY, user_id INTEGER, kind TEXT, created_at TEXT, payload TEXT);",
+                  "  CREATE INDEX idx_events_user ON events(user_id);",
+                  "  CREATE INDEX idx_events_kind ON events(kind);",
+                  "  CREATE INDEX idx_events_created ON events(created_at);",
+                  "  CREATE INDEX idx_events_user_created ON events(user_id, created_at);   -- já cobre as buscas de idx_events_user",
+                  "`);",
+                  "",
+                  "// Um INSERT nesta tabela escreve 5 estruturas: a tabela e os 4 índices.",
+                  "db.prepare(\"SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'events'\").all();",
+                  "// [{ name: \"idx_events_user\" }, { name: \"idx_events_kind\" }, { name: \"idx_events_created\" }, { name: \"idx_events_user_created\" }]",
+                  "",
+                  "// No PostgreSQL, os índices que nunca foram usados aparecem em pg_stat_user_indexes com idx_scan = 0:",
+                  "//   SELECT indexrelname, idx_scan FROM pg_stat_user_indexes WHERE relname = 'events' ORDER BY idx_scan;",
+                ].join("\n"),
+              },
+              explanation:
+                "Em uma tabela de eventos, que recebe muitas escritas e é lida por poucas consultas, índices sobram com " +
+                "facilidade. `idx_events_user` é redundante, porque o composto `(user_id, created_at)` já serve às buscas " +
+                "por `user_id`; apagar os índices sem uso deixa as escritas mais rápidas.",
+            },
+            {
+              title: "Árvore B ou hash: o que cada uma sabe fazer",
+              context: "A estrutura do índice decide quais consultas ele consegue atender.",
+              code: {
+                language: "text",
+                filename: "btree-vs-hash.txt",
+                code: [
+                  "                               B-tree (padrão)     Hash",
+                  "igualdade      email = ?       sim                 sim",
+                  "intervalo      price > ?       sim                 não",
+                  "prefixo        name LIKE 'An%' sim (*)             não",
+                  "ordenação      ORDER BY email  sim, sem ordenar    não",
+                  "unicidade      UNIQUE          sim                 não (no PostgreSQL)",
+                  "",
+                  "(*) com a configuração de ordenação (collation) adequada.",
+                  "",
+                  "A B-tree guarda os valores em ordem, como o percurso de uma árvore de busca; o hash",
+                  "espalha os valores por baldes, como uma tabela hash, e perde a ordem. Por isso quase",
+                  "todo índice é B-tree, e o hash fica para colunas grandes consultadas só por igualdade.",
+                ].join("\n"),
+              },
+              explanation:
+                "As mesmas propriedades das estruturas de dados aparecem no banco: a ordem da árvore permite intervalos e " +
+                "ordenação, e o hash só responde se um valor exato existe. Na dúvida, `CREATE INDEX` sem tipo cria uma " +
+                "B-tree, que é a escolha certa na grande maioria dos casos.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O login ficou lento depois que a base passou de um milhão de usuários. A consulta procura o usuário pelo " +
+              "e-mail, e a tabela só tem a chave primária.",
+            problemCode: {
+              language: "javascript",
+              filename: "login.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "const plan = (sql) => db.prepare(`EXPLAIN QUERY PLAN ${sql}`).all().map((row) => row.detail);",
+                "",
+                "db.exec(\"CREATE TABLE users (id INTEGER PRIMARY KEY, email TEXT NOT NULL, password_hash TEXT NOT NULL)\");",
+                "",
+                "const findByEmail = db.prepare(\"SELECT id, password_hash FROM users WHERE email = ?\");",
+                "plan(\"SELECT id, password_hash FROM users WHERE email = 'ana@example.test'\");   // [\"SCAN users\"]",
+              ].join("\n"),
+            },
+            task:
+              "Crie o índice adequado, confirme pelo plano que a consulta passou a usá-lo e explique por que ele deve " +
+              "ser `UNIQUE`.",
+            hint: "Dois usuários não podem ter o mesmo e-mail: a mesma declaração garante a regra e cria o índice.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "login.fixed.js",
+                code: [
+                  "db.exec(\"CREATE UNIQUE INDEX idx_users_email ON users(email)\");",
+                  "",
+                  "plan(\"SELECT id, password_hash FROM users WHERE email = 'ana@example.test'\");",
+                  "// [\"SEARCH users USING INDEX idx_users_email (email=?)\"]",
+                  "",
+                  "db.prepare(\"INSERT INTO users (email, password_hash) VALUES (?, ?)\").run(\"ana@example.test\", \"h1\");",
+                  "try { db.prepare(\"INSERT INTO users (email, password_hash) VALUES (?, ?)\").run(\"ana@example.test\", \"h2\"); }",
+                  "catch (error) { error.message; }   // \"UNIQUE constraint failed: users.email\"",
+                ].join("\n"),
+              },
+              explanation:
+                "A busca deixou de ler um milhão de linhas e passou a descer a árvore do índice, algumas páginas só. Como " +
+                "o e-mail identifica a conta, o índice `UNIQUE` também impede o cadastro duplicado, sem uma verificação à " +
+                "parte que poderia falhar sob concorrência.",
+            },
+          },
         }),
-        concept({ order: 20, title: "Composite Index", requires: ["Index"], note: "regra do prefixo mais à esquerda; ordem das colunas" }),
-        concept({ order: 30, title: "Query Execution Plan", requires: ["Index"], note: "EXPLAIN; seq scan × index scan; estimativas do otimizador" }),
-        concept({ order: 40, title: "Query Optimization", requires: ["Query Execution Plan"], note: "SARGability, evitar SELECT *, projeção, covering index" }),
+        concept({
+          order: 20,
+          title: "Composite Index",
+          requires: ["Index"],
+          note: "regra do prefixo mais à esquerda; ordem das colunas",
+          summary:
+            "Um índice sobre várias colunas, ordenado pela primeira, depois pela segunda dentro de cada valor da " +
+            "primeira, e assim por diante — útil para consultas que filtram por um prefixo dessas colunas, na ordem " +
+            "em que foram declaradas.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Um índice composto guarda várias colunas juntas, em ordem: primeiro pela primeira coluna; dentro de cada " +
+                "valor dela, pela segunda; e assim por diante — como uma lista telefônica ordenada por sobrenome e, " +
+                "dentro do sobrenome, pelo nome. Por isso ele só é útil para consultas que usam as colunas a partir da " +
+                "primeira, sem pular nenhuma: é a regra do prefixo mais à esquerda. A ordem das colunas na declaração é, " +
+                "então, a decisão mais importante.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Um índice `(a, b, c)` serve a consultas por `a`, por `a` e `b`, e por `a`, `b` e `c` — mas não por `b` " +
+                "ou por `c` sozinhos; a ordem das colunas se escolhe pelas consultas, com as de igualdade primeiro e a de " +
+                "intervalo ou ordenação por último.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "composite.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "const plan = (sql) => db.prepare(`EXPLAIN QUERY PLAN ${sql}`).all().map((row) => row.detail);",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER, placed_at TEXT, total_cents INTEGER);",
+                "  CREATE INDEX idx_orders_customer_placed ON orders(customer_id, placed_at);",
+                "`);",
+                "",
+                "plan(\"SELECT * FROM orders WHERE customer_id = 7\");",
+                "// [\"SEARCH orders USING INDEX idx_orders_customer_placed (customer_id=?)\"] — prefixo: a 1ª coluna",
+                "",
+                "plan(\"SELECT * FROM orders WHERE customer_id = 7 AND placed_at >= '2026-01-01'\");",
+                "// [\"SEARCH ... (customer_id=? AND placed_at>?)\"] — as duas colunas",
+                "",
+                "plan(\"SELECT * FROM orders WHERE placed_at >= '2026-01-01'\");",
+                "// [\"SCAN orders\"] — pulou a 1ª coluna: o índice não ajuda",
+                "",
+                "plan(\"SELECT * FROM orders WHERE customer_id = 7 ORDER BY placed_at DESC LIMIT 20\");",
+                "// [\"SEARCH ... (customer_id=?)\"] — já vem ordenado por data: sem etapa de ordenação",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Na última consulta, o banco lê os pedidos do cliente 7 no índice, que já estão em ordem de data, de trás " +
+                "para a frente, e para depois de 20. Sem o `placed_at` no índice, ele teria de buscar todos os pedidos do " +
+                "cliente e ordená-los antes de devolver os 20 primeiros.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Quando as consultas importantes filtram sempre pela mesma combinação de colunas, como loja e status, ou cliente e data.",
+                "Para atender filtro e ordenação com um índice só: as colunas de igualdade primeiro, e a coluna do `ORDER BY` depois delas.",
+                "No lugar de vários índices simples, quando um composto já cobre as mesmas consultas pelo prefixo.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Consultas que não usam a primeira coluna não aproveitam o índice; às vezes é preciso um segundo índice com outra ordem.",
+                "Depois de uma condição de intervalo (`>`, `<`, `BETWEEN`), as colunas seguintes do índice já não ajudam a filtrar nem a ordenar.",
+                "Índices largos, com muitas colunas, ocupam mais espaço e custam mais a cada escrita; inclua só as colunas que as consultas usam.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Igualdade antes de intervalo",
+              context: "A mesma consulta, com as mesmas duas colunas em ordens diferentes.",
+              code: {
+                language: "javascript",
+                filename: "equality-first.js",
+                code: [
+                  "db.exec(\"CREATE TABLE orders (id INTEGER PRIMARY KEY, status TEXT, placed_at TEXT, total_cents INTEGER)\");",
+                  "const sql = \"SELECT * FROM orders WHERE status = 'paid' AND placed_at >= '2026-01-01'\";",
+                  "",
+                  "db.exec(\"CREATE INDEX idx_placed_status ON orders(placed_at, status)\");",
+                  "plan(sql);   // [\"SEARCH orders USING INDEX idx_placed_status (placed_at>?)\"]",
+                  "// usa só a data: lê todos os pedidos desde janeiro e descarta os que não estão pagos",
+                  "",
+                  "db.exec(\"DROP INDEX idx_placed_status; CREATE INDEX idx_status_placed ON orders(status, placed_at)\");",
+                  "plan(sql);   // [\"SEARCH orders USING INDEX idx_status_placed (status=? AND placed_at>?)\"]",
+                  "// vai direto aos pagos e, dentro deles, ao intervalo de datas",
+                ].join("\n"),
+              },
+              explanation:
+                "Com a data primeiro, o intervalo encerra o uso do índice, e o status só serve de filtro depois. Com o " +
+                "status primeiro, a igualdade fixa um trecho da árvore, e o intervalo de datas é percorrido dentro dele: " +
+                "as duas condições são resolvidas pelo índice.",
+            },
+            {
+              title: "O índice simples que ficou redundante",
+              context: "Um composto já atende às buscas pelo seu prefixo.",
+              code: {
+                language: "javascript",
+                filename: "redundant.js",
+                code: [
+                  "db.exec(`",
+                  "  CREATE TABLE tickets (id INTEGER PRIMARY KEY, project_id INTEGER, created_at TEXT, title TEXT);",
+                  "  CREATE INDEX idx_tickets_project ON tickets(project_id);                       -- antigo",
+                  "  CREATE INDEX idx_tickets_project_created ON tickets(project_id, created_at);   -- novo",
+                  "`);",
+                  "",
+                  "db.exec(\"DROP INDEX idx_tickets_project\");",
+                  "plan(\"SELECT * FROM tickets WHERE project_id = 3\");",
+                  "// [\"SEARCH tickets USING INDEX idx_tickets_project_created (project_id=?)\"] — o composto serve",
+                ].join("\n"),
+              },
+              explanation:
+                "O índice `(project_id)` é o prefixo de `(project_id, created_at)`, e tudo o que ele faz o composto " +
+                "também faz. Manter os dois só dobra o custo das escritas. O contrário não vale: um índice `(created_at, " +
+                "project_id)` não substituiria o simples.",
+            },
+            {
+              title: "Um índice para filtrar e ordenar",
+              context: "A listagem filtra por loja e ordena pelos mais recentes.",
+              code: {
+                language: "javascript",
+                filename: "filter-and-sort.js",
+                code: [
+                  "db.exec(`",
+                  "  CREATE TABLE orders (id INTEGER PRIMARY KEY, store_id INTEGER, placed_at TEXT, total_cents INTEGER);",
+                  "  CREATE INDEX idx_orders_store ON orders(store_id);",
+                  "`);",
+                  "const sql = \"SELECT * FROM orders WHERE store_id = 3 ORDER BY placed_at DESC LIMIT 20\";",
+                  "",
+                  "plan(sql);",
+                  "// [\"SEARCH orders USING INDEX idx_orders_store (store_id=?)\", \"USE TEMP B-TREE FOR ORDER BY\"]",
+                  "// busca TODOS os pedidos da loja e os ordena antes de devolver 20",
+                  "",
+                  "db.exec(\"DROP INDEX idx_orders_store; CREATE INDEX idx_orders_store_placed ON orders(store_id, placed_at)\");",
+                  "plan(sql);",
+                  "// [\"SEARCH orders USING INDEX idx_orders_store_placed (store_id=?)\"] — lê os 20 mais recentes e para",
+                ].join("\n"),
+              },
+              explanation:
+                "A etapa de ordenação (`USE TEMP B-TREE FOR ORDER BY`) desapareceu, porque o índice já entrega os pedidos " +
+                "da loja em ordem de data. Em uma loja com cem mil pedidos, isso é a diferença entre ordenar cem mil " +
+                "linhas e ler vinte.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O painel da loja lista os pedidos em aberto, dos mais recentes para os mais antigos, 20 por página. Há " +
+              "um índice só em `store_id`, e a consulta ficou lenta nas lojas grandes.",
+            problemCode: {
+              language: "javascript",
+              filename: "store-panel.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "const plan = (sql) => db.prepare(`EXPLAIN QUERY PLAN ${sql}`).all().map((row) => row.detail);",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE orders (id INTEGER PRIMARY KEY, store_id INTEGER, status TEXT, placed_at TEXT, total_cents INTEGER);",
+                "  CREATE INDEX idx_orders_store ON orders(store_id);",
+                "`);",
+                "",
+                "const sql = \"SELECT id, total_cents FROM orders WHERE store_id = 3 AND status = 'open' ORDER BY placed_at DESC LIMIT 20\";",
+                "plan(sql);",
+                "// [\"SEARCH orders USING INDEX idx_orders_store (store_id=?)\", \"USE TEMP B-TREE FOR ORDER BY\"]",
+              ].join("\n"),
+            },
+            task:
+              "Projete o índice composto que atende ao filtro e à ordenação, substitua o índice atual e confirme pelo " +
+              "plano que a etapa de ordenação sumiu.",
+            hint: "Primeiro as colunas comparadas por igualdade (loja e status), por último a coluna da ordenação.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "store-panel.fixed.js",
+                code: [
+                  "db.exec(`",
+                  "  DROP INDEX idx_orders_store;",
+                  "  CREATE INDEX idx_orders_store_status_placed ON orders(store_id, status, placed_at);",
+                  "`);",
+                  "",
+                  "plan(sql);",
+                  "// [\"SEARCH orders USING INDEX idx_orders_store_status_placed (store_id=? AND status=?)\"]",
+                  "",
+                  "plan(\"SELECT * FROM orders WHERE store_id = 3\");",
+                  "// [\"SEARCH orders USING INDEX idx_orders_store_status_placed (store_id=?)\"] — o prefixo continua servindo",
+                ].join("\n"),
+              },
+              explanation:
+                "Com loja e status fixados pelo índice, os pedidos em aberto daquela loja já estão em ordem de data, e o " +
+                "banco lê só os 20 primeiros. O índice antigo pode sair, porque `store_id` é o prefixo do novo.",
+            },
+          },
+        }),
+        concept({
+          order: 30,
+          title: "Query Execution Plan",
+          requires: ["Index"],
+          note: "EXPLAIN; seq scan × index scan; estimativas do otimizador",
+          summary:
+            "O roteiro que o otimizador do banco escolhe para executar uma consulta — que índices usar, em que ordem " +
+            "juntar as tabelas, onde ordenar —, visível com `EXPLAIN`, junto com as estimativas de custo e de linhas " +
+            "que o levaram a essa escolha.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "O SQL diz o que se quer, e não como obter. Quem decide o como é o otimizador: ele considera caminhos " +
+                "possíveis (varrer a tabela ou usar um índice, qual tabela ler primeiro em um `JOIN`, como ordenar), " +
+                "estima o custo de cada um a partir de estatísticas sobre os dados e escolhe o mais barato. `EXPLAIN` " +
+                "mostra o plano escolhido; `EXPLAIN ANALYZE`, no PostgreSQL, executa a consulta e mostra também o que " +
+                "aconteceu de verdade: tempos e número real de linhas em cada etapa.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Antes de adivinhar por que uma consulta é lenta, leia o plano: ele mostra se o banco varreu a tabela, " +
+                "que índice usou, onde ordenou e quanto errou nas estimativas — e quase sempre aponta a correção.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "plan.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "const plan = (sql) => db.prepare(`EXPLAIN QUERY PLAN ${sql}`).all().map((row) => row.detail);",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER, placed_at TEXT);",
+                "  CREATE TABLE order_items (id INTEGER PRIMARY KEY, order_id INTEGER, product_id INTEGER, quantity INTEGER);",
+                "  CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT);",
+                "  CREATE INDEX idx_orders_customer ON orders(customer_id);",
+                "`);",
+                "",
+                "const sql = `",
+                "  SELECT p.name, oi.quantity",
+                "  FROM orders o",
+                "  JOIN order_items oi ON oi.order_id = o.id",
+                "  JOIN products p ON p.id = oi.product_id",
+                "  WHERE o.customer_id = 7`;",
+                "",
+                "plan(sql);",
+                "// [\"SCAN oi\",                                          ← varre TODOS os itens de pedido",
+                "//  \"SEARCH p USING INTEGER PRIMARY KEY (rowid=?)\",",
+                "//  \"SEARCH o USING INTEGER PRIMARY KEY (rowid=?)\"]     ← e só então confere o cliente de cada um",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Cada linha do plano é uma etapa, na ordem em que as tabelas são percorridas. `SCAN` lê a tabela inteira; " +
+                "`SEARCH ... USING INDEX` usa um índice; `USE TEMP B-TREE` indica uma ordenação ou agrupamento feitos à " +
+                "parte. Aqui, sem índice em `order_items.order_id`, o otimizador preferiu começar pelos itens e varrê-los " +
+                "todos.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Sempre que uma consulta estiver lenta, antes de mudar o código ou criar índices por tentativa.",
+                "Depois de criar um índice, para confirmar que a consulta passou a usá-lo.",
+                "Em revisões de código de consultas novas sobre tabelas grandes, para pegar varreduras antes de chegarem à produção.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "O plano depende dos dados e das estatísticas: o mesmo `EXPLAIN` em um banco de desenvolvimento pequeno pode ser bem diferente do de produção.",
+                "`EXPLAIN ANALYZE` executa a consulta de verdade; em `UPDATE` e `DELETE`, rode-o dentro de uma transação e faça `ROLLBACK`.",
+                "O formato e o vocabulário variam entre bancos (SQLite, PostgreSQL, MySQL); o que se aprende em um se traduz, mas não se copia.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Seq Scan e Index Scan no PostgreSQL",
+              context: "A mesma consulta, antes e depois do índice, com `EXPLAIN ANALYZE`.",
+              code: {
+                language: "text",
+                filename: "explain-analyze.txt",
+                code: [
+                  "EXPLAIN ANALYZE SELECT * FROM orders WHERE customer_id = 42;",
+                  "",
+                  "-- sem índice",
+                  "Seq Scan on orders  (cost=0.00..1834.00 rows=10 width=24) (actual time=0.015..9.871 rows=12 loops=1)",
+                  "  Filter: (customer_id = 42)",
+                  "  Rows Removed by Filter: 99988",
+                  "Planning Time: 0.080 ms",
+                  "Execution Time: 9.902 ms",
+                  "",
+                  "-- com CREATE INDEX idx_orders_customer ON orders(customer_id)",
+                  "Index Scan using idx_orders_customer on orders  (cost=0.29..8.49 rows=10 width=24) (actual time=0.020..0.034 rows=12 loops=1)",
+                  "  Index Cond: (customer_id = 42)",
+                  "Planning Time: 0.110 ms",
+                  "Execution Time: 0.052 ms",
+                  "",
+                  "cost=inicial..total   estimativa do otimizador, em unidades próprias (não é tempo)",
+                  "rows                  linhas estimadas (primeiro parêntese) e reais (segundo)",
+                  "Rows Removed by Filter: linhas lidas e descartadas — o sinal de que faltou um índice",
+                ].join("\n"),
+              },
+              explanation:
+                "\"Rows Removed by Filter: 99988\" diz que o banco leu cem mil linhas para devolver doze. Com o índice, a " +
+                "condição vira `Index Cond`: ela é resolvida na própria busca, e nada é lido à toa.",
+            },
+            {
+              title: "Quando a estimativa erra",
+              context: "O otimizador escolhe pelo que acha que os dados são, e as estatísticas podem estar velhas.",
+              code: {
+                language: "text",
+                filename: "bad-estimate.txt",
+                code: [
+                  "EXPLAIN ANALYZE SELECT * FROM events WHERE kind = 'checkout';",
+                  "",
+                  "Index Scan using idx_events_kind on events  (cost=0.43..12.51 rows=8 width=64)",
+                  "                                            (actual time=0.03..812.40 rows=480113 loops=1)",
+                  "",
+                  "Estimou 8 linhas, e vieram 480 mil: a tabela recebeu uma carga grande depois da última",
+                  "coleta de estatísticas, e o otimizador escolheu o índice achando que 'checkout' era raro.",
+                  "",
+                  "ANALYZE events;   -- atualiza as estatísticas (o autovacuum também faz isso, periodicamente)",
+                  "",
+                  "Seq Scan on events  (cost=0.00..21870.00 rows=479950 width=64)",
+                  "                    (actual time=0.01..210.33 rows=480113 loops=1)",
+                ].join("\n"),
+              },
+              explanation:
+                "A diferença grande entre `rows` estimado e real é a pista mais importante de um plano ruim. Depois de " +
+                "cargas em massa, rodar `ANALYZE` na tabela devolve ao otimizador números corretos, e ele volta a " +
+                "escolher bem.",
+            },
+            {
+              title: "EXPLAIN ANALYZE também executa escritas",
+              context: "Para medir um `DELETE` sem apagar nada, a transação desfaz o efeito.",
+              code: {
+                language: "javascript",
+                filename: "explain-write.js",
+                code: [
+                  "await client.query(\"BEGIN\");",
+                  "const { rows } = await client.query(",
+                  "  \"EXPLAIN (ANALYZE, BUFFERS) DELETE FROM sessions WHERE expires_at < now() - interval '30 days'\"",
+                  ");",
+                  "console.log(rows.map((row) => row[\"QUERY PLAN\"]).join(\"\\n\"));",
+                  "await client.query(\"ROLLBACK\");   // o DELETE rodou de verdade; o ROLLBACK o desfaz",
+                ].join("\n"),
+              },
+              explanation:
+                "Com `ANALYZE`, o banco executa o comando para medir o tempo real, inclusive escritas. A transação com " +
+                "`ROLLBACK` permite ver o plano e o custo de uma limpeza grande sem perder os dados. `BUFFERS` mostra " +
+                "quantas páginas vieram da memória e quantas do disco.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A tela \"Meus pedidos\" junta pedidos, itens e produtos de um cliente. Ela ficou lenta à medida que a " +
+              "tabela de itens cresceu, e ninguém sabe por onde começar.",
+            problemCode: {
+              language: "javascript",
+              filename: "my-orders.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "const plan = (sql) => db.prepare(`EXPLAIN QUERY PLAN ${sql}`).all().map((row) => row.detail);",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER, placed_at TEXT);",
+                "  CREATE TABLE order_items (id INTEGER PRIMARY KEY, order_id INTEGER, product_id INTEGER, quantity INTEGER);",
+                "  CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT);",
+                "  CREATE INDEX idx_orders_customer ON orders(customer_id);",
+                "`);",
+                "",
+                "const sql = `",
+                "  SELECT o.id, p.name, oi.quantity",
+                "  FROM orders o",
+                "  JOIN order_items oi ON oi.order_id = o.id",
+                "  JOIN products p ON p.id = oi.product_id",
+                "  WHERE o.customer_id = ?`;",
+              ].join("\n"),
+            },
+            task:
+              "Leia o plano, diga qual etapa é o problema e por quê, crie o índice que falta e mostre o plano novo, " +
+              "explicando a mudança na ordem das tabelas.",
+            hint: "Procure a etapa `SCAN`. Qual coluna o `JOIN` usa para chegar a essa tabela?",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "my-orders.fixed.js",
+                code: [
+                  "plan(sql);",
+                  "// [\"SCAN oi\", \"SEARCH p USING INTEGER PRIMARY KEY (rowid=?)\", \"SEARCH o USING INTEGER PRIMARY KEY (rowid=?)\"]",
+                  "// o problema: SCAN oi — todos os itens de pedido são lidos, qualquer que seja o cliente",
+                  "",
+                  "db.exec(\"CREATE INDEX idx_order_items_order ON order_items(order_id)\");",
+                  "",
+                  "plan(sql);",
+                  "// [\"SEARCH o USING COVERING INDEX idx_orders_customer (customer_id=?)\",",
+                  "//  \"SEARCH oi USING INDEX idx_order_items_order (order_id=?)\",",
+                  "//  \"SEARCH p USING INTEGER PRIMARY KEY (rowid=?)\"]",
+                ].join("\n"),
+              },
+              explanation:
+                "Sem índice em `order_items.order_id`, o otimizador não tinha como ir de um pedido aos seus itens, e " +
+                "começou pelos itens, varrendo a tabela inteira. Com o índice, ele começa pelo cliente, chega aos seus " +
+                "poucos pedidos e, de cada pedido, direto aos seus itens: o trabalho passa a ser proporcional aos pedidos " +
+                "do cliente, e não ao total de itens do sistema.",
+            },
+          },
+        }),
+        concept({
+          order: 40,
+          title: "Query Optimization",
+          requires: ["Query Execution Plan"],
+          note: "SARGability, evitar SELECT *, projeção, covering index",
+          summary:
+            "Escrever as consultas de um jeito que o banco consiga usar os índices e ler só o necessário — condições " +
+            "aplicáveis ao índice (SARGable), só as colunas usadas e, quando vale, um índice que cubra a consulta " +
+            "inteira.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Duas consultas com o mesmo resultado podem ter custos muito diferentes. Otimizar uma consulta é, na " +
+                "maior parte das vezes, permitir que o banco use o que já tem: uma condição só aproveita um índice se " +
+                "compara a coluna, tal como está indexada, com um valor — a condição \"SARGable\" (search argument able). " +
+                "Aplicar uma função sobre a coluna, calcular sobre ela ou começar um `LIKE` com `%` esconde a coluna do " +
+                "índice. Pedir só as colunas usadas reduz o que se lê e o que se transfere, e às vezes permite responder " +
+                "só pelo índice (um índice de cobertura).",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Deixe a coluna indexada \"nua\" na condição e mova as transformações para o valor comparado: `created_at " +
+                ">= ? AND created_at < ?` usa o índice, `date(created_at) = ?` não.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "sargable.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "const plan = (sql) => db.prepare(`EXPLAIN QUERY PLAN ${sql}`).all().map((row) => row.detail);",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE users (id INTEGER PRIMARY KEY, email TEXT NOT NULL, created_at TEXT NOT NULL);",
+                "  CREATE INDEX idx_users_email ON users(email);",
+                "  CREATE INDEX idx_users_created ON users(created_at);",
+                "`);",
+                "",
+                "// Função sobre a coluna: o índice guarda `email`, e não `lower(email)`",
+                "plan(\"SELECT * FROM users WHERE lower(email) = 'ana@example.test'\");   // [\"SCAN users\"]",
+                "",
+                "// Função sobre a data: mesmo problema",
+                "plan(\"SELECT * FROM users WHERE date(created_at) = '2026-09-01'\");     // [\"SCAN users\"]",
+                "",
+                "// A mesma pergunta, com a coluna nua e um intervalo",
+                "plan(\"SELECT * FROM users WHERE created_at >= '2026-09-01' AND created_at < '2026-09-02'\");",
+                "// [\"SEARCH users USING INDEX idx_users_created (created_at>? AND created_at<?)\"]",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Para o e-mail, as saídas são guardar o valor já normalizado (em minúsculas, na gravação) ou criar um " +
+                "índice sobre a expressão, `CREATE INDEX ... ON users(lower(email))`, que o banco usa quando a condição " +
+                "repete a mesma expressão.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Quando o plano mostra uma varredura em uma coluna que tem índice: quase sempre há uma função, uma conversão ou um cálculo sobre ela na condição.",
+                "Em consultas muito frequentes que usam poucas colunas, que podem ser respondidas só pelo índice (índice de cobertura).",
+                "Ao trocar `SELECT *` pelas colunas usadas, em tabelas com colunas grandes (textos, JSON) que a tela não mostra.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Consultas raras sobre tabelas pequenas não pagam o esforço; otimize guiado pelo que o monitoramento mostra como lento ou frequente.",
+                "Índices de expressão e de cobertura são mais índices para manter a cada escrita; crie-os para consultas que justifiquem o custo.",
+                "Busca por trechos no meio do texto (`LIKE '%termo%'`) não se resolve com um índice comum; ela pede um índice de texto completo, como o `tsvector` do PostgreSQL ou o FTS do SQLite.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Índice de cobertura: responder sem ler a tabela",
+              context: "Se o índice tem todas as colunas que a consulta pede, a tabela nem é consultada.",
+              code: {
+                language: "javascript",
+                filename: "covering.js",
+                code: [
+                  "db.exec(`",
+                  "  CREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER, placed_at TEXT, notes TEXT);",
+                  "  CREATE INDEX idx_orders_customer_placed ON orders(customer_id, placed_at);",
+                  "`);",
+                  "",
+                  "plan(\"SELECT * FROM orders WHERE customer_id = 7\");",
+                  "// [\"SEARCH orders USING INDEX idx_orders_customer_placed (customer_id=?)\"] — índice + leitura da tabela",
+                  "",
+                  "plan(\"SELECT placed_at FROM orders WHERE customer_id = 7\");",
+                  "// [\"SEARCH orders USING COVERING INDEX idx_orders_customer_placed (customer_id=?)\"] — só o índice",
+                ].join("\n"),
+              },
+              explanation:
+                "Com `SELECT *`, o banco encontra as linhas pelo índice e depois vai buscar cada uma na tabela, por causa " +
+                "de `notes`. Pedindo só `placed_at`, que está no índice, ele não precisa ir à tabela. No PostgreSQL, " +
+                "`INCLUDE` acrescenta colunas extras a um índice só para isso.",
+            },
+            {
+              title: "Contar tudo para saber se existe um",
+              context: "A pergunta \"tem algum?\" não precisa da quantidade.",
+              code: {
+                language: "javascript",
+                filename: "exists.js",
+                code: [
+                  "// Lento em listas grandes: conta todos os pedidos do cliente para comparar com zero",
+                  "const hasOrdersSlow = (customerId) =>",
+                  "  db.prepare(\"SELECT count(*) AS n FROM orders WHERE customer_id = ?\").get(customerId).n > 0;",
+                  "",
+                  "// Para no primeiro que encontrar",
+                  "const hasOrders = (customerId) =>",
+                  "  db.prepare(\"SELECT EXISTS (SELECT 1 FROM orders WHERE customer_id = ?) AS found\").get(customerId).found === 1;",
+                ].join("\n"),
+              },
+              explanation:
+                "`count(*)` percorre todas as linhas que atendem à condição, mesmo que só importe se há uma. `EXISTS` " +
+                "termina assim que encontra a primeira. Com um cliente de dez pedidos a diferença é pequena; com uma " +
+                "tabela de eventos de milhões de linhas, não.",
+            },
+            {
+              title: "O `OR` que impede o índice",
+              context: "Condições em colunas diferentes ligadas por `OR` costumam levar a uma varredura.",
+              code: {
+                language: "text",
+                filename: "or-vs-union.txt",
+                code: [
+                  "-- Busca de contato por e-mail OU por telefone (ambas as colunas têm índice)",
+                  "SELECT id FROM contacts WHERE email = $1 OR phone = $2;",
+                  "  → muitos bancos varrem a tabela, ou precisam combinar os dois índices (Bitmap OR no PostgreSQL)",
+                  "",
+                  "-- Duas buscas simples, cada uma com o seu índice, e o resultado unido",
+                  "SELECT id FROM contacts WHERE email = $1",
+                  "UNION",
+                  "SELECT id FROM contacts WHERE phone = $2;",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada lado do `UNION` é uma busca por igualdade em uma coluna indexada, fácil para qualquer otimizador. O " +
+                "PostgreSQL costuma combinar os dois índices sozinho; em outros bancos, e em consultas mais complexas, " +
+                "reescrever o `OR` é o que devolve o índice. O plano diz qual é o caso.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O relatório de cadastros do dia e a busca de usuário pelo e-mail fazem varredura na tabela de usuários, " +
+              "embora `email` e `created_at` tenham índice.",
+            problemCode: {
+              language: "javascript",
+              filename: "users-report.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "const plan = (sql) => db.prepare(`EXPLAIN QUERY PLAN ${sql}`).all().map((row) => row.detail);",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE users (id INTEGER PRIMARY KEY, email TEXT NOT NULL, created_at TEXT NOT NULL, bio TEXT);",
+                "  CREATE INDEX idx_users_email ON users(email);",
+                "  CREATE INDEX idx_users_created ON users(created_at);",
+                "`);",
+                "",
+                "const signupsOfDay = \"SELECT * FROM users WHERE date(created_at) = ?\";",
+                "const findByEmail = \"SELECT * FROM users WHERE lower(email) = lower(?)\";",
+                "",
+                "plan(signupsOfDay.replace(\"?\", \"'2026-09-01'\"));                  // [\"SCAN users\"]",
+                "plan(findByEmail.replace(\"?\", \"'Ana@Example.test'\"));             // [\"SCAN users\"]",
+              ].join("\n"),
+            },
+            task:
+              "Reescreva as duas consultas para que usem índices, sem mudar o resultado. Para o e-mail, escolha entre " +
+              "um índice de expressão e gravar o e-mail normalizado, e justifique.",
+            hint:
+              "O dia vira um intervalo: do início do dia até o início do dia seguinte. Para o e-mail, o índice precisa " +
+              "ter a mesma expressão da condição.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "users-report.fixed.js",
+                code: [
+                  "// Dia como intervalo sobre a coluna nua",
+                  "const signupsOfDay = \"SELECT id, email, created_at FROM users WHERE created_at >= ? AND created_at < ?\";",
+                  "plan(\"SELECT id, email, created_at FROM users WHERE created_at >= '2026-09-01' AND created_at < '2026-09-02'\");",
+                  "// [\"SEARCH users USING INDEX idx_users_created (created_at>? AND created_at<?)\"]",
+                  "",
+                  "// Índice sobre a mesma expressão usada na condição",
+                  "db.exec(\"CREATE INDEX idx_users_email_lower ON users(lower(email))\");",
+                  "plan(\"SELECT * FROM users WHERE lower(email) = lower('Ana@Example.test')\");",
+                  "// [\"SEARCH users USING INDEX idx_users_email_lower (<expr>=?)\"]",
+                ].join("\n"),
+              },
+              explanation:
+                "O intervalo devolve os mesmos cadastros de `date(created_at) = ?` e deixa a coluna comparável com o " +
+                "índice. O índice de expressão resolve a busca sem mudar os dados; gravar o e-mail já em minúsculas seria " +
+                "ainda mais simples, com um índice comum e um `UNIQUE` que também impede \"Ana@\" e \"ana@\" como contas " +
+                "diferentes. O relatório também deixou de pedir `bio`, que a tela não usa.",
+            },
+          },
+        }),
         concept({
           order: 50,
           title: "N+1 Query Problem",
           note: "canônico do roadmap — I/O por item × lote; eager loading/IN/join. GraphQL / N+1 in Resolvers revisita daqui",
           collision: "GraphQL / N+1 in Resolvers é a manifestação; aqui é o conceito canônico",
+          summary:
+            "O padrão em que se faz uma consulta para buscar uma lista e, depois, mais uma consulta para cada item " +
+            "dela — N+1 idas ao banco onde uma ou duas bastariam, um custo que cresce com o tamanho da lista.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "O problema N+1 aparece quando o código busca uma lista (1 consulta) e, para cada item, busca um dado " +
+                "relacionado (N consultas). Cada consulta é rápida, e o código parece correto; o custo está no número de " +
+                "idas ao banco, cada uma com a sua latência de rede, e ele cresce com o tamanho da lista. Com 20 itens " +
+                "passa despercebido; com 500, a página demora segundos. É comum em laços escritos à mão, em ORMs que " +
+                "carregam relações sob demanda (lazy loading) e nos resolvers de GraphQL, onde o DataLoader é a solução " +
+                "específica.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Busque em lote: em vez de uma consulta por item, uma consulta com todos os ids (`WHERE id IN (...)`) ou " +
+                "um `JOIN` — o número de idas ao banco deixa de depender do tamanho da lista.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "n-plus-1.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "let queries = 0;",
+                "const query = (sql, ...params) => { queries++; return db.prepare(sql).all(...params); };",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE authors (id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
+                "  CREATE TABLE posts (id INTEGER PRIMARY KEY, author_id INTEGER NOT NULL, title TEXT NOT NULL);",
+                "`);",
+                "for (let i = 1; i <= 50; i++) db.prepare(\"INSERT INTO authors VALUES (?, ?)\").run(i, `Autor ${i}`);",
+                "for (let i = 1; i <= 50; i++) db.prepare(\"INSERT INTO posts (author_id, title) VALUES (?, ?)\").run(i, `Post ${i}`);",
+                "",
+                "// N+1: 1 consulta para os posts + 1 por post para o autor",
+                "queries = 0;",
+                "const posts = query(\"SELECT id, author_id, title FROM posts ORDER BY id\");",
+                "const withAuthors = posts.map((post) => ({ ...post, author: query(\"SELECT name FROM authors WHERE id = ?\", post.author_id)[0].name }));",
+                "queries;   // 51",
+                "",
+                "// Em lote: 1 consulta para os posts + 1 para todos os autores",
+                "queries = 0;",
+                "const posts2 = query(\"SELECT id, author_id, title FROM posts ORDER BY id\");",
+                "const ids = [...new Set(posts2.map((post) => post.author_id))];",
+                "const authors = query(`SELECT id, name FROM authors WHERE id IN (${ids.map(() => \"?\").join(\", \")})`, ...ids);",
+                "const byId = new Map(authors.map((author) => [author.id, author.name]));",
+                "const withAuthors2 = posts2.map((post) => ({ ...post, author: byId.get(post.author_id) }));",
+                "queries;   // 2 — com 50 posts ou com 5.000",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A versão em lote tem dois passos: buscar todos os relacionados de uma vez e montar um mapa por id para " +
+                "ligar cada item ao seu. Um `JOIN` faria o mesmo em uma consulta só; o lote em duas consultas é " +
+                "preferível quando a relação é de um para muitos e o `JOIN` repetiria os dados do item em cada linha.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Sempre que um laço sobre uma lista faz uma consulta por item: busque os relacionados em lote antes do laço.",
+                "Em ORMs, ao carregar uma lista cujas relações serão usadas: peça o carregamento antecipado (eager loading, `include`, `preload`).",
+                "Em GraphQL, com um carregador por requisição (DataLoader), que junta as buscas dos resolvers em uma consulta por lote.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Carregar antecipadamente relações que a tela não usa troca consultas desnecessárias por dados desnecessários.",
+                "Listas de ids muito grandes em um `IN` esbarram em limites de parâmetros do banco e do driver; divida em lotes, ou use um array (`= ANY($1)` no PostgreSQL).",
+                "Um `JOIN` com várias relações de um para muitos ao mesmo tempo multiplica as linhas; nesses casos, uma consulta por relação costuma ser melhor.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "O N+1 escondido em uma propriedade",
+              context: "Com carregamento sob demanda, acessar `post.author` parece ler um campo, mas faz uma consulta.",
+              code: {
+                language: "javascript",
+                filename: "lazy-loading.js",
+                code: [
+                  "let queries = 0;",
+                  "const query = (sql, ...params) => { queries++; return db.prepare(sql).all(...params); };",
+                  "",
+                  "class Post {",
+                  "  constructor(row) { Object.assign(this, row); }",
+                  "  get author() {   // \"lazy loading\": busca quando alguém lê a propriedade",
+                  "    return query(\"SELECT name FROM authors WHERE id = ?\", this.author_id)[0];",
+                  "  }",
+                  "}",
+                  "",
+                  "queries = 0;",
+                  "const posts = query(\"SELECT id, author_id, title FROM posts\").map((row) => new Post(row));",
+                  "const html = posts.map((post) => `<li>${post.title} — ${post.author.name}</li>`).join(\"\");",
+                  "queries;   // 51 — nenhuma linha do template \"parece\" consultar o banco",
+                ].join("\n"),
+              },
+              explanation:
+                "É assim que o N+1 costuma entrar em aplicações com ORM: o código do template é inocente, e as consultas " +
+                "acontecem dentro de uma propriedade. Contar as consultas por requisição, em desenvolvimento ou nos logs, " +
+                "é o que o torna visível; a correção é pedir ao ORM que carregue os autores junto com os posts.",
+            },
+            {
+              title: "Listas grandes: lotes ou um array",
+              context: "Um `IN` com milhares de parâmetros esbarra em limites.",
+              code: {
+                language: "javascript",
+                filename: "large-in.js",
+                code: [
+                  "// PostgreSQL: um único parâmetro do tipo array, qualquer que seja o tamanho da lista",
+                  "const { rows } = await client.query(\"SELECT id, name FROM authors WHERE id = ANY($1::int[])\", [ids]);",
+                  "",
+                  "// Onde não há array: dividir em lotes de tamanho fixo",
+                  "async function findAuthorsInChunks(ids, chunkSize = 500) {",
+                  "  const found = [];",
+                  "  for (let i = 0; i < ids.length; i += chunkSize) {",
+                  "    const chunk = ids.slice(i, i + chunkSize);",
+                  "    const placeholders = chunk.map((_, j) => `$${j + 1}`).join(\", \");",
+                  "    const { rows } = await client.query(`SELECT id, name FROM authors WHERE id IN (${placeholders})`, chunk);",
+                  "    found.push(...rows);",
+                  "  }",
+                  "  return found;   // 10.000 ids → 20 consultas, e não 10.000",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "O protocolo do PostgreSQL aceita no máximo 65.535 parâmetros por comando, e outros bancos têm limites " +
+                "próprios. O array ocupa um só parâmetro; os lotes mantêm o número de consultas pequeno e previsível " +
+                "mesmo em listas enormes.",
+            },
+            {
+              title: "JOIN ou uma consulta por relação",
+              context: "Para relações de um para muitos, o `JOIN` repete os dados do lado \"um\".",
+              code: {
+                language: "text",
+                filename: "join-vs-batches.txt",
+                code: [
+                  "Posts (20) com os seus comentários (média de 30 por post):",
+                  "",
+                  "JOIN posts × comments",
+                  "  1 consulta, 600 linhas; o título e o texto de cada post vêm repetidos 30 vezes.",
+                  "  Somando também as tags (JOIN com uma 3ª tabela, 5 por post): 20 × 30 × 5 = 3.000 linhas.",
+                  "",
+                  "Uma consulta por relação",
+                  "  SELECT ... FROM posts WHERE ...                       -- 20 linhas",
+                  "  SELECT ... FROM comments WHERE post_id IN (...)       -- 600 linhas",
+                  "  SELECT ... FROM post_tags WHERE post_id IN (...)      -- 100 linhas",
+                  "  3 consultas, 720 linhas, sem repetição.",
+                ].join("\n"),
+              },
+              explanation:
+                "Resolver o N+1 não significa juntar tudo em uma consulta. Para uma relação de muitos para um, como o " +
+                "autor do post, o `JOIN` é natural; para várias relações de um para muitos, uma consulta em lote por " +
+                "relação evita a multiplicação de linhas e continua com um número fixo de consultas.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A página \"Pedidos da semana\" lista os pedidos com os seus itens e o nome de cada produto. Em semanas " +
+              "movimentadas ela leva vários segundos, e o log mostra centenas de consultas por carregamento.",
+            problemCode: {
+              language: "javascript",
+              filename: "weekly-orders.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "let queries = 0;",
+                "const query = (sql, ...params) => { queries++; return db.prepare(sql).all(...params); };",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE orders (id INTEGER PRIMARY KEY, placed_at TEXT NOT NULL);",
+                "  CREATE TABLE order_items (id INTEGER PRIMARY KEY, order_id INTEGER NOT NULL, product_id INTEGER NOT NULL, quantity INTEGER NOT NULL);",
+                "  CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
+                "  CREATE INDEX idx_order_items_order ON order_items(order_id);",
+                "`);",
+                "for (let p = 1; p <= 10; p++) db.prepare(\"INSERT INTO products VALUES (?, ?)\").run(p, `Produto ${p}`);",
+                "for (let o = 1; o <= 30; o++) {",
+                "  db.prepare(\"INSERT INTO orders VALUES (?, '2026-09-21')\").run(o);",
+                "  for (let i = 0; i < 3; i++) db.prepare(\"INSERT INTO order_items (order_id, product_id, quantity) VALUES (?, ?, 1)\").run(o, ((o + i) % 10) + 1);",
+                "}",
+                "",
+                "function weeklyOrders() {",
+                "  return query(\"SELECT id, placed_at FROM orders ORDER BY id\").map((order) => ({",
+                "    ...order,",
+                "    items: query(\"SELECT product_id, quantity FROM order_items WHERE order_id = ?\", order.id).map((item) => ({",
+                "      ...item,",
+                "      product: query(\"SELECT name FROM products WHERE id = ?\", item.product_id)[0].name,",
+                "    })),",
+                "  }));",
+                "}",
+                "",
+                "weeklyOrders();",
+                "queries;   // 1 + 30 + 90 = 121",
+              ].join("\n"),
+            },
+            task:
+              "Reescreva `weeklyOrders` para que o número de consultas não dependa da quantidade de pedidos nem de " +
+              "itens, devolvendo exatamente a mesma estrutura.",
+            hint:
+              "Três consultas: os pedidos; os itens de todos esses pedidos, com o nome do produto por `JOIN`; e um " +
+              "agrupamento dos itens por pedido na aplicação.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "weekly-orders.fixed.js",
+                code: [
+                  "function weeklyOrders() {",
+                  "  const orders = query(\"SELECT id, placed_at FROM orders ORDER BY id\");",
+                  "  const ids = orders.map((order) => order.id);",
+                  "  // itens de todos os pedidos, já com o nome do produto (muitos para um: o JOIN não multiplica nada)",
+                  "  const items = query(",
+                  "    `SELECT oi.order_id, oi.product_id, oi.quantity, p.name AS product",
+                  "     FROM order_items oi JOIN products p ON p.id = oi.product_id",
+                  "     WHERE oi.order_id IN (${ids.map(() => \"?\").join(\", \")})",
+                  "     ORDER BY oi.id`,",
+                  "    ...ids",
+                  "  );",
+                  "  const byOrder = new Map(ids.map((id) => [id, []]));",
+                  "  for (const { order_id, ...item } of items) byOrder.get(order_id).push(item);",
+                  "  return orders.map((order) => ({ ...order, items: byOrder.get(order.id) }));",
+                  "}",
+                  "",
+                  "queries = 0;",
+                  "weeklyOrders();",
+                  "queries;   // 2 — com 30 pedidos ou com 3.000 (em lotes, se a lista de ids for enorme)",
+                ].join("\n"),
+              },
+              explanation:
+                "Os itens de todos os pedidos vêm em uma consulta, e o nome do produto vem junto pelo `JOIN`, que é uma " +
+                "relação de muitos para um. O agrupamento por pedido é feito em memória com um mapa. A estrutura " +
+                "devolvida é a mesma, e o número de consultas passou de 1 + N + N×M para 2.",
+            },
+          },
         }),
         concept({
           order: 60,
           title: "Connection Pool",
           note: "tamanho do pool, exaustão, timeout — revisita Programming Foundations / Concurrency (recurso compartilhado limitado)",
           revisit: ["Programming Foundations / Concurrency"],
+          summary:
+            "Um conjunto de conexões ao banco abertas de antemão e reaproveitadas entre as requisições — para não " +
+            "pagar o custo de abrir uma conexão a cada consulta e para limitar quantas conexões a aplicação usa ao " +
+            "mesmo tempo.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Abrir uma conexão com um banco como o PostgreSQL custa caro: rede, autenticação, TLS e, no servidor, um " +
+                "processo por conexão. Um pool mantém algumas conexões abertas e as empresta: a requisição pega uma, usa " +
+                "e devolve, e a próxima a reaproveita. O pool também é um limite: com todas as conexões emprestadas, quem " +
+                "chega espera numa fila, como em qualquer recurso compartilhado limitado da programação concorrente. O " +
+                "tamanho do pool, o tempo máximo de espera e a garantia de que toda conexão emprestada volta são as " +
+                "decisões que importam.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "O pool é um recurso limitado e compartilhado: toda conexão emprestada precisa voltar (sempre em " +
+                "`finally`), e o tamanho dele, multiplicado pelo número de instâncias da aplicação, precisa caber no que " +
+                "o banco aceita.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "pool.js",
+              code: [
+                "import pg from \"pg\";",
+                "",
+                "const pool = new pg.Pool({",
+                "  max: 10,                          // no máximo 10 conexões abertas por esta instância",
+                "  idleTimeoutMillis: 30_000,        // fecha conexões paradas há 30 s",
+                "  connectionTimeoutMillis: 2_000,   // espera no máximo 2 s por uma conexão livre; depois, erro",
+                "});",
+                "",
+                "// Consulta avulsa: o pool empresta e devolve sozinho",
+                "const { rows } = await pool.query(\"SELECT id, name FROM products WHERE id = $1\", [7]);",
+                "",
+                "// Várias consultas na mesma conexão (uma transação): empresta, usa e devolve — sempre",
+                "async function transfer(productId, fromStore, toStore, quantity) {",
+                "  const client = await pool.connect();",
+                "  try {",
+                "    await client.query(\"BEGIN\");",
+                "    await client.query(\"UPDATE stock SET quantity = quantity - $1 WHERE product_id = $2 AND store_id = $3\", [quantity, productId, fromStore]);",
+                "    await client.query(\"UPDATE stock SET quantity = quantity + $1 WHERE product_id = $2 AND store_id = $3\", [quantity, productId, toStore]);",
+                "    await client.query(\"COMMIT\");",
+                "  } catch (error) {",
+                "    await client.query(\"ROLLBACK\");",
+                "    throw error;",
+                "  } finally {",
+                "    client.release();   // devolve ao pool, com ou sem erro",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "`pool.query` é suficiente para consultas avulsas. Uma transação precisa de `pool.connect()`, porque " +
+                "todas as consultas dela têm de rodar na mesma conexão; e aí devolver a conexão passa a ser " +
+                "responsabilidade do código.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Em qualquer servidor que atende várias requisições e fala com um banco relacional: abrir uma conexão por requisição desperdiça tempo e sobrecarrega o banco.",
+                "Com um limite de espera (`connectionTimeoutMillis`), para que um banco sobrecarregado gere erros rápidos, e não uma fila que só cresce.",
+                "Com um pool externo, como o PgBouncer, quando muitas instâncias da aplicação (ou funções serverless) somam mais conexões do que o banco suporta.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Um pool maior não deixa o banco mais rápido: além do número de núcleos e discos do servidor, mais conexões simultâneas só disputam os mesmos recursos.",
+                "Estado de sessão (`SET`, tabelas temporárias, `search_path`) fica na conexão e acompanha quem a pegar depois; limpe-o ou evite-o.",
+                "Em ambientes serverless, cada instância tem o seu pool; sem um pool externo, um pico de tráfego abre conexões demais.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "O vazamento: a conexão que não volta",
+              context: "Um caminho de erro sem `release` esgota o pool aos poucos, até a aplicação travar.",
+              code: {
+                language: "javascript",
+                filename: "leak.js",
+                code: [
+                  "// Errado: se a consulta falhar, a conexão nunca volta ao pool",
+                  "async function getProfileLeaky(userId) {",
+                  "  const client = await pool.connect();",
+                  "  const { rows } = await client.query(\"SELECT * FROM profiles WHERE user_id = $1\", [userId]);",
+                  "  client.release();   // não é executado quando a linha de cima lança um erro",
+                  "  return rows[0];",
+                  "}",
+                  "",
+                  "// Certo: o finally roda em qualquer caminho",
+                  "async function getProfile(userId) {",
+                  "  const client = await pool.connect();",
+                  "  try {",
+                  "    const { rows } = await client.query(\"SELECT * FROM profiles WHERE user_id = $1\", [userId]);",
+                  "    return rows[0];",
+                  "  } finally {",
+                  "    client.release();",
+                  "  }",
+                  "}",
+                  "",
+                  "// Sinais do vazamento no pg: pool.totalCount === pool.options.max, pool.idleCount === 0",
+                  "// e pool.waitingCount crescendo — até as requisições falharem com \"timeout exceeded when trying to connect\".",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada erro na versão errada prende uma conexão para sempre. Com um pool de 10, dez erros bastam para a " +
+                "aplicação inteira parar de responder, embora o banco esteja folgado. O `finally`, ou o `pool.query` para " +
+                "consultas avulsas, elimina o problema.",
+            },
+            {
+              title: "A conta que precisa fechar: pool × instâncias",
+              context: "O limite de conexões é do banco, e cada instância da aplicação tem o seu pool.",
+              code: {
+                language: "text",
+                filename: "pool-math.txt",
+                code: [
+                  "PostgreSQL:  max_connections = 100   (algumas ficam reservadas para administração)",
+                  "",
+                  "Aplicação:   6 instâncias × pool de 20 = 120 conexões   → acima do limite",
+                  "Job worker:  2 instâncias × pool de 10 =  20 conexões",
+                  "                                          --------------",
+                  "                                          140 pedidas; o banco recusa as excedentes:",
+                  "                                          \"sorry, too many clients already\"",
+                  "",
+                  "Opções: pools menores por instância (6 × 12 + 2 × 5 = 82);",
+                  "        ou um PgBouncer entre as aplicações e o banco, que mantém poucas conexões reais",
+                  "        e as reparte entre muitas conexões de clientes.",
+                ].join("\n"),
+              },
+              explanation:
+                "Aumentar o pool de uma instância parece inofensivo, mas multiplica pelo número de instâncias, e o total " +
+                "escala junto com o autoscaling. O tamanho do pool é uma decisão da capacidade do banco, dividida entre " +
+                "tudo o que se conecta a ele.",
+            },
+            {
+              title: "Esperar pouco e falhar cedo",
+              context: "Sem um tempo máximo de espera, requisições acumulam enquanto o banco está sobrecarregado.",
+              code: {
+                language: "javascript",
+                filename: "fail-fast.js",
+                code: [
+                  "const pool = new pg.Pool({ max: 10, connectionTimeoutMillis: 1_500 });",
+                  "",
+                  "app.get(\"/products/:id\", async (req, res) => {",
+                  "  try {",
+                  "    const { rows } = await pool.query(\"SELECT id, name, price_cents FROM products WHERE id = $1\", [req.params.id]);",
+                  "    if (!rows.length) return res.status(404).end();",
+                  "    res.json(rows[0]);",
+                  "  } catch (error) {",
+                  "    if (/timeout exceeded when trying to connect/.test(error.message)) {",
+                  "      res.set(\"Retry-After\", \"2\");",
+                  "      return res.status(503).json({ error: \"serviço sobrecarregado, tente de novo em instantes\" });",
+                  "    }",
+                  "    throw error;",
+                  "  }",
+                  "});",
+                ].join("\n"),
+              },
+              explanation:
+                "Com o banco saturado, esperar indefinidamente só empilha requisições e consome memória. Um limite curto " +
+                "transforma a sobrecarga em uma resposta `503` com `Retry-After`, que o cliente e o balanceador de carga " +
+                "sabem tratar, e dá ao banco a chance de se recuperar.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Depois de algumas horas no ar, a API passa a demorar e, por fim, a falhar em todas as rotas, e só volta " +
+              "ao normal quando é reiniciada. O banco está ocioso nesses momentos. O pool usado é o abaixo, uma versão " +
+              "simplificada do que as bibliotecas fazem.",
+            problemCode: {
+              language: "javascript",
+              filename: "exhaustion.js",
+              code: [
+                "// Pool mínimo: `max` conexões; quem pede com todas ocupadas espera até `timeoutMs`",
+                "function createPool({ max, timeoutMs }) {",
+                "  let inUse = 0;",
+                "  const waiting = [];",
+                "  return {",
+                "    get inUse() { return inUse; },",
+                "    async acquire() {",
+                "      if (inUse < max) { inUse++; return { release: () => this.release() }; }",
+                "      return new Promise((resolve, reject) => {",
+                "        const timer = setTimeout(() => reject(new Error(\"timeout esperando conexão\")), timeoutMs);",
+                "        waiting.push(() => { clearTimeout(timer); resolve({ release: () => this.release() }); });",
+                "      });",
+                "    },",
+                "    release() {",
+                "      const next = waiting.shift();",
+                "      if (next) next(); else inUse--;",
+                "    },",
+                "  };",
+                "}",
+                "",
+                "const pool = createPool({ max: 2, timeoutMs: 100 });",
+                "",
+                "async function getOrder(id) {",
+                "  const conn = await pool.acquire();",
+                "  if (id <= 0) throw new Error(\"id inválido\");   // caminho de erro",
+                "  const order = { id };                          // \"consulta\"",
+                "  conn.release();",
+                "  return order;",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Mostre, com chamadas a `getOrder`, como dois erros derrubam as chamadas seguintes, e corrija a função " +
+              "para que o pool se recupere depois de qualquer erro.",
+            hint:
+              "Conte `pool.inUse` depois de duas chamadas com id inválido. A devolução precisa acontecer em todos os " +
+              "caminhos.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "exhaustion.fixed.js",
+                code: [
+                  "// Reprodução: dois erros prendem as duas conexões",
+                  "await getOrder(0).catch(() => {});",
+                  "await getOrder(-1).catch(() => {});",
+                  "pool.inUse;   // 2 — nenhuma voltou",
+                  "await getOrder(1).catch((error) => error.message);   // \"timeout esperando conexão\"",
+                  "",
+                  "// Correção: devolver sempre, no finally",
+                  "async function getOrderFixed(id) {",
+                  "  const conn = await pool.acquire();",
+                  "  try {",
+                  "    if (id <= 0) throw new Error(\"id inválido\");",
+                  "    return { id };",
+                  "  } finally {",
+                  "    conn.release();",
+                  "  }",
+                  "}",
+                  "",
+                  "const healthy = createPool({ max: 2, timeoutMs: 100 });",
+                  "// (com getOrderFixed usando `healthy`) dez erros seguidos deixam healthy.inUse === 0",
+                ].join("\n"),
+              },
+              explanation:
+                "O caminho de erro saía da função com a conexão emprestada, e bastaram dois erros para esgotar um pool de " +
+                "dois. Com `max` de 10 ou 20, o efeito é o mesmo, só mais lento — por isso a API degradava ao longo de " +
+                "horas, com o banco ocioso. O `finally` devolve a conexão em qualquer saída.",
+            },
+          },
         }),
-        concept({ order: 70, title: "Slow Query Analysis", requires: ["Query Execution Plan"], subtopics: ["slow query log", "p95/p99 por query", "EXPLAIN ANALYZE (plano estimado × real)"], note: "consolidada (A20) — absorve Database Profiling" }),
+        concept({
+          order: 70,
+          title: "Slow Query Analysis",
+          requires: ["Query Execution Plan"],
+          subtopics: ["slow query log", "p95/p99 por query", "EXPLAIN ANALYZE (plano estimado × real)"],
+          note: "consolidada (A20) — absorve Database Profiling",
+          summary:
+            "O trabalho de descobrir quais consultas deixam o sistema lento — pelo registro das consultas demoradas e " +
+            "por estatísticas agregadas por forma de consulta — e de escolher, com dados, quais otimizar primeiro.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Analisar consultas lentas é trabalhar a partir de medições, e não de palpites. Há duas fontes " +
+                "principais. O registro de consultas lentas (slow query log) grava cada execução que passou de um limite " +
+                "de tempo, com o texto e a duração. As estatísticas agregadas, como a extensão `pg_stat_statements` do " +
+                "PostgreSQL, somam as execuções de cada forma de consulta — o mesmo SQL, com valores diferentes nos " +
+                "parâmetros — e mostram quantas vezes rodou, o tempo total e a média. Com a lista em mãos, cada consulta " +
+                "escolhida é investigada com `EXPLAIN ANALYZE`.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Otimize pelo tempo total, e não pela consulta mais lenta: uma consulta de 5 ms executada um milhão de " +
+                "vezes por dia pesa mais que um relatório de 30 segundos que roda uma vez.",
+            },
+            { type: "heading", text: "Como fazer" },
+            {
+              type: "list",
+              items: [
+                "Ligue o registro de lentas com um limite realista (`log_min_duration_statement = 250ms` no PostgreSQL) e a extensão `pg_stat_statements`.",
+                "Ordene as formas de consulta pelo tempo total; olhe também a latência alta (p95, p99), que é o que os usuários sentem.",
+                "Para cada consulta escolhida, rode `EXPLAIN (ANALYZE, BUFFERS)` com parâmetros reais e compare as linhas estimadas com as reais.",
+                "Corrija (índice, reescrita, lote), meça de novo e registre o antes e o depois.",
+              ],
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "top-queries.js",
+              code: [
+                "// pg_stat_statements agrega por forma de consulta: WHERE id = $1 vale para todos os ids",
+                "const { rows } = await pool.query(`",
+                "  SELECT query,",
+                "         calls,",
+                "         round(total_exec_time) AS total_ms,",
+                "         round(mean_exec_time::numeric, 2) AS mean_ms,",
+                "         rows",
+                "  FROM pg_stat_statements",
+                "  ORDER BY total_exec_time DESC",
+                "  LIMIT 10",
+                "`);",
+                "",
+                "for (const row of rows) console.log(`${row.total_ms} ms no total · ${row.calls}× · média ${row.mean_ms} ms\\n  ${row.query}`);",
+              ].join("\n"),
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "A média esconde a cauda: uma consulta com média de 20 ms pode ter um p99 de 2 segundos, e é esse que aparece como lentidão para alguém.",
+                "Uma consulta pode ser lenta por esperar um lock, e não pelo plano; o `EXPLAIN` não mostra espera, e é preciso olhar `pg_stat_activity` (`wait_event`).",
+                "Testar a correção com outros parâmetros ou em uma base pequena dá resultados enganosos; use os valores e o volume que causaram a lentidão.",
+                "Registrar todas as consultas, sem limite, gera logs enormes e também custa desempenho; comece por um limite e desça se for preciso.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Ligar o registro de lentas",
+              context: "No PostgreSQL, duas configurações dão as duas fontes de dados.",
+              code: {
+                language: "text",
+                filename: "postgresql.conf",
+                code: [
+                  "# Toda consulta que passar de 250 ms vai para o log, com o texto e a duração",
+                  "log_min_duration_statement = 250ms",
+                  "",
+                  "# Estatísticas agregadas por forma de consulta",
+                  "shared_preload_libraries = 'pg_stat_statements'",
+                  "# e, no banco: CREATE EXTENSION pg_stat_statements;",
+                  "",
+                  "# Planos das consultas lentas, direto no log (útil em produção, com moderação)",
+                  "session_preload_libraries = 'auto_explain'",
+                  "auto_explain.log_min_duration = '1s'",
+                  "auto_explain.log_analyze = on",
+                  "",
+                  "Exemplo de linha no log:",
+                  "LOG:  duration: 1843.221 ms  statement: SELECT * FROM orders WHERE lower(email) = 'ana@example.test'",
+                ].join("\n"),
+              },
+              explanation:
+                "O log mostra execuções individuais, com os valores; o `pg_stat_statements` mostra o peso acumulado de " +
+                "cada forma de consulta. O `auto_explain` registra o plano no momento em que a consulta foi lenta, o que " +
+                "ajuda quando o problema não se reproduz depois.",
+            },
+            {
+              title: "Medir na aplicação: p95 por forma de consulta",
+              context: "Sem acesso ao banco, a aplicação pode medir as suas próprias consultas.",
+              code: {
+                language: "javascript",
+                filename: "timed-db.js",
+                code: [
+                  "import { DatabaseSync } from \"node:sqlite\";",
+                  "import { performance } from \"node:perf_hooks\";",
+                  "",
+                  "const db = new DatabaseSync(\":memory:\");",
+                  "const timings = new Map();   // forma da consulta → durações em ms",
+                  "",
+                  "function timedAll(sql, ...params) {",
+                  "  const start = performance.now();",
+                  "  const rows = db.prepare(sql).all(...params);",
+                  "  const elapsed = performance.now() - start;",
+                  "  const shape = sql.replace(/\\s+/g, \" \").trim();   // o SQL com \"?\" já é a forma da consulta",
+                  "  if (!timings.has(shape)) timings.set(shape, []);",
+                  "  timings.get(shape).push(elapsed);",
+                  "  if (elapsed > 250) console.warn(`consulta lenta (${elapsed.toFixed(0)} ms): ${shape}`);",
+                  "  return rows;",
+                  "}",
+                  "",
+                  "function report() {",
+                  "  const percentile = (sorted, p) => sorted[Math.min(sorted.length - 1, Math.ceil((p / 100) * sorted.length) - 1)];",
+                  "  return [...timings]",
+                  "    .map(([shape, list]) => {",
+                  "      const sorted = [...list].sort((a, b) => a - b);",
+                  "      const total = sorted.reduce((sum, ms) => sum + ms, 0);",
+                  "      return { shape, calls: sorted.length, total, p95: percentile(sorted, 95) };",
+                  "    })",
+                  "    .sort((a, b) => b.total - a.total);",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Agrupar pela forma da consulta, com os parâmetros como `?`, é o que permite somar as execuções de uma " +
+                "mesma consulta. O relatório ordena pelo tempo total e mostra o p95; em produção, as mesmas medidas " +
+                "costumam ir para uma ferramenta de métricas ou de rastreamento.",
+            },
+            {
+              title: "Lenta por esperar, e não por calcular",
+              context: "A consulta tem um plano bom, e mesmo assim às vezes demora segundos.",
+              code: {
+                language: "text",
+                filename: "lock-wait.txt",
+                code: [
+                  "-- Quem está esperando o quê, agora",
+                  "SELECT pid, state, wait_event_type, wait_event, now() - query_start AS rodando_ha, query",
+                  "FROM pg_stat_activity",
+                  "WHERE state <> 'idle' AND wait_event_type IS NOT NULL;",
+                  "",
+                  "  pid  | wait_event_type | wait_event    | rodando_ha | query",
+                  " ------+-----------------+---------------+------------+--------------------------------------------",
+                  "  4121 | Lock            | transactionid | 00:00:04.2 | UPDATE products SET stock = stock - 1 ...",
+                  "  4098 | Client          | ClientRead    | 00:02:31.0 | (idle in transaction) ...",
+                  "",
+                  "-- E quem está bloqueando cada uma",
+                  "SELECT pid, pg_blocking_pids(pid) AS bloqueada_por FROM pg_stat_activity WHERE cardinality(pg_blocking_pids(pid)) > 0;",
+                ].join("\n"),
+              },
+              explanation:
+                "O `UPDATE` do pid 4121 espera um lock que a sessão 4098 segura, uma transação aberta e esquecida há mais " +
+                "de dois minutos. Nenhum índice resolve isso: o que resolve é encerrar a transação esquecida e corrigir o " +
+                "código que a deixou aberta.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O time tem tempo para otimizar uma consulta nesta semana. Alguém sugeriu o relatório mensal, \"a consulta " +
+              "mais lenta do sistema\". Os números de um dia, tirados do `pg_stat_statements`, estão abaixo.",
+            problemCode: {
+              language: "javascript",
+              filename: "pick-target.js",
+              code: [
+                "// Um dia de pg_stat_statements (tempos em ms)",
+                "const stats = [",
+                "  { query: \"SELECT ... FROM monthly_report($1)\",                     calls: 2,       mean_ms: 38_000, p99_ms: 41_000 },",
+                "  { query: \"SELECT id, name FROM products WHERE id = $1\",            calls: 900_000, mean_ms: 0.4,    p99_ms: 2 },",
+                "  { query: \"SELECT * FROM carts WHERE lower(user_email) = lower($1)\", calls: 120_000, mean_ms: 45,     p99_ms: 380 },",
+                "  { query: \"UPDATE sessions SET seen_at = now() WHERE token = $1\",   calls: 650_000, mean_ms: 1.1,    p99_ms: 9 },",
+                "];",
+              ].join("\n"),
+            },
+            task:
+              "Calcule o tempo total de cada consulta, ordene e escolha qual otimizar primeiro. Diga também o que o " +
+              "`p99` da consulta escolhida sugere e qual seria o primeiro passo da investigação.",
+            hint:
+              "Tempo total = chamadas × média. Uma consulta com `lower(...)` sobre uma coluna costuma ter um problema " +
+              "conhecido.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "pick-target.answer.js",
+                code: [
+                  "const ranked = stats",
+                  "  .map((s) => ({ ...s, total_s: Math.round((s.calls * s.mean_ms) / 1000) }))",
+                  "  .sort((a, b) => b.total_s - a.total_s);",
+                  "",
+                  "ranked.map((s) => `${s.total_s} s — ${s.query}`);",
+                  "// [ \"5400 s — SELECT * FROM carts WHERE lower(user_email) = lower($1)\",",
+                  "//   \"715 s — UPDATE sessions SET seen_at = now() WHERE token = $1\",",
+                  "//   \"360 s — SELECT id, name FROM products WHERE id = $1\",",
+                  "//   \"76 s — SELECT ... FROM monthly_report($1)\" ]",
+                  "",
+                  "// Escolhida: a busca de carrinhos. 1h30 de banco por dia, e p99 de 380 ms na tela do carrinho.",
+                  "// Primeiro passo: EXPLAIN (ANALYZE, BUFFERS) com um e-mail real — lower(user_email) deve estar",
+                  "// provocando Seq Scan; a correção provável é um índice em lower(user_email) ou o e-mail já normalizado.",
+                ].join("\n"),
+              },
+              explanation:
+                "O relatório mensal é a execução mais lenta, mas roda duas vezes por dia e soma pouco mais de um minuto. " +
+                "A busca de carrinhos consome 5.400 segundos por dia e ainda tem um p99 alto em uma tela que os clientes " +
+                "usam; otimizá-la libera o banco e melhora a experiência de muita gente.",
+            },
+          },
+        }),
       ],
     }),
     module({
