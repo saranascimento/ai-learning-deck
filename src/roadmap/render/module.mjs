@@ -20,6 +20,7 @@
  * hrefs resolvidos por R2 (resolved → link; ambiguous/unresolved → span apagado).
  */
 import { renderDocument } from "./html.mjs";
+import { renderSidebar } from "./sidebar.mjs";
 import { escapeHtml, escapeAttr, num, renderChipList } from "./partials.mjs";
 
 /**
@@ -33,7 +34,7 @@ import { escapeHtml, escapeAttr, num, renderChipList } from "./partials.mjs";
  *   homeHref   : href relativo da Home a partir desta página
  *   stylesheets: hrefs de CSS já resolvidos para a profundidade desta página
  */
-export function renderModule({ product, area, module, concepts, requires = [], homeHref, stylesheets }) {
+export function renderModule({ product, area, module, concepts, requires = [], homeHref, stylesheets, sidebar }) {
   const kicker = ("Módulo " + num(module.index)).toUpperCase();
 
   const rows = concepts.map((c) => {
@@ -93,6 +94,7 @@ export function renderModule({ product, area, module, concepts, requires = [], h
     navLabel: product.name,
     footerText: product.footerText,
     stylesheets,
+    sidebar: sidebar ? renderSidebar(sidebar) : "",
     main,
   });
 }

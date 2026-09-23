@@ -235,6 +235,30 @@ const CSS_FILES = ["reset.css", "variables.css", "base.css", "roadmap.css", "roa
 const STYLESHEETS = CSS_FILES.map((p) => "css/" + p);
 // Layout de documentação da página do Concept — só as 668 Concept Pages carregam (depois dos demais).
 const CONCEPT_CSS = "roadmap/_concept.css";
+// Menu lateral (sidebar) — Area, Module e Concept Pages; Home e 404 não têm.
+const SIDEBAR_CSS = "roadmap/_sidebar.css";
+const extraCss = (logicalPath, file) => relativize(logicalPath, HOME_PATH) + "css/" + file;
+
+// Dados do menu lateral de uma página: a Área atual, os seus Módulos (só o Módulo da página aberto,
+// com os Concepts) e as outras Áreas. hrefs relativos à página.
+function sidebarFor(pagePath, area, currentModule = null, currentConcept = null) {
+  const href = (node) => relativize(pagePath, pathFor(node));
+  return {
+    area: { title: area.title, href: href(area), color: area.color, current: !currentModule },
+    modules: model.modules(area).map((m) => {
+      const open = m === currentModule;
+      return {
+        title: m.title,
+        href: href(m),
+        conceptCount: model.concepts(m).length,
+        current: open && !currentConcept,
+        open,
+        ...(open ? { concepts: model.concepts(m).map((c) => ({ title: c.title, href: href(c), current: c === currentConcept })) } : {}),
+      };
+    }),
+    otherAreas: model.areas().filter((a) => a !== area).map((a) => ({ title: a.title, href: href(a) })),
+  };
+}
 
 // Enhancement JS (R3.5.7) — SÓ as 668 Concept Pages carregam este asset, como
 // <script type="module">. É COPIADO para dentro do preview (o deploy não depende
@@ -438,7 +462,8 @@ const areaPages = model.areas().map((area, i) => {
     },
     modules: mods,
     homeHref: relativize(areaPath, HOME_PATH), // "../../"
-    stylesheets: stylesheetsFor(areaPath),
+    stylesheets: [...stylesheetsFor(areaPath), extraCss(areaPath, SIDEBAR_CSS)],
+    sidebar: sidebarFor(areaPath, area),
   });
   return { area, file: filePathFor(area), html, mods };
 });
@@ -612,7 +637,8 @@ for (const area of model.areas()) {
       concepts: conceptsVM,
       requires: requiresVM,
       homeHref: relativize(modPath, HOME_PATH), // "../../../../"
-      stylesheets: stylesheetsFor(modPath),
+      stylesheets: [...stylesheetsFor(modPath), extraCss(modPath, SIDEBAR_CSS)],
+      sidebar: sidebarFor(modPath, area, module),
     });
     modulePages.push({ area, module, file: filePathFor(module), html, requiresVM });
   });
@@ -847,7 +873,8 @@ for (const area of model.areas()) {
         prev: sib.prev ? { title: sib.prev.title, href: relativize(cPath, pathFor(sib.prev)) } : null,
         next: sib.next ? { title: sib.next.title, href: relativize(cPath, pathFor(sib.next)) } : null,
         homeHref: relativize(cPath, HOME_PATH), // "../../../../../../"
-        stylesheets: [...stylesheetsFor(cPath), relativize(cPath, HOME_PATH) + "css/" + CONCEPT_CSS],
+        stylesheets: [...stylesheetsFor(cPath), extraCss(cPath, SIDEBAR_CSS), extraCss(cPath, CONCEPT_CSS)],
+        sidebar: sidebarFor(cPath, area, module, concept),
         enhancementScript: assetHrefFor(cPath, ENHANCE_DEST), // "../../../../../../assets/concept-tabs.js"
       };
       conceptPages.push({ area, module, concept, ci, file: filePathFor(concept), html: renderConcept(vm), vm });
@@ -1729,6 +1756,65 @@ for (const area of model.areas()) {
   );
 }
 
+// ---- 20. menu lateral (layout de documentação, etapa 2) ---------------
+{
+  const g = "Menu lateral (sidebar)";
+  const generated = new Set([
+    ...areaPages.map((p) => p.file),
+    ...modulePages.map((p) => p.file),
+    ...conceptPages.map((p) => p.file),
+    "index.html",
+  ]);
+  const asideOf = (html) => (html.match(/<aside class="doc-sidebar"[\s\S]*?<\/aside>/g) || []);
+  const bad = { count: [], outsideMain: [], modules: [], open: [], current: [], hrefs: [], others: [] };
+  const check = (label, html, pagePath, area, module, concept) => {
+    const asides = asideOf(html);
+    if (asides.length !== 1) return bad.count.push(label);
+    const aside = asides[0];
+    // o menu fica fora do <main>, dentro de .doc-layout, antes do <main>
+    const iLayout = html.indexOf('<div class="doc-layout">');
+    if (!(iLayout >= 0 && iLayout < html.indexOf(aside) && html.indexOf(aside) < html.indexOf('<main id="main"'))) bad.outsideMain.push(label);
+    const mods = model.modules(area);
+    if ((aside.match(/class="doc-nav__module"/g) || []).length !== mods.length) bad.modules.push(label);
+    // só o Módulo da página aberto (com os seus Concepts); na página da Área, nenhum
+    const lists = aside.match(/<ol class="doc-nav__concepts">[\s\S]*?<\/ol>/g) || [];
+    const wantOpen = module ? 1 : 0;
+    if (lists.length !== wantOpen || (module && (lists[0].match(/<li>/g) || []).length !== model.concepts(module).length)) bad.open.push(label);
+    // exatamente um aria-current="page": o link da própria página
+    const currents = [...aside.matchAll(/<a [^>]*href="([^"]*)"[^>]*aria-current="page"/g)].map((m) => m[1]);
+    const self = relativize(pagePath, pagePath);
+    if (currents.length !== 1 || currents[0] !== self) bad.current.push(label + " → " + currents.join(","));
+    // todo href do menu aponta para uma página gerada
+    for (const [, href] of aside.matchAll(/href="([^"]*)"/g)) {
+      const target = new URL(href, "https://x" + pagePath).pathname;
+      const file = target.replace(/^\//, "") + (target.endsWith("/") ? "index.html" : "");
+      if (!generated.has(file || "index.html")) bad.hrefs.push(label + " → " + href);
+    }
+    if ((aside.match(/<details class="doc-sidebar__others">[\s\S]*?<\/details>/)?.[0].match(/<li>/g) || []).length !== model.areas().length - 1) bad.others.push(label);
+  };
+  for (const p of areaPages) check("area " + p.area.slug, p.html, pathFor(p.area), p.area, null, null);
+  for (const p of modulePages) check("module " + p.module.slug, p.html, pathFor(p.module), p.area, p.module, null);
+  for (const p of conceptPages) check("concept " + p.concept.slug, p.html, pathFor(p.concept), p.area, p.module, p.concept);
+  const total = areaPages.length + modulePages.length + conceptPages.length;
+  const list = (arr) => arr.slice(0, 6).join(" | ");
+  record(g, `exatamente 1 menu lateral em cada página de Área, Módulo e Concept (${total})`, bad.count.length === 0, list(bad.count));
+  record(g, "menu fora do <main>, antes dele, dentro de .doc-layout", bad.outsideMain.length === 0, list(bad.outsideMain));
+  record(g, "todos os Módulos da Área listados", bad.modules.length === 0, list(bad.modules));
+  record(g, "só o Módulo da página aberto, com todos os seus Concepts (Área: nenhum aberto)", bad.open.length === 0, list(bad.open));
+  record(g, 'exatamente 1 aria-current="page" = a própria página', bad.current.length === 0, list(bad.current));
+  record(g, "todo link do menu aponta para uma página gerada", bad.hrefs.length === 0, list(bad.hrefs));
+  record(g, "«Outras Áreas» com as 6 demais", bad.others.length === 0, list(bad.others));
+  record(g, "menu é HTML puro: <details> fechado, sem open nem script", [...areaPages, ...modulePages].every((p) => !/<script/i.test(p.html)) && [...areaPages, ...modulePages, ...conceptPages].every((p) => p.html.includes('<details class="doc-menu">')));
+  record(g, "Home e 404 sem menu lateral", !indexHtml.includes("doc-sidebar") && !notFoundHtml.includes("doc-sidebar"));
+  record(
+    g,
+    "_sidebar.css nas páginas com menu, e só nelas",
+    [...areaPages, ...modulePages, ...conceptPages].every((p) => p.html.includes("css/" + SIDEBAR_CSS)) && !indexHtml.includes(SIDEBAR_CSS) && !notFoundHtml.includes(SIDEBAR_CSS)
+  );
+  const heaviest = Math.max(...conceptPages.map((p) => Buffer.byteLength(p.html)));
+  record(g, `peso: maior página de Concept ${Math.round(heaviest / 1024)} KB (menu só com o Módulo atual aberto)`, heaviest < 200 * 1024);
+}
+
 // ---- relatório ---------------------------------------------------------
 const GROUPS = [...new Set(results.map((r) => r.group))];
 const failed = results.filter((r) => !r.ok).length;
@@ -1759,8 +1845,8 @@ console.log("Preview estático (R3.5.7 — Home + 7 Areas + 89 Modules + 668 Con
 let assetOk = true;
 if (failed === 0) {
   mkdirSync(join(PREVIEW_DIR, "css", "roadmap"), { recursive: true });
-  for (const f of [...CSS_FILES, CONCEPT_CSS]) copyFileSync(join(ROOT, "css", f), join(PREVIEW_DIR, "css", f));
-  console.log(`  copiado: build/preview/css/ (${CSS_FILES.length + 1} arquivos CSS)`);
+  for (const f of [...CSS_FILES, SIDEBAR_CSS, CONCEPT_CSS]) copyFileSync(join(ROOT, "css", f), join(PREVIEW_DIR, "css", f));
+  console.log(`  copiado: build/preview/css/ (${CSS_FILES.length + 2} arquivos CSS)`);
   mkdirSync(join(PREVIEW_DIR, dirname(ENHANCE_DEST)), { recursive: true });
   copyFileSync(join(ROOT, ENHANCE_SRC), join(PREVIEW_DIR, ENHANCE_DEST));
   assetOk = existsSync(join(PREVIEW_DIR, ENHANCE_DEST));

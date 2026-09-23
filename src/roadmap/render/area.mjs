@@ -17,6 +17,7 @@
  * decks/resources. Nada disso é inventado aqui.
  */
 import { renderDocument } from "./html.mjs";
+import { renderSidebar } from "./sidebar.mjs";
 import { escapeHtml, escapeAttr, num } from "./partials.mjs";
 
 /**
@@ -28,7 +29,7 @@ import { escapeHtml, escapeAttr, num } from "./partials.mjs";
  *   homeHref    : href relativo da Home a partir desta página ("../../")
  *   stylesheets : hrefs de CSS já resolvidos para a profundidade desta página
  */
-export function renderArea({ product, area, modules, homeHref, stylesheets }) {
+export function renderArea({ product, area, modules, homeHref, stylesheets, sidebar }) {
   const kicker = ("Área " + num(area.index)).toUpperCase();
 
   const main = [
@@ -58,6 +59,7 @@ export function renderArea({ product, area, modules, homeHref, stylesheets }) {
     navLabel: product.name,
     footerText: product.footerText,
     stylesheets,
+    sidebar: sidebar ? renderSidebar(sidebar) : "",
     main,
   });
 }

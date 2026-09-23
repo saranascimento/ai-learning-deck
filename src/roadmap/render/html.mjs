@@ -36,13 +36,16 @@ export function escapeAttr(value) {
  *                   Home (default: true). A Home é a raiz — passa `false`: o
  *                   header global (e o link `site-header__home`) some, a página
  *                   começa direto no <main>. Não afeta o skip-link nem o rodapé.
+ *   - sidebar     : HTML do menu lateral (<aside>, de render/sidebar.mjs) ou "" (default).
+ *                   Com sidebar, <aside> e <main> ficam lado a lado em <div class="doc-layout">;
+ *                   o menu fica FORA do <main> (é navegação, não conteúdo da página).
  *   - scripts     : hrefs (já resolvidos, relativos) de <script type="module">
  *                   ao fim do <body> (default: []). Enhancement opt-in por
  *                   página — a Home/Area/Module/404 não passam nada.
  *
  * Sem aria-live global. Sem <script> a menos que `scripts` seja passado.
  */
-export function renderDocument({ title, main, homeHref, homeLabel, stylesheets = [], navLabel, footerText, siteHeader = true, scripts = [] }) {
+export function renderDocument({ title, main, homeHref, homeLabel, stylesheets = [], navLabel, footerText, siteHeader = true, sidebar = "", scripts = [] }) {
   const links = stylesheets
     .map((href) => `    <link rel="stylesheet" href="${escapeAttr(href)}" />`)
     .join("\n");
@@ -71,10 +74,10 @@ ${links}
   </head>
   <body>
     <a href="#main" class="skip-link">Pular para o conteúdo principal</a>
-${header}    <main id="main" tabindex="-1">
+${header}${sidebar ? `    <div class="doc-layout">\n${sidebar}\n` : ""}    <main id="main" tabindex="-1">
 ${main}
     </main>
-    <footer class="site-footer">
+${sidebar ? "    </div>\n" : ""}    <footer class="site-footer">
       <p>${escapeHtml(footer)}</p>
     </footer>${scriptTags}
   </body>

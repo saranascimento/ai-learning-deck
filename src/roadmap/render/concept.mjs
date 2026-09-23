@@ -38,6 +38,7 @@
  * só por presença de dado.
  */
 import { renderDocument } from "./html.mjs";
+import { renderSidebar } from "./sidebar.mjs";
 import { escapeHtml, escapeAttr, num, renderChipList, renderInline, renderRelationList } from "./partials.mjs";
 import { icon } from "./icons.mjs";
 import { highlight } from "./highlight.mjs";
@@ -272,11 +273,12 @@ const plainWords = (html) => html.replace(/<[^>]+>/g, " ").split(/\s+/).filter(B
  *   vm.resources  : { label, href }[]
  *   vm.prev/next  : { title, href } | null
  *   vm.homeHref, vm.stylesheets
+ *   vm.sidebar    : dados do menu lateral (render/sidebar.mjs) ou ausente
  *   vm.enhancementScript : href relativo do <script type="module"> de enhancement, ou
  *                          "" / ausente para não emitir <script>
  */
 export function renderConcept(vm) {
-  const { product, area, module, concept, requires, revisitOf, revisit, resources, prev, next, homeHref, stylesheets, enhancementScript } = vm;
+  const { product, area, module, concept, requires, revisitOf, revisit, resources, prev, next, homeHref, stylesheets, enhancementScript, sidebar } = vm;
 
   const content = concept.content && concept.content.length ? concept.content : null;
   const contentHtml = content ? renderContentBlocks(content) : null;
@@ -376,6 +378,7 @@ export function renderConcept(vm) {
     navLabel: product.name,
     footerText: product.footerText,
     stylesheets,
+    sidebar: sidebar ? renderSidebar(sidebar) : "",
     main,
     scripts: enhancementScript ? [enhancementScript] : [],
   });

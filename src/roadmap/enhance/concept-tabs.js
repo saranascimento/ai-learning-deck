@@ -30,8 +30,9 @@
  *     práticos", "Praticar agora") ativam a aba certa antes de a âncora rolar;
  *     sem JS eles são âncoras comuns (#sec-N / #estudo) e tudo está visível;
  *   - "Neste conteúdo" destaca a seção que está na tela (aria-current="location");
- *   - botão Compartilhar no cabeçalho ([data-actions-slot]) copia o link da página.
- *     Sem JS o slot fica vazio (e oculto por CSS).
+ *   - botão Compartilhar no cabeçalho ([data-actions-slot]) copia o link da página;
+ *     sem JS o slot fica vazio (e oculto por CSS);
+ *   - o menu lateral rola (só ele) até o Concept atual quando a lista é longa.
  *
  * Porte 1:1 de src/roadmap/ui/concept-tabs.js (o enhancement da SPA) na parte
  * de tabs, com duas diferenças mínimas: (1) auto-executa e trata TODOS os
@@ -297,3 +298,15 @@ function wireActions() {
 }
 
 wireActions();
+
+// ---- Menu lateral: traz o Concept atual para a área visível do menu (que rola sozinho no desktop) ----
+// Só mexe na rolagem do próprio menu — nunca na da página.
+function revealCurrentInSidebar() {
+  const sidebar = document.querySelector(".doc-sidebar");
+  const item = sidebar && sidebar.querySelector('.doc-nav__concepts [aria-current="page"]');
+  if (!item || sidebar.scrollHeight <= sidebar.clientHeight) return;
+  const itemTop = item.getBoundingClientRect().top - sidebar.getBoundingClientRect().top + sidebar.scrollTop;
+  sidebar.scrollTop = Math.max(0, itemTop - sidebar.clientHeight / 3);
+}
+
+revealCurrentInSidebar();

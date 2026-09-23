@@ -1,0 +1,226 @@
+/*
+ * _sidebar.css — menu lateral das páginas de Área, Módulo e Concept (site gerado).
+ *
+ * Carregado SOMENTE por essas páginas (Home e 404 não têm menu; a SPA da raiz não
+ * importa este arquivo). Estrutura em render/sidebar.mjs + render/html.mjs:
+ *   <div class="doc-layout"> <aside class="doc-sidebar">…</aside> <main id="main">…</main> </div>
+ *
+ * O menu é um <details class="doc-menu"> fechado no HTML:
+ *   - desktop: o conteúdo aparece sempre e o botão some (::details-content, dentro de
+ *     @supports — sem suporte, o botão "Menu" continua visível e funcional);
+ *   - celular: o botão "Menu" abre e fecha o menu, sem JavaScript.
+ */
+
+:root {
+  --doc-max-width: 92rem; /* menu + texto + coluna direita do Concept */
+}
+
+/* roadmap.css põe `overflow` em html E body: o body vira contêiner de rolagem e o
+   `position: sticky` (menu e coluna direita) nunca gruda. Aqui o body volta a não recortar;
+   o html continua com overflow-x oculto. */
+body {
+  overflow: visible;
+}
+
+/* Cabeçalho e rodapé acompanham a largura das páginas com menu. */
+body:has(.doc-layout) .site-header,
+body:has(.doc-layout) .site-footer {
+  max-width: var(--doc-max-width);
+}
+
+.doc-layout {
+  display: grid;
+  grid-template-columns: 16rem minmax(0, 1fr);
+  gap: 2.5rem;
+  align-items: start;
+  max-width: var(--doc-max-width);
+  margin-inline: auto;
+  padding: clamp(1.5rem, 4vw, 3rem) clamp(1rem, 4vw, 4.5rem);
+}
+/* O <main> passa a ser uma coluna da grade: a largura e o respiro vêm do .doc-layout. */
+.doc-layout > main#main {
+  min-width: 0;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* ---- menu ---- */
+.doc-sidebar {
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  padding-right: 1rem;
+  border-right: 1px solid var(--color-border);
+  font-size: 0.875rem;
+  scrollbar-width: thin;
+}
+/* base.css fixa `li { font-size }`: herdar não basta, o tamanho vai no próprio <li>. */
+.doc-sidebar li,
+.doc-sidebar summary {
+  font-size: 0.875rem;
+  line-height: 1.35;
+}
+.doc-sidebar a {
+  color: var(--color-text-muted);
+  text-decoration: none;
+}
+.doc-sidebar a:hover {
+  color: var(--color-text);
+}
+
+.doc-menu > summary.doc-menu__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+.doc-menu > summary.doc-menu__toggle::-webkit-details-marker {
+  display: none;
+}
+.doc-menu__area {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 400;
+  color: var(--color-text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.doc-menu > summary.doc-menu__toggle::after {
+  content: "▾";
+  color: var(--color-text-muted);
+}
+.doc-menu[open] > summary.doc-menu__toggle::after {
+  content: "▴";
+}
+
+.doc-sidebar__area {
+  margin: 0 0 0.6rem;
+  font-size: 1rem; /* base.css dá tamanho de parágrafo ao <p> */
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.doc-menu[open] .doc-sidebar__area {
+  margin-top: 0.9rem;
+}
+.doc-sidebar__area a {
+  color: var(--area-color);
+}
+.doc-sidebar__area a[aria-current="page"] {
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+.doc-nav,
+.doc-nav__concepts,
+.doc-sidebar__others ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.doc-nav > li + li {
+  margin-top: 0.1rem;
+}
+.doc-nav__module {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.4rem;
+}
+.doc-nav__module:hover {
+  background: color-mix(in srgb, var(--color-text) 6%, transparent);
+}
+.doc-nav__count {
+  flex: none;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+/* Módulo da página: destacado, com a lista dos seus Concepts aberta embaixo. */
+.doc-nav__open > .doc-nav__module {
+  color: var(--color-text);
+  font-weight: 600;
+  background: color-mix(in srgb, var(--area-color) 10%, transparent);
+  box-shadow: inset 2px 0 0 var(--area-color);
+}
+.doc-nav__concepts {
+  margin: 0.15rem 0 0.5rem 0.6rem;
+  padding-left: 0.6rem;
+  border-left: 1px solid var(--color-border);
+}
+.doc-nav__concepts a {
+  display: block;
+  margin-left: -0.6rem;
+  padding: 0.25rem 0.5rem 0.25rem calc(1.1rem - 2px);
+  border-left: 2px solid transparent;
+  border-radius: 0 0.35rem 0.35rem 0;
+}
+.doc-nav__concepts a:hover {
+  background: color-mix(in srgb, var(--color-text) 5%, transparent);
+}
+.doc-sidebar a[aria-current="page"] {
+  color: var(--color-text);
+  font-weight: 600;
+}
+.doc-nav__concepts a[aria-current="page"] {
+  border-left-color: var(--area-color);
+  background: color-mix(in srgb, var(--area-color) 14%, transparent);
+}
+
+.doc-sidebar__others {
+  margin: 1rem 0 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-border);
+}
+.doc-sidebar__others summary {
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+.doc-sidebar__others ul {
+  margin-top: 0.4rem;
+}
+.doc-sidebar__others a {
+  display: block;
+  padding: 0.2rem 0.5rem;
+}
+
+/* ---- desktop: menu sempre aberto, sem o botão ---- */
+@supports selector(::details-content) {
+  @media (width > 64rem) {
+    .doc-menu > summary.doc-menu__toggle {
+      display: none;
+    }
+    .doc-menu::details-content {
+      content-visibility: visible;
+    }
+    .doc-menu .doc-sidebar__area {
+      margin-top: 0;
+    }
+  }
+}
+
+/* ---- celular e telas estreitas: o menu vira um botão acima do conteúdo ---- */
+@media (width <= 64rem) {
+  .doc-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+  .doc-sidebar {
+    position: static;
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+    border-right: 0;
+  }
+}
