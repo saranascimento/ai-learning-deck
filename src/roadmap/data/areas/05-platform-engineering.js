@@ -8060,7 +8060,9 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text: "O SQL é avaliado a partir do FROM, e não do SELECT, então é por aí que se lê uma consulta.",
+              text:
+                "Pense em conjuntos de linhas, e não em laços: cada linha processada na aplicação é um trabalho que o " +
+                "banco faria melhor.",
             },
             { type: "heading", text: "Como funciona" },
             {
