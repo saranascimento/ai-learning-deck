@@ -7165,23 +7165,23 @@ export default area({
           isNew: true,
           note: "guarda-chuva: o que é, por que é gate de qualidade",
           summary:
-            "Uma ou mais pessoas examinam uma mudança de código antes de ela entrar na base principal — para " +
-            "achar problemas cedo, compartilhar conhecimento e manter a qualidade e a consistência do código.",
+            "Code Review é a prática de outra pessoa examinar uma mudança de código antes de ela ser integrada à base " +
+            "principal.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Code Review é a prática de outra pessoa (o revisor) examinar uma mudança feita por quem a escreveu " +
-                "(o autor) antes de ela ser integrada. Costuma acontecer em um pull request (ou merge request): " +
-                "o autor propõe a mudança, o revisor lê, comenta, pede ajustes ou aprova, e só então o código entra.",
+                "Quem revisa (o revisor) lê a mudança de quem a escreveu (o autor). Costuma acontecer em um pull request " +
+                "(ou merge request): o autor propõe a mudança, o revisor lê, comenta, pede ajustes ou aprova, e só então " +
+                "o código entra.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Revisão de código é um filtro barato e um meio de compartilhar conhecimento — automatize o mecânico " +
-                "e use o olhar humano no que só pessoas conseguem avaliar.",
+                "Deixe para a máquina tudo o que ela consegue checar, e gaste o olhar humano no que só uma pessoa " +
+                "enxerga.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -7370,26 +7370,22 @@ export default area({
           subtopics: ["Correctness", "Readability", "Maintainability", "Testability", "Security"],
           collision: "≠ Testability (Testing & Quality Engineering / Testing Strategy) — uma lente de revisão × a propriedade em si",
           summary:
-            "As lentes pelas quais uma mudança é avaliada em uma revisão — correção, legibilidade, " +
-            "manutenibilidade, testabilidade e segurança — para que a revisão seja sistemática em vez de " +
-            "depender do que chama a atenção primeiro.",
+            "Review Dimensions são as lentes usadas para avaliar uma mudança: correção, legibilidade, " +
+            "manutenibilidade, testabilidade e segurança.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
                 "Ao revisar, é fácil se prender ao que salta aos olhos (um nome estranho, uma linha longa) e perder " +
-                "problemas mais importantes. As dimensões de revisão são um conjunto de lentes que ajudam a " +
-                "percorrer a mudança de forma sistemática: Correctness (faz o que deveria?), Readability (dá " +
-                "para entender?), Maintainability (é fácil de mudar depois?), Testability (dá para verificar?) e " +
-                "Security (abre alguma brecha?).",
+                "problemas mais importantes. As lentes ajudam a percorrer a mudança de forma sistemática: Correctness " +
+                "(faz o que deveria?), Readability (dá para entender?), Maintainability (é fácil de mudar depois?), " +
+                "Testability (dá para verificar?) e Security (abre alguma brecha?).",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Percorra a mudança por lentes diferentes — correção, legibilidade, manutenibilidade, " +
-                "testabilidade, segurança — para não aprovar algo apenas porque uma dimensão parecia boa.",
+              text: "O problema mais grave de uma mudança raramente é o que chama atenção primeiro.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -7561,25 +7557,20 @@ export default area({
           title: "Review Scope",
           requires: ["Code Review"],
           note: "tamanho/foco de um PR — mudanças de propósito único",
-          summary:
-            "Manter cada mudança submetida a revisão pequena e com um propósito único — porque revisões de mudanças " +
-            "grandes ou misturadas são lentas, superficiais e deixam passar problemas.",
+          summary: "Review Scope é o tamanho e o foco de uma mudança enviada para revisão.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Review Scope é o tamanho e o foco de uma mudança enviada para revisão. A regra prática: cada " +
-                "pull request deve ter um único propósito (uma funcionalidade, uma correção, uma refatoração) e ser " +
-                "pequeno o bastante para ser lido com atenção em uma sessão — em geral, algumas centenas de linhas " +
-                "no máximo, e menos é melhor.",
+                "A regra prática: cada pull request deve ter um único propósito (uma funcionalidade, uma correção, uma " +
+                "refatoração) e ser pequeno o bastante para ser lido com atenção em uma sessão — em geral, algumas " +
+                "centenas de linhas no máximo, e menos é melhor.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Um PR, um propósito, pequeno o bastante para ser lido com atenção — mudanças grandes não recebem " +
-                "revisões melhores, recebem revisões piores.",
+              text: "Vinte linhas recebem comentários detalhados, e duas mil recebem um \"parece ok\".",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -7748,24 +7739,20 @@ export default area({
           title: "Giving & Receiving Feedback",
           requires: ["Code Review"],
           note: "camada de comunicação/soft-skill",
-          summary:
-            "Como comentar e como responder em uma revisão: focar no código e não na pessoa, ser específico e " +
-            "explicar o porquê, distinguir o essencial do opcional e assumir boa-fé dos dois lados.",
+          summary: "Giving & Receiving Feedback é a forma de comentar e de responder numa revisão de código.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
                 "Uma revisão é uma conversa entre pessoas, e a forma como o feedback é dado e recebido decide se ela " +
-                "melhora o código e o time — ou gera atrito. Giving & Receiving Feedback é a camada de comunicação " +
-                "da revisão: o que dizer, como dizer, e como reagir ao que se ouve.",
+                "melhora o código e o time — ou gera atrito. É a camada de comunicação da revisão: o que dizer, como " +
+                "dizer, e como reagir ao que se ouve.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Critique o código, não a pessoa: seja específico, explique o porquê, marque a severidade — e " +
-                "quem recebe, responda com boa-fé e sem levar para o lado pessoal.",
+              text: "Um comentário certo, mas que humilha, faz o autor se defender em vez de corrigir.",
             },
             { type: "heading", text: "Por que importa" },
             {
