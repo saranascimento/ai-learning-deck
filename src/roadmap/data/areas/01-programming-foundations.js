@@ -33,8 +33,8 @@ export default area({
           title: "Abstraction",
           note: "Abstração",
           summary:
-            "Expor só o que quem usa precisa saber, escondendo os detalhes de implementação por trás de uma " +
-            "interface simples — a base para lidar com sistemas complexos sem carregar tudo na cabeça.",
+            "Abstraction é expor só o que quem usa uma parte do sistema precisa saber e esconder os detalhes de como " +
+            "ela funciona.",
           revisit: ["Software Design / Object-Oriented Design", "Architecture Fundamentals"],
           // Piloto editorial (template canônico da Concept Study Page) — só este
           // Concept. content/examples/exercise já existiam como defaults no
@@ -46,17 +46,13 @@ export default area({
             {
               type: "paragraph",
               text:
-                "Abstraction é a prática de expor apenas o que quem usa uma parte do sistema precisa saber, " +
-                "escondendo os detalhes de como aquilo funciona por dentro. Você interage com uma representação " +
-                "simplificada — um nome, uma assinatura, um conjunto de operações — sem precisar carregar na " +
-                "cabeça a implementação inteira.",
+                "Você interage com uma representação simplificada — um nome, uma assinatura, um conjunto de operações — " +
+                "sem precisar carregar na cabeça a implementação inteira.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Abstraction esconde os detalhes de implementação atrás de uma interface simples — quem usa só " +
-                "precisa entender o que a interface promete, não como ela cumpre a promessa por dentro.",
+              text: "Se para usar algo você precisa conhecer a implementação, a abstração falhou.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -210,24 +206,21 @@ export default area({
           requires: ["Abstraction"],
           revisit: ["Software Design / Object-Oriented Design"],
           summary:
-            "Agrupar dados e o comportamento que opera sobre eles em uma única unidade, controlando quem pode " +
-            "acessar ou modificar esse estado de fora.",
+            "Encapsulation é reunir dados e o comportamento que opera sobre eles numa mesma unidade, controlando o " +
+            "acesso a esse estado de fora.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Encapsulation é a prática de agrupar dados (estado) e o comportamento que opera sobre esses " +
-                "dados na mesma unidade — uma classe, um módulo, um closure — e restringir o acesso direto a " +
-                "esse estado de fora dessa unidade. Quem está de fora só interage através de operações " +
-                "expostas propositalmente.",
+                "A unidade pode ser uma classe, um módulo ou um closure. O estado fica lá dentro, sem acesso direto, e " +
+                "quem está de fora só interage através de operações expostas propositalmente.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Encapsulation une dados e as operações que os protegem numa única unidade, e bloqueia acesso " +
-                "direto a esses dados — mudanças só acontecem através de métodos que mantêm o estado válido.",
+                "Se o estado só muda pelos métodos da própria unidade, nenhum código de fora consegue deixá-lo inválido.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -391,24 +384,22 @@ export default area({
           note: "Ocultação de informação",
           requires: ["Encapsulation"],
           summary:
-            "O princípio de projetar interfaces que escondem decisões de implementação com chance de mudar — " +
-            "Encapsulation é a técnica de linguagem que ajuda a aplicá-lo, mas os dois não são a mesma coisa.",
+            "Information Hiding é o princípio de design que decide quais decisões de implementação ficam escondidas " +
+            "atrás da interface pública.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Information Hiding é um princípio de design: ao projetar um módulo, uma classe ou uma função, " +
-                "você decide deliberadamente quais decisões internas ficam escondidas da interface pública — " +
-                "especialmente aquelas com mais chance de mudar no futuro. Não é sobre usar private; é sobre " +
-                "escolher O QUE esconder.",
+                "Ao projetar um módulo, uma classe ou uma função, você escolhe deliberadamente o que esconder — " +
+                "especialmente as decisões com mais chance de mudar no futuro. Não é sobre usar private; é sobre escolher " +
+                "O QUE esconder.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Encapsulation esconde o acesso; Information Hiding esconde a decisão. Um bom design " +
-                "normalmente precisa dos dois, mas eles resolvem problemas diferentes.",
+                "Esconda atrás da interface as decisões com mais chance de mudar, para que mudá-las não afete quem usa.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -547,24 +538,19 @@ export default area({
           note: "a fronteira",
           requires: ["Abstraction"],
           revisit: ["Software Design / Program to an Interface", "Platform / API Contract", "Testing / Contract Testing"],
-          summary:
-            "O contrato público que separa o que algo faz do como isso é implementado — a fronteira que " +
-            "Abstraction e Encapsulation ajudam a proteger.",
+          summary: "Uma Interface é o conjunto de operações que algo expõe para quem está de fora.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Uma Interface é o conjunto de operações que algo expõe para o mundo exterior — a lista do que " +
-                "você pode fazer, sem revelar como isso é feito por dentro. É a fronteira entre \"por fora\" e " +
-                "\"por dentro\".",
+                "É a lista do que você pode fazer com aquilo, sem revelar como isso é feito por dentro: a fronteira entre " +
+                "\"por fora\" e \"por dentro\".",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Interface é o contrato — o que algo promete fazer. Duas implementações completamente " +
-                "diferentes podem cumprir a mesma interface, e quem depende dela nem percebe a diferença.",
+              text: "Quem depende só da interface pode trocar de implementação sem perceber a diferença.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -694,26 +680,22 @@ export default area({
           note: "Contrato",
           requires: ["Interface"],
           revisit: ["Platform / API", "Testing & Quality Engineering / Testing Strategy / Contract Testing"],
-          summary:
-            "As regras que uma Interface promete cumprir: pré-condições que quem chama precisa garantir, " +
-            "pós-condições que a implementação garante de volta, e invariantes que nunca podem ser violados.",
+          summary: "Um Contract é o conjunto de regras que uma Interface promete cumprir, além da assinatura dos métodos.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Um Contract formaliza o que uma Interface promete, além da assinatura dos métodos: " +
-                "pré-condições (o que precisa ser verdade antes de chamar), pós-condições (o que fica " +
-                "garantido depois que a chamada termina) e invariantes (o que permanece verdade sempre, antes " +
+                "Essas regras são de três tipos: pré-condições (o que precisa ser verdade antes de chamar), pós-condições " +
+                "(o que fica garantido depois que a chamada termina) e invariantes (o que permanece verdade sempre, antes " +
                 "e depois).",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Um Contract é o que uma Interface promete além da assinatura — pré-condições, pós-condições e " +
-                "invariantes tornam explícito sob quais condições o código funciona, em vez de deixar isso " +
-                "implícito na cabeça de quem escreveu.",
+                "Um Contract explícito tira as regras de uso da cabeça de quem escreveu o código e as coloca no próprio " +
+                "código.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -874,24 +856,20 @@ export default area({
           requires: ["Encapsulation"],
           revisit: ["Software Design / Object-Oriented Design", "Software Design / SOLID / Liskov Substitution Principle (LSP)"],
           summary:
-            "Um mecanismo pelo qual uma classe reaproveita e especializa o comportamento de outra — mas com " +
-            "um contrato próprio que precisa ser respeitado para não quebrar quem depende da classe base.",
+            "Inheritance é o mecanismo de linguagem pelo qual uma classe reaproveita o estado e o comportamento de " +
+            "outra.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Inheritance é um mecanismo de linguagem: uma classe (subclasse) reutiliza o estado e o " +
-                "comportamento de outra classe (superclasse) e pode sobrescrever ou estender parte dele. É uma " +
-                "forma de dizer \"isso é um tipo daquilo\" (is-a).",
+                "A subclasse recebe o que a superclasse tem e pode sobrescrever ou estender parte disso. É uma forma de " +
+                "dizer \"isso é um tipo daquilo\" (is-a).",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Inheritance reaproveita comportamento de uma classe base, mas junto com o reaproveitamento " +
-                "vem uma promessa: a subclasse deve continuar se comportando como a base esperava. Quebrar " +
-                "essa promessa é o problema mais comum de herança mal usada.",
+              text: "Só herde quando a subclasse puder ocupar o lugar da base sem quebrar o que quem usa a base espera.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -1070,25 +1048,21 @@ export default area({
           requires: ["Interface", "Inheritance"],
           revisit: ["Software Design / Object-Oriented Design", "SOLID"],
           summary:
-            "A capacidade de tratar objetos de tipos diferentes através da mesma interface, deixando cada tipo " +
-            "decidir como responder à mesma chamada — o motivo pelo qual Interface e Inheritance se tornam " +
-            "úteis na prática.",
+            "Polymorphism é a capacidade de objetos de tipos diferentes responderem, cada um do seu jeito, à mesma " +
+            "operação.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Polymorphism é a capacidade de chamar a mesma operação (o mesmo nome de método, a mesma " +
-                "interface) em objetos de tipos diferentes, e cada um responder do seu próprio jeito. Quem " +
-                "chama não precisa saber — nem checar — qual tipo concreto está recebendo.",
+                "A operação é a mesma — o mesmo nome de método, a mesma interface — e quem chama não precisa saber, nem " +
+                "checar, qual tipo concreto está recebendo.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Polymorphism deixa cada tipo responder à mesma chamada do seu próprio jeito — é o que " +
-                "transforma Interface (o contrato) e Inheritance (a hierarquia) em código que cresce sem " +
-                "acumular condicionais de tipo.",
+                "Com Polymorphism, um tipo novo entra no sistema sem acrescentar mais uma checagem de tipo em quem chama.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -1271,25 +1245,22 @@ export default area({
           requires: ["Encapsulation"],
           collision: "≠ Function Composition (Functional Programming) — objetos has-a × f∘g",
           summary:
-            "Construir comportamento complexo combinando objetos menores que colaboram entre si (has-a), em " +
-            "vez de herdar de uma superclasse (is-a) — a alternativa mais flexível à Inheritance na maioria " +
-            "dos casos.",
+            "Composition é montar um objeto a partir de outros objetos que ele contém e para os quais delega " +
+            "trabalho.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Composition é montar um objeto a partir de outros objetos que ele contém e para quem delega " +
-                "trabalho (has-a), em vez de herdar comportamento de uma superclasse (is-a). Um Car não é um " +
-                "Engine — ele tem um Engine.",
+                "Em vez de herdar comportamento de uma superclasse (is-a), o objeto tem as peças de que precisa (has-a). " +
+                "Um Car não é um Engine — ele tem um Engine.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Composition monta comportamento juntando objetos que colaboram (has-a), em vez de herdar de " +
-                "uma superclasse (is-a) — geralmente mais flexível, porque cada peça pode ser trocada, testada " +
-                "e reutilizada de forma independente.",
+                "Quando o comportamento vem de peças compostas, cada peça pode ser trocada e testada sem mexer nas " +
+                "outras.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -1450,26 +1421,19 @@ export default area({
           note: "Acoplamento",
           requires: ["Interface", "Composition", "Inheritance"],
           revisit: ["Architecture Fundamentals"],
-          summary:
-            "O quanto uma parte do sistema depende dos detalhes internos de outra — Interface, Composition e " +
-            "Inheritance bem usados são justamente as ferramentas para manter esse grau de dependência baixo.",
+          summary: "Coupling é o quanto uma parte do sistema depende dos detalhes internos de outra.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Coupling é o grau de dependência entre duas partes de um sistema — o quanto uma precisa saber " +
-                "sobre os detalhes internos da outra pra funcionar. Alto Coupling: mudar uma parte " +
-                "frequentemente exige mudar a outra também. Baixo Coupling: as partes podem mudar de forma " +
-                "independente.",
+                "Na prática, isso aparece quando algo muda. Alto Coupling: mudar uma parte frequentemente exige mudar a " +
+                "outra também. Baixo Coupling: as partes podem mudar de forma independente.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Coupling mede o quanto uma parte do sistema depende dos detalhes de outra. O objetivo não é " +
-                "coupling zero (impossível) — é manter as dependências no nível mais baixo que o problema " +
-                "permite.",
+              text: "Coupling zero não existe, então o objetivo é que mudar uma parte raramente obrigue a mudar outra.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -1595,27 +1559,20 @@ export default area({
           note: "Coesão",
           requires: ["Coupling"],
           revisit: ["Software Design / SOLID / Single Responsibility Principle (SRP)"],
-          summary:
-            "O quanto as responsabilidades dentro de uma mesma unidade (classe, módulo, função) pertencem de " +
-            "verdade umas às outras — o par de Coupling: baixo Coupling entre unidades, alta Cohesion dentro " +
-            "de cada uma.",
+          summary: "Cohesion é o quanto as responsabilidades dentro de uma mesma unidade pertencem umas às outras.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Cohesion é o quanto as coisas dentro de uma mesma unidade — uma classe, um módulo, uma função " +
-                "— têm relação entre si e servem a um propósito comum. Alta Cohesion: tudo ali dentro existe " +
-                "por um motivo relacionado. Baixa Cohesion: a unidade faz um monte de coisas sem relação " +
-                "nenhuma entre si, só porque ficaram juntas.",
+                "A unidade pode ser uma classe, um módulo ou uma função. Alta Cohesion: tudo ali dentro existe por um " +
+                "motivo relacionado. Baixa Cohesion: a unidade faz um monte de coisas sem relação nenhuma entre si, só " +
+                "porque ficaram juntas.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Cohesion mede o quanto as responsabilidades dentro de uma unidade pertencem de verdade umas " +
-                "às outras. Junto com Coupling baixo entre unidades, alta Cohesion dentro de cada uma é o par " +
-                "que sustenta a heurística \"baixo acoplamento, alta coesão\".",
+              text: "Se você não consegue dizer em uma frase para que uma unidade serve, a Cohesion dela está baixa.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -1762,25 +1719,22 @@ export default area({
           requires: ["Coupling", "Cohesion"],
           revisit: ["Architecture & System Design / Architectural Styles / Layered Architecture"],
           summary:
-            "O princípio de organizar um sistema para que cada parte trate de uma preocupação distinta — a " +
-            "razão de ser por trás de baixo Coupling e alta Cohesion, não uma técnica nova.",
+            "Separation of Concerns é o princípio de organizar um sistema para que cada parte trate de uma única " +
+            "preocupação.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Separation of Concerns é o princípio de organizar um sistema de forma que cada parte trate de " +
-                "uma \"preocupação\" (concern) distinta — uma responsabilidade, um tipo de decisão — sem se " +
-                "misturar com as outras. Não é uma técnica específica; é o objetivo que Coupling baixo e " +
-                "Cohesion alta existem para servir.",
+                "Uma preocupação (concern) é uma responsabilidade ou um tipo de decisão, e cada parte cuida da sua sem se " +
+                "misturar com as outras. Não é uma técnica específica; é o objetivo que Coupling baixo e Cohesion alta " +
+                "existem para servir.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Separation of Concerns é o princípio; baixo Coupling e alta Cohesion são o resultado prático " +
-                "de aplicá-lo bem. Perguntar \"essa parte está misturando preocupações diferentes?\" é uma " +
-                "forma direta de aplicar o princípio no dia a dia.",
+                "Quando um trecho de código mistura preocupações diferentes, é sinal de que ele deveria ser dividido.",
             },
             { type: "heading", text: "Por que importa" },
             {
