@@ -398,8 +398,7 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Esconda atrás da interface as decisões com mais chance de mudar, para que mudá-las não afete quem usa.",
+              text: "Antes de expor um detalhe, pergunte quantos lugares teriam de mudar se ele mudasse.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -2203,7 +2202,9 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text: "Se um dado precisa sobreviver ao fim da função que o criou, ele não pode morar na Stack.",
+              text:
+                "A Stack se limpa sozinha quando a função retorna, e é justamente por isso que não serve para o que " +
+                "precisa durar mais.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -3177,8 +3178,8 @@ export default area({
               type: "callout",
               title: "Ideia principal",
               text:
-                "Use tipagem nominal quando dois conceitos do domínio têm a mesma forma, mas não podem ser trocados um " +
-                "pelo outro.",
+                "Um `UserId` e um `OrderId` podem ser ambos números, e ainda assim trocá-los deveria ser um erro de " +
+                "compilação.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -5266,7 +5267,8 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text: "Quando o objetivo é resumir uma coleção inteira num valor só, a ferramenta é o reduce.",
+              text:
+                "Map e Filter cabem dentro de um Reduce, mas quando um deles resolve, ele comunica a intenção melhor.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -5754,7 +5756,7 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text: "Quando a ordem de chegada precisa ser respeitada no processamento, a estrutura é uma Queue.",
+              text: "Uma Queue é justa por construção: ninguém que chegou depois é atendido antes.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -6343,8 +6345,7 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Quando você só precisa do maior ou do menor elemento de uma coleção que muda o tempo todo, use um Heap.",
+              text: "Um Heap entrega o topo sem manter a coleção inteira ordenada, e é isso que o torna barato.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -7454,7 +7455,8 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text: "Toda recursão precisa de um caso base que seja de fato alcançado, ou ela termina em stack overflow.",
+              text:
+                "Cada chamada recursiva ocupa um frame da Call Stack, então a profundidade da recursão também é um custo.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -7831,7 +7833,7 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text: "É o I/O non-blocking que mantém uma página responsiva enquanto ela espera uma resposta de rede.",
+              text: "Numa única thread, esperar bloqueando significa não atender mais ninguém enquanto isso.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -9155,8 +9157,8 @@ export default area({
               type: "callout",
               title: "Ideia principal",
               text:
-                "Numa Race Condition cada thread faz exatamente o que o código diz, e o erro está na falta de coordenação " +
-                "entre elas.",
+                "Uma Race Condition pode passar em todos os testes e falhar em produção, porque depende de timing, e não " +
+                "da lógica.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -9429,9 +9431,7 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Quando a operação é simples e a plataforma oferece uma versão atômica, ela resolve a Race Condition sem " +
-                "precisar de lock.",
+              text: "Se a plataforma oferece a versão atômica da operação, prefira-a a montar um lock em volta dela.",
             },
             { type: "heading", text: "Por que importa" },
             {
