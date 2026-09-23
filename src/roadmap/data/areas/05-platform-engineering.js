@@ -11941,6 +11941,280 @@ export default area({
           requires: ["Database Fundamentals / SQL"],
           note: "BEGIN/COMMIT/ROLLBACK; unidade de trabalho. Software Design / Enterprise Patterns / Unit of Work abstrai isto (pointer)",
           revisit: ["Software Design / Enterprise & Application Patterns / Unit of Work"],
+          summary:
+            "Um grupo de comandos que o banco trata como uma unidade: ou todos valem (`COMMIT`), ou nenhum vale " +
+            "(`ROLLBACK`) — para que uma operação de várias etapas nunca fique pela metade.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Uma transação agrupa vários comandos em uma unidade de trabalho. Ela começa com `BEGIN`, e termina com " +
+                "`COMMIT`, que confirma tudo de uma vez, ou com `ROLLBACK`, que desfaz tudo o que foi feito desde o " +
+                "início. Se o processo cair, a conexão cair ou um comando falhar no meio, o banco desfaz a parte já " +
+                "executada. Fora de um `BEGIN` explícito, os bancos relacionais tratam cada comando como uma transação " +
+                "própria (o modo autocommit).",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Toda operação de negócio que exige mais de uma escrita — baixar o estoque e criar o pedido, por exemplo " +
+                "— precisa estar dentro de uma transação; sem ela, uma falha no meio deixa o banco em um estado que não " +
+                "deveria existir.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "paragraph",
+              text:
+                "A aplicação abre a transação, executa os comandos e decide o final: confirma se tudo deu certo, desfaz " +
+                "se algo falhou. O padrão mais seguro é concentrar isso em uma função que recebe o trabalho a fazer, para " +
+                "que nenhum caminho de erro esqueça o `ROLLBACK`.",
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "checkout.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT NOT NULL, stock INTEGER NOT NULL CHECK (stock >= 0));",
+                "  CREATE TABLE orders (id INTEGER PRIMARY KEY, product_id INTEGER NOT NULL, quantity INTEGER NOT NULL);",
+                "  INSERT INTO products VALUES (1, 'Caneca', 3);",
+                "`);",
+                "",
+                "// Executa `work` dentro de uma transação: COMMIT se terminar, ROLLBACK se lançar um erro.",
+                "function withTransaction(db, work) {",
+                "  db.exec(\"BEGIN\");",
+                "  try {",
+                "    const result = work();",
+                "    db.exec(\"COMMIT\");",
+                "    return result;",
+                "  } catch (error) {",
+                "    db.exec(\"ROLLBACK\");",
+                "    throw error;",
+                "  }",
+                "}",
+                "",
+                "function checkout(productId, quantity) {",
+                "  return withTransaction(db, () => {",
+                "    db.prepare(\"UPDATE products SET stock = stock - ? WHERE id = ?\").run(quantity, productId);   // o CHECK recusa estoque negativo",
+                "    return db.prepare(\"INSERT INTO orders (product_id, quantity) VALUES (?, ?)\").run(productId, quantity).lastInsertRowid;",
+                "  });",
+                "}",
+                "",
+                "checkout(1, 2);   // estoque 3 → 1, pedido criado",
+                "try { checkout(1, 5); } catch (error) { error.message; }   // \"CHECK constraint failed: stock >= 0\"",
+                "",
+                "db.prepare(\"SELECT stock FROM products WHERE id = 1\").get();   // { stock: 1 } — a 2ª compra não deixou rastro",
+                "db.prepare(\"SELECT COUNT(*) AS total FROM orders\").get();      // { total: 1 }",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O padrão Unit of Work, da camada de aplicação, organiza as mudanças de uma operação de negócio para " +
+                "gravá-las justamente assim: todas em uma única transação.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Sempre que uma operação precisa de mais de uma escrita que só faz sentido junta: pedido e estoque, cabeçalho e itens, crédito e débito.",
+                "Quando se lê um dado para decidir uma escrita, e a decisão não pode valer se o dado mudar no meio (o que também depende do nível de isolamento).",
+                "Em cargas e migrações, para que uma execução que falha não deixe os dados pela metade.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Transações longas seguram bloqueios e versões antigas dos dados; não chame APIs externas, filas ou e-mails dentro delas.",
+                "A transação só vale dentro de um banco: um e-mail enviado ou uma chamada a outro serviço não é desfeita pelo `ROLLBACK`.",
+                "Uma transação sozinha não impede que duas execuções simultâneas se atrapalhem; isso depende do isolamento e, às vezes, de locks.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Sem transação, metade da operação fica gravada",
+              context: "Em autocommit, cada comando é confirmado assim que termina.",
+              code: {
+                language: "javascript",
+                filename: "half-done.js",
+                code: [
+                  "db.exec(`",
+                  "  CREATE TABLE products (id INTEGER PRIMARY KEY, stock INTEGER NOT NULL);",
+                  "  CREATE TABLE orders (id INTEGER PRIMARY KEY, product_id INTEGER NOT NULL, customer_id INTEGER NOT NULL);",
+                  "  INSERT INTO products VALUES (1, 3);",
+                  "`);",
+                  "",
+                  "function checkoutWithoutTransaction(productId, quantity, customerId) {",
+                  "  db.prepare(\"UPDATE products SET stock = stock - ? WHERE id = ?\").run(quantity, productId);              // confirmado na hora",
+                  "  db.prepare(\"INSERT INTO orders (product_id, customer_id) VALUES (?, ?)\").run(productId, customerId);    // falha: cliente ausente",
+                  "}",
+                  "",
+                  "try { checkoutWithoutTransaction(1, 2, null); }",
+                  "catch (error) { error.message; }   // \"NOT NULL constraint failed: orders.customer_id\"",
+                  "",
+                  "db.prepare(\"SELECT stock FROM products WHERE id = 1\").get();   // { stock: 1 } — o estoque baixou",
+                  "db.prepare(\"SELECT COUNT(*) AS total FROM orders\").get();      // { total: 0 } — e nenhum pedido explica a baixa",
+                ].join("\n"),
+              },
+              explanation:
+                "O primeiro comando foi confirmado antes de o segundo falhar, e o estoque ficou diferente do que os " +
+                "pedidos explicam. Dentro de uma transação, a falha do `INSERT` desfaria também o `UPDATE`.",
+            },
+            {
+              title: "O que não deve ficar dentro da transação",
+              context: "Uma chamada lenta ou externa segura os bloqueios e não é desfeita pelo `ROLLBACK`.",
+              code: {
+                language: "javascript",
+                filename: "external-calls.js",
+                code: [
+                  "// Errado: a cobrança acontece no meio da transação",
+                  "async function payOrderWrong(db, payments, orderId) {",
+                  "  db.exec(\"BEGIN\");",
+                  "  try {",
+                  "    const order = db.prepare(\"SELECT id, total_cents FROM orders WHERE id = ?\").get(orderId);",
+                  "    await payments.charge(order.total_cents);   // segundos de rede com a transação aberta",
+                  "    db.prepare(\"UPDATE orders SET status = 'paid' WHERE id = ?\").run(orderId);",
+                  "    db.exec(\"COMMIT\");                          // se falhar aqui, o cliente foi cobrado e o pedido não diz isso",
+                  "  } catch (error) {",
+                  "    db.exec(\"ROLLBACK\");                        // não devolve o dinheiro",
+                  "    throw error;",
+                  "  }",
+                  "}",
+                  "",
+                  "// Melhor: transações curtas antes e depois; a chamada externa fica entre elas",
+                  "async function payOrder(db, payments, orderId) {",
+                  "  const order = db.prepare(\"UPDATE orders SET status = 'paying' WHERE id = ? AND status = 'pending' RETURNING total_cents\").get(orderId);",
+                  "  if (!order) throw new Error(\"pedido não está pendente\");",
+                  "  const receipt = await payments.charge(order.total_cents, { idempotencyKey: `order-${orderId}` });",
+                  "  db.prepare(\"UPDATE orders SET status = 'paid', receipt = ? WHERE id = ?\").run(receipt.id, orderId);",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada escrita da versão melhor é uma transação curta, e o estado `paying` registra que a cobrança está em " +
+                "andamento. Se algo falhar entre as duas escritas, o pedido fica em um estado conhecido, que uma rotina " +
+                "pode conferir com o provedor; a chave de idempotência evita cobrar duas vezes ao tentar de novo.",
+            },
+            {
+              title: "Savepoint: desfazer só uma parte",
+              context:
+                "Dentro de uma transação, um `SAVEPOINT` marca um ponto para onde se pode voltar sem perder o resto.",
+              code: {
+                language: "javascript",
+                filename: "savepoint.js",
+                code: [
+                  "db.exec(\"CREATE TABLE contacts (id INTEGER PRIMARY KEY, email TEXT NOT NULL UNIQUE)\");",
+                  "",
+                  "function importContacts(emails) {",
+                  "  const skipped = [];",
+                  "  db.exec(\"BEGIN\");",
+                  "  try {",
+                  "    for (const email of emails) {",
+                  "      db.exec(\"SAVEPOINT row\");",
+                  "      try {",
+                  "        db.prepare(\"INSERT INTO contacts (email) VALUES (?)\").run(email);",
+                  "        db.exec(\"RELEASE row\");",
+                  "      } catch {",
+                  "        db.exec(\"ROLLBACK TO row\");   // desfaz só esta linha",
+                  "        db.exec(\"RELEASE row\");",
+                  "        skipped.push(email);",
+                  "      }",
+                  "    }",
+                  "    db.exec(\"COMMIT\");",
+                  "  } catch (error) {",
+                  "    db.exec(\"ROLLBACK\");",
+                  "    throw error;",
+                  "  }",
+                  "  return skipped;",
+                  "}",
+                  "",
+                  "importContacts([\"ana@example.test\", \"bruno@example.test\", \"ana@example.test\"]);   // [\"ana@example.test\"]",
+                  "db.prepare(\"SELECT COUNT(*) AS total FROM contacts\").get();                      // { total: 2 }",
+                ].join("\n"),
+              },
+              explanation:
+                "O `ROLLBACK TO` volta ao savepoint e mantém tudo o que veio antes dele. A importação inteira continua " +
+                "sendo uma transação só: se o processo cair no meio, nenhum contato fica gravado.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O resgate de um cupom faz três escritas separadas: marca o cupom como usado, cria o pedido com desconto " +
+              "e baixa o estoque. Quando o estoque acaba, o cupom fica marcado como usado sem que nenhum pedido tenha " +
+              "sido criado.",
+            problemCode: {
+              language: "javascript",
+              filename: "redeem.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE coupons (code TEXT PRIMARY KEY, used INTEGER NOT NULL DEFAULT 0);",
+                "  CREATE TABLE products (id INTEGER PRIMARY KEY, stock INTEGER NOT NULL CHECK (stock >= 0));",
+                "  CREATE TABLE orders (id INTEGER PRIMARY KEY, product_id INTEGER NOT NULL, coupon TEXT);",
+                "  INSERT INTO coupons (code) VALUES ('BEMVINDO');",
+                "  INSERT INTO products VALUES (1, 0);",
+                "`);",
+                "",
+                "function redeem(code, productId) {",
+                "  db.prepare(\"UPDATE coupons SET used = 1 WHERE code = ? AND used = 0\").run(code);",
+                "  db.prepare(\"INSERT INTO orders (product_id, coupon) VALUES (?, ?)\").run(productId, code);",
+                "  db.prepare(\"UPDATE products SET stock = stock - 1 WHERE id = ?\").run(productId);   // falha: estoque 0",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Escreva uma função `withTransaction` e reescreva `redeem` com ela, de modo que uma falha em qualquer " +
+              "etapa não deixe rastro. Aproveite para recusar um cupom que já foi usado.",
+            hint:
+              "`UPDATE ... WHERE used = 0` devolve `changes` igual a 0 quando o cupom já foi usado: lance um erro nesse " +
+              "caso, e a transação desfaz o resto.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "redeem.fixed.js",
+                code: [
+                  "function withTransaction(db, work) {",
+                  "  db.exec(\"BEGIN\");",
+                  "  try {",
+                  "    const result = work();",
+                  "    db.exec(\"COMMIT\");",
+                  "    return result;",
+                  "  } catch (error) {",
+                  "    db.exec(\"ROLLBACK\");",
+                  "    throw error;",
+                  "  }",
+                  "}",
+                  "",
+                  "function redeem(code, productId) {",
+                  "  return withTransaction(db, () => {",
+                  "    const coupon = db.prepare(\"UPDATE coupons SET used = 1 WHERE code = ? AND used = 0\").run(code);",
+                  "    if (coupon.changes === 0) throw new Error(\"cupom inválido ou já usado\");",
+                  "    db.prepare(\"INSERT INTO orders (product_id, coupon) VALUES (?, ?)\").run(productId, code);",
+                  "    db.prepare(\"UPDATE products SET stock = stock - 1 WHERE id = ?\").run(productId);",
+                  "  });",
+                  "}",
+                  "",
+                  "try { redeem(\"BEMVINDO\", 1); } catch (error) { error.message; }   // \"CHECK constraint failed: stock >= 0\"",
+                  "",
+                  "db.prepare(\"SELECT used FROM coupons WHERE code = 'BEMVINDO'\").get();   // { used: 0 } — o cupom continua disponível",
+                  "db.prepare(\"SELECT COUNT(*) AS total FROM orders\").get();                // { total: 0 }",
+                ].join("\n"),
+              },
+              explanation:
+                "As três escritas passaram a ser uma unidade: a falha do estoque desfaz o pedido e devolve o cupom. A " +
+                "condição `used = 0` no próprio `UPDATE` faz a checagem e a marcação em um passo, sem uma consulta " +
+                "separada antes.",
+            },
+          },
         }),
         concept({
           order: 20,
@@ -11949,16 +12223,1180 @@ export default area({
           subtopics: ["Atomicity", "Consistency (ACID) — subtopic nomeado, endereçável para a colisão", "Durability"],
           note: "consolidada (A7 + C6). Isolation fica Task própria",
           collision: "Consistency (ACID) ≠ Distributed Consistency (Architecture); Atomicity ≠ Atomic Operation (Programming Foundations / Concurrency)",
+          summary:
+            "As garantias que um banco transacional dá a cada transação: atomicidade (tudo ou nada), consistência (as " +
+            "regras declaradas continuam valendo), isolamento (tratado à parte) e durabilidade (o que foi confirmado " +
+            "não se perde).",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "ACID é a sigla das quatro propriedades de uma transação. Atomicidade: a transação acontece por inteiro " +
+                "ou não acontece. Consistência: ela leva o banco de um estado válido a outro estado válido, segundo as " +
+                "regras declaradas (chaves, `CHECK`, `UNIQUE`). Isolamento: transações simultâneas não se atrapalham — ou " +
+                "se atrapalham só do jeito permitido pelo nível escolhido. Durabilidade: depois do `COMMIT`, o resultado " +
+                "sobrevive a uma queda do processo ou da máquina. O isolamento é o que os bancos mais relaxam na prática, " +
+                "e por isso ganha um conceito próprio.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "ACID descreve o que o banco garante sobre cada transação, e não sobre o sistema inteiro: ele só protege " +
+                "o que está dentro da transação e só verifica as regras que foram declaradas.",
+            },
+            { type: "heading", text: "Por que importa" },
+            {
+              type: "paragraph",
+              text:
+                "Essas garantias tiram da aplicação um trabalho que ela faria mal: desfazer uma operação pela metade " +
+                "depois de uma falha, verificar as regras em todos os caminhos de escrita e garantir que um dado " +
+                "confirmado está no disco. Conhecer o limite de cada uma evita a falsa segurança de \"o banco é ACID, " +
+                "então está tudo certo\".",
+            },
+            {
+              type: "list",
+              items: [
+                "Atomicidade é sobre falhas: garante que não sobra metade de uma operação. Ela não impede que duas transações simultâneas leiam o mesmo valor — isso é isolamento.",
+                "Consistência, no sentido do ACID, é o respeito às regras declaradas no esquema. Não tem relação com a consistência de sistemas distribuídos (réplicas que concordam entre si).",
+                "Durabilidade depende de o banco gravar o log no disco antes de responder ao `COMMIT`; configurações que trocam isso por velocidade podem perder as últimas transações em uma queda.",
+              ],
+            },
+            { type: "heading", text: "Na prática" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "acid.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "import { rmSync } from \"node:fs\";",
+                "",
+                "const file = \"./acid-demo.db\";",
+                "rmSync(file, { force: true });",
+                "let db = new DatabaseSync(file);",
+                "db.exec(\"CREATE TABLE seats (id INTEGER PRIMARY KEY, free INTEGER NOT NULL CHECK (free >= 0))\");",
+                "db.exec(\"INSERT INTO seats VALUES (1, 2)\");",
+                "",
+                "// Atomicidade + consistência: o 2º UPDATE viola o CHECK, e a transação inteira é desfeita",
+                "db.exec(\"BEGIN\");",
+                "try {",
+                "  db.exec(\"UPDATE seats SET free = free - 1 WHERE id = 1\");   // 2 → 1",
+                "  db.exec(\"UPDATE seats SET free = free - 5 WHERE id = 1\");   // 1 → -4: recusado pelo CHECK",
+                "  db.exec(\"COMMIT\");",
+                "} catch {",
+                "  db.exec(\"ROLLBACK\");",
+                "}",
+                "db.prepare(\"SELECT free FROM seats\").get();   // { free: 2 } — nem o 1º UPDATE ficou",
+                "",
+                "// Durabilidade: o que foi confirmado continua lá depois de fechar e reabrir o banco",
+                "db.exec(\"UPDATE seats SET free = 1 WHERE id = 1\");   // autocommit: confirmado",
+                "db.close();",
+                "db = new DatabaseSync(file);",
+                "db.prepare(\"SELECT free FROM seats\").get();   // { free: 1 }",
+              ].join("\n"),
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "Regras que só existem no código da aplicação não fazem parte da consistência do ACID: o banco só garante o que foi declarado no esquema.",
+                "Comandos executados fora de uma transação explícita são confirmados um a um; o ACID de cada comando não faz de uma função inteira uma operação atômica.",
+                "Desligar a sincronização com o disco para ganhar desempenho (`synchronous_commit = off` no PostgreSQL, `synchronous = OFF` no SQLite) troca durabilidade por velocidade; faça isso só sabendo o que pode ser perdido.",
+                "ACID vale dentro de um banco; uma operação que escreve em dois bancos ou em um banco e uma fila não é atômica por isso.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "O banco garante a regra que foi declarada",
+              context: "Um `CHECK` protege o estoque; o limite por cliente, que só existe no código, não é protegido.",
+              code: {
+                language: "javascript",
+                filename: "declared-rules.js",
+                code: [
+                  "db.exec(`",
+                  "  CREATE TABLE products (id INTEGER PRIMARY KEY, stock INTEGER NOT NULL CHECK (stock >= 0));",
+                  "  CREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER NOT NULL, quantity INTEGER NOT NULL);",
+                  "  INSERT INTO products VALUES (1, 100);",
+                  "`);",
+                  "",
+                  "// Regra de negócio só no código: no máximo 5 unidades por cliente",
+                  "const MAX_PER_CUSTOMER = 5;",
+                  "",
+                  "// Um script interno grava direto no banco, sem passar por essa verificação",
+                  "db.prepare(\"INSERT INTO orders (customer_id, quantity) VALUES (?, ?)\").run(7, 40);   // aceito: o banco não conhece o limite",
+                  "",
+                  "try { db.exec(\"UPDATE products SET stock = stock - 200 WHERE id = 1\"); }",
+                  "catch (error) { error.message; }   // \"CHECK constraint failed: stock >= 0\" — esta regra o banco conhece",
+                ].join("\n"),
+              },
+              explanation:
+                "A consistência do ACID é a das regras que o banco enxerga. O limite por cliente depende de dados de " +
+                "outras linhas e pode ficar na aplicação, mas então vale só para quem passa por ela; é uma escolha " +
+                "consciente, e não uma garantia do banco.",
+            },
+            {
+              title: "Durabilidade tem um preço, e às vezes se abre mão dela",
+              context: "Confirmar só depois de o log chegar ao disco custo tempo em cada `COMMIT`.",
+              code: {
+                language: "text",
+                filename: "durability.txt",
+                code: [
+                  "PostgreSQL",
+                  "  synchronous_commit = on    (padrão) o COMMIT só responde depois de o log (WAL) estar no disco.",
+                  "  synchronous_commit = off   o COMMIT responde antes; em uma queda do servidor, as últimas",
+                  "                             transações confirmadas podem se perder. O banco não fica corrompido:",
+                  "                             só volta a um ponto um pouco anterior.",
+                  "",
+                  "SQLite (modo WAL)",
+                  "  PRAGMA synchronous = FULL    cada COMMIT é sincronizado com o disco.",
+                  "  PRAGMA synchronous = NORMAL  mais rápido; em uma queda de energia, a última transação",
+                  "                               confirmada pode ser desfeita. O banco continua íntegro.",
+                  "",
+                  "Pode fazer sentido para dados que se podem reconstruir (cache, métricas, cargas repetíveis).",
+                  "Não faz para pedidos, pagamentos ou qualquer coisa que a pessoa já viu como \"confirmado\".",
+                ].join("\n"),
+              },
+              explanation:
+                "A durabilidade não é tudo ou nada: é uma configuração, e em alguns bancos pode ser escolhida por " +
+                "transação. Relaxá-la mantém a atomicidade e a consistência; o que se arrisca é perder as confirmações " +
+                "mais recentes.",
+            },
+            {
+              title: "Atomicidade não é o mesmo que operação atômica",
+              context:
+                "O \"A\" do ACID trata de falhas; a operação atômica da concorrência trata de execuções simultâneas.",
+              code: {
+                language: "text",
+                filename: "atomicity-vs-atomic.txt",
+                code: [
+                  "Atomicidade (ACID)                            Operação atômica (concorrência)",
+                  "--------------------------------------------  --------------------------------------------",
+                  "\"tudo ou nada\" diante de uma falha            \"indivisível\" diante de outra execução",
+                  "protege contra: queda, erro no meio,          protege contra: outra thread ou transação",
+                  "ROLLBACK                                      ler ou escrever no meio da operação",
+                  "no banco: a transação                         no banco: um único comando, como",
+                  "                                              UPDATE ... SET stock = stock - 1",
+                  "",
+                  "Duas transações atômicas podem, ao mesmo tempo, ler o mesmo estoque (10), calcular 9",
+                  "e gravar 9: nenhuma ficou pela metade, e mesmo assim uma venda se perdeu.",
+                  "Quem trata disso é o isolamento (ou um único UPDATE que lê e escreve no mesmo passo).",
+                ].join("\n"),
+              },
+              explanation:
+                "Os nomes parecidos escondem problemas diferentes. Uma transação pode ser perfeitamente atômica e ainda " +
+                "assim sofrer com concorrência; é por isso que o isolamento é uma propriedade separada.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Em uma revisão de arquitetura, o time afirmou: \"usamos um banco ACID, então estamos protegidos\". Alguém " +
+              "listou as situações que preocupam, e é preciso dizer quais o banco de fato garante e o que falta em cada " +
+              "uma.",
+            problemCode: {
+              language: "javascript",
+              filename: "acid-claims.js",
+              code: [
+                "// Para cada situação: o banco garante sozinho? Se não, o que falta?",
+                "const claims = [",
+                "  { id: 1, text: \"Se o servidor da aplicação cair no meio de checkout(), nada fica pela metade.\" },",
+                "  { id: 2, text: \"O estoque nunca fica negativo.\" },",
+                "  { id: 3, text: \"Um pedido confirmado não se perde se o servidor do banco reiniciar em seguida.\" },",
+                "  { id: 4, text: \"Dois clientes nunca compram a última unidade ao mesmo tempo.\" },",
+                "  { id: 5, text: \"O e-mail de confirmação só sai se o pedido for gravado.\" },",
+                "];",
+              ].join("\n"),
+            },
+            task:
+              "Para cada situação, responda `garantido: true | false` e explique o que é preciso para que ela valha — " +
+              "qual letra do ACID está em jogo, e o que a aplicação ou o esquema precisam fazer.",
+            hint:
+              "Pergunte, em cada caso: isto está dentro de uma transação? É uma regra declarada no esquema? Envolve " +
+              "execuções simultâneas? Envolve algo fora do banco?",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "acid-claims.answer.js",
+                code: [
+                  "const answers = [",
+                  "  { id: 1, garantido: false, letra: \"A\",",
+                  "    falta: \"Só se todas as escritas de checkout() estiverem em UMA transação; comandos em autocommit são confirmados um a um.\" },",
+                  "  { id: 2, garantido: false, letra: \"C\",",
+                  "    falta: \"Só se houver CHECK (stock >= 0) no esquema; uma verificação apenas no código não protege scripts e outros caminhos.\" },",
+                  "  { id: 3, garantido: true, letra: \"D\",",
+                  "    falta: \"Nada, com a configuração padrão; deixaria de valer com synchronous_commit = off (PostgreSQL) ou equivalente.\" },",
+                  "  { id: 4, garantido: false, letra: \"I\",",
+                  "    falta: \"Depende do isolamento: um único UPDATE condicional (stock > 0), um lock na linha ou o nível Serializable.\" },",
+                  "  { id: 5, garantido: false, letra: \"—\",",
+                  "    falta: \"O e-mail está fora do banco: envie depois do COMMIT, idealmente a partir de um registro gravado na mesma transação (outbox).\" },",
+                  "];",
+                ].join("\n"),
+              },
+              explanation:
+                "Só a durabilidade vem pronta. A atomicidade depende de a aplicação usar transações, a consistência " +
+                "depende das regras declaradas, e o isolamento depende do nível e da forma de escrever as consultas. " +
+                "Efeitos fora do banco nunca são cobertos pelo ACID.",
+            },
+          },
         }),
-        concept({ order: 30, title: "Isolation", requires: ["ACID (A / C / D)"], note: "por que o 'I' é separado — é o que se relaxa na prática" }),
-        concept({ order: 40, title: "Isolation Levels", requires: ["Isolation"], note: "Read Uncommitted → Serializable; trade-off com throughput" }),
-        concept({ order: 50, title: "Read Phenomena (Dirty / Non-Repeatable / Phantom)", requires: ["Isolation Levels"], subtopics: ["dirty read", "non-repeatable read", "phantom read", "matriz 'qual nível previne qual'"], note: "consolidada (A6)" }),
+        concept({
+          order: 30,
+          title: "Isolation",
+          requires: ["ACID (A / C / D)"],
+          note: "por que o 'I' é separado — é o que se relaxa na prática",
+          summary:
+            "A propriedade que define quanto uma transação enxerga e sofre das outras que rodam ao mesmo tempo — do " +
+            "ideal de parecerem executadas uma depois da outra aos níveis mais frouxos que os bancos usam por padrão.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Isolamento é o \"I\" do ACID: o que acontece quando duas transações rodam ao mesmo tempo sobre os mesmos " +
+                "dados. O ideal, chamado serializável, é que o resultado seja igual ao de alguma execução em fila, uma " +
+                "depois da outra. Garantir isso custa espera ou transações abortadas, e por isso os bancos oferecem " +
+                "níveis mais frouxos, e costumam usar um deles por padrão. Para implementar o isolamento, os bancos usam " +
+                "bloqueios (quem escreve impede os outros de mexer) e versões (MVCC: cada transação lê uma \"foto\" dos " +
+                "dados, sem bloquear quem escreve).",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "O isolamento é a letra do ACID que os bancos relaxam por padrão: quem escreve código que lê um dado para " +
+                "decidir uma escrita precisa saber qual nível está em uso, e o que ele deixa passar.",
+            },
+            { type: "heading", text: "Por que importa" },
+            {
+              type: "paragraph",
+              text:
+                "Os problemas de isolamento não aparecem em testes com um usuário só; aparecem em produção, com carga, " +
+                "como números que não fecham. O mais comum é a atualização perdida (lost update): duas execuções leem o " +
+                "mesmo valor, calculam um novo e gravam, e a segunda apaga o trabalho da primeira.",
+            },
+            { type: "heading", text: "Na prática" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "snapshot.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "import { rmSync } from \"node:fs\";",
+                "",
+                "const file = \"./isolation-demo.db\";",
+                "for (const suffix of [\"\", \"-wal\", \"-shm\"]) rmSync(file + suffix, { force: true });",
+                "const a = new DatabaseSync(file);   // duas conexões ao mesmo banco,",
+                "a.exec(\"PRAGMA journal_mode = WAL\");",
+                "a.exec(\"CREATE TABLE products (id INTEGER PRIMARY KEY, stock INTEGER NOT NULL)\");",
+                "a.exec(\"INSERT INTO products VALUES (1, 10)\");",
+                "const b = new DatabaseSync(file);   // como dois usuários",
+                "",
+                "a.exec(\"BEGIN\");",
+                "a.prepare(\"SELECT stock FROM products WHERE id = 1\").get();   // { stock: 10 } — A tira a sua \"foto\"",
+                "",
+                "b.exec(\"UPDATE products SET stock = 7 WHERE id = 1\");          // B muda e confirma",
+                "",
+                "a.prepare(\"SELECT stock FROM products WHERE id = 1\").get();   // { stock: 10 } — A continua vendo a foto",
+                "try { a.exec(\"UPDATE products SET stock = stock - 1 WHERE id = 1\"); }",
+                "catch (error) { error.message; }                              // \"database is locked\": a foto de A ficou velha",
+                "a.exec(\"ROLLBACK\");",
+                "",
+                "a.prepare(\"SELECT stock FROM products WHERE id = 1\").get();   // { stock: 7 } — nova transação, nova foto",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O SQLite oferece o nível mais forte: a transação de A lê sempre a mesma versão dos dados e não pode " +
+                "escrever por cima de uma mudança que não viu — ela precisa recomeçar. Outros bancos, com o nível padrão " +
+                "mais frouxo, deixariam essa escrita passar.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "Ler um valor, calcular na aplicação e gravar o resultado em comandos separados perde atualizações sob concorrência; prefira `UPDATE ... SET stock = stock - 1`, que lê e escreve no mesmo passo.",
+                "O nível padrão varia: Read Committed no PostgreSQL, Repeatable Read no MySQL (InnoDB), Serializable no SQLite. Código correto em um banco pode não ser em outro.",
+                "Níveis mais fortes não eliminam o problema de graça: eles fazem transações esperarem ou falharem, e a aplicação precisa tentar de novo.",
+                "Transações de leitura longas também têm custo: em bancos com MVCC, elas obrigam o banco a guardar versões antigas das linhas enquanto estiverem abertas.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "A atualização perdida",
+              context: "Ler, calcular e gravar em comandos separados deixa uma janela entre a leitura e a escrita.",
+              code: {
+                language: "javascript",
+                filename: "lost-update.js",
+                code: [
+                  "import { DatabaseSync } from \"node:sqlite\";",
+                  "import { rmSync } from \"node:fs\";",
+                  "",
+                  "rmSync(\"./shop.db\", { force: true });",
+                  "const a = new DatabaseSync(\"./shop.db\");",
+                  "a.exec(\"CREATE TABLE products (id INTEGER PRIMARY KEY, stock INTEGER NOT NULL)\");",
+                  "a.exec(\"INSERT INTO products VALUES (1, 10)\");",
+                  "const b = new DatabaseSync(\"./shop.db\");",
+                  "",
+                  "// Duas vendas simultâneas, cada comando confirmado sozinho (sem transação)",
+                  "const stockA = a.prepare(\"SELECT stock FROM products WHERE id = 1\").get().stock;   // 10",
+                  "const stockB = b.prepare(\"SELECT stock FROM products WHERE id = 1\").get().stock;   // 10",
+                  "a.prepare(\"UPDATE products SET stock = ? WHERE id = 1\").run(stockA - 1);            // grava 9",
+                  "b.prepare(\"UPDATE products SET stock = ? WHERE id = 1\").run(stockB - 1);            // grava 9 por cima",
+                  "",
+                  "a.prepare(\"SELECT stock FROM products WHERE id = 1\").get();   // { stock: 9 } — duas vendas, uma baixa",
+                  "",
+                  "// Correção: o banco lê e escreve no mesmo comando, e a condição impede estoque negativo",
+                  "const sell = (db) => db.prepare(\"UPDATE products SET stock = stock - 1 WHERE id = 1 AND stock > 0\").run().changes === 1;",
+                  "sell(a);",
+                  "sell(b);",
+                  "a.prepare(\"SELECT stock FROM products WHERE id = 1\").get();   // { stock: 7 }",
+                ].join("\n"),
+              },
+              explanation:
+                "As duas vendas calcularam o novo valor a partir do mesmo estoque, e a segunda apagou a primeira. Com " +
+                "`stock = stock - 1`, a leitura e a escrita são um passo só dentro do banco, e nenhuma venda se perde; " +
+                "`changes` diz se a venda aconteceu.",
+            },
+            {
+              title: "Bloqueios ou versões",
+              context: "As duas formas de isolar transações têm custos diferentes.",
+              code: {
+                language: "text",
+                filename: "locks-vs-mvcc.txt",
+                code: [
+                  "Bloqueios (locking)",
+                  "  Quem lê ou escreve uma linha a bloqueia; os outros esperam.",
+                  "  + simples de entender          - leitores e escritores se bloqueiam; risco de deadlock",
+                  "",
+                  "Versões (MVCC — PostgreSQL, MySQL/InnoDB, Oracle, SQLite em modo WAL)",
+                  "  Cada escrita cria uma nova versão da linha; cada transação lê a versão que valia",
+                  "  no seu início (ou no início de cada comando, conforme o nível).",
+                  "  + leitores não bloqueiam escritores, nem o contrário",
+                  "  - versões antigas ocupam espaço até ninguém mais precisar delas (VACUUM no PostgreSQL)",
+                  "  - duas escritas na mesma linha ainda precisam de bloqueio entre si",
+                  "",
+                  "Na prática, os bancos combinam as duas coisas: MVCC para leituras, bloqueios para escritas.",
+                ].join("\n"),
+              },
+              explanation:
+                "Saber qual mecanismo o banco usa explica o comportamento: com MVCC, um relatório longo não trava as " +
+                "vendas, mas uma transação esquecida aberta impede a limpeza das versões antigas.",
+            },
+            {
+              title: "A transação esquecida aberta",
+              context:
+                "Uma conexão que abriu uma transação e não terminou continua segurando a sua foto e os seus bloqueios.",
+              code: {
+                language: "javascript",
+                filename: "idle-transaction.js",
+                code: [
+                  "// Um trecho que retorna cedo sem COMMIT nem ROLLBACK",
+                  "function markAsSeen(db, notificationId) {",
+                  "  db.exec(\"BEGIN\");",
+                  "  const row = db.prepare(\"SELECT id, seen FROM notifications WHERE id = ?\").get(notificationId);",
+                  "  if (!row || row.seen) return;   // a transação fica aberta, na conexão, até alguém a encerrar",
+                  "  db.prepare(\"UPDATE notifications SET seen = 1 WHERE id = ?\").run(notificationId);",
+                  "  db.exec(\"COMMIT\");",
+                  "}",
+                  "",
+                  "// No PostgreSQL, essas conexões aparecem como \"idle in transaction\":",
+                  "//   SELECT pid, state, now() - xact_start AS aberta_ha FROM pg_stat_activity WHERE state = 'idle in transaction';",
+                  "// e um limite de tempo encerra as esquecidas:",
+                  "//   SET idle_in_transaction_session_timeout = '30s';",
+                ].join("\n"),
+              },
+              explanation:
+                "O `return` antecipado deixa a transação aberta. Enquanto ela existir, o banco guarda as versões que ela " +
+                "ainda pode ler, e as outras transações esperam pelos bloqueios que ela tem. Uma função como " +
+                "`withTransaction`, que sempre termina a transação, evita o problema.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O endpoint de curtidas lê o contador, soma um na aplicação e grava o resultado. Em uma postagem que " +
+              "viralizou, o contador mostra bem menos curtidas do que as linhas registradas na tabela de curtidas.",
+            problemCode: {
+              language: "javascript",
+              filename: "likes.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "import { rmSync } from \"node:fs\";",
+                "",
+                "rmSync(\"./likes.db\", { force: true });",
+                "const setup = new DatabaseSync(\"./likes.db\");",
+                "setup.exec(`",
+                "  CREATE TABLE posts (id INTEGER PRIMARY KEY, like_count INTEGER NOT NULL DEFAULT 0);",
+                "  CREATE TABLE likes (post_id INTEGER NOT NULL, user_id INTEGER NOT NULL, PRIMARY KEY (post_id, user_id));",
+                "  INSERT INTO posts (id) VALUES (1);",
+                "`);",
+                "",
+                "function like(db, postId, userId) {",
+                "  db.prepare(\"INSERT INTO likes (post_id, user_id) VALUES (?, ?)\").run(postId, userId);",
+                "  const { like_count } = db.prepare(\"SELECT like_count FROM posts WHERE id = ?\").get(postId);",
+                "  db.prepare(\"UPDATE posts SET like_count = ? WHERE id = ?\").run(like_count + 1, postId);",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Reproduza a perda com duas conexões intercalando a leitura e a escrita, e corrija `like` para que o " +
+              "contador nunca perca uma curtida, com a curtida e o contador gravados juntos.",
+            hint:
+              "Deixe o banco fazer a soma (`like_count = like_count + 1`) e coloque as duas escritas em uma transação.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "likes.fixed.js",
+                code: [
+                  "function like(db, postId, userId) {",
+                  "  db.exec(\"BEGIN\");",
+                  "  try {",
+                  "    db.prepare(\"INSERT INTO likes (post_id, user_id) VALUES (?, ?)\").run(postId, userId);",
+                  "    db.prepare(\"UPDATE posts SET like_count = like_count + 1 WHERE id = ?\").run(postId);   // lê e soma no mesmo passo",
+                  "    db.exec(\"COMMIT\");",
+                  "  } catch (error) {",
+                  "    db.exec(\"ROLLBACK\");",
+                  "    throw error;",
+                  "  }",
+                  "}",
+                  "",
+                  "// Reprodução do problema antigo: duas conexões leem 0 e gravam 1",
+                  "const a = new DatabaseSync(\"./likes.db\");",
+                  "const b = new DatabaseSync(\"./likes.db\");",
+                  "const readA = a.prepare(\"SELECT like_count FROM posts WHERE id = 1\").get().like_count;   // 0",
+                  "const readB = b.prepare(\"SELECT like_count FROM posts WHERE id = 1\").get().like_count;   // 0",
+                  "a.prepare(\"UPDATE posts SET like_count = ? WHERE id = 1\").run(readA + 1);",
+                  "b.prepare(\"UPDATE posts SET like_count = ? WHERE id = 1\").run(readB + 1);",
+                  "a.prepare(\"SELECT like_count FROM posts WHERE id = 1\").get();   // { like_count: 1 } — duas curtidas, contador 1",
+                  "",
+                  "// Com a correção, cada curtida soma de verdade",
+                  "a.exec(\"UPDATE posts SET like_count = 0\");",
+                  "like(a, 1, 10);",
+                  "like(b, 1, 20);",
+                  "a.prepare(\"SELECT like_count FROM posts WHERE id = 1\").get();   // { like_count: 2 }",
+                ].join("\n"),
+              },
+              explanation:
+                "A leitura na aplicação criava uma janela em que outra curtida podia gravar o mesmo valor. Com a soma " +
+                "feita pelo banco, cada `UPDATE` parte do valor atual, qualquer que seja o nível de isolamento. A " +
+                "transação garante que a curtida e o contador não se separam.",
+            },
+          },
+        }),
+        concept({
+          order: 40,
+          title: "Isolation Levels",
+          requires: ["Isolation"],
+          note: "Read Uncommitted → Serializable; trade-off com throughput",
+          summary:
+            "Os quatro níveis de isolamento do padrão SQL — Read Uncommitted, Read Committed, Repeatable Read e " +
+            "Serializable —, cada um permitindo menos interferência entre transações, em troca de mais espera ou de " +
+            "mais transações abortadas.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "O padrão SQL define quatro níveis de isolamento, do mais frouxo ao mais forte. Cada nível é definido " +
+                "pelas anomalias que ele impede, e os bancos podem oferecer mais do que o mínimo pedido. O nível pode ser " +
+                "escolhido para o banco inteiro ou para cada transação, o que permite usar um nível forte só onde ele é " +
+                "necessário.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Escolha o nível pela pergunta que a transação faz: o padrão do banco serve para a maioria das operações, " +
+                "e o Serializable fica para as que leem dados para decidir uma escrita — com a aplicação pronta para " +
+                "repetir a transação quando o banco a recusar.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "list",
+              items: [
+                "Read Uncommitted — pode ler o que outra transação escreveu e ainda não confirmou. No PostgreSQL, ele se comporta como Read Committed.",
+                "Read Committed — cada comando vê só o que já foi confirmado antes de ele começar; dois comandos da mesma transação podem ver dados diferentes. É o padrão do PostgreSQL e do SQL Server.",
+                "Repeatable Read — a transação inteira vê os dados como estavam no seu primeiro comando. É o padrão do MySQL (InnoDB). No PostgreSQL, uma escrita sobre uma linha alterada por outra transação confirmada faz esta falhar.",
+                "Serializable — o resultado é igual ao de alguma execução em fila. No PostgreSQL, o banco detecta as combinações perigosas e aborta uma das transações, que precisa ser repetida.",
+              ],
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "serializable-retry.js",
+              code: [
+                "import pg from \"pg\";",
+                "const pool = new pg.Pool();",
+                "",
+                "// Executa `work` em uma transação Serializable, repetindo quando o banco a aborta por conflito.",
+                "async function withSerializable(work, { attempts = 5 } = {}) {",
+                "  for (let attempt = 1; ; attempt++) {",
+                "    const client = await pool.connect();",
+                "    try {",
+                "      await client.query(\"BEGIN ISOLATION LEVEL SERIALIZABLE\");",
+                "      const result = await work(client);",
+                "      await client.query(\"COMMIT\");",
+                "      return result;",
+                "    } catch (error) {",
+                "      await client.query(\"ROLLBACK\");",
+                "      // 40001 = serialization_failure: nada foi gravado, e a transação pode ser refeita do zero",
+                "      if (error.code !== \"40001\" || attempt === attempts) throw error;",
+                "    } finally {",
+                "      client.release();",
+                "    }",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A repetição precisa refazer a transação inteira, inclusive as leituras: a decisão tomada na tentativa " +
+                "anterior foi baseada em dados que mudaram. Por isso `work` recebe o cliente e executa tudo de novo a " +
+                "cada tentativa.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Read Committed (o padrão do PostgreSQL) para a maior parte das escritas simples, sobretudo quando o próprio comando lê e escreve (`SET stock = stock - 1`).",
+                "Repeatable Read para relatórios e exportações que fazem várias consultas e precisam de números coerentes entre elas.",
+                "Serializable quando a transação lê um conjunto de linhas para decidir uma escrita, e duas execuções simultâneas poderiam, juntas, quebrar uma regra.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Serializable sem código de repetição transforma conflitos em erros para o usuário; ele só funciona junto com o `retry`.",
+                "O mesmo nome não garante o mesmo comportamento: o Repeatable Read do MySQL e o do PostgreSQL diferem em como tratam escritas concorrentes.",
+                "Níveis fortes em transações longas e muito disputadas aumentam as esperas e as repetições; às vezes um lock explícito em uma linha resolve com menos custo.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Write skew: o que só o Serializable impede",
+              context: "Duas transações leem o mesmo conjunto, decidem a partir dele e escrevem em linhas diferentes.",
+              code: {
+                language: "text",
+                filename: "write-skew.txt",
+                code: [
+                  "Regra: pelo menos um médico de plantão. Ana e Bruno estão de plantão.",
+                  "",
+                  "Sessão 1 (Ana)                                Sessão 2 (Bruno)",
+                  "BEGIN ISOLATION LEVEL REPEATABLE READ;        BEGIN ISOLATION LEVEL REPEATABLE READ;",
+                  "SELECT count(*) FROM doctors                  SELECT count(*) FROM doctors",
+                  "  WHERE on_call;          -- 2                  WHERE on_call;          -- 2",
+                  "UPDATE doctors SET on_call = false            UPDATE doctors SET on_call = false",
+                  "  WHERE name = 'Ana';                           WHERE name = 'Bruno';",
+                  "COMMIT;                   -- ok               COMMIT;                   -- ok",
+                  "",
+                  "Resultado: ninguém de plantão. Cada um mudou uma linha diferente, e nenhuma escrita",
+                  "conflitou com a outra; o problema está na decisão tomada a partir de uma leitura.",
+                  "",
+                  "Com SERIALIZABLE no PostgreSQL, o segundo COMMIT falha com",
+                  "  ERROR: could not serialize access due to read/write dependencies among transactions",
+                  "e, ao ser repetida, a transação de Bruno vê só um médico de plantão e desiste.",
+                ].join("\n"),
+              },
+              explanation:
+                "Nem Read Committed nem Repeatable Read impedem esse caso, porque não há duas escritas na mesma linha. O " +
+                "Serializable acompanha o que cada transação leu, e é por isso que ele é o nível certo para regras que " +
+                "envolvem várias linhas.",
+            },
+            {
+              title: "Um relatório coerente com Repeatable Read",
+              context: "Em Read Committed, cada consulta vê o banco em um momento diferente.",
+              code: {
+                language: "javascript",
+                filename: "report.js",
+                code: [
+                  "async function monthlyReport(pool, month) {",
+                  "  const client = await pool.connect();",
+                  "  try {",
+                  "    // A transação inteira lê a mesma foto dos dados; READ ONLY deixa claro que nada será escrito",
+                  "    await client.query(\"BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY\");",
+                  "    const { rows: [summary] } = await client.query(",
+                  "      \"SELECT count(*) AS orders, sum(total_cents) AS revenue FROM orders WHERE date_trunc('month', placed_at) = $1\",",
+                  "      [month]",
+                  "    );",
+                  "    const { rows: byProduct } = await client.query(",
+                  "      \"SELECT product_id, sum(total_cents) AS revenue FROM orders WHERE date_trunc('month', placed_at) = $1 GROUP BY product_id\",",
+                  "      [month]",
+                  "    );",
+                  "    await client.query(\"COMMIT\");",
+                  "    return { summary, byProduct };   // a soma de byProduct bate com summary.revenue",
+                  "  } catch (error) {",
+                  "    await client.query(\"ROLLBACK\");",
+                  "    throw error;",
+                  "  } finally {",
+                  "    client.release();",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Sem a transação, um pedido gravado entre as duas consultas entraria em uma e não na outra, e o total não " +
+                "bateria com a soma por produto. Transações só de leitura em Repeatable Read não entram em conflito de " +
+                "escrita, e por isso não precisam de repetição.",
+            },
+            {
+              title: "O nível é escolhido por transação",
+              context: "O padrão do banco vale para tudo; o nível forte fica onde é preciso.",
+              code: {
+                language: "javascript",
+                filename: "per-transaction.js",
+                code: [
+                  "// O padrão do banco (Read Committed) para a operação comum",
+                  "await client.query(\"BEGIN\");",
+                  "await client.query(\"UPDATE products SET stock = stock - 1 WHERE id = $1 AND stock > 0\", [productId]);",
+                  "await client.query(\"COMMIT\");",
+                  "",
+                  "// Serializable só para a operação que decide com base em várias linhas (com retry)",
+                  "await withSerializable(async (tx) => {",
+                  "  const { rows: [{ count }] } = await tx.query(\"SELECT count(*) FROM doctors WHERE on_call\");",
+                  "  if (Number(count) < 2) throw new Error(\"é preciso manter alguém de plantão\");",
+                  "  await tx.query(\"UPDATE doctors SET on_call = false WHERE id = $1\", [doctorId]);",
+                  "});",
+                  "",
+                  "// Para conferir o padrão em uso:  SHOW default_transaction_isolation;",
+                ].join("\n"),
+              },
+              explanation:
+                "Subir o nível do banco inteiro para Serializable obrigaria todo o código a lidar com repetições. " +
+                "Escolher por transação concentra esse custo nas poucas operações que precisam dele.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O painel financeiro mostra o total de vendas do dia e, logo abaixo, as vendas por loja. Em dias " +
+              "movimentados, a soma das lojas não bate com o total. As duas consultas rodam em sequência, com o nível " +
+              "padrão do PostgreSQL.",
+            problemCode: {
+              language: "javascript",
+              filename: "dashboard.js",
+              code: [
+                "import pg from \"pg\";",
+                "const pool = new pg.Pool();",
+                "",
+                "async function dailyDashboard(day) {",
+                "  const total = await pool.query(\"SELECT sum(total_cents) AS revenue FROM sales WHERE sold_on = $1\", [day]);",
+                "  const byStore = await pool.query(",
+                "    \"SELECT store_id, sum(total_cents) AS revenue FROM sales WHERE sold_on = $1 GROUP BY store_id\",",
+                "    [day]",
+                "  );",
+                "  return { total: total.rows[0], byStore: byStore.rows };",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Explique por que os números divergem e reescreva `dailyDashboard` para que as duas consultas vejam os " +
+              "mesmos dados, sem bloquear as vendas que continuam chegando.",
+            hint:
+              "`pool.query` pode usar uma conexão diferente a cada chamada, e cada consulta é uma transação própria. " +
+              "Use um único cliente e uma transação Repeatable Read, só de leitura.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "dashboard.fixed.js",
+                code: [
+                  "async function dailyDashboard(day) {",
+                  "  const client = await pool.connect();   // uma conexão só, para a transação inteira",
+                  "  try {",
+                  "    await client.query(\"BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY\");",
+                  "    const total = await client.query(\"SELECT sum(total_cents) AS revenue FROM sales WHERE sold_on = $1\", [day]);",
+                  "    const byStore = await client.query(",
+                  "      \"SELECT store_id, sum(total_cents) AS revenue FROM sales WHERE sold_on = $1 GROUP BY store_id\",",
+                  "      [day]",
+                  "    );",
+                  "    await client.query(\"COMMIT\");",
+                  "    return { total: total.rows[0], byStore: byStore.rows };",
+                  "  } catch (error) {",
+                  "    await client.query(\"ROLLBACK\");",
+                  "    throw error;",
+                  "  } finally {",
+                  "    client.release();",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Em Read Committed, cada consulta vê as vendas confirmadas até o seu próprio início, e uma venda gravada " +
+                "entre as duas entra só na segunda. Em Repeatable Read, as duas leem a mesma foto. Como o PostgreSQL usa " +
+                "versões, a leitura não bloqueia as vendas novas, que simplesmente não aparecem nesta foto.",
+            },
+          },
+        }),
+        concept({
+          order: 50,
+          title: "Read Phenomena (Dirty / Non-Repeatable / Phantom)",
+          requires: ["Isolation Levels"],
+          subtopics: ["dirty read", "non-repeatable read", "phantom read", "matriz 'qual nível previne qual'"],
+          note: "consolidada (A6)",
+          summary:
+            "As três anomalias de leitura que definem os níveis de isolamento: ler o que outra transação ainda não " +
+            "confirmou (dirty read), ler a mesma linha duas vezes e obter valores diferentes (non-repeatable read) e " +
+            "repetir uma consulta e encontrar linhas novas (phantom read).",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Os fenômenos de leitura são os tipos de interferência que uma transação pode sofrer ao ler dados que " +
+                "outras estão mudando. O padrão SQL define cada nível de isolamento pelos fenômenos que ele impede. Dirty " +
+                "read: ler um valor que outra transação escreveu e ainda pode desfazer. Non-repeatable read: ler a mesma " +
+                "linha duas vezes, na mesma transação, e obter valores diferentes, porque outra transação a alterou e " +
+                "confirmou no meio. Phantom read: repetir uma consulta com uma condição e encontrar linhas que não " +
+                "estavam lá, porque outra transação inseriu ou apagou linhas que atendem à condição.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Cada fenômeno é uma pergunta sobre a mesma transação: posso ver o que não foi confirmado? A mesma linha " +
+                "pode mudar? O mesmo conjunto pode ganhar ou perder linhas? O nível de isolamento escolhido responde a " +
+                "cada uma.",
+            },
+            { type: "heading", text: "Por que importa" },
+            {
+              type: "paragraph",
+              text:
+                "Saber o nome do fenômeno ajuda a escolher o nível mínimo que resolve um problema, sem subir para o mais " +
+                "caro. A matriz do padrão diz o que cada nível impede, no mínimo:",
+            },
+            {
+              type: "code",
+              language: "text",
+              filename: "matrix.txt",
+              code: [
+                "                     Dirty read   Non-repeatable read   Phantom read",
+                "Read Uncommitted     possível     possível              possível",
+                "Read Committed       impedido     possível              possível",
+                "Repeatable Read      impedido     impedido              possível (*)",
+                "Serializable         impedido     impedido              impedido",
+                "",
+                "(*) O padrão permite; no PostgreSQL, o Repeatable Read também impede phantom reads,",
+                "    porque a transação inteira lê a mesma foto dos dados.",
+              ].join("\n"),
+            },
+            { type: "heading", text: "Na prática" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "no-dirty-read.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "import { rmSync } from \"node:fs\";",
+                "",
+                "for (const suffix of [\"\", \"-wal\", \"-shm\"]) rmSync(\"./phenomena.db\" + suffix, { force: true });",
+                "const a = new DatabaseSync(\"./phenomena.db\");",
+                "a.exec(\"PRAGMA journal_mode = WAL\");",
+                "a.exec(\"CREATE TABLE accounts_payable (id INTEGER PRIMARY KEY, amount_cents INTEGER NOT NULL)\");",
+                "a.exec(\"INSERT INTO accounts_payable VALUES (1, 5000)\");",
+                "const b = new DatabaseSync(\"./phenomena.db\");",
+                "",
+                "a.exec(\"BEGIN\");",
+                "a.exec(\"UPDATE accounts_payable SET amount_cents = 999999 WHERE id = 1\");   // ainda não confirmado",
+                "",
+                "b.prepare(\"SELECT amount_cents FROM accounts_payable WHERE id = 1\").get();   // { amount_cents: 5000 } — sem dirty read",
+                "",
+                "a.exec(\"ROLLBACK\");   // o valor 999999 nunca existiu, e ninguém chegou a vê-lo",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Se a sessão B tivesse lido 999999 e agido com base nisso — pagado a conta, por exemplo —, teria agido " +
+                "sobre um valor que foi desfeito. Por isso quase nenhum banco usa, na prática, um nível que permita dirty " +
+                "reads.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "A matriz do padrão é o mínimo: bancos diferentes impedem mais do que ela exige em alguns níveis, e o mesmo código pode se comportar de forma diferente em cada um.",
+                "Os três fenômenos não cobrem tudo: a atualização perdida e o write skew acontecem mesmo sem nenhum deles, e só um nível mais forte ou um lock os resolve.",
+                "Um phantom não é só uma linha nova: uma linha apagada ou alterada para deixar de atender à condição também muda o resultado da consulta repetida.",
+                "Fenômenos só aparecem com transações simultâneas; testes com um usuário não os reproduzem, e é preciso intercalar duas conexões de propósito.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Non-repeatable read em Read Committed",
+              context: "A mesma linha, lida duas vezes, muda no meio da transação.",
+              code: {
+                language: "text",
+                filename: "non-repeatable.txt",
+                code: [
+                  "PostgreSQL, nível padrão (Read Committed). Preço do produto 1: 100.",
+                  "",
+                  "Sessão 1 (fechamento do carrinho)             Sessão 2 (equipe de preços)",
+                  "BEGIN;",
+                  "SELECT price FROM products WHERE id = 1;",
+                  "  -- 100: mostra o total ao cliente",
+                  "                                              BEGIN;",
+                  "                                              UPDATE products SET price = 120 WHERE id = 1;",
+                  "                                              COMMIT;",
+                  "SELECT price FROM products WHERE id = 1;",
+                  "  -- 120: cobra um valor diferente do mostrado",
+                  "COMMIT;",
+                  "",
+                  "Em REPEATABLE READ, a segunda leitura também devolveria 100.",
+                ].join("\n"),
+              },
+              explanation:
+                "A sessão 1 fez duas leituras na mesma transação e recebeu respostas diferentes. O problema real é o " +
+                "valor mostrado não ser o cobrado; ler o preço uma vez só e guardá-lo no pedido, ou usar Repeatable Read, " +
+                "resolve.",
+            },
+            {
+              title: "Phantom read: o conjunto que ganha uma linha",
+              context: "A mesma consulta com condição, repetida, devolve linhas diferentes.",
+              code: {
+                language: "text",
+                filename: "phantom.txt",
+                code: [
+                  "Sessão 1 (relatório)                          Sessão 2 (loja)",
+                  "BEGIN;  -- Read Committed",
+                  "SELECT count(*) FROM orders",
+                  "  WHERE status = 'pending';     -- 3",
+                  "                                              INSERT INTO orders (status) VALUES ('pending');",
+                  "                                              COMMIT;",
+                  "SELECT id, total_cents FROM orders",
+                  "  WHERE status = 'pending';     -- 4 linhas",
+                  "COMMIT;",
+                  "",
+                  "O relatório diz \"3 pedidos pendentes\" e lista 4. A linha nova é o \"fantasma\".",
+                ].join("\n"),
+              },
+              explanation:
+                "Nenhuma linha lida antes mudou; o que mudou foi o conjunto que atende à condição. Locks de linha não " +
+                "impedem isso, porque a linha nova não existia para ser bloqueada: é preciso um nível que leia uma foto " +
+                "só, ou o Serializable.",
+            },
+            {
+              title: "Reproduzir de propósito, com duas conexões",
+              context: "Um teste que intercala duas sessões mostra o fenômeno de forma repetível.",
+              code: {
+                language: "javascript",
+                filename: "reproduce.test.js",
+                code: [
+                  "import { test } from \"node:test\";",
+                  "import assert from \"node:assert/strict\";",
+                  "import pg from \"pg\";",
+                  "",
+                  "test(\"Repeatable Read não enxerga o pedido inserido no meio da transação\", async () => {",
+                  "  const pool = new pg.Pool();",
+                  "  const report = await pool.connect();",
+                  "  const shop = await pool.connect();",
+                  "  try {",
+                  "    await report.query(\"BEGIN ISOLATION LEVEL REPEATABLE READ\");",
+                  "    const before = await report.query(\"SELECT count(*)::int AS n FROM orders WHERE status = 'pending'\");",
+                  "",
+                  "    await shop.query(\"INSERT INTO orders (status) VALUES ('pending')\");   // autocommit",
+                  "",
+                  "    const after = await report.query(\"SELECT count(*)::int AS n FROM orders WHERE status = 'pending'\");",
+                  "    assert.equal(after.rows[0].n, before.rows[0].n);   // em Read Committed, este teste falharia",
+                  "    await report.query(\"COMMIT\");",
+                  "  } finally {",
+                  "    report.release();",
+                  "    shop.release();",
+                  "    await pool.end();",
+                  "  }",
+                  "});",
+                ].join("\n"),
+              },
+              explanation:
+                "Duas conexões controladas pelo teste deixam escolher exatamente em que ponto a segunda sessão age. " +
+                "Trocar o nível para Read Committed faz o teste falhar, o que demonstra o phantom e documenta a decisão.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Três incidentes chegaram ao time de dados. Para cada um, é preciso dizer qual fenômeno aconteceu e qual " +
+              "o nível de isolamento mínimo, segundo o padrão SQL, que o impediria.",
+            problemCode: {
+              language: "javascript",
+              filename: "incidents.js",
+              code: [
+                "const incidents = [",
+                "  {",
+                "    id: \"A\",",
+                "    what: \"O job de cobrança leu o valor de uma fatura que outra transação estava ajustando; o ajuste foi desfeito, mas a cobrança saiu com o valor ajustado.\",",
+                "  },",
+                "  {",
+                "    id: \"B\",",
+                "    what: \"A tela de conferência lê o saldo de uma conta no início e de novo no fim da mesma transação, e os dois valores não batem, porque um depósito foi confirmado no meio.\",",
+                "  },",
+                "  {",
+                "    id: \"C\",",
+                "    what: \"A exportação conta as matrículas do curso e depois lista as matrículas; a lista tem uma linha a mais do que a contagem.\",",
+                "  },",
+                "];",
+              ].join("\n"),
+            },
+            task:
+              "Complete um objeto com, para cada incidente, o fenômeno e o nível mínimo do padrão que o impede. Diga " +
+              "também se, no PostgreSQL, algum nível mais baixo já resolveria.",
+            hint:
+              "Valor não confirmado → dirty read. Mesma linha com valor diferente → non-repeatable read. Conjunto com " +
+              "linhas a mais ou a menos → phantom read.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "incidents.answer.js",
+                code: [
+                  "const answers = {",
+                  "  A: { phenomenon: \"dirty read\", minimumLevel: \"Read Committed\",",
+                  "       postgres: \"Nunca acontece: o PostgreSQL não oferece dirty reads em nenhum nível.\" },",
+                  "  B: { phenomenon: \"non-repeatable read\", minimumLevel: \"Repeatable Read\",",
+                  "       postgres: \"Repeatable Read.\" },",
+                  "  C: { phenomenon: \"phantom read\", minimumLevel: \"Serializable\",",
+                  "       postgres: \"Repeatable Read já basta: a transação lê uma foto só, e a linha nova não aparece.\" },",
+                  "};",
+                ].join("\n"),
+              },
+              explanation:
+                "O padrão só exige que o Serializable impeça phantoms, mas o PostgreSQL já os impede no Repeatable Read, " +
+                "por usar uma foto por transação. Conhecer o comportamento real do banco evita pagar pelo nível mais " +
+                "forte sem necessidade.",
+            },
+          },
+        }),
         concept({
           order: 60,
           title: "Optimistic Locking",
           requires: ["Isolation"],
           note: "versão/timestamp, retry em conflito — revisita Programming Foundations / Concurrency / Race Condition",
           revisit: ["Programming Foundations / Concurrency / Race Condition"],
+          summary:
+            "Detectar, na hora de gravar, que outra pessoa mudou o registro desde que ele foi lido — com uma coluna " +
+            "de versão conferida no `UPDATE` —, em vez de bloquear o registro durante toda a edição.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "O lock otimista parte da suposição de que conflitos são raros: ninguém bloqueia nada enquanto lê ou " +
+                "edita. Cada linha tem uma versão (um número que sobe a cada alteração). Quem vai gravar diz qual versão " +
+                "leu, e o `UPDATE` só acontece se a versão ainda for aquela. Se outra escrita chegou antes, nenhuma linha " +
+                "é alterada, e a aplicação sabe que houve conflito. É a solução para a condição de corrida em que duas " +
+                "pessoas editam o mesmo registro e a última a salvar apaga o trabalho da outra.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "O `UPDATE ... WHERE id = ? AND version = ?` transforma uma escrita cega em uma escrita condicional: ou " +
+                "ela parte da versão que a pessoa viu, ou não acontece, e o conflito vira uma decisão explícita.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "optimistic.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE documents (id INTEGER PRIMARY KEY, body TEXT NOT NULL, version INTEGER NOT NULL DEFAULT 1);",
+                "  INSERT INTO documents (id, body) VALUES (1, 'Rascunho');",
+                "`);",
+                "",
+                "class ConflictError extends Error {}",
+                "",
+                "function saveDocument(id, body, expectedVersion) {",
+                "  const result = db",
+                "    .prepare(\"UPDATE documents SET body = ?, version = version + 1 WHERE id = ? AND version = ?\")",
+                "    .run(body, id, expectedVersion);",
+                "  if (result.changes === 0) throw new ConflictError(\"o documento foi alterado por outra pessoa\");",
+                "  return expectedVersion + 1;",
+                "}",
+                "",
+                "// Ana e Bruno abrem o documento na versão 1",
+                "const seenByAna = db.prepare(\"SELECT body, version FROM documents WHERE id = 1\").get();     // version 1",
+                "const seenByBruno = db.prepare(\"SELECT body, version FROM documents WHERE id = 1\").get();   // version 1",
+                "",
+                "saveDocument(1, \"Texto da Ana\", seenByAna.version);   // ok: versão 2",
+                "try { saveDocument(1, \"Texto do Bruno\", seenByBruno.version); }",
+                "catch (error) { error instanceof ConflictError; }     // true — o texto da Ana não foi apagado",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A verificação e a escrita acontecem no mesmo comando, dentro do banco, e por isso não há janela entre " +
+                "elas. Um `SELECT` para conferir a versão antes do `UPDATE` recriaria a condição de corrida.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Edições feitas por pessoas, em que entre ler e salvar passam segundos ou minutos, e bloquear o registro todo esse tempo seria inviável.",
+                "Quando conflitos são raros e mostrar \"alguém alterou isto\" é aceitável, como em cadastros, documentos e configurações.",
+                "Em APIs HTTP, junto com `ETag` e `If-Match`, para que clientes diferentes não sobrescrevam as mudanças uns dos outros.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Com muita disputa pelo mesmo registro, como o estoque de um produto em promoção, a maioria das tentativas falha e é repetida; um `UPDATE` atômico ou um lock pessimista funciona melhor.",
+                "Toda escrita precisa respeitar a versão: um caminho que grave sem conferi-la desfaz a proteção sem aviso.",
+                "O lock otimista detecta o conflito, mas não o resolve: repetir automaticamente só é seguro quando a operação pode ser refeita sobre o dado novo.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "O conflito vira uma resposta HTTP",
+              context: "A versão viaja no `ETag`, e o cliente a devolve em `If-Match`.",
+              code: {
+                language: "javascript",
+                filename: "etag.js",
+                code: [
+                  "// GET /documents/1  →  200, ETag: \"3\", corpo com o documento",
+                  "app.get(\"/documents/:id\", (req, res) => {",
+                  "  const doc = db.prepare(\"SELECT id, body, version FROM documents WHERE id = ?\").get(req.params.id);",
+                  "  if (!doc) return res.status(404).end();",
+                  "  res.set(\"ETag\", `\"${doc.version}\"`).json({ id: doc.id, body: doc.body });",
+                  "});",
+                  "",
+                  "// PUT /documents/1 com If-Match: \"3\"",
+                  "app.put(\"/documents/:id\", (req, res) => {",
+                  "  const expected = Number(String(req.get(\"If-Match\") || \"\").replaceAll('\"', \"\"));",
+                  "  if (!expected) return res.status(428).json({ error: \"envie If-Match com a versão lida\" });   // Precondition Required",
+                  "  const result = db",
+                  "    .prepare(\"UPDATE documents SET body = ?, version = version + 1 WHERE id = ? AND version = ?\")",
+                  "    .run(req.body.body, req.params.id, expected);",
+                  "  if (result.changes === 0) return res.status(412).json({ error: \"o documento mudou desde a sua leitura\" });   // Precondition Failed",
+                  "  res.set(\"ETag\", `\"${expected + 1}\"`).status(204).end();",
+                  "});",
+                ].join("\n"),
+              },
+              explanation:
+                "O `412 Precondition Failed` diz ao cliente que a versão dele está velha, e ele pode buscar a atual e " +
+                "mostrar a diferença. Exigir o `If-Match` com `428` impede que um cliente desatualizado grave sem " +
+                "conferir nada.",
+            },
+            {
+              title: "Repetir sozinho só quando dá para refazer",
+              context: "Uma operação calculada pode ser repetida sobre o dado novo; uma edição de texto, não.",
+              code: {
+                language: "javascript",
+                filename: "retry.js",
+                code: [
+                  "// Somar pontos pode ser refeito: lê de novo, recalcula e tenta outra vez",
+                  "function addPoints(customerId, points, attempts = 5) {",
+                  "  for (let attempt = 1; attempt <= attempts; attempt++) {",
+                  "    const row = db.prepare(\"SELECT points, version FROM loyalty WHERE customer_id = ?\").get(customerId);",
+                  "    const result = db",
+                  "      .prepare(\"UPDATE loyalty SET points = ?, version = version + 1 WHERE customer_id = ? AND version = ?\")",
+                  "      .run(row.points + points, customerId, row.version);",
+                  "    if (result.changes === 1) return row.points + points;",
+                  "  }",
+                  "  throw new Error(\"muita disputa: tente mais tarde\");",
+                  "}",
+                  "",
+                  "// Uma edição de texto não: repetir gravaria o texto antigo da pessoa por cima do novo.",
+                  "// O certo é devolver o conflito e deixar a pessoa decidir (mesclar, descartar ou sobrescrever).",
+                ].join("\n"),
+              },
+              explanation:
+                "A repetição automática só é correta quando o novo valor é recalculado a partir do dado atual. Quando o " +
+                "valor vem de uma decisão humana tomada sobre a versão antiga, só a pessoa pode resolver o conflito.",
+            },
+            {
+              title: "Por que um número, e não a data da alteração",
+              context: "Usar `updated_at` como versão parece natural e tem armadilhas.",
+              code: {
+                language: "text",
+                filename: "version-vs-timestamp.txt",
+                code: [
+                  "Versão inteira                                Data de alteração (updated_at)",
+                  "-------------------------------------------   -------------------------------------------",
+                  "version = version + 1 a cada escrita          depende do relógio e da precisão da coluna",
+                  "duas escritas nunca geram o mesmo valor       duas escritas no mesmo milissegundo (ou no",
+                  "                                              mesmo segundo, com precisão menor) geram o",
+                  "                                              mesmo valor, e o conflito passa despercebido",
+                  "comparação exata e barata                     relógios de servidores diferentes podem",
+                  "                                              divergir ou voltar no tempo",
+                  "",
+                  "A data continua útil para mostrar \"editado há 5 minutos\"; só não deve ser a guarda do conflito.",
+                ].join("\n"),
+              },
+              explanation:
+                "A versão inteira muda a cada escrita por definição. A data depende de relógio e de precisão, e em alta " +
+                "frequência duas alterações diferentes podem ter a mesma data.",
+            },
+          ],
+          exercise: {
+            problem:
+              "No painel de administração, dois atendentes editaram o endereço do mesmo cliente quase ao mesmo tempo. O " +
+              "segundo a salvar apagou a correção do primeiro, e ninguém foi avisado.",
+            problemCode: {
+              language: "javascript",
+              filename: "customer-edit.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "",
+                "db.exec(`",
+                "  CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL, address TEXT NOT NULL);",
+                "  INSERT INTO customers VALUES (1, 'Ana Souza', 'Rua A, 10');",
+                "`);",
+                "",
+                "function loadCustomer(id) {",
+                "  return db.prepare(\"SELECT id, name, address FROM customers WHERE id = ?\").get(id);",
+                "}",
+                "",
+                "function saveCustomer(customer) {",
+                "  db.prepare(\"UPDATE customers SET name = ?, address = ? WHERE id = ?\").run(customer.name, customer.address, customer.id);",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Acrescente uma coluna de versão e faça `saveCustomer` recusar a gravação quando o cliente tiver mudado " +
+              "desde `loadCustomer`, devolvendo a versão atual para que o atendente possa comparar.",
+            hint:
+              "Leve a versão lida junto com o cliente, confira-a no `WHERE` do `UPDATE` e olhe `changes`: 0 significa " +
+              "conflito.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "customer-edit.fixed.js",
+                code: [
+                  "db.exec(\"ALTER TABLE customers ADD COLUMN version INTEGER NOT NULL DEFAULT 1\");",
+                  "",
+                  "function loadCustomer(id) {",
+                  "  return db.prepare(\"SELECT id, name, address, version FROM customers WHERE id = ?\").get(id);",
+                  "}",
+                  "",
+                  "function saveCustomer(customer) {",
+                  "  const result = db",
+                  "    .prepare(\"UPDATE customers SET name = ?, address = ?, version = version + 1 WHERE id = ? AND version = ?\")",
+                  "    .run(customer.name, customer.address, customer.id, customer.version);",
+                  "  if (result.changes === 0) return { ok: false, current: loadCustomer(customer.id) };   // conflito: mostra o que mudou",
+                  "  return { ok: true, version: customer.version + 1 };",
+                  "}",
+                  "",
+                  "const first = loadCustomer(1);    // atendente 1, versão 1",
+                  "const second = loadCustomer(1);   // atendente 2, versão 1",
+                  "saveCustomer({ ...first, address: \"Rua A, 10 — apto 2\" });   // { ok: true, version: 2 }",
+                  "saveCustomer({ ...second, address: \"Rua B, 5\" });",
+                  "// { ok: false, current: { id: 1, name: \"Ana Souza\", address: \"Rua A, 10 — apto 2\", version: 2 } }",
+                ].join("\n"),
+              },
+              explanation:
+                "A segunda gravação agora falha em vez de apagar a primeira, e devolve a versão atual para o atendente " +
+                "comparar e decidir. Nenhum registro fica bloqueado enquanto os atendentes digitam.",
+            },
+          },
         }),
         concept({
           order: 70,
@@ -11966,6 +13404,246 @@ export default area({
           requires: ["Isolation"],
           note: "SELECT … FOR UPDATE, ordem de lock — revisita Programming Foundations / Concurrency / Deadlock",
           revisit: ["Programming Foundations / Concurrency / Deadlock"],
+          summary:
+            "Bloquear as linhas que se vai alterar no momento da leitura — com `SELECT … FOR UPDATE` —, para que " +
+            "nenhuma outra transação as mude até o `COMMIT`: quem chega depois espera, em vez de descobrir o conflito " +
+            "ao gravar.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "O lock pessimista parte da suposição oposta à do otimista: o conflito é provável, então é melhor " +
+                "impedi-lo. A transação lê as linhas com `SELECT ... FOR UPDATE`, e o banco as bloqueia: outras " +
+                "transações que tentem alterá-las, ou bloqueá-las também, esperam até o `COMMIT` ou o `ROLLBACK`. " +
+                "Enquanto isso, a primeira transação decide e grava com a certeza de que os dados não mudam debaixo dela. " +
+                "Como qualquer lock, ele traz o risco de deadlock quando duas transações bloqueiam as mesmas linhas em " +
+                "ordens diferentes.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Bloqueie só as linhas necessárias, pelo menor tempo possível, e sempre na mesma ordem: o lock pessimista " +
+                "troca conflitos por espera, e uma espera mal controlada vira lentidão ou deadlock.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "reserve-stock.js",
+              code: [
+                "import pg from \"pg\";",
+                "const pool = new pg.Pool();",
+                "",
+                "async function reserve(productId, quantity) {",
+                "  const client = await pool.connect();",
+                "  try {",
+                "    await client.query(\"BEGIN\");",
+                "    // Bloqueia a linha do produto: outra reserva do mesmo produto espera aqui",
+                "    const { rows: [product] } = await client.query(\"SELECT stock FROM products WHERE id = $1 FOR UPDATE\", [productId]);",
+                "    if (!product) throw new Error(\"produto inexistente\");",
+                "    if (product.stock < quantity) throw new Error(\"estoque insuficiente\");",
+                "    await client.query(\"UPDATE products SET stock = stock - $1 WHERE id = $2\", [quantity, productId]);",
+                "    await client.query(\"INSERT INTO reservations (product_id, quantity) VALUES ($1, $2)\", [productId, quantity]);",
+                "    await client.query(\"COMMIT\");   // libera o lock",
+                "  } catch (error) {",
+                "    await client.query(\"ROLLBACK\");   // também libera o lock",
+                "    throw error;",
+                "  } finally {",
+                "    client.release();",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Entre o `SELECT ... FOR UPDATE` e o `COMMIT`, a decisão tomada com o estoque lido continua válida, " +
+                "porque ninguém mais pode alterá-lo. Leitores comuns, sem `FOR UPDATE`, continuam lendo normalmente no " +
+                "PostgreSQL.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Quando o mesmo registro é muito disputado e as tentativas otimistas falhariam o tempo todo, como o estoque de um produto em promoção.",
+                "Quando a decisão depende de ler várias informações antes de escrever, e refazer a operação inteira em caso de conflito seria caro ou impossível.",
+                "Em filas de tarefas no banco, com `FOR UPDATE SKIP LOCKED`, para que cada trabalhador pegue uma tarefa diferente.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Nunca durante a interação de uma pessoa: segurar um lock enquanto alguém edita um formulário bloqueia os outros por minutos.",
+                "Bloquear em ordens diferentes em transações diferentes causa deadlock; o banco aborta uma delas, e a aplicação precisa estar pronta para repetir.",
+                "O lock só vale dentro do banco e da transação; ele não protege nada entre dois serviços nem entre duas requisições HTTP.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Fila de tarefas com SKIP LOCKED",
+              context:
+                "Vários trabalhadores pegam tarefas da mesma tabela sem pegar a mesma duas vezes e sem esperar uns pelos " +
+                "outros.",
+              code: {
+                language: "javascript",
+                filename: "job-queue.js",
+                code: [
+                  "async function takeNextJob(client) {",
+                  "  await client.query(\"BEGIN\");",
+                  "  const { rows: [job] } = await client.query(`",
+                  "    SELECT id, payload FROM jobs",
+                  "    WHERE status = 'pending'",
+                  "    ORDER BY created_at",
+                  "    LIMIT 1",
+                  "    FOR UPDATE SKIP LOCKED",
+                  "  `);   // pula as tarefas que outro trabalhador já bloqueou",
+                  "  if (!job) {",
+                  "    await client.query(\"COMMIT\");",
+                  "    return null;",
+                  "  }",
+                  "  await client.query(\"UPDATE jobs SET status = 'running', started_at = now() WHERE id = $1\", [job.id]);",
+                  "  await client.query(\"COMMIT\");",
+                  "  return job;",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Sem `SKIP LOCKED`, todos os trabalhadores esperariam pela mesma primeira tarefa; sem `FOR UPDATE`, dois " +
+                "poderiam ler a mesma tarefa como pendente. A transação é curta: ela só marca a tarefa como em execução, " +
+                "e o trabalho em si acontece fora dela.",
+            },
+            {
+              title: "Deadlock, e a ordem que o evita",
+              context: "Duas transações bloqueiam as mesmas duas linhas em ordens opostas.",
+              code: {
+                language: "text",
+                filename: "deadlock.txt",
+                code: [
+                  "Reserva do pedido 1: produtos 7 e 3.   Reserva do pedido 2: produtos 3 e 7.",
+                  "",
+                  "Sessão 1                                      Sessão 2",
+                  "BEGIN;                                        BEGIN;",
+                  "SELECT ... WHERE id = 7 FOR UPDATE;  -- ok    SELECT ... WHERE id = 3 FOR UPDATE;  -- ok",
+                  "SELECT ... WHERE id = 3 FOR UPDATE;           SELECT ... WHERE id = 7 FOR UPDATE;",
+                  "  -- espera a sessão 2                          -- espera a sessão 1",
+                  "                                              ERROR: deadlock detected   (SQLSTATE 40P01)",
+                  "                                              -- o PostgreSQL aborta uma das duas",
+                  "",
+                  "Correção: bloquear sempre na mesma ordem, em um único comando",
+                  "  SELECT id, stock FROM products WHERE id = ANY($1) ORDER BY id FOR UPDATE;",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada sessão segura uma linha e espera a outra, o ciclo clássico de deadlock. Com a ordem fixa (pelo id), " +
+                "a segunda sessão espera já na primeira linha, e o ciclo não se forma. Mesmo assim, trate o erro `40P01` " +
+                "repetindo a transação.",
+            },
+            {
+              title: "No SQLite, o lock é do banco inteiro",
+              context:
+                "O SQLite não tem `FOR UPDATE`; `BEGIN IMMEDIATE` reserva a escrita no banco todo desde o início.",
+              code: {
+                language: "javascript",
+                filename: "sqlite-immediate.js",
+                code: [
+                  "import { DatabaseSync } from \"node:sqlite\";",
+                  "import { rmSync } from \"node:fs\";",
+                  "",
+                  "for (const suffix of [\"\", \"-wal\", \"-shm\"]) rmSync(\"./queue.db\" + suffix, { force: true });",
+                  "const a = new DatabaseSync(\"./queue.db\");",
+                  "a.exec(\"PRAGMA journal_mode = WAL\");",
+                  "a.exec(\"CREATE TABLE products (id INTEGER PRIMARY KEY, stock INTEGER NOT NULL)\");",
+                  "a.exec(\"INSERT INTO products VALUES (1, 5)\");",
+                  "const b = new DatabaseSync(\"./queue.db\");",
+                  "",
+                  "a.exec(\"BEGIN IMMEDIATE\");   // A reserva o direito de escrever",
+                  "try { b.exec(\"BEGIN IMMEDIATE\"); }",
+                  "catch (error) { error.message; }   // \"database is locked\" — B não pode escrever enquanto A não terminar",
+                  "",
+                  "b.prepare(\"SELECT stock FROM products WHERE id = 1\").get();   // { stock: 5 } — mas B continua lendo",
+                  "a.exec(\"UPDATE products SET stock = stock - 1 WHERE id = 1\");",
+                  "a.exec(\"COMMIT\");",
+                  "b.exec(\"BEGIN IMMEDIATE\");   // agora B consegue",
+                  "b.exec(\"COMMIT\");",
+                ].join("\n"),
+              },
+              explanation:
+                "Sem locks por linha, o SQLite só permite um escritor por vez no banco inteiro. `BEGIN IMMEDIATE` pega " +
+                "esse direito logo no início, o que evita descobrir o conflito no meio da transação. Em aplicações reais, " +
+                "um `busy_timeout` faz a segunda conexão esperar em vez de falhar na hora.",
+            },
+          ],
+          exercise: {
+            problem:
+              "As inscrições de um evento têm limite de 100 vagas. O código conta as inscrições e, se houver vaga, " +
+              "insere a nova. Em um lançamento concorrido, o evento terminou com 104 inscritos.",
+            problemCode: {
+              language: "javascript",
+              filename: "register.js",
+              code: [
+                "import pg from \"pg\";",
+                "const pool = new pg.Pool();",
+                "",
+                "async function register(eventId, userId) {",
+                "  const client = await pool.connect();",
+                "  try {",
+                "    await client.query(\"BEGIN\");",
+                "    const { rows: [{ count }] } = await client.query(\"SELECT count(*)::int AS count FROM registrations WHERE event_id = $1\", [eventId]);",
+                "    const { rows: [event] } = await client.query(\"SELECT capacity FROM events WHERE id = $1\", [eventId]);",
+                "    if (count >= event.capacity) throw new Error(\"evento lotado\");",
+                "    await client.query(\"INSERT INTO registrations (event_id, user_id) VALUES ($1, $2)\", [eventId, userId]);",
+                "    await client.query(\"COMMIT\");",
+                "  } catch (error) {",
+                "    await client.query(\"ROLLBACK\");",
+                "    throw error;",
+                "  } finally {",
+                "    client.release();",
+                "  }",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Explique por que um `FOR UPDATE` nas inscrições não resolveria, e corrija `register` com um lock " +
+              "pessimista que faça as inscrições do mesmo evento acontecerem uma de cada vez.",
+            hint:
+              "As linhas que causam o problema são as que ainda não existem. Bloqueie uma linha que exista e represente " +
+              "o evento inteiro: a do próprio evento.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "register.fixed.js",
+                code: [
+                  "async function register(eventId, userId) {",
+                  "  const client = await pool.connect();",
+                  "  try {",
+                  "    await client.query(\"BEGIN\");",
+                  "    // A linha do evento funciona como a \"porta\": só uma inscrição por vez passa daqui",
+                  "    const { rows: [event] } = await client.query(\"SELECT capacity FROM events WHERE id = $1 FOR UPDATE\", [eventId]);",
+                  "    if (!event) throw new Error(\"evento inexistente\");",
+                  "    const { rows: [{ count }] } = await client.query(\"SELECT count(*)::int AS count FROM registrations WHERE event_id = $1\", [eventId]);",
+                  "    if (count >= event.capacity) throw new Error(\"evento lotado\");",
+                  "    await client.query(\"INSERT INTO registrations (event_id, user_id) VALUES ($1, $2)\", [eventId, userId]);",
+                  "    await client.query(\"COMMIT\");",
+                  "  } catch (error) {",
+                  "    await client.query(\"ROLLBACK\");",
+                  "    throw error;",
+                  "  } finally {",
+                  "    client.release();",
+                  "  }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Duas transações contavam 99 ao mesmo tempo e inseriam cada uma a sua linha: um phantom, que um lock nas " +
+                "inscrições existentes não impede, porque as novas ainda não existiam. Bloquear a linha do evento faz a " +
+                "segunda inscrição esperar a primeira terminar e contar de novo, já com 100. Inscrições de eventos " +
+                "diferentes continuam em paralelo.",
+            },
+          },
         }),
       ],
     }),

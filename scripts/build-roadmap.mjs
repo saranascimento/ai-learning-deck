@@ -1498,6 +1498,13 @@ for (const area of model.areas()) {
     "denormalization",
     "natural-vs-surrogate-key",
     "database-migration",
+    "transaction",
+    "acid-a-c-d",
+    "isolation",
+    "isolation-levels",
+    "read-phenomena-dirty-non-repeatable-phantom",
+    "optimistic-locking",
+    "pessimistic-locking",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",
