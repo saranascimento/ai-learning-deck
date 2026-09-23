@@ -7835,25 +7835,24 @@ export default area({
           title: "Relational Database",
           note: "modelo relacional, tuplas/relações",
           summary:
-            "Um banco de dados que organiza a informação em tabelas de linhas e colunas tipadas, relacionadas " +
-            "entre si por valores em comum (chaves) e consultadas em uma linguagem declarativa, o SQL.",
+            "Um Relational Database é um banco que guarda os dados em tabelas de linhas e colunas tipadas, ligadas " +
+            "entre si por valores em comum.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "O modelo relacional, proposto por Edgar Codd em 1970, guarda os dados em relações, o que na prática " +
-                "chamamos de tabelas. Cada tabela é um conjunto de linhas (tuplas), e cada linha tem os mesmos " +
-                "atributos (colunas), cada um com um tipo. As tabelas se ligam por valores, e não por ponteiros: um " +
-                "pedido guarda o id do cliente, e não uma referência a ele. Bancos como PostgreSQL, MySQL, SQL Server, " +
-                "Oracle e SQLite implementam esse modelo (RDBMS), e é com eles que se começa a maioria dos sistemas.",
+                "O modelo relacional foi proposto por Edgar Codd em 1970. Cada tabela é um conjunto de linhas (tuplas), e " +
+                "cada linha tem os mesmos atributos (colunas), cada um com um tipo. As tabelas se ligam por valores, e " +
+                "não por ponteiros: um pedido guarda o id do cliente, e não uma referência a ele. Bancos como PostgreSQL, " +
+                "MySQL, SQL Server, Oracle e SQLite implementam esse modelo (RDBMS), e é com eles que se começa a maioria " +
+                "dos sistemas.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Dados estruturados em tabelas, ligados por valores em comum e consultados pelo que se quer, e não " +
-                "pelo caminho para encontrá-lo: o banco decide como executar.",
+                "Guarde cada dado uma vez e ligue as tabelas por valores, deixando para a consulta a tarefa de juntá-los.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -8045,25 +8044,22 @@ export default area({
           requires: ["Relational Database"],
           note: "DDL/DML/DQL",
           summary:
-            "A linguagem declarativa dos bancos relacionais, com comandos para definir a estrutura (DDL), alterar " +
-            "os dados (DML) e consultá-los (DQL) — em que se descreve o resultado, e o banco escolhe como obtê-lo.",
+            "SQL (Structured Query Language) é a linguagem declarativa usada para definir, alterar e consultar dados " +
+            "em bancos relacionais.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "SQL (Structured Query Language) é a linguagem padrão para falar com bancos relacionais. É " +
-                "declarativa (Declarative vs Imperative): em vez de ensinar o banco a percorrer as linhas, você " +
-                "descreve o que quer, e o otimizador escolhe o plano de execução. Os comandos se agrupam por papel: " +
-                "DDL define a estrutura (`CREATE`, `ALTER`, `DROP`), DML altera os dados (`INSERT`, `UPDATE`, " +
-                "`DELETE`) e DQL os consulta (`SELECT`). Há ainda comandos de controle de acesso e de transação.",
+                "Por ser declarativa (Declarative vs Imperative), em vez de ensinar o banco a percorrer as linhas, você " +
+                "descreve o que quer, e o otimizador escolhe o plano de execução. Os comandos se agrupam por papel: DDL " +
+                "define a estrutura (`CREATE`, `ALTER`, `DROP`), DML altera os dados (`INSERT`, `UPDATE`, `DELETE`) e DQL " +
+                "os consulta (`SELECT`). Há ainda comandos de controle de acesso e de transação.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Descreva o resultado que quer, e não os passos: o SQL trabalha sobre conjuntos de linhas, e o " +
-                "banco decide a melhor forma de executá-lo.",
+              text: "O SQL é avaliado a partir do FROM, e não do SELECT, então é por aí que se lê uma consulta.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -8244,25 +8240,21 @@ export default area({
           title: "Table",
           requires: ["Relational Database"],
           note: "a unidade que PK/FK/Constraint referenciam",
-          summary:
-            "A estrutura básica de armazenamento em um banco relacional: um conjunto de linhas que têm todas as " +
-            "mesmas colunas, cada uma com um nome e um tipo.",
+          summary: "Uma Table é um conjunto de linhas que têm todas as mesmas colunas, cada uma com um nome e um tipo.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Uma tabela representa uma coisa do domínio (clientes, pedidos, produtos) ou uma relação entre coisas. " +
-                "As colunas definem que informações cada linha tem, com o tipo de cada uma; as linhas são os registros. " +
-                "Em geral, uma tabela por entidade, e uma tabela intermediária para relações de muitos para muitos. A " +
-                "tabela é a unidade que chaves primárias, chaves estrangeiras e constraints referenciam.",
+                "Ela representa uma coisa do domínio (clientes, pedidos, produtos) ou uma relação entre coisas. As " +
+                "colunas definem que informações cada linha tem; as linhas são os registros. Em geral, uma tabela por " +
+                "entidade, e uma tabela intermediária para relações de muitos para muitos. A tabela é a unidade que " +
+                "chaves primárias, chaves estrangeiras e constraints referenciam.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Uma tabela, um assunto: colunas tipadas e valores atômicos, uma linha por fato, e uma chave que " +
-                "identifica cada linha.",
+              text: "Se você não consegue dizer qual assunto uma tabela guarda, ela provavelmente está guardando dois.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -8458,26 +8450,26 @@ export default area({
           note: "o identificador único e obrigatório de cada linha da tabela",
           collision: "≠ Natural vs Surrogate Key (Database Design) — que discute a escolha",
           summary:
-            "A coluna, ou o conjunto de colunas, que identifica cada linha de uma tabela de forma única e " +
-            "obrigatória — o endereço da linha, e o alvo das chaves estrangeiras.",
+            "A Primary Key é a coluna, ou o conjunto de colunas, que identifica cada linha de uma tabela de forma " +
+            "única e obrigatória.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "A chave primária (PK) garante duas coisas: nenhum valor se repete e nenhum é nulo. Isso permite " +
-                "apontar para uma linha específica, atualizá-la e ser referenciada por outras tabelas (Foreign Key). " +
-                "Cada tabela tem uma só chave primária, que pode ser simples (uma coluna, como `id`) ou composta (várias, " +
-                "como `(order_id, product_id)`). O banco cria automaticamente um índice para ela, o que torna a busca " +
-                "por chave rápida. Se a chave é um dado do negócio ou um número gerado é a escolha tratada em Database " +
-                "Design (chave natural ou substituta).",
+                "Ela garante duas coisas: nenhum valor se repete e nenhum é nulo. Isso permite apontar para uma linha " +
+                "específica, atualizá-la e ser referenciada por outras tabelas (Foreign Key). Cada tabela tem uma só " +
+                "chave primária, que pode ser simples (uma coluna, como `id`) ou composta (várias, como `(order_id, " +
+                "product_id)`). O banco cria automaticamente um índice para ela, o que torna a busca por chave rápida. Se " +
+                "a chave é um dado do negócio ou um número gerado é a escolha tratada em Database Design (chave natural " +
+                "ou substituta).",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Toda linha precisa de uma identidade única e estável: a chave primária é o que permite falar de " +
-                "uma linha específica sem ambiguidade.",
+                "Sem uma chave primária, não há como apontar para uma linha específica, e duas linhas iguais viram uma " +
+                "ambiguidade sem solução.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -8656,25 +8648,22 @@ export default area({
           requires: ["Primary Key"],
           note: "integridade referencial",
           summary:
-            "Uma coluna que referencia a chave primária de outra tabela e faz o banco impedir referências para " +
-            "linhas que não existem — a integridade referencial.",
+            "Uma Foreign Key é uma coluna que referencia a chave primária de outra tabela, e o banco garante que a " +
+            "referência existe.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "A chave estrangeira (FK) declara que os valores de uma coluna precisam existir como chave de outra " +
-                "tabela: `orders.customer_id` referencia `customers.id`. Com isso, o banco recusa criar um pedido de um " +
-                "cliente que não existe (linha órfã) e decide o que acontece com os pedidos quando o cliente é apagado. " +
-                "É a integridade referencial: as relações entre as tabelas deixam de ser uma convenção da aplicação e " +
-                "passam a ser garantidas pelo banco.",
+                "Por exemplo, `orders.customer_id` referencia `customers.id`. Com isso, o banco recusa criar um pedido de " +
+                "um cliente que não existe (linha órfã) e decide o que acontece com os pedidos quando o cliente é " +
+                "apagado. É a integridade referencial: as relações entre as tabelas deixam de ser uma convenção da " +
+                "aplicação e passam a ser garantidas pelo banco.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "A chave estrangeira transforma a relação entre tabelas em uma regra: o banco não deixa uma " +
-                "referência apontar para o nada.",
+              text: "Uma relação garantida só pela aplicação vale até o primeiro script que escreve direto no banco.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -8877,25 +8866,24 @@ export default area({
           requires: ["Table"],
           note: "NOT NULL, UNIQUE, CHECK, DEFAULT",
           summary:
-            "Regras declaradas na estrutura da tabela que o próprio banco aplica em toda escrita — nulidade, " +
-            "unicidade, condições sobre os valores e valores padrão —, independentemente de quem escreve.",
+            "Uma Constraint é uma regra de integridade declarada na estrutura da tabela, que o próprio banco aplica " +
+            "em toda escrita.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Uma constraint é uma regra de integridade que o banco garante. `NOT NULL` proíbe valores ausentes, " +
-                "`UNIQUE` proíbe repetições, `CHECK` exige que uma condição sobre a linha seja verdadeira, e `DEFAULT` " +
-                "preenche um valor quando nenhum é informado (a chave primária e a chave estrangeira também são " +
-                "constraints). Elas valem para toda escrita, venha da aplicação, de um script, de outro serviço ou de " +
-                "alguém com um terminal aberto, e por isso são a última linha de defesa da qualidade dos dados.",
+                "`NOT NULL` proíbe valores ausentes, `UNIQUE` proíbe repetições, `CHECK` exige que uma condição sobre a " +
+                "linha seja verdadeira, e `DEFAULT` preenche um valor quando nenhum é informado (a chave primária e a " +
+                "chave estrangeira também são constraints). Elas valem para toda escrita, venha da aplicação, de um " +
+                "script, de outro serviço ou de alguém com um terminal aberto.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Se uma regra precisa valer sempre, declare-a no banco: a validação da aplicação pode ser " +
-                "contornada, e a constraint, não.",
+                "Valide na aplicação para dar uma mensagem boa, e declare no banco para que a regra nunca seja " +
+                "contornada.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -9092,27 +9080,22 @@ export default area({
           requires: ["Foreign Key"],
           subtopics: ["INNER", "LEFT/RIGHT OUTER", "FULL OUTER", "CROSS", "self-join"],
           note: "consolidada (A17)",
-          summary:
-            "A operação que combina linhas de duas tabelas pela relação entre elas — o INNER mantém só quem tem " +
-            "par, os OUTER mantêm também quem não tem, o CROSS combina tudo com tudo.",
+          summary: "JOIN é a operação que combina linhas de duas tabelas pela relação entre elas.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Como as tabelas se ligam por valores (Foreign Key), reunir as informações de um pedido e do seu " +
-                "cliente é um `JOIN`. A condição `ON` diz quando duas linhas se correspondem. O tipo de `JOIN` diz o " +
-                "que fazer com as linhas sem par: o `INNER JOIN` as descarta, o `LEFT JOIN` mantém as da tabela da " +
-                "esquerda (com `NULL` no lado sem par), o `RIGHT JOIN` faz o inverso, o `FULL JOIN` mantém as duas, e " +
-                "o `CROSS JOIN` combina todas as linhas com todas, sem condição. Um `JOIN` de uma tabela com ela " +
-                "mesma é o self-join.",
+                "Como as tabelas se ligam por valores (Foreign Key), reunir as informações de um pedido e do seu cliente " +
+                "é um `JOIN`. A condição `ON` diz quando duas linhas se correspondem. O tipo de `JOIN` diz o que fazer " +
+                "com as linhas sem par: o `INNER JOIN` as descarta, o `LEFT JOIN` mantém as da tabela da esquerda (com " +
+                "`NULL` no lado sem par), o `RIGHT JOIN` faz o inverso, o `FULL JOIN` mantém as duas, e o `CROSS JOIN` " +
+                "combina todas as linhas com todas, sem condição. Um `JOIN` de uma tabela com ela mesma é o self-join.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "O JOIN reúne o que a modelagem separou: escolha o tipo pelo que deve acontecer com as linhas sem " +
-                "correspondente.",
+              text: "Antes de escolher o tipo de JOIN, pergunte o que deve acontecer com as linhas que não têm par.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -9307,24 +9290,22 @@ export default area({
           subtopics: ["COUNT/SUM/AVG/MIN/MAX", "GROUP BY", "HAVING × WHERE"],
           note: "consolidada (A18)",
           summary:
-            "Funções que resumem várias linhas em um valor — contar, somar, tirar a média, o mínimo e o " +
-            "máximo — e o `GROUP BY`, que faz esse resumo por grupo, com `HAVING` para filtrar os grupos.",
+            "Aggregate Functions resumem várias linhas num único valor, e o GROUP BY faz esse resumo separadamente " +
+            "para cada grupo.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Uma função de agregação transforma um conjunto de linhas em um único valor: `COUNT`, `SUM`, `AVG`, " +
-                "`MIN` e `MAX`. Sem `GROUP BY`, o resumo é da tabela toda. Com `GROUP BY`, ele é feito para cada grupo de " +
-                "linhas com o mesmo valor nas colunas indicadas, como o total por cliente ou por mês. O `WHERE` filtra " +
-                "as linhas antes de agrupar, e o `HAVING` filtra os grupos depois de agregados.",
+                "As funções mais comuns são `COUNT`, `SUM`, `AVG`, `MIN` e `MAX`. Sem `GROUP BY`, o resumo é da tabela " +
+                "toda. Com `GROUP BY`, ele é feito para cada grupo de linhas com o mesmo valor nas colunas indicadas, " +
+                "como o total por cliente ou por mês. O `WHERE` filtra as linhas antes de agrupar, e o `HAVING` filtra os " +
+                "grupos depois de agregados.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Agrupe as linhas, resuma cada grupo, e filtre no momento certo: WHERE antes de agrupar, HAVING " +
-                "depois.",
+              text: "Se o filtro fala de uma linha, ele vai no WHERE, e se fala de um total, vai no HAVING.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -9517,26 +9498,25 @@ export default area({
           subtopics: ["correlacionada × não-correlacionada", "WITH", "CTE recursiva (menção)"],
           note: "consolidada (§D) — absorve CTE do rascunho",
           summary:
-            "Consultas dentro de consultas: a subquery aparece no meio de outra, e a CTE (`WITH`) dá nome a um " +
-            "resultado intermediário para que a consulta se leia em passos, e pode até se referir a si mesma.",
+            "Uma Subquery é uma consulta dentro de outra, e uma CTE (`WITH`) dá nome a um resultado intermediário da " +
+            "consulta.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Uma subquery é um `SELECT` dentro de outro, usado como valor (`WHERE preco > (SELECT AVG(preco) ...)`), " +
-                "como lista (`IN (SELECT ...)`), como teste de existência (`EXISTS`) ou como uma tabela temporária no " +
-                "`FROM`. Ela é não correlacionada quando roda de forma independente da consulta externa, e correlacionada " +
-                "quando depende da linha externa. Uma CTE (Common Table Expression, `WITH nome AS (...)`) dá um nome a " +
-                "um resultado intermediário, o que permite escrever a consulta como uma sequência de passos legíveis. " +
-                "A CTE recursiva se refere a si mesma e percorre estruturas hierárquicas.",
+                "A subquery pode ser usada como valor (`WHERE preco > (SELECT AVG(preco) ...)`), como lista (`IN (SELECT " +
+                "...)`), como teste de existência (`EXISTS`) ou como uma tabela temporária no `FROM`. Ela é não " +
+                "correlacionada quando roda de forma independente da consulta externa, e correlacionada quando depende da " +
+                "linha externa. A CTE (Common Table Expression, `WITH nome AS (...)`) permite escrever a consulta como " +
+                "uma sequência de passos legíveis, e a CTE recursiva se refere a si mesma.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Quebre uma pergunta complicada em partes com nomes: a subquery responde a uma pergunta dentro da " +
-                "outra, e a CTE deixa a sequência de raciocínio explícita.",
+                "Quando uma consulta fica difícil de ler, dê nome às etapas com CTEs, como faria extraindo funções no " +
+                "código.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -9741,26 +9721,25 @@ export default area({
           note: "a estrutura do banco: tabelas, colunas, tipos, chaves e constraints",
           collision: "≠ Schema-on-Read (NoSQL) ≠ GraphQL Schema ≠ JSON Schema (AI Engineering)",
           summary:
-            "A descrição completa da estrutura de um banco — as tabelas, as colunas e os seus tipos, as chaves, as " +
-            "constraints e os índices — e a forma de evoluí-la de maneira controlada, por migrações.",
+            "O Database Schema é a estrutura completa de um banco: tabelas, colunas e tipos, chaves, constraints e " +
+            "índices.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "O esquema (schema) de um banco relacional é a sua estrutura: quais tabelas existem, quais colunas cada " +
-                "uma tem e de que tipo, como se relacionam (chaves) e que regras valem (constraints), além de índices e " +
-                "visões. Ele é o contrato entre o banco e a aplicação. Em bancos como o PostgreSQL, \"schema\" também é " +
-                "um espaço de nomes dentro do banco (`public.orders`), o que é um segundo significado. Como o esquema " +
-                "muda ao longo da vida do sistema, ele é versionado por migrações, scripts numerados e guardados no " +
-                "repositório junto do código.",
+                "Ele diz quais tabelas existem, quais colunas cada uma tem e de que tipo, como se relacionam e que regras " +
+                "valem, além de índices e visões. É o contrato entre o banco e a aplicação. Em bancos como o PostgreSQL, " +
+                "\"schema\" também é um espaço de nomes dentro do banco (`public.orders`), o que é um segundo significado. " +
+                "Como o esquema muda ao longo da vida do sistema, ele é versionado por migrações, scripts numerados e " +
+                "guardados no repositório junto do código.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "O esquema é o contrato do banco, e mudá-lo é uma alteração de código como outra qualquer: " +
-                "versionada, revisada e aplicada de forma repetível em todos os ambientes.",
+                "Nunca altere o esquema à mão num ambiente: toda mudança vira uma migração, versionada e aplicada igual " +
+                "em todos.",
             },
             { type: "heading", text: "Como funciona" },
             {
