@@ -13539,28 +13539,26 @@ export default area({
           note: "B-tree × hash index — revisita Programming Foundations / Data Structures / BST, Hash Table (absorve o B-Tree só citado antes)",
           revisit: ["Programming Foundations / Data Structures / Binary Search Tree", "Programming Foundations / Data Structures / Hash Table"],
           summary:
-            "Uma estrutura auxiliar, mantida pelo banco, que guarda os valores de uma ou mais colunas em ordem e " +
-            "aponta para as linhas — para encontrar registros sem ler a tabela inteira, em troca de espaço e de " +
-            "escritas mais caras.",
+            "Um Index é uma estrutura mantida pelo banco que guarda os valores de uma ou mais colunas em ordem, com " +
+            "um ponteiro para cada linha.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Sem índice, encontrar as linhas com um valor exige ler a tabela inteira (uma varredura, ou scan). Um " +
-                "índice é uma cópia organizada de uma ou mais colunas, com um ponteiro para cada linha, que o banco " +
-                "atualiza a cada escrita. O tipo mais comum é a árvore B (B-tree), parente da árvore binária de busca, " +
-                "mas com muitos filhos por nó para caber em páginas de disco: ela mantém os valores em ordem e responde a " +
-                "buscas por igualdade, por intervalo e por prefixo, e ainda entrega os dados já ordenados. Há também " +
-                "índices hash, que, como uma tabela hash, só servem para igualdade.",
+                "Sem índice, encontrar as linhas com um valor exige ler a tabela inteira (uma varredura, ou scan). O " +
+                "índice é uma cópia organizada dessas colunas, que o banco atualiza a cada escrita. O tipo mais comum é a " +
+                "árvore B (B-tree), parente da árvore binária de busca, mas com muitos filhos por nó para caber em " +
+                "páginas de disco: ela mantém os valores em ordem e responde a buscas por igualdade, por intervalo e por " +
+                "prefixo, e ainda entrega os dados já ordenados. Há também índices hash, que, como uma tabela hash, só " +
+                "servem para igualdade.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Um índice troca escrita e espaço por leitura: ele faz uma consulta frequente deixar de ler a tabela " +
-                "toda, mas cada `INSERT`, `UPDATE` e `DELETE` passa a atualizá-lo também — por isso se cria índice para " +
-                "as consultas que existem, e não para todas as colunas.",
+                "Crie índices para as consultas que existem, e não para todas as colunas, porque cada índice encarece " +
+                "toda escrita.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -13744,27 +13742,23 @@ export default area({
           requires: ["Index"],
           note: "regra do prefixo mais à esquerda; ordem das colunas",
           summary:
-            "Um índice sobre várias colunas, ordenado pela primeira, depois pela segunda dentro de cada valor da " +
-            "primeira, e assim por diante — útil para consultas que filtram por um prefixo dessas colunas, na ordem " +
-            "em que foram declaradas.",
+            "Um Composite Index é um índice sobre várias colunas, ordenado pela primeira, depois pela segunda dentro " +
+            "de cada valor da primeira, e assim por diante.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Um índice composto guarda várias colunas juntas, em ordem: primeiro pela primeira coluna; dentro de cada " +
-                "valor dela, pela segunda; e assim por diante — como uma lista telefônica ordenada por sobrenome e, " +
-                "dentro do sobrenome, pelo nome. Por isso ele só é útil para consultas que usam as colunas a partir da " +
-                "primeira, sem pular nenhuma: é a regra do prefixo mais à esquerda. A ordem das colunas na declaração é, " +
-                "então, a decisão mais importante.",
+                "É como uma lista telefônica ordenada por sobrenome e, dentro do sobrenome, pelo nome. Por isso ele só é " +
+                "útil para consultas que usam as colunas a partir da primeira, sem pular nenhuma: é a regra do prefixo " +
+                "mais à esquerda. A ordem das colunas na declaração é, então, a decisão mais importante.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Um índice `(a, b, c)` serve a consultas por `a`, por `a` e `b`, e por `a`, `b` e `c` — mas não por `b` " +
-                "ou por `c` sozinhos; a ordem das colunas se escolhe pelas consultas, com as de igualdade primeiro e a de " +
-                "intervalo ou ordenação por último.",
+                "A ordem das colunas de um índice composto se escolhe pelas consultas: igualdade primeiro, intervalo por " +
+                "último.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -13950,10 +13944,7 @@ export default area({
           title: "Query Execution Plan",
           requires: ["Index"],
           note: "EXPLAIN; seq scan × index scan; estimativas do otimizador",
-          summary:
-            "O roteiro que o otimizador do banco escolhe para executar uma consulta — que índices usar, em que ordem " +
-            "juntar as tabelas, onde ordenar —, visível com `EXPLAIN`, junto com as estimativas de custo e de linhas " +
-            "que o levaram a essa escolha.",
+          summary: "O Query Execution Plan é o roteiro que o otimizador do banco escolhe para executar uma consulta.",
           content: [
             { type: "heading", text: "Conceito" },
             {
@@ -13968,9 +13959,7 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Antes de adivinhar por que uma consulta é lenta, leia o plano: ele mostra se o banco varreu a tabela, " +
-                "que índice usou, onde ordenou e quanto errou nas estimativas — e quase sempre aponta a correção.",
+              text: "Antes de adivinhar por que uma consulta é lenta, leia o plano que o banco escolheu para ela.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -14170,27 +14159,24 @@ export default area({
           requires: ["Query Execution Plan"],
           note: "SARGability, evitar SELECT *, projeção, covering index",
           summary:
-            "Escrever as consultas de um jeito que o banco consiga usar os índices e ler só o necessário — condições " +
-            "aplicáveis ao índice (SARGable), só as colunas usadas e, quando vale, um índice que cubra a consulta " +
-            "inteira.",
+            "Query Optimization é escrever as consultas de um jeito que o banco consiga usar os índices e ler só o " +
+            "necessário.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Duas consultas com o mesmo resultado podem ter custos muito diferentes. Otimizar uma consulta é, na " +
-                "maior parte das vezes, permitir que o banco use o que já tem: uma condição só aproveita um índice se " +
-                "compara a coluna, tal como está indexada, com um valor — a condição \"SARGable\" (search argument able). " +
-                "Aplicar uma função sobre a coluna, calcular sobre ela ou começar um `LIKE` com `%` esconde a coluna do " +
-                "índice. Pedir só as colunas usadas reduz o que se lê e o que se transfere, e às vezes permite responder " +
-                "só pelo índice (um índice de cobertura).",
+                "Duas consultas com o mesmo resultado podem ter custos muito diferentes, e otimizar é, na maior parte das " +
+                "vezes, permitir que o banco use o que já tem. Uma condição só aproveita um índice se compara a coluna, " +
+                "tal como está indexada, com um valor — a condição \"SARGable\" (search argument able). Aplicar uma função " +
+                "sobre a coluna, calcular sobre ela ou começar um `LIKE` com `%` esconde a coluna do índice. Pedir só as " +
+                "colunas usadas reduz o que se lê e o que se transfere, e às vezes permite responder só pelo índice (um " +
+                "índice de cobertura).",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Deixe a coluna indexada \"nua\" na condição e mova as transformações para o valor comparado: `created_at " +
-                ">= ? AND created_at < ?` usa o índice, `date(created_at) = ?` não.",
+              text: "Deixe a coluna indexada nua na condição e faça as contas do lado do valor comparado.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -14375,26 +14361,23 @@ export default area({
           note: "canônico do roadmap — I/O por item × lote; eager loading/IN/join. GraphQL / N+1 in Resolvers revisita daqui",
           collision: "GraphQL / N+1 in Resolvers é a manifestação; aqui é o conceito canônico",
           summary:
-            "O padrão em que se faz uma consulta para buscar uma lista e, depois, mais uma consulta para cada item " +
-            "dela — N+1 idas ao banco onde uma ou duas bastariam, um custo que cresce com o tamanho da lista.",
+            "O N+1 Query Problem é buscar uma lista com uma consulta e, depois, fazer mais uma consulta para cada " +
+            "item dela.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "O problema N+1 aparece quando o código busca uma lista (1 consulta) e, para cada item, busca um dado " +
-                "relacionado (N consultas). Cada consulta é rápida, e o código parece correto; o custo está no número de " +
-                "idas ao banco, cada uma com a sua latência de rede, e ele cresce com o tamanho da lista. Com 20 itens " +
-                "passa despercebido; com 500, a página demora segundos. É comum em laços escritos à mão, em ORMs que " +
-                "carregam relações sob demanda (lazy loading) e nos resolvers de GraphQL, onde o DataLoader é a solução " +
-                "específica.",
+                "O código busca a lista (1 consulta) e, para cada item, um dado relacionado (N consultas). Cada consulta " +
+                "é rápida, e o código parece correto; o custo está no número de idas ao banco, cada uma com a sua " +
+                "latência de rede, e ele cresce com o tamanho da lista. Com 20 itens passa despercebido; com 500, a " +
+                "página demora segundos. É comum em laços escritos à mão, em ORMs que carregam relações sob demanda (lazy " +
+                "loading) e nos resolvers de GraphQL, onde o DataLoader é a solução específica.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Busque em lote: em vez de uma consulta por item, uma consulta com todos os ids (`WHERE id IN (...)`) ou " +
-                "um `JOIN` — o número de idas ao banco deixa de depender do tamanho da lista.",
+              text: "Uma consulta dentro de um laço é o sinal do N+1, e a correção é buscar todos os itens de uma vez.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -14624,17 +14607,16 @@ export default area({
           note: "tamanho do pool, exaustão, timeout — revisita Programming Foundations / Concurrency (recurso compartilhado limitado)",
           revisit: ["Programming Foundations / Concurrency"],
           summary:
-            "Um conjunto de conexões ao banco abertas de antemão e reaproveitadas entre as requisições — para não " +
-            "pagar o custo de abrir uma conexão a cada consulta e para limitar quantas conexões a aplicação usa ao " +
-            "mesmo tempo.",
+            "Um Connection Pool é um conjunto de conexões ao banco abertas de antemão e reaproveitadas entre as " +
+            "requisições.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
                 "Abrir uma conexão com um banco como o PostgreSQL custa caro: rede, autenticação, TLS e, no servidor, um " +
-                "processo por conexão. Um pool mantém algumas conexões abertas e as empresta: a requisição pega uma, usa " +
-                "e devolve, e a próxima a reaproveita. O pool também é um limite: com todas as conexões emprestadas, quem " +
+                "processo por conexão. O pool empresta as conexões que mantém abertas: a requisição pega uma, usa e " +
+                "devolve, e a próxima a reaproveita. O pool também é um limite: com todas as conexões emprestadas, quem " +
                 "chega espera numa fila, como em qualquer recurso compartilhado limitado da programação concorrente. O " +
                 "tamanho do pool, o tempo máximo de espera e a garantia de que toda conexão emprestada volta são as " +
                 "decisões que importam.",
@@ -14643,9 +14625,8 @@ export default area({
               type: "callout",
               title: "Ideia principal",
               text:
-                "O pool é um recurso limitado e compartilhado: toda conexão emprestada precisa voltar (sempre em " +
-                "`finally`), e o tamanho dele, multiplicado pelo número de instâncias da aplicação, precisa caber no que " +
-                "o banco aceita.",
+                "O tamanho do pool vezes o número de instâncias da aplicação precisa caber no limite de conexões do " +
+                "banco.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -14884,26 +14865,25 @@ export default area({
           subtopics: ["slow query log", "p95/p99 por query", "EXPLAIN ANALYZE (plano estimado × real)"],
           note: "consolidada (A20) — absorve Database Profiling",
           summary:
-            "O trabalho de descobrir quais consultas deixam o sistema lento — pelo registro das consultas demoradas e " +
-            "por estatísticas agregadas por forma de consulta — e de escolher, com dados, quais otimizar primeiro.",
+            "Slow Query Analysis é descobrir, a partir de medições, quais consultas deixam o sistema lento e quais " +
+            "otimizar primeiro.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Analisar consultas lentas é trabalhar a partir de medições, e não de palpites. Há duas fontes " +
-                "principais. O registro de consultas lentas (slow query log) grava cada execução que passou de um limite " +
-                "de tempo, com o texto e a duração. As estatísticas agregadas, como a extensão `pg_stat_statements` do " +
-                "PostgreSQL, somam as execuções de cada forma de consulta — o mesmo SQL, com valores diferentes nos " +
-                "parâmetros — e mostram quantas vezes rodou, o tempo total e a média. Com a lista em mãos, cada consulta " +
-                "escolhida é investigada com `EXPLAIN ANALYZE`.",
+                "Há duas fontes principais. O registro de consultas lentas (slow query log) grava cada execução que " +
+                "passou de um limite de tempo, com o texto e a duração. As estatísticas agregadas, como a extensão " +
+                "`pg_stat_statements` do PostgreSQL, somam as execuções de cada forma de consulta — o mesmo SQL, com " +
+                "valores diferentes nos parâmetros — e mostram quantas vezes rodou, o tempo total e a média. Com a lista " +
+                "em mãos, cada consulta escolhida é investigada com `EXPLAIN ANALYZE`.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Otimize pelo tempo total, e não pela consulta mais lenta: uma consulta de 5 ms executada um milhão de " +
-                "vezes por dia pesa mais que um relatório de 30 segundos que roda uma vez.",
+                "Otimize pelo tempo total, e não pela consulta mais lenta: 5 ms um milhão de vezes pesa mais que 30 " +
+                "segundos uma vez.",
             },
             { type: "heading", text: "Como fazer" },
             {
