@@ -21535,30 +21535,26 @@ export default area({
           title: "Threat Modeling",
           note: "STRIDE, superfície de ataque, trust boundaries; loose ref a fronteiras de módulo (Epic 04)",
           summary:
-            "Pensar de forma estruturada, antes de construir, no que pode dar errado com a segurança de um sistema: o " +
-            "que ele protege, por onde pode ser atacado, que ameaças existem em cada fronteira de confiança e o que " +
-            "será feito a respeito de cada uma.",
+            "Threat Modeling é pensar de forma estruturada, antes de construir, no que pode dar errado com a " +
+            "segurança de um sistema.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Modelagem de ameaças é um exercício de projeto, feito em grupo e de preferência cedo, que responde a " +
-                "quatro perguntas: o que estamos construindo? O que pode dar errado? O que vamos fazer a respeito? " +
-                "Fizemos um bom trabalho? Desenha-se o sistema como um fluxo de dados — pessoas, processos, bancos, " +
-                "serviços externos — e marcam-se as fronteiras de confiança, onde os dados passam de um lugar menos " +
-                "confiável para um mais confiável (da internet para a API, da API para o banco). Em cada fronteira, uma " +
-                "lista como a STRIDE ajuda a não esquecer categorias: falsificação de identidade (Spoofing), adulteração " +
-                "(Tampering), repúdio (Repudiation), vazamento de informação (Information disclosure), negação de serviço " +
-                "(Denial of service) e elevação de privilégio (Elevation of privilege).",
+                "É um exercício de projeto, feito em grupo e de preferência cedo, que responde a quatro perguntas: o que " +
+                "estamos construindo? O que pode dar errado? O que vamos fazer a respeito? Fizemos um bom trabalho? " +
+                "Desenha-se o sistema como um fluxo de dados — pessoas, processos, bancos, serviços externos — e " +
+                "marcam-se as fronteiras de confiança, onde os dados passam de um lugar menos confiável para um mais " +
+                "confiável (da internet para a API, da API para o banco). Em cada fronteira, uma lista como a STRIDE " +
+                "ajuda a não esquecer categorias: falsificação de identidade (Spoofing), adulteração (Tampering), repúdio " +
+                "(Repudiation), vazamento de informação (Information disclosure), negação de serviço (Denial of service) " +
+                "e elevação de privilégio (Elevation of privilege).",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Os ataques acontecem nas fronteiras de confiança: desenhe por onde os dados entram e mudam de dono, " +
-                "pergunte o que cada categoria da STRIDE faria ali, e transforme as respostas em decisões — mitigar, " +
-                "aceitar ou transferir — com responsável e prazo.",
+              text: "Procure os ataques nas fronteiras de confiança, onde os dados entram ou mudam de dono.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -21733,9 +21729,8 @@ export default area({
           requires: ["Threat Modeling"],
           note: "framing do resto da Story",
           summary:
-            "A lista, publicada pela fundação OWASP, das categorias de risco mais importantes em aplicações web, " +
-            "montada a partir de dados de falhas reais — um vocabulário comum e um ponto de partida para priorizar a " +
-            "segurança, e não uma lista completa.",
+            "O OWASP Top 10 é a lista das categorias de risco mais importantes em aplicações web, montada pela " +
+            "fundação OWASP a partir de falhas reais.",
           content: [
             { type: "heading", text: "Conceito" },
             {
@@ -21753,8 +21748,8 @@ export default area({
               type: "callout",
               title: "Ideia principal",
               text:
-                "O Top 10 é o mínimo, e não o máximo: ele ajuda a não esquecer as falhas mais comuns e dá nome a elas, " +
-                "mas uma aplicação livre dessas dez categorias ainda pode ter problemas específicos do seu domínio.",
+                "O Top 10 é o mínimo, e não o máximo: uma aplicação livre dessas dez categorias ainda tem os riscos do " +
+                "próprio domínio.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -21937,27 +21932,26 @@ export default area({
           requires: ["Database Fundamentals / SQL"],
           note: "queries parametrizadas; ORM não é imunidade automática",
           summary:
-            "Uma falha em que um valor vindo de fora é concatenado no texto de um comando SQL e passa a ser " +
-            "interpretado como parte do comando — permitindo ler, alterar ou apagar dados — e que se evita mandando " +
-            "os valores sempre como parâmetros, separados do comando.",
+            "SQL Injection é a falha em que um valor vindo de fora entra no texto de um comando SQL e passa a ser " +
+            "interpretado como parte dele.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Há injeção de SQL quando o texto do comando é montado com dados que o atacante controla. O banco não tem " +
-                "como saber qual parte do texto era para ser um valor e qual era comando, e um valor com aspas e " +
-                "palavras-chave muda o significado da consulta. A defesa principal é a consulta parametrizada: o comando " +
-                "é enviado com marcadores (`?` ou `$1`) e os valores vão separados, de modo que o banco nunca os " +
-                "interpreta como SQL. ORMs e query builders parametrizam por padrão, mas todos oferecem formas de " +
-                "escrever SQL cru, e é nelas que a injeção volta.",
+                "Ela acontece quando o texto do comando é montado com dados que o atacante controla, o que permite ler, " +
+                "alterar ou apagar dados. O banco não tem como saber qual parte do texto era para ser um valor e qual era " +
+                "comando, e um valor com aspas e palavras-chave muda o significado da consulta. A defesa principal é a " +
+                "consulta parametrizada: o comando é enviado com marcadores (`?` ou `$1`) e os valores vão separados, de " +
+                "modo que o banco nunca os interpreta como SQL. ORMs e query builders parametrizam por padrão, mas todos " +
+                "oferecem formas de escrever SQL cru, e é nelas que a injeção volta.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "O comando é escrito pelo programa, e os valores vêm só como parâmetros: nenhum dado de fora entra no " +
-                "texto do SQL — e o que não pode ser parâmetro, como o nome de uma coluna, sai de uma lista fechada.",
+                "O que não pode ser parâmetro, como o nome de uma coluna para ordenar, sai de uma lista fechada, e nunca " +
+                "do cliente.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -22143,29 +22137,25 @@ export default area({
           requires: ["Web Fundamentals / Same-Origin Policy"],
           note: "stored/reflected/DOM",
           summary:
-            "Uma falha em que dados controlados por um atacante chegam à página como código — HTML ou JavaScript — e " +
-            "são executados no navegador de outras pessoas, com todos os poderes do site: ler a página, agir em nome " +
-            "da vítima e roubar o que não estiver protegido.",
+            "XSS (Cross-Site Scripting) é a falha em que dados controlados por um atacante chegam à página como " +
+            "código e rodam no navegador de outras pessoas.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "XSS acontece quando um dado é inserido numa página sem ser tratado como texto, e o navegador o " +
-                "interpreta como marcação ou script. Como o script roda na origem do site, a política de mesma origem não " +
-                "o impede: ele lê o que a página mostra, faz requisições com a sessão da vítima e altera a interface. Há " +
-                "três formas: armazenado (o conteúdo malicioso é gravado, como um comentário, e servido a todos), " +
-                "refletido (vem na própria requisição, como um parâmetro de busca ecoado na página) e baseado em DOM (o " +
-                "próprio JavaScript da página pega um dado, como o fragmento da URL, e o coloca no DOM de forma " +
-                "insegura).",
+                "Acontece quando um dado é inserido numa página sem ser tratado como texto, e o navegador o interpreta " +
+                "como marcação ou script. Como o script roda na origem do site, a política de mesma origem não o impede: " +
+                "ele lê o que a página mostra, faz requisições com a sessão da vítima e altera a interface. Há três " +
+                "formas: armazenado (o conteúdo malicioso é gravado, como um comentário, e servido a todos), refletido " +
+                "(vem na própria requisição, como um parâmetro de busca ecoado na página) e baseado em DOM (o próprio " +
+                "JavaScript da página pega um dado, como o fragmento da URL, e o coloca no DOM de forma insegura).",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Dado é texto até prova em contrário: insira-o na página com APIs que tratam o conteúdo como texto " +
-                "(`textContent`, o escape automático dos frameworks), e trate como exceção rara e revisada qualquer " +
-                "inserção de HTML vindo de fora.",
+                "Todo dado é texto até prova em contrário, e inserir HTML vindo de fora é uma exceção rara e revisada.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -22356,29 +22346,27 @@ export default area({
           requires: ["Web Fundamentals / Cookies"],
           note: "tokens anti-CSRF, SameSite",
           summary:
-            "Um ataque em que outro site faz o navegador da vítima enviar uma requisição ao seu site — e o navegador " +
-            "anexa sozinho os cookies de sessão —, executando uma ação que a pessoa não pediu, como trocar o e-mail " +
-            "ou fazer uma transferência.",
+            "CSRF (Cross-Site Request Forgery) é o ataque em que outro site faz o navegador da vítima enviar ao seu " +
+            "site uma requisição que ela não pediu.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "No CSRF, o atacante não rouba nada: ele faz a vítima, logada no seu site, carregar uma página dele. Essa " +
-                "página envia uma requisição ao seu site (um formulário que se submete sozinho, uma imagem, um `fetch`), " +
-                "e o navegador, como sempre, anexa os cookies do seu site. Se o servidor aceitar a ação só porque veio " +
-                "com um cookie de sessão válido, ela é executada em nome da vítima. O atacante não vê a resposta — a " +
-                "política de mesma origem impede —, mas o estrago está feito. O ataque só afeta autenticação por cookies " +
-                "(ou outra credencial que o navegador anexe sozinho); APIs que exigem um token no cabeçalho " +
-                "`Authorization` não são alcançadas.",
+                "O atacante não rouba nada: ele faz a vítima, logada no seu site, carregar uma página dele. Essa página " +
+                "envia uma requisição ao seu site (um formulário que se submete sozinho, uma imagem, um `fetch`), e o " +
+                "navegador, como sempre, anexa os cookies do seu site. Se o servidor aceitar a ação só porque veio com um " +
+                "cookie de sessão válido, ela é executada em nome da vítima. O atacante não vê a resposta — a política de " +
+                "mesma origem impede —, mas o estrago está feito. O ataque só afeta autenticação por cookies (ou outra " +
+                "credencial que o navegador anexe sozinho); APIs que exigem um token no cabeçalho `Authorization` não são " +
+                "alcançadas.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "A pergunta que o servidor precisa responder é \"esta requisição veio do meu próprio site?\" — o cookie não " +
-                "responde, porque o navegador o anexa venha de onde vier; `SameSite`, os cabeçalhos " +
-                "`Origin`/`Sec-Fetch-Site` e um token anti-CSRF respondem.",
+                "Um cookie de sessão válido não prova que a requisição veio do seu próprio site, porque o navegador o " +
+                "anexa venha de onde vier.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -22584,9 +22572,8 @@ export default area({
           title: "Server-Side Request Forgery (SSRF)",
           note: "relevante em cloud (metadata endpoint) — liga com Cloud Security",
           summary:
-            "Uma falha em que o servidor, ao buscar uma URL informada pelo usuário (pré-visualização de links, " +
-            "webhooks, importação por URL), é levado a fazer requisições para destinos internos — a rede privada, " +
-            "serviços administrativos ou o endpoint de metadados da nuvem.",
+            "SSRF (Server-Side Request Forgery) é a falha em que o servidor, ao buscar uma URL informada pelo " +
+            "usuário, é levado a acessar destinos internos.",
           content: [
             { type: "heading", text: "Conceito" },
             {
@@ -22602,9 +22589,8 @@ export default area({
               type: "callout",
               title: "Ideia principal",
               text:
-                "Buscar URLs informadas por usuários é uma operação perigosa por natureza: permita só destinos públicos, " +
-                "verificando o endereço IP depois da resolução de DNS e a cada redirecionamento — e, quando possível, " +
-                "faça as buscas a partir de uma rede que não alcança nada interno.",
+                "Confira o IP de destino depois de resolver o DNS e a cada redirecionamento, porque um nome público pode " +
+                "apontar para dentro.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -22825,28 +22811,26 @@ export default area({
           note: "IDOR — revisita Authorization / Resource Ownership",
           revisit: ["Platform / Authorization / Resource Ownership"],
           summary:
-            "A categoria de falhas em que alguém consegue fazer o que não deveria: acessar dados de outras pessoas " +
-            "trocando um id (IDOR), usar funções administrativas, alterar campos protegidos pelo corpo da requisição " +
-            "ou chegar a arquivos fora da pasta permitida.",
+            "Broken Access Control é a categoria de falhas em que alguém consegue fazer o que não deveria, porque o " +
+            "servidor não conferiu se podia.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Controle de acesso quebrado é a categoria que lidera o Top 10 da OWASP. Ela reúne falhas diferentes com " +
-                "a mesma causa: o servidor não confere, em algum caminho, se quem pede pode fazer aquilo. As mais comuns " +
-                "são o IDOR (referência direta insegura a objeto: trocar `/orders/41` por `/orders/42` e ver o pedido de " +
-                "outra pessoa), a escalada vertical (um usuário comum usando uma rota administrativa), a atribuição em " +
-                "massa (enviar `\"role\": \"admin\"` no corpo e o servidor gravar tudo o que veio) e o path traversal (usar " +
-                "`../` num nome de arquivo para sair da pasta permitida).",
+                "É a categoria que lidera o Top 10 da OWASP, e reúne falhas diferentes com a mesma causa: em algum " +
+                "caminho, falta a verificação. As mais comuns são o IDOR (referência direta insegura a objeto: trocar " +
+                "`/orders/41` por `/orders/42` e ver o pedido de outra pessoa), a escalada vertical (um usuário comum " +
+                "usando uma rota administrativa), a atribuição em massa (enviar `\"role\": \"admin\"` no corpo e o servidor " +
+                "gravar tudo o que veio) e o path traversal (usar `../` num nome de arquivo para sair da pasta " +
+                "permitida).",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Todo caminho que acessa um recurso ou executa uma ação precisa de uma verificação no servidor — do dono, " +
-                "da permissão, dos campos que podem ser alterados, da pasta que pode ser lida —, e a ausência de qualquer " +
-                "uma delas é a falha.",
+                "Basta um caminho sem verificação para o controle de acesso inteiro falhar, então a verificação não pode " +
+                "ser opcional em nenhum.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -23055,9 +23039,8 @@ export default area({
           note: "canônico — allowlist na fronteira, defesa contra entrada inválida/maliciosa. API Fundamentals / Request Validation trata o mesmo tema no contexto de contrato/request (conceitos distintos, pointer)",
           collision: "≠ API Fundamentals / Request Validation — segurança × validação de contrato",
           summary:
-            "Conferir, na fronteira do sistema, que toda entrada tem a forma esperada — tipo, tamanho, formato e " +
-            "valores permitidos —, recusando o resto, como uma das camadas de defesa contra entradas maliciosas, sem " +
-            "substituir as defesas específicas de cada saída.",
+            "Input Validation é conferir, na fronteira do sistema, que toda entrada tem a forma esperada e recusar o " +
+            "resto.",
           content: [
             { type: "heading", text: "Conceito" },
             {
@@ -23074,9 +23057,8 @@ export default area({
               type: "callout",
               title: "Ideia principal",
               text:
-                "Valide com allowlists, na fronteira e depois de normalizar a entrada — mas trate a validação como uma " +
-                "camada a mais: o que protege contra injeção e XSS é a forma correta de usar o dado na saída (parâmetros, " +
-                "codificação), e não a validação da entrada.",
+                "Validar a entrada é uma camada a mais, e não a defesa contra injeção: essa é a forma correta de usar o " +
+                "dado na saída.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -23291,28 +23273,26 @@ export default area({
           requires: ["Cross-Site Scripting (XSS)"],
           note: "encoding contextual (HTML/attr/JS/URL)",
           summary:
-            "Transformar os dados no momento em que são colocados numa saída — HTML, atributo, JavaScript, URL, CSS — " +
-            "com a codificação própria daquele contexto, para que sejam sempre interpretados como dado e nunca como " +
-            "parte da estrutura.",
+            "Output Encoding é transformar os dados, no momento em que entram numa saída, com a codificação própria " +
+            "daquele contexto.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Codificação de saída é a defesa principal contra XSS e outras injeções na apresentação. O ponto " +
-                "essencial é o contexto: o mesmo texto precisa de tratamentos diferentes conforme onde ele entra. No " +
-                "conteúdo de um elemento HTML, basta trocar `<`, `>` e `&` por entidades; num atributo, também as aspas; " +
-                "dentro de um `<script>`, a regra é outra (serializar como JSON e escapar `<`); num parâmetro de URL, " +
-                "usa-se a codificação percentual. Aplicar a codificação de um contexto em outro dá uma falsa sensação de " +
-                "segurança.",
+                "É a defesa principal contra XSS e outras injeções na apresentação, e garante que o dado seja sempre " +
+                "interpretado como dado. O ponto essencial é o contexto: o mesmo texto precisa de tratamentos diferentes " +
+                "conforme onde ele entra. No conteúdo de um elemento HTML, basta trocar `<`, `>` e `&` por entidades; num " +
+                "atributo, também as aspas; dentro de um `<script>`, a regra é outra (serializar como JSON e escapar " +
+                "`<`); num parâmetro de URL, usa-se a codificação percentual. Aplicar a codificação de um contexto em " +
+                "outro dá uma falsa sensação de segurança.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Codifique na saída, pelo contexto em que o dado entra — e deixe esse trabalho para o mecanismo de " +
-                "templates ou o framework sempre que possível, porque eles escolhem a codificação certa de forma " +
-                "automática e consistente.",
+                "Deixe a codificação para o mecanismo de templates do framework, que escolhe a certa para cada contexto " +
+                "sem esquecer nenhum.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -23500,28 +23480,25 @@ export default area({
           requires: ["Cross-Site Scripting (XSS)", "Web Fundamentals / HTTP Headers"],
           note: "defesa em profundidade contra XSS; nonce/hash",
           summary:
-            "Um cabeçalho de resposta com o qual o site diz ao navegador de onde scripts, estilos, imagens e conexões " +
-            "podem vir — de modo que, mesmo que um XSS consiga injetar marcação, o navegador se recuse a executar o " +
-            "script que não foi autorizado.",
+            "A Content Security Policy é um cabeçalho de resposta com o qual o site diz ao navegador de onde scripts, " +
+            "estilos, imagens e conexões podem vir.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "A Content Security Policy é uma lista de regras enviada no cabeçalho `Content-Security-Policy`. Cada " +
-                "diretiva controla um tipo de recurso: `script-src` (scripts), `style-src`, `img-src`, `connect-src` " +
-                "(para onde o `fetch` pode ir), `frame-ancestors` (quem pode embutir a página) e assim por diante. A " +
-                "forma mais eficaz contra XSS é a CSP estrita: todo script legítimo recebe um `nonce` aleatório, gerado a " +
-                "cada resposta, e só scripts com esse nonce executam. Um script injetado por um atacante não tem o nonce " +
-                "e é bloqueado. A CSP não corrige o XSS; ela é uma segunda camada, que reduz muito o estrago quando a " +
-                "primeira falha.",
+                "As regras vão no cabeçalho `Content-Security-Policy`, e cada diretiva controla um tipo de recurso: " +
+                "`script-src` (scripts), `style-src`, `img-src`, `connect-src` (para onde o `fetch` pode ir), " +
+                "`frame-ancestors` (quem pode embutir a página) e assim por diante. A forma mais eficaz contra XSS é a " +
+                "CSP estrita: todo script legítimo recebe um `nonce` aleatório, gerado a cada resposta, e só scripts com " +
+                "esse nonce executam. Um script injetado por um atacante não tem o nonce e é bloqueado. A CSP não corrige " +
+                "o XSS; ela é uma segunda camada, que reduz muito o estrago quando a primeira falha.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "A CSP é o cinto de segurança do XSS: a correção continua sendo codificar a saída, e a política com nonce " +
-                "faz com que um erro que escape dessa correção não se transforme em código executando na página.",
+                "A CSP é o cinto de segurança do XSS: não evita o erro, mas impede que ele vire código rodando na página.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -23722,28 +23699,27 @@ export default area({
           requires: ["Web Fundamentals / HTTP Headers"],
           note: "HSTS, X-Content-Type-Options, frame-ancestors, Referrer-Policy",
           summary:
-            "Cabeçalhos de resposta que ligam proteções do navegador: impedir que ele adivinhe o tipo do conteúdo, " +
-            "que a página seja embutida por outros sites, que a URL vaze para terceiros no `Referer` e que recursos " +
-            "como câmera e localização sejam usados sem necessidade.",
+            "Security Headers são os cabeçalhos de resposta que ligam proteções do navegador que vêm desligadas por " +
+            "padrão.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Muitas proteções dos navegadores vêm desligadas por compatibilidade e são ligadas por cabeçalhos. Os " +
-                "principais: `Strict-Transport-Security` (HSTS, forçar HTTPS), `X-Content-Type-Options: nosniff` (não " +
-                "reinterpretar um arquivo como script ou HTML por causa do conteúdo), `frame-ancestors` na CSP (ou o " +
-                "antigo `X-Frame-Options`), que diz quem pode embutir a página e protege contra clickjacking, " +
-                "`Referrer-Policy`, que limita o que a URL de origem revela ao navegar para outros sites, e " +
-                "`Permissions-Policy`, que desliga recursos como câmera, microfone e geolocalização onde não são usados. " +
-                "Custam pouco e fecham classes inteiras de ataques.",
+                "Muitas proteções vêm desligadas por compatibilidade. Os principais cabeçalhos: " +
+                "`Strict-Transport-Security` (HSTS, forçar HTTPS), `X-Content-Type-Options: nosniff` (não reinterpretar " +
+                "um arquivo como script ou HTML por causa do conteúdo), `frame-ancestors` na CSP (ou o antigo " +
+                "`X-Frame-Options`), que diz quem pode embutir a página e protege contra clickjacking, `Referrer-Policy`, " +
+                "que limita o que a URL de origem revela ao navegar para outros sites, e `Permissions-Policy`, que " +
+                "desliga recursos como câmera, microfone e geolocalização onde não são usados. Custam pouco e fecham " +
+                "classes inteiras de ataques.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Os cabeçalhos de segurança são configurações baratas com efeito amplo: defina-os num único lugar, para " +
-                "todas as respostas, e confira-os automaticamente, em vez de lembrar deles rota a rota.",
+                "Defina os cabeçalhos de segurança num único lugar, para todas as respostas, em vez de lembrar deles rota " +
+                "a rota.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -23959,27 +23935,26 @@ export default area({
           note: "rotação, nunca em VCS — revisita Software Craft (.gitignore, história do Git)",
           collision: "≠ Environments & Configuration (CI/CD) ≠ Secret Manager serviço (Cloud Security) ≠ K8s Secret",
           summary:
-            "Cuidar do ciclo de vida das credenciais que o sistema usa — senhas de banco, chaves de API, chaves de " +
-            "assinatura —: nunca no código nem no Git, entregues à aplicação em tempo de execução, com acesso mínimo, " +
-            "rotação periódica e plano para quando vazarem.",
+            "Secrets Management é cuidar do ciclo de vida das credenciais que o sistema usa, como senhas de banco, " +
+            "chaves de API e chaves de assinatura.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Segredos são os valores que dão acesso a algo: a senha do banco, a chave da API de pagamentos, o segredo " +
-                "que assina tokens. Gerenciá-los é garantir que eles fiquem fora do código-fonte e do controle de versão, " +
-                "sejam entregues à aplicação só no momento de rodar (variáveis de ambiente, arquivos montados, um cofre " +
-                "de segredos), sejam acessíveis só a quem precisa, possam ser trocados (rotação) sem parar o sistema e " +
-                "não apareçam em logs e mensagens de erro. O histórico do Git guarda tudo o que já foi commitado: um " +
-                "segredo que passou por lá deve ser considerado vazado, mesmo depois de apagado.",
+                "Segredos são os valores que dão acesso a algo. Gerenciá-los é garantir que eles fiquem fora do " +
+                "código-fonte e do controle de versão, sejam entregues à aplicação só no momento de rodar (variáveis de " +
+                "ambiente, arquivos montados, um cofre de segredos), sejam acessíveis só a quem precisa, possam ser " +
+                "trocados (rotação) sem parar o sistema e não apareçam em logs e mensagens de erro. O histórico do Git " +
+                "guarda tudo o que já foi commitado: um segredo que passou por lá deve ser considerado vazado, mesmo " +
+                "depois de apagado.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Segredo que passou pelo Git está vazado: a resposta é revogar e trocar, e não só apagar o arquivo — e o " +
-                "objetivo do processo é que trocar um segredo seja rotina, e não um projeto.",
+                "Um segredo vazado se resolve revogando e trocando, e um bom processo faz dessa troca uma rotina, e não " +
+                "um projeto.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -24197,9 +24172,8 @@ export default area({
           note: "consolidada (B4)",
           revisit: ["Platform / Web Fundamentals / TLS"],
           summary:
-            "Proteger os dados com criptografia enquanto viajam pela rede (em trânsito, com TLS, inclusive entre " +
-            "serviços internos) e enquanto estão guardados (em repouso: discos, bancos, backups e campos sensíveis), " +
-            "com as chaves guardadas separadas dos dados.",
+            "Encryption at Rest & in Transit é proteger os dados com criptografia enquanto viajam pela rede e " +
+            "enquanto estão guardados.",
           content: [
             { type: "heading", text: "Conceito" },
             {
@@ -24216,10 +24190,7 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Criptografia é tão boa quanto a guarda da chave: use algoritmos padrão com autenticação (como " +
-                "AES-256-GCM), nunca reutilize o IV com a mesma chave, e mantenha as chaves num KMS, separadas dos dados " +
-                "que elas protegem.",
+              text: "Criptografia é tão boa quanto a guarda da chave, e uma chave ao lado dos dados não protege nada.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -24455,9 +24426,8 @@ export default area({
           subtopics: ["SCA", "CVE/CVSS", "dependências transitivas", "auditoria de lockfile", "supply chain (menção)"],
           note: "mantida aqui (D6 alterada)",
           summary:
-            "Falhas de segurança conhecidas nas bibliotecas de que o sistema depende — inclusive nas dependências das " +
-            "dependências —, identificadas por CVEs, medidas pelo CVSS e encontradas por ferramentas de análise de " +
-            "composição (SCA) que comparam o lockfile com bases de vulnerabilidades.",
+            "Dependency Vulnerabilities são falhas de segurança conhecidas nas bibliotecas de que o sistema depende, " +
+            "inclusive nas dependências das dependências.",
           content: [
             { type: "heading", text: "Conceito" },
             {
@@ -24475,9 +24445,8 @@ export default area({
               type: "callout",
               title: "Ideia principal",
               text:
-                "Você é responsável por todo o código que roda, inclusive o das dependências transitivas: audite o " +
-                "lockfile automaticamente, atualize com frequência pequena e priorize as vulnerabilidades pela gravidade " +
-                "e pela exposição real, e não só pela nota.",
+                "Atualizar as dependências em passos pequenos e frequentes torna cada correção de segurança uma mudança " +
+                "pequena.",
             },
             { type: "heading", text: "Como funciona" },
             {
