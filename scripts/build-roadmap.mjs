@@ -1525,6 +1525,16 @@ for (const area of model.areas()) {
     "in-memory-data-store",
     "browser-and-http-cache",
     "cdn",
+    "authentication-vs-authorization",
+    "password-hashing",
+    "session-based-authentication",
+    "token-based-authentication",
+    "jwt",
+    "access-and-refresh-token",
+    "oauth-2-0",
+    "openid-connect-oidc",
+    "single-sign-on-sso",
+    "multi-factor-authentication-mfa",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",

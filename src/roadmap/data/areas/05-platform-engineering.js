@@ -18213,21 +18213,2378 @@ export default area({
       summary:
         "Auth vs authz → password hashing → session × token → JWT → access/refresh → OAuth 2.0 → OIDC → SSO → MFA.",
       concepts: [
-        concept({ order: 10, title: "Authentication vs Authorization", note: "framing; 'quem é você' × 'o que você pode'" }),
-        concept({ order: 20, title: "Password Hashing", note: "bcrypt/scrypt/argon2, salt, fator de custo; nunca reversível" }),
+        concept({
+          order: 10,
+          title: "Authentication vs Authorization",
+          note: "framing; 'quem é você' × 'o que você pode'",
+          summary:
+            "Autenticação responde \"quem é você?\" — confirma a identidade de quem faz a requisição —; autorização " +
+            "responde \"o que você pode fazer?\" — decide, para essa identidade, se a ação é permitida. São etapas " +
+            "diferentes, nessa ordem.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Autenticação (authentication, ou authn) é verificar a identidade: uma senha, um código, um certificado " +
+                "ou um token assinado provam que a requisição vem de uma pessoa ou de um sistema conhecido. Autorização " +
+                "(authorization, ou authz) é decidir se essa identidade pode fazer o que está pedindo: ler esta fatura, " +
+                "apagar este projeto, acessar o painel administrativo. A autenticação vem primeiro e produz uma " +
+                "identidade confiável (o \"principal\"); a autorização usa essa identidade, junto com o recurso e a ação, " +
+                "para decidir. No HTTP, as falhas têm códigos diferentes: `401 Unauthorized` quando não se sabe quem é, e " +
+                "`403 Forbidden` quando se sabe, e a resposta é não.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Autenticar é descobrir quem é; autorizar é decidir o que essa pessoa pode fazer — e a identidade usada " +
+                "na decisão deve vir sempre da autenticação, nunca de um campo enviado pelo próprio cliente.",
+            },
+            { type: "heading", text: "Por que importa" },
+            {
+              type: "paragraph",
+              text:
+                "Misturar as duas etapas causa as falhas de segurança mais comuns em APIs: tratar \"está logado\" como " +
+                "\"pode tudo\", ou confiar num `userId` que vem no corpo da requisição. Separá-las dá um lugar claro para " +
+                "cada verificação: um middleware que autentica e anexa a identidade à requisição, e regras de autorização " +
+                "que olham essa identidade e o recurso.",
+            },
+            { type: "heading", text: "Na prática" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "authn-authz.js",
+              code: [
+                "// 1. Autenticação: descobre quem é, a partir de uma credencial verificável",
+                "function authenticate(req, sessions) {",
+                "  const sessionId = req.cookies.session;",
+                "  const session = sessionId && sessions.get(sessionId);",
+                "  if (!session) return { status: 401, body: { error: \"faça login\" } };   // não sabemos quem é",
+                "  req.user = { id: session.userId, roles: session.roles };                // o \"principal\"",
+                "  return null;",
+                "}",
+                "",
+                "// 2. Autorização: decide se ESTA identidade pode fazer ESTA ação neste recurso",
+                "function canDeleteProject(user, project) {",
+                "  return user.roles.includes(\"admin\") || project.ownerId === user.id;",
+                "}",
+                "",
+                "function deleteProject(req, { sessions, projects }) {",
+                "  const denied = authenticate(req, sessions);",
+                "  if (denied) return denied;",
+                "  const project = projects.get(req.params.id);",
+                "  if (!project) return { status: 404 };",
+                "  if (!canDeleteProject(req.user, project)) return { status: 403, body: { error: \"sem permissão\" } };   // sabemos quem é, e a resposta é não",
+                "  projects.delete(project.id);",
+                "  return { status: 204 };",
+                "}",
+                "",
+                "const sessions = new Map([[\"s-ana\", { userId: 7, roles: [\"member\"] }]]);",
+                "const projects = new Map([[\"p1\", { id: \"p1\", ownerId: 7 }], [\"p2\", { id: \"p2\", ownerId: 8 }]]);",
+                "",
+                "deleteProject({ cookies: {}, params: { id: \"p1\" } }, { sessions, projects }).status;                 // 401",
+                "deleteProject({ cookies: { session: \"s-ana\" }, params: { id: \"p2\" } }, { sessions, projects }).status;   // 403",
+                "deleteProject({ cookies: { session: \"s-ana\" }, params: { id: \"p1\" } }, { sessions, projects }).status;   // 204",
+              ].join("\n"),
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "Considerar que estar autenticado basta: uma rota protegida só por login deixa qualquer usuário agir sobre os dados de qualquer outro.",
+                "Tirar a identidade de um campo enviado pelo cliente (`userId` no corpo ou na URL), em vez da sessão ou do token verificado.",
+                "Trocar 401 e 403: devolver 403 para quem não enviou credencial esconde do cliente que ele só precisa fazer login.",
+                "Espalhar as verificações pelo código, cada rota do seu jeito; as regras de autorização ficam mais seguras concentradas e testadas.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "401 ou 403",
+              context: "Os dois são \"não\", por motivos diferentes, e o cliente reage de forma diferente a cada um.",
+              code: {
+                language: "text",
+                filename: "401-vs-403.txt",
+                code: [
+                  "401 Unauthorized  — \"não sei quem você é\"",
+                  "  sem credencial, credencial inválida ou expirada",
+                  "  → o cliente deve (re)autenticar: mostrar o login, renovar o token",
+                  "  → acompanha WWW-Authenticate, por exemplo: WWW-Authenticate: Bearer error=\"invalid_token\"",
+                  "",
+                  "403 Forbidden     — \"sei quem você é, e você não pode\"",
+                  "  identidade válida, permissão insuficiente",
+                  "  → fazer login de novo não resolve; o cliente deve mostrar \"sem acesso\"",
+                  "",
+                  "404 Not Found no lugar do 403 — quando revelar que o recurso existe já é um vazamento",
+                  "  (ex.: GET /invoices/123 de outra empresa responde como se a fatura não existisse)",
+                ].join("\n"),
+              },
+              explanation:
+                "O nome \"Unauthorized\" do 401 é histórico: na prática, ele significa \"não autenticado\". Responder 404 " +
+                "para recursos de outros inquilinos é uma escolha comum, que evita confirmar a existência do que a pessoa " +
+                "não pode ver.",
+            },
+            {
+              title: "A identidade vem da autenticação, não do corpo",
+              context: "Um endpoint que aceita o id de quem está agindo deixa qualquer um agir por outra pessoa.",
+              code: {
+                language: "javascript",
+                filename: "trusted-identity.js",
+                code: [
+                  "// Errado: quem \"é\" o autor é decidido pelo cliente",
+                  "function createCommentWrong(req, comments) {",
+                  "  comments.push({ authorId: req.body.authorId, text: req.body.text });   // basta mandar authorId de outra pessoa",
+                  "}",
+                  "",
+                  "// Certo: o autor é a identidade autenticada; o corpo só traz o conteúdo",
+                  "function createComment(req, comments) {",
+                  "  if (!req.user) return { status: 401 };",
+                  "  comments.push({ authorId: req.user.id, text: req.body.text });",
+                  "  return { status: 201 };",
+                  "}",
+                  "",
+                  "const comments = [];",
+                  "createComment({ user: { id: 7 }, body: { authorId: 999, text: \"Olá\" } }, comments);",
+                  "comments[0].authorId;   // 7 — o authorId enviado foi ignorado",
+                ].join("\n"),
+              },
+              explanation:
+                "Todo dado que vem da requisição pode ser escolhido por quem a envia. A identidade só é confiável quando " +
+                "sai de algo que o servidor verificou: uma sessão guardada nele ou um token com assinatura válida.",
+            },
+            {
+              title: "Uma identidade, várias decisões",
+              context: "A mesma pessoa autenticada recebe respostas diferentes para recursos e ações diferentes.",
+              code: {
+                language: "javascript",
+                filename: "decisions.js",
+                code: [
+                  "const ana = { id: 7, roles: [\"member\"] };",
+                  "",
+                  "const can = (user, action, resource) =>",
+                  "  action === \"read\" ? resource.members.includes(user.id) :",
+                  "  action === \"edit\" ? resource.ownerId === user.id :",
+                  "  action === \"billing\" ? user.roles.includes(\"admin\") :",
+                  "  false;",
+                  "",
+                  "const board = { ownerId: 8, members: [7, 8] };",
+                  "can(ana, \"read\", board);      // true  — é membro",
+                  "can(ana, \"edit\", board);      // false — não é a dona",
+                  "can(ana, \"billing\", board);   // false — não é administradora",
+                ].join("\n"),
+              },
+              explanation:
+                "A autenticação acontece uma vez por requisição; a autorização, a cada decisão. Os modelos para organizar " +
+                "essas regras (papéis, atributos, permissões e posse do recurso) são o assunto do módulo de autorização.",
+            },
+          ],
+          exercise: {
+            problem:
+              "A rota de alterar e-mail recebe `{ userId, newEmail }`. Ela confere se há uma sessão válida, e então " +
+              "altera o e-mail do `userId` recebido. Um usuário descobriu que consegue trocar o e-mail de qualquer " +
+              "conta.",
+            problemCode: {
+              language: "javascript",
+              filename: "change-email.js",
+              code: [
+                "const sessions = new Map([[\"s-ana\", { userId: 7 }]]);",
+                "const users = new Map([[7, { id: 7, email: \"ana@example.test\" }], [8, { id: 8, email: \"bruno@example.test\" }]]);",
+                "",
+                "function changeEmail(req) {",
+                "  if (!sessions.has(req.cookies.session)) return { status: 403 };",
+                "  const user = users.get(req.body.userId);",
+                "  user.email = req.body.newEmail;",
+                "  return { status: 200 };",
+                "}",
+                "",
+                "changeEmail({ cookies: { session: \"s-ana\" }, body: { userId: 8, newEmail: \"atacante@example.test\" } });   // troca o e-mail do Bruno",
+              ].join("\n"),
+            },
+            task:
+              "Corrija a rota: a conta alterada é sempre a da pessoa autenticada, e o status de erro para quem não está " +
+              "logado é o correto.",
+            hint:
+              "O `userId` do corpo não deve ser usado. Leia a identidade da sessão e devolva 401 quando ela não " +
+              "existir.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "change-email.fixed.js",
+                code: [
+                  "function changeEmail(req) {",
+                  "  const session = sessions.get(req.cookies.session);",
+                  "  if (!session) return { status: 401 };             // não autenticado",
+                  "  const user = users.get(session.userId);           // a conta é sempre a de quem está logado",
+                  "  user.email = req.body.newEmail;",
+                  "  return { status: 200 };",
+                  "}",
+                  "",
+                  "changeEmail({ cookies: { session: \"s-ana\" }, body: { userId: 8, newEmail: \"atacante@example.test\" } });",
+                  "users.get(8).email;                        // \"bruno@example.test\" — intacto",
+                  "users.get(7).email;                        // \"atacante@example.test\" — só a própria conta mudou",
+                  "changeEmail({ cookies: {}, body: {} }).status;   // 401",
+                ].join("\n"),
+              },
+              explanation:
+                "A rota autenticava, mas usava a identidade errada: a que o cliente escolheu. Com a conta tirada da " +
+                "sessão, não há o que escolher. Em produção, trocar o e-mail também deveria exigir confirmação no " +
+                "endereço novo e, de preferência, a senha atual.",
+            },
+          },
+        }),
+        concept({
+          order: 20,
+          title: "Password Hashing",
+          note: "bcrypt/scrypt/argon2, salt, fator de custo; nunca reversível",
+          summary:
+            "Guardar senhas como o resultado de uma função de hash lenta e com sal (salt), feita para isso — " +
+            "Argon2id, scrypt ou bcrypt —, de modo que nem quem tem acesso ao banco consiga descobrir as senhas, e " +
+            "testá-las por tentativa seja caro.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Uma senha nunca é guardada como texto, nem criptografada (o que permitiria decifrá-la). Guarda-se o " +
+                "resultado de uma função de hash de senha: uma função de mão única, lenta de propósito e configurável. " +
+                "Cada senha recebe um sal (salt), um valor aleatório guardado junto do hash, para que duas pessoas com a " +
+                "mesma senha tenham hashes diferentes e tabelas pré-calculadas não sirvam. O custo configurável (memória, " +
+                "tempo, iterações) faz cada tentativa de adivinhação custar caro, o que protege as senhas se o banco " +
+                "vazar. As funções recomendadas são Argon2id, scrypt e bcrypt; hashes rápidos como MD5 e SHA-256 não " +
+                "servem para senhas.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Senha se guarda com uma função de hash de senha — lenta, com sal e com custo ajustável —, e não com um " +
+                "hash comum nem com criptografia: o objetivo é que um vazamento do banco não revele as senhas.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "password.js",
+              code: [
+                "import { scryptSync, randomBytes, timingSafeEqual } from \"node:crypto\";",
+                "",
+                "// Parâmetros do scrypt recomendados pela OWASP: N = 2^17, r = 8, p = 1",
+                "const PARAMS = { N: 2 ** 17, r: 8, p: 1, maxmem: 256 * 1024 * 1024 };   // maxmem: o scrypt usa ~128 MB com estes valores",
+                "",
+                "function hashPassword(password) {",
+                "  const salt = randomBytes(16);",
+                "  const hash = scryptSync(password.normalize(\"NFKC\"), salt, 32, PARAMS);",
+                "  // guarda tudo o que é preciso para verificar depois: algoritmo, parâmetros, sal e hash",
+                "  return `scrypt$${PARAMS.N}$${PARAMS.r}$${PARAMS.p}$${salt.toString(\"base64\")}$${hash.toString(\"base64\")}`;",
+                "}",
+                "",
+                "function verifyPassword(password, stored) {",
+                "  const [, N, r, p, saltB64, hashB64] = stored.split(\"$\");",
+                "  const expected = Buffer.from(hashB64, \"base64\");",
+                "  const actual = scryptSync(password.normalize(\"NFKC\"), Buffer.from(saltB64, \"base64\"), expected.length, {",
+                "    N: Number(N), r: Number(r), p: Number(p), maxmem: PARAMS.maxmem,",
+                "  });",
+                "  return timingSafeEqual(actual, expected);   // comparação em tempo constante",
+                "}",
+                "",
+                "const stored = hashPassword(\"correct horse battery staple\");",
+                "stored.startsWith(\"scrypt$131072$8$1$\");                          // true",
+                "verifyPassword(\"correct horse battery staple\", stored);           // true",
+                "verifyPassword(\"Correct horse battery staple\", stored);           // false",
+                "hashPassword(\"123456\") === hashPassword(\"123456\");                // false — sal diferente a cada vez",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Os parâmetros ficam gravados junto do hash para que seja possível aumentá-los no futuro sem invalidar as " +
+                "senhas antigas: cada hash sabe com que custo foi feito. Com esses valores, cada verificação leva algumas " +
+                "centenas de milissegundos, o que é imperceptível num login e proibitivo para quem testa bilhões de " +
+                "senhas.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Sempre que o sistema guarda senhas de pessoas: Argon2id como primeira escolha, scrypt ou bcrypt como alternativas bem estabelecidas.",
+                "Para qualquer segredo de baixa entropia escolhido por pessoas, como PINs e respostas de segurança.",
+                "Com parâmetros revisados de tempos em tempos, e o hash refeito no login quando o custo guardado for menor que o atual.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Para tokens aleatórios longos (sessões, chaves de API), um hash rápido como SHA-256 basta: a entropia do próprio token já impede a adivinhação.",
+                "O hash não protege senhas fracas ou vazadas em outros sites; limite de tentativas, verificação contra senhas vazadas e MFA continuam necessários.",
+                "bcrypt ignora tudo depois do 72º byte da senha; senhas muito longas precisam de outra função ou de um tratamento prévio.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Por que um hash comum não serve",
+              context: "SHA-256 é rápido e determinístico: a mesma senha gera sempre o mesmo hash.",
+              code: {
+                language: "javascript",
+                filename: "fast-hash.js",
+                code: [
+                  "import { createHash } from \"node:crypto\";",
+                  "",
+                  "const sha256 = (text) => createHash(\"sha256\").update(text).digest(\"hex\");",
+                  "",
+                  "// Dois usuários com a mesma senha: hashes idênticos, visíveis num vazamento",
+                  "sha256(\"123456\");   // \"8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92\"",
+                  "sha256(\"123456\");   // o mesmo — e esse valor aparece em qualquer lista pública de hashes de senhas comuns",
+                  "",
+                  "// E é rápido: uma GPU calcula bilhões de SHA-256 por segundo; testar um dicionário inteiro leva segundos.",
+                ].join("\n"),
+              },
+              explanation:
+                "Sem sal, senhas iguais têm hashes iguais, e tabelas pré-calculadas revelam as senhas comuns na hora. Sem " +
+                "custo, quem tem o banco testa bilhões de palpites por segundo. As funções de hash de senha resolvem as " +
+                "duas coisas: sal aleatório e custo alto por tentativa.",
+            },
+            {
+              title: "Aumentar o custo sem forçar a troca de senha",
+              context:
+                "No login, a senha está disponível em texto: é o momento de refazer o hash com os parâmetros novos.",
+              code: {
+                language: "javascript",
+                filename: "rehash.js",
+                code: [
+                  "const CURRENT_N = 2 ** 17;",
+                  "",
+                  "function needsRehash(stored) {",
+                  "  const [algorithm, N] = stored.split(\"$\");",
+                  "  return algorithm !== \"scrypt\" || Number(N) < CURRENT_N;",
+                  "}",
+                  "",
+                  "async function login(email, password, { users, verifyPassword, hashPassword }) {",
+                  "  const user = users.get(email);",
+                  "  if (!user || !verifyPassword(password, user.passwordHash)) return null;",
+                  "  if (needsRehash(user.passwordHash)) {",
+                  "    user.passwordHash = hashPassword(password);   // atualiza, aos poucos, a cada login",
+                  "  }",
+                  "  return user;",
+                  "}",
+                  "",
+                  "needsRehash(\"scrypt$16384$8$1$c2FsdA==$aGFzaA==\");   // true — feito com um custo antigo, menor",
+                  "needsRehash(\"scrypt$131072$8$1$c2FsdA==$aGFzaA==\");  // false",
+                ].join("\n"),
+              },
+              explanation:
+                "Guardar os parâmetros junto do hash permite conviver com várias gerações: as senhas antigas continuam " +
+                "válidas e são atualizadas no próximo login de cada pessoa. É o mesmo caminho para migrar de um algoritmo " +
+                "para outro.",
+            },
+            {
+              title: "Argon2id com uma biblioteca",
+              context: "O Node não traz Argon2 embutido; o pacote `argon2` usa a implementação de referência.",
+              code: {
+                language: "javascript",
+                filename: "argon2.js",
+                code: [
+                  "import argon2 from \"argon2\";",
+                  "",
+                  "// Parâmetros mínimos recomendados pela OWASP para Argon2id: 19 MiB de memória, 2 iterações, 1 via de paralelismo",
+                  "const hash = await argon2.hash(password, {",
+                  "  type: argon2.argon2id,",
+                  "  memoryCost: 19456,   // em KiB",
+                  "  timeCost: 2,",
+                  "  parallelism: 1,",
+                  "});",
+                  "// \"$argon2id$v=19$m=19456,t=2,p=1$<sal>$<hash>\" — algoritmo, versão e parâmetros vêm dentro da string",
+                  "",
+                  "const ok = await argon2.verify(hash, password);",
+                  "const outdated = argon2.needsRehash(hash, { memoryCost: 47104, timeCost: 1 });",
+                ].join("\n"),
+              },
+              explanation:
+                "O formato padrão do Argon2 já guarda o algoritmo, a versão e os parâmetros no próprio hash, e a " +
+                "biblioteca oferece `needsRehash` para a atualização gradual. O custo de memória é o que torna ataques " +
+                "com GPU caros: cada tentativa precisa de dezenas de megabytes.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Um sistema antigo guarda as senhas como MD5 sem sal. O banco ainda não vazou, mas o time quer tirar " +
+              "essas senhas do formato inseguro sem obrigar todos os usuários a trocá-las.",
+            problemCode: {
+              language: "javascript",
+              filename: "legacy-md5.js",
+              code: [
+                "import { createHash } from \"node:crypto\";",
+                "const md5 = (text) => createHash(\"md5\").update(text).digest(\"hex\");",
+                "",
+                "const users = new Map([",
+                "  [\"ana@example.test\", { email: \"ana@example.test\", passwordHash: md5(\"s3nha-da-ana\") }],",
+                "  [\"bruno@example.test\", { email: \"bruno@example.test\", passwordHash: md5(\"s3nha-do-bruno\") }],",
+                "]);",
+                "",
+                "function login(email, password) {",
+                "  const user = users.get(email);",
+                "  return Boolean(user) && user.passwordHash === md5(password);",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Faça o login aceitar as senhas antigas e, ao acertar uma delas, regravá-la com scrypt. Garanta que as " +
+              "senhas já migradas sejam verificadas com scrypt, e diga o que fazer com as contas que nunca mais " +
+              "entrarem.",
+            hint:
+              "Um prefixo no valor guardado (`scrypt$...`) diz qual verificação usar. Reaproveite `hashPassword` e " +
+              "`verifyPassword` do scrypt.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "legacy-md5.fixed.js",
+                code: [
+                  "import { scryptSync, randomBytes, timingSafeEqual } from \"node:crypto\";",
+                  "",
+                  "const PARAMS = { N: 2 ** 17, r: 8, p: 1, maxmem: 256 * 1024 * 1024 };",
+                  "const hashPassword = (password) => {",
+                  "  const salt = randomBytes(16);",
+                  "  return `scrypt$${salt.toString(\"base64\")}$${scryptSync(password, salt, 32, PARAMS).toString(\"base64\")}`;",
+                  "};",
+                  "const verifyScrypt = (password, stored) => {",
+                  "  const [, salt, hash] = stored.split(\"$\");",
+                  "  const expected = Buffer.from(hash, \"base64\");",
+                  "  return timingSafeEqual(scryptSync(password, Buffer.from(salt, \"base64\"), expected.length, PARAMS), expected);",
+                  "};",
+                  "",
+                  "function login(email, password) {",
+                  "  const user = users.get(email);",
+                  "  if (!user) return false;",
+                  "  if (user.passwordHash.startsWith(\"scrypt$\")) return verifyScrypt(password, user.passwordHash);",
+                  "  // formato antigo: confere com MD5 e, se acertar, migra na hora",
+                  "  const legacy = Buffer.from(md5(password));",
+                  "  const ok = legacy.length === user.passwordHash.length && timingSafeEqual(legacy, Buffer.from(user.passwordHash));",
+                  "  if (ok) user.passwordHash = hashPassword(password);",
+                  "  return ok;",
+                  "}",
+                  "",
+                  "login(\"ana@example.test\", \"s3nha-da-ana\");           // true — e a senha passa a scrypt",
+                  "users.get(\"ana@example.test\").passwordHash.startsWith(\"scrypt$\");   // true",
+                  "login(\"ana@example.test\", \"s3nha-da-ana\");           // true — agora verificada com scrypt",
+                  "",
+                  "// Contas que nunca mais entrarem: depois de um prazo, apagar o MD5 e exigir a redefinição de senha por e-mail.",
+                ].join("\n"),
+              },
+              explanation:
+                "A migração acontece no único momento em que a senha em texto está disponível: o login. As contas " +
+                "inativas continuariam com MD5 para sempre; apagar esses hashes depois de um prazo e pedir a redefinição " +
+                "remove o risco. Uma alternativa sem esperar logins é aplicar scrypt sobre o MD5 já guardado para todos, " +
+                "e verificar com `scrypt(md5(senha))` até cada um entrar.",
+            },
+          },
+        }),
         concept({
           order: 30,
           title: "Session-Based Authentication",
           requires: ["Web Fundamentals / Sessions"],
+          note: "o servidor guarda quem está logado; o navegador só carrega o id da sessão num cookie",
           collision: "usa Sessions (Web Fundamentals) como mecanismo",
+          summary:
+            "Autenticar uma vez, no login, e registrar no servidor uma sessão ligada ao usuário, cujo identificador " +
+            "vai para o navegador num cookie — a cada requisição, o servidor encontra a sessão e sabe quem é, e pode " +
+            "encerrá-la quando quiser.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Na autenticação baseada em sessão, o login verifica a credencial (senha e, se houver, o segundo fator) e " +
+                "cria uma sessão no servidor: um registro com o id do usuário, o momento do login e a validade. O " +
+                "navegador recebe só o identificador da sessão, num cookie `HttpOnly`, e o devolve em toda requisição. O " +
+                "servidor procura a sessão e, se ela existe e está válida, sabe quem está fazendo a requisição. Como o " +
+                "estado fica no servidor, encerrar o acesso é imediato: apagar a sessão desloga a pessoa na próxima " +
+                "requisição.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Com sessões, quem decide se alguém está logado é o servidor, a cada requisição: isso torna simples o " +
+                "logout, a revogação e o \"sair de todos os dispositivos\", em troca de guardar e consultar o estado das " +
+                "sessões.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "session-auth.js",
+              code: [
+                "import { randomBytes } from \"node:crypto\";",
+                "",
+                "const sessions = new Map();   // em produção: um armazenamento compartilhado, como Redis ou uma tabela",
+                "const SESSION_TTL_MS = 8 * 60 * 60 * 1000;",
+                "",
+                "function login(email, password, { findUser, verifyPassword }) {",
+                "  const user = findUser(email);",
+                "  if (!user || !verifyPassword(password, user.passwordHash)) return { status: 401 };",
+                "  const id = randomBytes(32).toString(\"base64url\");   // imprevisível: 256 bits",
+                "  sessions.set(id, { userId: user.id, createdAt: Date.now(), authenticatedAt: Date.now() });",
+                "  return {",
+                "    status: 204,",
+                "    headers: { \"set-cookie\": `sid=${id}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${SESSION_TTL_MS / 1000}` },",
+                "  };",
+                "}",
+                "",
+                "function currentUserId(cookies) {",
+                "  const session = cookies.sid && sessions.get(cookies.sid);",
+                "  if (!session || Date.now() - session.createdAt > SESSION_TTL_MS) return null;",
+                "  return session.userId;",
+                "}",
+                "",
+                "function logout(cookies) {",
+                "  sessions.delete(cookies.sid);   // vale na hora: o mesmo cookie não abre mais nada",
+                "  return { status: 204, headers: { \"set-cookie\": \"sid=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0\" } };",
+                "}",
+                "",
+                "const users = { \"ana@example.test\": { id: 7, passwordHash: \"x\" } };",
+                "const res = login(\"ana@example.test\", \"certa\", { findUser: (e) => users[e], verifyPassword: (p) => p === \"certa\" });",
+                "const sid = res.headers[\"set-cookie\"].split(\";\")[0].slice(4);",
+                "currentUserId({ sid });   // 7",
+                "logout({ sid });",
+                "currentUserId({ sid });   // null",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A sessão guarda o momento da autenticação (`authenticatedAt`) separado da criação, para que ações " +
+                "sensíveis possam exigir um login recente. Os atributos do cookie e a troca do identificador no login " +
+                "seguem o que vale para qualquer sessão.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Em aplicações web com servidor próprio, em que o navegador fala com o mesmo domínio: é o modelo mais simples e o mais fácil de revogar.",
+                "Quando é preciso encerrar acessos na hora: logout, troca de senha, conta bloqueada, \"sair de todos os dispositivos\".",
+                "Quando se quer manter o mínimo no navegador: o cookie `HttpOnly` não fica acessível a scripts da página.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Cada requisição consulta o armazenamento de sessões, que precisa ser compartilhado entre as instâncias e aguentar essa carga.",
+                "Cookies são enviados automaticamente, o que exige proteção contra CSRF nas requisições que alteram dados (`SameSite` e, em alguns casos, um token).",
+                "Clientes que não são navegadores, como apps móveis e integrações entre serviços, costumam ficar mais simples com tokens.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Sair de todos os dispositivos",
+              context: "Ao trocar a senha, as sessões antigas precisam deixar de valer.",
+              code: {
+                language: "javascript",
+                filename: "logout-everywhere.js",
+                code: [
+                  "const sessions = new Map([",
+                  "  [\"s1\", { userId: 7, device: \"notebook\" }],",
+                  "  [\"s2\", { userId: 7, device: \"celular\" }],",
+                  "  [\"s3\", { userId: 8, device: \"notebook\" }],",
+                  "]);",
+                  "",
+                  "function revokeAllSessions(userId, { except } = {}) {",
+                  "  for (const [id, session] of sessions) {",
+                  "    if (session.userId === userId && id !== except) sessions.delete(id);",
+                  "  }",
+                  "}",
+                  "",
+                  "// Troca de senha feita no notebook (sessão s1): derruba as outras sessões da Ana",
+                  "revokeAllSessions(7, { except: \"s1\" });",
+                  "[...sessions.keys()];   // [\"s1\", \"s3\"]",
+                ].join("\n"),
+              },
+              explanation:
+                "Se alguém roubou a senha e já entrou, trocar a senha não basta: a sessão do invasor continua aberta. Com " +
+                "as sessões no servidor, derrubá-las é apagar registros. Num armazenamento como o Redis, um conjunto " +
+                "`user:7:sessions` com os ids evita percorrer todas as sessões.",
+            },
+            {
+              title: "CSRF: o cookie vai junto sem ninguém pedir",
+              context:
+                "Um site malicioso pode fazer o navegador enviar uma requisição ao seu site, com o cookie da vítima.",
+              code: {
+                language: "javascript",
+                filename: "csrf-token.js",
+                code: [
+                  "import { randomBytes, timingSafeEqual } from \"node:crypto\";",
+                  "",
+                  "// Um token por sessão, colocado nos formulários do próprio site e conferido nas escritas",
+                  "function csrfTokenFor(session) {",
+                  "  session.csrf ??= randomBytes(32).toString(\"base64url\");",
+                  "  return session.csrf;",
+                  "}",
+                  "",
+                  "function checkCsrf(req, session) {",
+                  "  if ([\"GET\", \"HEAD\", \"OPTIONS\"].includes(req.method)) return true;   // leituras não alteram nada",
+                  "  const sent = Buffer.from(String(req.headers[\"x-csrf-token\"] ?? \"\"));",
+                  "  const expected = Buffer.from(session.csrf ?? \"\");",
+                  "  return sent.length === expected.length && sent.length > 0 && timingSafeEqual(sent, expected);",
+                  "}",
+                  "",
+                  "const session = { userId: 7 };",
+                  "const token = csrfTokenFor(session);",
+                  "checkCsrf({ method: \"POST\", headers: { \"x-csrf-token\": token } }, session);   // true  — veio do próprio site",
+                  "checkCsrf({ method: \"POST\", headers: {} }, session);                          // false — o site atacante não conhece o token",
+                ].join("\n"),
+              },
+              explanation:
+                "O cookie `SameSite=Lax` já impede que a maior parte das requisições vindas de outros sites leve o " +
+                "cookie. O token é uma segunda camada, necessária quando o cookie precisa ser `SameSite=None` ou quando " +
+                "se quer proteger também navegadores antigos: um site de outra origem não consegue ler a página para " +
+                "descobri-lo.",
+            },
+            {
+              title: "Ação sensível pede um login recente",
+              context: "Uma sessão aberta há horas não deveria bastar para trocar o e-mail ou apagar a conta.",
+              code: {
+                language: "javascript",
+                filename: "recent-auth.js",
+                code: [
+                  "const RECENT_MS = 10 * 60 * 1000;",
+                  "",
+                  "function requireRecentLogin(session, now = Date.now()) {",
+                  "  if (now - session.authenticatedAt > RECENT_MS) {",
+                  "    return { status: 401, body: { error: \"reauthentication_required\" } };   // o front-end pede a senha de novo",
+                  "  }",
+                  "  return null;",
+                  "}",
+                  "",
+                  "const session = { userId: 7, authenticatedAt: Date.now() - 3 * 60 * 60 * 1000 };   // login há 3 horas",
+                  "requireRecentLogin(session)?.body.error;   // \"reauthentication_required\"",
+                  "session.authenticatedAt = Date.now();      // confirmou a senha",
+                  "requireRecentLogin(session);               // null — pode seguir",
+                ].join("\n"),
+              },
+              explanation:
+                "Um notebook destravado ou uma sessão roubada dá acesso à conta, mas não deveria permitir tomá-la. Pedir " +
+                "a senha (ou o segundo fator) de novo para ações que mudam a própria segurança da conta limita esse dano.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O app guarda o id do usuário num cookie comum (`user=7`) e confia nele. Qualquer pessoa que troque o " +
+              "valor no navegador entra na conta de outra.",
+            problemCode: {
+              language: "javascript",
+              filename: "cookie-user.js",
+              code: [
+                "function currentUser(cookies, users) {",
+                "  return users.get(Number(cookies.user)) ?? null;   // o cliente escolhe quem é",
+                "}",
+                "",
+                "function loginResponse(user) {",
+                "  return { status: 204, headers: { \"set-cookie\": `user=${user.id}; Path=/` } };",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Troque o cookie com o id do usuário por uma sessão no servidor com identificador aleatório, com os " +
+              "atributos certos no cookie, e implemente logout e `currentUser`.",
+            hint:
+              "O cookie deve carregar um valor que não diga nada sozinho e não possa ser adivinhado; a ligação com o " +
+              "usuário fica num mapa no servidor.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "cookie-user.fixed.js",
+                code: [
+                  "import { randomBytes } from \"node:crypto\";",
+                  "",
+                  "const sessions = new Map();",
+                  "",
+                  "function loginResponse(user) {",
+                  "  const sid = randomBytes(32).toString(\"base64url\");",
+                  "  sessions.set(sid, { userId: user.id, createdAt: Date.now() });",
+                  "  return { status: 204, headers: { \"set-cookie\": `sid=${sid}; HttpOnly; Secure; SameSite=Lax; Path=/` } };",
+                  "}",
+                  "",
+                  "function currentUser(cookies, users) {",
+                  "  const session = cookies.sid && sessions.get(cookies.sid);",
+                  "  return session ? users.get(session.userId) ?? null : null;",
+                  "}",
+                  "",
+                  "function logout(cookies) {",
+                  "  sessions.delete(cookies.sid);",
+                  "  return { status: 204, headers: { \"set-cookie\": \"sid=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0\" } };",
+                  "}",
+                  "",
+                  "const users = new Map([[7, { id: 7, name: \"Ana\" }], [8, { id: 8, name: \"Bruno\" }]]);",
+                  "const sid = loginResponse(users.get(7)).headers[\"set-cookie\"].split(\";\")[0].slice(4);",
+                  "currentUser({ sid }, users)?.name;         // \"Ana\"",
+                  "currentUser({ user: \"8\" }, users);         // null — o cookie antigo não vale mais nada",
+                  "logout({ sid });",
+                  "currentUser({ sid }, users);               // null",
+                ].join("\n"),
+              },
+              explanation:
+                "O cookie deixou de afirmar quem é a pessoa e passou a ser só uma chave para um registro que o servidor " +
+                "controla. 256 bits aleatórios não podem ser adivinhados, `HttpOnly` impede que scripts o leiam, e o " +
+                "logout apaga o registro, o que invalida o cookie mesmo que alguém o tenha copiado.",
+            },
+          },
         }),
-        concept({ order: 40, title: "Token-Based Authentication", requires: ["Web Fundamentals / Cookies"], note: "stateless; onde guardar o token (cookie vs storage)" }),
-        concept({ order: 50, title: "JWT", requires: ["Token-Based Authentication"], note: "header/payload/signature; claims; JWT ≠ criptografado por padrão" }),
-        concept({ order: 60, title: "Access & Refresh Token", requires: ["JWT"], subtopics: ["access (curto)", "refresh (longo, rotação, revogação)"], note: "consolidada (B3)" }),
-        concept({ order: 70, title: "OAuth 2.0", requires: ["Token-Based Authentication"], note: "papéis, Authorization Code + PKCE; autorização delegada, não login" }),
-        concept({ order: 80, title: "OpenID Connect (OIDC)", requires: ["OAuth 2.0"], note: "camada de identidade sobre OAuth; id_token" }),
-        concept({ order: 90, title: "Single Sign-On (SSO)", requires: ["Authentication vs Authorization"], note: "IdP, SAML (menção) × OIDC" }),
-        concept({ order: 100, title: "Multi-Factor Authentication (MFA)", requires: ["Authentication vs Authorization"], note: "fatores; TOTP, WebAuthn/passkeys (menção)" }),
+        concept({
+          order: 40,
+          title: "Token-Based Authentication",
+          requires: ["Web Fundamentals / Cookies"],
+          note: "stateless; onde guardar o token (cookie vs storage)",
+          summary:
+            "Autenticar cada requisição por um token que o cliente envia, em geral no cabeçalho `Authorization: " +
+            "Bearer` — um valor aleatório que o servidor procura (token opaco) ou um documento assinado que ele só " +
+            "precisa verificar (token autocontido).",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Na autenticação por token, depois de provar a identidade o cliente recebe um token e o apresenta em cada " +
+                "requisição, normalmente como `Authorization: Bearer <token>`. \"Bearer\" significa portador: quem tiver o " +
+                "token é tratado como o dono dele. Há dois tipos. O token opaco é um valor aleatório sem significado, e o " +
+                "servidor precisa consultar um registro para saber a quem ele pertence — como uma sessão, só que enviado " +
+                "num cabeçalho. O token autocontido, como o JWT, carrega os dados e uma assinatura, e o servidor o valida " +
+                "sem consultar nada, o que permite validar em qualquer serviço mas dificulta revogar antes do prazo.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Um token de portador é uma credencial completa: quem o obtém age como o dono até ele expirar — por isso " +
+                "ele precisa de prazo curto, transporte só por HTTPS e um lugar para ficar guardado que um script " +
+                "malicioso não alcance.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "bearer.js",
+              code: [
+                "import { randomBytes, createHash } from \"node:crypto\";",
+                "",
+                "// Tokens opacos (ex.: chaves de API pessoais): o banco guarda só o hash",
+                "const tokens = new Map();   // sha256(token) → { userId, scopes, expiresAt }",
+                "const sha256 = (value) => createHash(\"sha256\").update(value).digest(\"hex\");",
+                "",
+                "function issueToken(userId, scopes) {",
+                "  const token = `dvt_${randomBytes(32).toString(\"base64url\")}`;   // prefixo identifica a origem em vazamentos",
+                "  tokens.set(sha256(token), { userId, scopes, expiresAt: Date.now() + 90 * 24 * 3600 * 1000 });",
+                "  return token;   // mostrado uma única vez para a pessoa",
+                "}",
+                "",
+                "function authenticateBearer(headers) {",
+                "  const match = /^Bearer (\\S+)$/.exec(headers.authorization ?? \"\");",
+                "  if (!match) return { status: 401, headers: { \"www-authenticate\": \"Bearer\" } };",
+                "  const record = tokens.get(sha256(match[1]));",
+                "  if (!record || record.expiresAt < Date.now()) {",
+                "    return { status: 401, headers: { \"www-authenticate\": 'Bearer error=\"invalid_token\"' } };",
+                "  }",
+                "  return { user: { id: record.userId, scopes: record.scopes } };",
+                "}",
+                "",
+                "const token = issueToken(7, [\"repos:read\"]);",
+                "authenticateBearer({ authorization: `Bearer ${token}` }).user;   // { id: 7, scopes: [\"repos:read\"] }",
+                "authenticateBearer({ authorization: \"Bearer dvt_falso\" }).status; // 401",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Um token aleatório de 256 bits não precisa de hash lento como uma senha: ninguém consegue adivinhá-lo, e " +
+                "o SHA-256 basta para que um vazamento do banco não entregue tokens válidos.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Para APIs usadas por apps móveis, integrações e outros serviços, que não trabalham com cookies de navegador.",
+                "Para chaves de API e tokens pessoais, com escopo e validade, que a pessoa cria e revoga.",
+                "Para validar a identidade em vários serviços sem um armazenamento de sessões compartilhado (tokens autocontidos, com prazo curto).",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Num navegador, um token guardado em `localStorage` fica ao alcance de qualquer script injetado na página (XSS); cookies `HttpOnly` protegem melhor.",
+                "Tokens autocontidos não podem ser cancelados antes do prazo sem uma lista de revogação — o que traz de volta a consulta que se queria evitar.",
+                "Tokens em URLs vazam em logs, históricos e no cabeçalho `Referer`; eles devem ir no cabeçalho `Authorization`.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Onde guardar o token no navegador",
+              context: "Cada lugar protege contra um ataque e expõe a outro.",
+              code: {
+                language: "text",
+                filename: "token-storage.txt",
+                code: [
+                  "                         XSS (script injetado)        CSRF (outro site)          Sobrevive a recarregar",
+                  "localStorage             LÊ o token e o envia         não: não vai sozinho       sim",
+                  "memória (variável JS)    usa enquanto a página vive   não                        não (precisa renovar)",
+                  "cookie HttpOnly          não lê (mas pode usá-lo      o navegador envia sozinho: sim",
+                  "                         pela própria página)         precisa de SameSite/token",
+                  "",
+                  "Recomendação comum para SPAs: token de acesso curto em memória e o de renovação num cookie",
+                  "HttpOnly, Secure, SameSite — ou deixar o próprio servidor do front-end guardar os tokens",
+                  "(padrão \"backend for frontend\") e usar uma sessão com o navegador.",
+                ].join("\n"),
+              },
+              explanation:
+                "Não existe lugar perfeito no navegador. O `localStorage` é o mais exposto a XSS, porque o script lê e " +
+                "leva o token para fora; o cookie `HttpOnly` impede a leitura e exige cuidado com CSRF. Por isso a " +
+                "tendência é manter tokens longos fora do alcance do JavaScript.",
+            },
+            {
+              title: "Opaco ou autocontido",
+              context: "A diferença decide como se valida e como se revoga.",
+              code: {
+                language: "text",
+                filename: "opaque-vs-self-contained.txt",
+                code: [
+                  "                       Token opaco                        Token autocontido (JWT)",
+                  "conteúdo               aleatório, sem significado         dados + assinatura",
+                  "validar                consulta o registro (banco/cache)  verifica a assinatura, sem consulta",
+                  "revogar                apaga o registro: vale na hora      só expira; revogar exige lista de bloqueio",
+                  "tamanho                ~43 caracteres                     centenas de caracteres",
+                  "vazamento dos dados    nenhum: não diz nada               o conteúdo é legível por quem tiver o token",
+                  "bom para               sessões, chaves de API              tokens de acesso curtos entre serviços",
+                ].join("\n"),
+              },
+              explanation:
+                "Os dois são tokens de portador; muda o que o servidor precisa fazer para confiar neles. É comum combinar " +
+                "os dois: um token de acesso autocontido de poucos minutos e um token de renovação opaco, guardado no " +
+                "servidor, que pode ser revogado a qualquer momento.",
+            },
+            {
+              title: "O token no lugar errado: a URL",
+              context: "Parâmetros de URL aparecem em lugares que ninguém protege.",
+              code: {
+                language: "javascript",
+                filename: "token-in-url.js",
+                code: [
+                  "// Errado: GET /api/reports?access_token=eyJhbGciOi...",
+                  "//   → fica no log do servidor e do proxy, no histórico do navegador, e é enviado a outros",
+                  "//     sites no cabeçalho Referer quando a página tem links externos.",
+                  "",
+                  "// Certo: no cabeçalho, que não é registrado nem repassado por padrão",
+                  "await fetch(\"/api/reports\", { headers: { authorization: `Bearer ${accessToken}` } });",
+                  "",
+                  "// Para links que precisam funcionar sem cabeçalho (download, convite): um token próprio,",
+                  "// de uso único e prazo de minutos, que só autoriza aquela ação específica.",
+                ].join("\n"),
+              },
+              explanation:
+                "Um token de acesso numa URL acaba copiado em lugares sem proteção. Quando a URL precisa carregar a " +
+                "autorização, como num link de download, ela deve levar uma credencial limitada àquele recurso, válida " +
+                "por pouco tempo e por um só uso.",
+            },
+          ],
+          exercise: {
+            problem:
+              "As chaves de API da plataforma são guardadas em texto no banco. Um backup antigo foi parar num bucket " +
+              "público e, com ele, todas as chaves válidas dos clientes.",
+            problemCode: {
+              language: "javascript",
+              filename: "api-keys.js",
+              code: [
+                "import { randomBytes } from \"node:crypto\";",
+                "",
+                "const apiKeys = new Map();   // chave em texto → { customerId }",
+                "",
+                "function createApiKey(customerId) {",
+                "  const key = randomBytes(24).toString(\"hex\");",
+                "  apiKeys.set(key, { customerId });",
+                "  return key;",
+                "}",
+                "",
+                "function customerFor(headers) {",
+                "  const key = (headers.authorization ?? \"\").replace(\"Bearer \", \"\");",
+                "  return apiKeys.get(key)?.customerId ?? null;",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Guarde só o hash das chaves, acrescente um prefixo reconhecível e os últimos caracteres para a pessoa " +
+              "identificar cada chave no painel, e mantenha a autenticação funcionando.",
+            hint:
+              "SHA-256 da chave como índice; o prefixo (`dvk_`) e os 4 últimos caracteres podem ficar em texto, porque " +
+              "sozinhos não autenticam nada.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "api-keys.fixed.js",
+                code: [
+                  "import { randomBytes, createHash } from \"node:crypto\";",
+                  "",
+                  "const sha256 = (value) => createHash(\"sha256\").update(value).digest(\"hex\");",
+                  "const apiKeys = new Map();   // sha256(chave) → { customerId, hint }",
+                  "",
+                  "function createApiKey(customerId) {",
+                  "  const key = `dvk_${randomBytes(32).toString(\"base64url\")}`;",
+                  "  apiKeys.set(sha256(key), { customerId, hint: `dvk_…${key.slice(-4)}` });",
+                  "  return key;   // exibida uma vez; depois, nem o sistema sabe qual é",
+                  "}",
+                  "",
+                  "function customerFor(headers) {",
+                  "  const match = /^Bearer (dvk_\\S+)$/.exec(headers.authorization ?? \"\");",
+                  "  return match ? apiKeys.get(sha256(match[1]))?.customerId ?? null : null;",
+                  "}",
+                  "",
+                  "const key = createApiKey(42);",
+                  "customerFor({ authorization: `Bearer ${key}` });   // 42",
+                  "[...apiKeys.values()][0].hint;                    // \"dvk_…\" + 4 últimos caracteres — o que o painel mostra",
+                  "[...apiKeys.keys()][0] === key;                   // false — o banco não guarda a chave",
+                ].join("\n"),
+              },
+              explanation:
+                "Com o hash, um vazamento do banco entrega valores que não autenticam nada, e procurar a chave continua " +
+                "sendo uma busca por igualdade. O prefixo permite que ferramentas de varredura de segredos reconheçam uma " +
+                "chave vazada em código público, e a dica com os últimos caracteres ajuda a pessoa a saber qual chave " +
+                "revogar.",
+            },
+          },
+        }),
+        concept({
+          order: 50,
+          title: "JWT",
+          requires: ["Token-Based Authentication"],
+          note: "header/payload/signature; claims; JWT ≠ criptografado por padrão",
+          summary:
+            "JSON Web Token: um token autocontido em três partes — cabeçalho, conteúdo (claims) e assinatura, em " +
+            "Base64URL — que qualquer um pode ler e que só quem tem a chave pode ter produzido, desde que a " +
+            "assinatura e as claims sejam verificadas.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Um JWT tem a forma `cabeçalho.conteúdo.assinatura`, cada parte codificada em Base64URL. O cabeçalho diz " +
+                "o algoritmo (`alg`), o conteúdo traz as claims — afirmações como `sub` (de quem é o token), `exp` " +
+                "(quando expira), `iss` (quem emitiu) e `aud` (para quem) — e a assinatura é calculada sobre as duas " +
+                "primeiras partes. Com HMAC (HS256), emissor e verificador compartilham um segredo; com assinatura " +
+                "assimétrica (RS256, ES256), o emissor assina com a chave privada e qualquer serviço verifica com a " +
+                "pública. O conteúdo não é criptografado: qualquer pessoa com o token lê as claims. A assinatura só " +
+                "garante que ninguém as alterou.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Um JWT é assinado, e não secreto: nunca coloque nele o que não pode ser lido, e nunca confie nele sem " +
+                "verificar a assinatura com o algoritmo esperado, a validade (`exp`), o emissor (`iss`) e o destinatário " +
+                "(`aud`).",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "jwt-hs256.js",
+              code: [
+                "import { createHmac, timingSafeEqual } from \"node:crypto\";",
+                "",
+                "// Implementação didática do HS256; em produção, use uma biblioteca como `jose`",
+                "const b64url = (value) => Buffer.from(value).toString(\"base64url\");",
+                "const SECRET = Buffer.from(\"um-segredo-de-no-minimo-32-bytes-aleatorios!!\");",
+                "",
+                "function sign(payload) {",
+                "  const header = b64url(JSON.stringify({ alg: \"HS256\", typ: \"JWT\" }));",
+                "  const body = b64url(JSON.stringify(payload));",
+                "  const signature = createHmac(\"sha256\", SECRET).update(`${header}.${body}`).digest(\"base64url\");",
+                "  return `${header}.${body}.${signature}`;",
+                "}",
+                "",
+                "function verify(token, { issuer, audience, now = Math.floor(Date.now() / 1000) }) {",
+                "  const [header, body, signature] = token.split(\".\");",
+                "  if (!header || !body || !signature) throw new Error(\"formato inválido\");",
+                "  if (JSON.parse(Buffer.from(header, \"base64url\")).alg !== \"HS256\") throw new Error(\"algoritmo inesperado\");",
+                "  const expected = createHmac(\"sha256\", SECRET).update(`${header}.${body}`).digest();",
+                "  const actual = Buffer.from(signature, \"base64url\");",
+                "  if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) throw new Error(\"assinatura inválida\");",
+                "  const claims = JSON.parse(Buffer.from(body, \"base64url\"));",
+                "  if (typeof claims.exp !== \"number\" || claims.exp <= now) throw new Error(\"expirado\");",
+                "  if (claims.iss !== issuer || claims.aud !== audience) throw new Error(\"emissor ou destinatário inesperado\");",
+                "  return claims;",
+                "}",
+                "",
+                "const now = Math.floor(Date.now() / 1000);",
+                "const token = sign({ sub: \"user-7\", iss: \"https://auth.devatlas.test\", aud: \"api\", iat: now, exp: now + 900 });",
+                "verify(token, { issuer: \"https://auth.devatlas.test\", audience: \"api\" }).sub;   // \"user-7\"",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A ordem das verificações importa: primeiro o algoritmo e a assinatura, e só então o conteúdo. Ler as " +
+                "claims antes de verificar a assinatura é confiar em algo que qualquer pessoa pode ter escrito.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Como token de acesso de curta duração, validado por várias APIs sem consultar um servidor central.",
+                "Com assinatura assimétrica (RS256, ES256) quando vários serviços precisam verificar, e só um deve poder emitir.",
+                "Para levar entre serviços, de forma verificável, a identidade e o escopo da requisição original.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Como sessão de longa duração no navegador: não dá para revogar antes do `exp` sem uma lista de bloqueio, e o token cresce a cada claim.",
+                "Para guardar dados sensíveis: o conteúdo é legível; se for preciso sigilo, há o formato criptografado (JWE), que é outra coisa.",
+                "Com implementações próprias em produção: detalhes como o algoritmo `none`, a troca de algoritmo e a comparação da assinatura já causaram falhas reais em bibliotecas.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "O conteúdo é legível por qualquer um",
+              context: "Base64URL é uma codificação, e não uma criptografia.",
+              code: {
+                language: "javascript",
+                filename: "decode.js",
+                code: [
+                  "const token =",
+                  "  \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.\" +",
+                  "  \"eyJzdWIiOiJ1c2VyLTciLCJlbWFpbCI6ImFuYUBleGFtcGxlLnRlc3QiLCJyb2xlIjoiYWRtaW4ifQ.\" +",
+                  "  \"assinatura\";",
+                  "",
+                  "const [, body] = token.split(\".\");",
+                  "JSON.parse(Buffer.from(body, \"base64url\").toString());",
+                  "// { sub: \"user-7\", email: \"ana@example.test\", role: \"admin\" } — sem chave nenhuma",
+                ].join("\n"),
+              },
+              explanation:
+                "Qualquer pessoa que veja o token — num log, numa ferramenta do navegador, numa captura de tela — lê as " +
+                "claims. Por isso o JWT não deve carregar CPF, endereço ou dados de saúde, e o e-mail só se for aceitável " +
+                "expô-lo a quem tiver o token.",
+            },
+            {
+              title: "O que a verificação precisa recusar",
+              context: "Cada item abaixo já foi explorado em ataques reais.",
+              code: {
+                language: "javascript",
+                filename: "rejections.js",
+                code: [
+                  "// (usa sign/verify do exemplo anterior)",
+                  "const opts = { issuer: \"https://auth.devatlas.test\", audience: \"api\" };",
+                  "const t = Math.floor(Date.now() / 1000);",
+                  "const good = sign({ sub: \"user-7\", iss: opts.issuer, aud: \"api\", exp: t + 900 });",
+                  "const tryVerify = (token) => { try { verify(token, opts); return \"aceito\"; } catch (error) { return error.message; } };",
+                  "",
+                  "// 1. conteúdo alterado (\"role\": \"admin\"), com a assinatura antiga",
+                  "const [h, , s] = good.split(\".\");",
+                  "const forged = `${h}.${Buffer.from(JSON.stringify({ sub: \"user-7\", role: \"admin\", iss: opts.issuer, aud: \"api\", exp: t + 900 })).toString(\"base64url\")}.${s}`;",
+                  "tryVerify(forged);   // \"assinatura inválida\"",
+                  "",
+                  "// 2. algoritmo \"none\", sem assinatura",
+                  "const none = `${Buffer.from('{\"alg\":\"none\"}').toString(\"base64url\")}.${good.split(\".\")[1]}.x`;",
+                  "tryVerify(none);     // \"algoritmo inesperado\"",
+                  "",
+                  "// 3. expirado, e 4. emitido para outro destinatário",
+                  "tryVerify(sign({ sub: \"user-7\", iss: opts.issuer, aud: \"api\", exp: t - 1 }));        // \"expirado\"",
+                  "tryVerify(sign({ sub: \"user-7\", iss: opts.issuer, aud: \"billing\", exp: t + 900 }));  // \"emissor ou destinatário inesperado\"",
+                ].join("\n"),
+              },
+              explanation:
+                "A verificação fixa o algoritmo esperado, em vez de aceitar o que o cabeçalho disser, o que bloqueia o " +
+                "`none` e a troca de algoritmo. `aud` impede que um token emitido para um serviço seja usado em outro, e " +
+                "`exp` limita por quanto tempo um token roubado funciona.",
+            },
+            {
+              title: "Com uma biblioteca e chave pública",
+              context: "Em produção, a verificação usa uma biblioteca e as chaves públicas publicadas pelo emissor.",
+              code: {
+                language: "javascript",
+                filename: "jose-rs256.js",
+                code: [
+                  "import { createRemoteJWKSet, jwtVerify } from \"jose\";",
+                  "",
+                  "// O emissor publica as chaves públicas num endereço JWKS; a biblioteca as busca e guarda em cache",
+                  "const JWKS = createRemoteJWKSet(new URL(\"https://auth.devatlas.test/.well-known/jwks.json\"));",
+                  "",
+                  "async function verifyAccessToken(token) {",
+                  "  const { payload } = await jwtVerify(token, JWKS, {",
+                  "    issuer: \"https://auth.devatlas.test\",",
+                  "    audience: \"api\",",
+                  "    algorithms: [\"RS256\"],    // nunca deixe o cabeçalho escolher",
+                  "    clockTolerance: 30,       // segundos de tolerância entre relógios",
+                  "  });",
+                  "  return payload;             // { sub, scope, exp, ... }",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "Com RS256, só o servidor de autenticação tem a chave privada, e cada API verifica com a pública, sem " +
+                "compartilhar segredos. O JWKS permite trocar as chaves (rotação) sem reconfigurar os serviços: o `kid` " +
+                "no cabeçalho do token diz qual chave usar.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O middleware de autenticação da API só decodifica o JWT e usa o `sub`. Um desenvolvedor mostrou que " +
+              "editar o token no navegador dá acesso à conta de outra pessoa.",
+            problemCode: {
+              language: "javascript",
+              filename: "middleware.js",
+              code: [
+                "import { createHmac } from \"node:crypto\";",
+                "const SECRET = Buffer.from(\"um-segredo-de-no-minimo-32-bytes-aleatorios!!\");",
+                "",
+                "function userFromToken(authorization) {",
+                "  const token = (authorization ?? \"\").replace(\"Bearer \", \"\");",
+                "  const payload = JSON.parse(Buffer.from(token.split(\".\")[1], \"base64url\"));",
+                "  return payload.sub;   // confia no que estiver escrito",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Reescreva `userFromToken` para verificar o algoritmo (HS256), a assinatura em tempo constante, `exp`, " +
+              "`iss` e `aud`, devolvendo `null` para qualquer token inválido. Mostre que um token com o `sub` alterado " +
+              "é recusado.",
+            hint:
+              "Recalcule o HMAC sobre `cabeçalho.conteúdo` com o segredo e compare com `timingSafeEqual`; só leia as " +
+              "claims depois disso.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "middleware.fixed.js",
+                code: [
+                  "import { timingSafeEqual } from \"node:crypto\";",
+                  "",
+                  "const ISSUER = \"https://auth.devatlas.test\";",
+                  "",
+                  "function userFromToken(authorization, now = Math.floor(Date.now() / 1000)) {",
+                  "  const match = /^Bearer ([\\w-]+)\\.([\\w-]+)\\.([\\w-]+)$/.exec(authorization ?? \"\");",
+                  "  if (!match) return null;",
+                  "  const [, header, body, signature] = match;",
+                  "  try {",
+                  "    if (JSON.parse(Buffer.from(header, \"base64url\")).alg !== \"HS256\") return null;",
+                  "    const expected = createHmac(\"sha256\", SECRET).update(`${header}.${body}`).digest();",
+                  "    const actual = Buffer.from(signature, \"base64url\");",
+                  "    if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) return null;",
+                  "    const claims = JSON.parse(Buffer.from(body, \"base64url\"));",
+                  "    if (typeof claims.exp !== \"number\" || claims.exp <= now) return null;",
+                  "    if (claims.iss !== ISSUER || claims.aud !== \"api\") return null;",
+                  "    return claims.sub;",
+                  "  } catch {",
+                  "    return null;   // JSON ou Base64 malformados",
+                  "  }",
+                  "}",
+                  "",
+                  "// Teste: um token válido e a mesma coisa com o sub trocado",
+                  "const enc = (value) => Buffer.from(JSON.stringify(value)).toString(\"base64url\");",
+                  "const now = Math.floor(Date.now() / 1000);",
+                  "const header = enc({ alg: \"HS256\", typ: \"JWT\" });",
+                  "const body = enc({ sub: \"user-7\", iss: ISSUER, aud: \"api\", exp: now + 600 });",
+                  "const signature = createHmac(\"sha256\", SECRET).update(`${header}.${body}`).digest(\"base64url\");",
+                  "",
+                  "userFromToken(`Bearer ${header}.${body}.${signature}`);   // \"user-7\"",
+                  "const tampered = enc({ sub: \"user-8\", iss: ISSUER, aud: \"api\", exp: now + 600 });",
+                  "userFromToken(`Bearer ${header}.${tampered}.${signature}`);   // null",
+                ].join("\n"),
+              },
+              explanation:
+                "Decodificar não é verificar: sem conferir a assinatura, o `sub` é só o que o cliente escreveu. Com o " +
+                "HMAC recalculado e comparado em tempo constante, qualquer alteração no conteúdo invalida o token, e as " +
+                "claims de prazo, emissor e destinatário limitam onde e até quando ele vale.",
+            },
+          },
+        }),
+        concept({
+          order: 60,
+          title: "Access & Refresh Token",
+          requires: ["JWT"],
+          subtopics: ["access (curto)", "refresh (longo, rotação, revogação)"],
+          note: "consolidada (B3)",
+          summary:
+            "Um par de tokens: o de acesso, de vida curta, enviado a cada requisição às APIs; e o de renovação " +
+            "(refresh), de vida longa, guardado com mais cuidado e usado só para obter um novo token de acesso — e " +
+            "que pode ser revogado.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Tokens autocontidos são práticos de validar e difíceis de revogar. O par de tokens separa as duas " +
+                "necessidades. O token de acesso vale poucos minutos e vai em toda requisição; se vazar, funciona por " +
+                "pouco tempo. O token de renovação vale dias ou semanas, é enviado só ao servidor de autenticação e fica " +
+                "registrado nele, o que permite revogá-lo. Quando o token de acesso expira, o cliente usa o de renovação " +
+                "para pedir outro, sem que a pessoa precise fazer login de novo. Na rotação, cada renovação devolve " +
+                "também um novo token de renovação e invalida o anterior.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "O token de acesso é curto porque não pode ser revogado; o de renovação pode ser revogado porque fica " +
+                "registrado no servidor — e, com rotação, o reuso de um token de renovação já trocado é o sinal de que " +
+                "ele foi roubado.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "token-pair.js",
+              code: [
+                "import { randomBytes, createHash } from \"node:crypto\";",
+                "",
+                "const sha256 = (value) => createHash(\"sha256\").update(value).digest(\"hex\");",
+                "const refreshTokens = new Map();   // sha256(token) → { userId, familyId, expiresAt, usedAt }",
+                "const ACCESS_TTL_S = 15 * 60;",
+                "const REFRESH_TTL_MS = 30 * 24 * 3600 * 1000;",
+                "",
+                "function issuePair(userId, { signAccess, familyId = randomBytes(8).toString(\"hex\") }) {",
+                "  const refresh = randomBytes(32).toString(\"base64url\");",
+                "  refreshTokens.set(sha256(refresh), { userId, familyId, expiresAt: Date.now() + REFRESH_TTL_MS, usedAt: null });",
+                "  const now = Math.floor(Date.now() / 1000);",
+                "  return { accessToken: signAccess({ sub: String(userId), exp: now + ACCESS_TTL_S }), refreshToken: refresh };",
+                "}",
+                "",
+                "function refresh(oldRefresh, { signAccess }) {",
+                "  const record = refreshTokens.get(sha256(oldRefresh));",
+                "  if (!record || record.expiresAt < Date.now()) return { status: 401 };",
+                "  if (record.usedAt) {",
+                "    // já foi trocado antes: alguém está usando uma cópia. Revoga a família inteira.",
+                "    for (const [key, r] of refreshTokens) if (r.familyId === record.familyId) refreshTokens.delete(key);",
+                "    return { status: 401, reason: \"reuse_detected\" };",
+                "  }",
+                "  record.usedAt = Date.now();   // rotação: este token não serve mais",
+                "  return { status: 200, ...issuePair(record.userId, { signAccess, familyId: record.familyId }) };",
+                "}",
+                "",
+                "const signAccess = (claims) => `access(${claims.sub},${claims.exp})`;   // no lugar de um JWT assinado",
+                "const first = issuePair(7, { signAccess });",
+                "const second = refresh(first.refreshToken, { signAccess });   // 200 — novo par",
+                "refresh(second.refreshToken, { signAccess }).status;          // 200 — a pessoa continua renovando normalmente",
+              ].join("\n"),
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Em apps e SPAs que usam tokens autocontidos e precisam manter a pessoa logada por dias sem tokens de acesso longos.",
+                "Com rotação e detecção de reuso sempre que o token de renovação fica num cliente público, como um navegador ou um app instalado.",
+                "Para revogar acesso: apagar os tokens de renovação de alguém corta o acesso dela no máximo quando o token de acesso atual expirar.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Depois do logout ou de uma revogação, o token de acesso atual continua valendo até expirar; o prazo curto é o que limita essa janela.",
+                "Aplicações web simples, no mesmo domínio do servidor, costumam ficar mais seguras e simples com uma sessão do que com o par de tokens.",
+                "Renovações simultâneas (duas abas, repetições de rede) podem ser confundidas com reuso; os servidores costumam tolerar alguns segundos de margem.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "O reuso que denuncia o roubo",
+              context: "Com rotação, um token de renovação só serve uma vez; usá-lo de novo é suspeito.",
+              code: {
+                language: "javascript",
+                filename: "reuse-detection.js",
+                code: [
+                  "// (continua o exemplo anterior)",
+                  "const stolen = issuePair(7, { signAccess }).refreshToken;   // copiado por um malware",
+                  "",
+                  "const attacker = refresh(stolen, { signAccess });     // o atacante renova primeiro: 200",
+                  "const victim = refresh(stolen, { signAccess });       // a pessoa tenta com o mesmo token",
+                  "victim.reason;                                        // \"reuse_detected\"",
+                  "",
+                  "refresh(attacker.refreshToken, { signAccess }).status;   // 401 — a família inteira foi revogada, inclusive o do atacante",
+                ].join("\n"),
+              },
+              explanation:
+                "O servidor não sabe quem é o atacante e quem é a pessoa, mas sabe que duas partes estão usando o mesmo " +
+                "token. Revogar a família inteira corta os dois; a pessoa faz login de novo, e o atacante perde o acesso. " +
+                "É o comportamento recomendado pelas boas práticas atuais de OAuth para clientes públicos.",
+            },
+            {
+              title: "Onde cada token fica, num navegador",
+              context: "Os dois tokens têm riscos diferentes e merecem lugares diferentes.",
+              code: {
+                language: "text",
+                filename: "where-to-keep.txt",
+                code: [
+                  "Token de acesso (15 min)    em memória, na aplicação; enviado em Authorization: Bearer",
+                  "                            → perdido ao recarregar a página: renova-se com o refresh",
+                  "",
+                  "Token de renovação (30 d)   cookie HttpOnly; Secure; SameSite=Strict; Path=/auth/refresh",
+                  "                            → o JavaScript não o lê; só vai para a rota de renovação",
+                  "",
+                  "Renovação: POST /auth/refresh (o cookie vai sozinho) → novo token de acesso no corpo",
+                  "           e novo cookie de renovação (rotação)",
+                ].join("\n"),
+              },
+              explanation:
+                "O token longo fica onde um script injetado não o alcança, e o `Path` restrito faz o navegador enviá-lo " +
+                "só à rota que precisa dele. O token de acesso, exposto ao JavaScript, vale tão pouco tempo que um " +
+                "vazamento tem efeito limitado.",
+            },
+            {
+              title: "Logout e o que ele alcança",
+              context: "Revogar o refresh não invalida o token de acesso que já foi emitido.",
+              code: {
+                language: "javascript",
+                filename: "logout-window.js",
+                code: [
+                  "function logout(refreshToken) {",
+                  "  const record = refreshTokens.get(sha256(refreshToken));",
+                  "  if (record) for (const [key, r] of refreshTokens) if (r.familyId === record.familyId) refreshTokens.delete(key);",
+                  "  // o token de acesso atual continua válido até o exp (no máximo 15 minutos)",
+                  "}",
+                  "",
+                  "// Quando nem essa janela é aceitável (conta comprometida, demissão), as APIs consultam",
+                  "// uma lista curta de revogados: ids de tokens (jti) ou \"tokens emitidos antes de T para o usuário X\".",
+                  "const revokedBefore = new Map([[\"user-7\", Math.floor(Date.now() / 1000)]]);",
+                  "const isRevoked = (claims) => (revokedBefore.get(claims.sub) ?? 0) > claims.iat;",
+                ].join("\n"),
+              },
+              explanation:
+                "A duração do token de acesso é a janela de risco de qualquer revogação. Para os casos em que ela " +
+                "importa, uma lista pequena, com prazo igual à duração do token de acesso, dá revogação imediata sem " +
+                "voltar a consultar tudo a cada requisição.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O app móvel recebe um token de acesso válido por 30 dias, e não há token de renovação. Quando um celular " +
+              "foi roubado, não houve como cortar o acesso daquela sessão sem trocar a chave de assinatura de todo o " +
+              "sistema.",
+            problemCode: {
+              language: "javascript",
+              filename: "mobile-login.js",
+              code: [
+                "function mobileLogin(user, { signAccess }) {",
+                "  const now = Math.floor(Date.now() / 1000);",
+                "  return { accessToken: signAccess({ sub: String(user.id), exp: now + 30 * 24 * 3600 }) };",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Troque por um par de tokens: acesso de 15 minutos e renovação de 30 dias com rotação. Implemente a " +
+              "revogação de todos os dispositivos de um usuário e mostre que o celular roubado não consegue mais " +
+              "renovar.",
+            hint:
+              "Guarde os tokens de renovação (pelo hash) com o id do usuário e do dispositivo; revogar é apagar todos " +
+              "os do usuário.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "mobile-login.fixed.js",
+                code: [
+                  "import { randomBytes, createHash } from \"node:crypto\";",
+                  "",
+                  "const sha256 = (value) => createHash(\"sha256\").update(value).digest(\"hex\");",
+                  "const refreshStore = new Map();   // hash → { userId, device, expiresAt }",
+                  "",
+                  "function issue(userId, device, signAccess) {",
+                  "  const refreshToken = randomBytes(32).toString(\"base64url\");",
+                  "  refreshStore.set(sha256(refreshToken), { userId, device, expiresAt: Date.now() + 30 * 24 * 3600 * 1000 });",
+                  "  const now = Math.floor(Date.now() / 1000);",
+                  "  return { accessToken: signAccess({ sub: String(userId), exp: now + 15 * 60 }), refreshToken };",
+                  "}",
+                  "",
+                  "const mobileLogin = (user, device, { signAccess }) => issue(user.id, device, signAccess);",
+                  "",
+                  "function renew(refreshToken, { signAccess }) {",
+                  "  const key = sha256(refreshToken);",
+                  "  const record = refreshStore.get(key);",
+                  "  if (!record || record.expiresAt < Date.now()) return null;",
+                  "  refreshStore.delete(key);   // rotação",
+                  "  return issue(record.userId, record.device, signAccess);",
+                  "}",
+                  "",
+                  "function revokeAllDevices(userId) {",
+                  "  for (const [key, record] of refreshStore) if (record.userId === userId) refreshStore.delete(key);",
+                  "}",
+                  "",
+                  "const signAccess = (claims) => `access(${claims.sub},${claims.exp})`;",
+                  "const stolenPhone = mobileLogin({ id: 7 }, \"celular\", { signAccess });",
+                  "revokeAllDevices(7);",
+                  "renew(stolenPhone.refreshToken, { signAccess });   // null — o celular perde o acesso em até 15 minutos",
+                ].join("\n"),
+              },
+              explanation:
+                "Com o token de acesso de 15 minutos, o pior caso depois de uma revogação é esse prazo, e não 30 dias. Os " +
+                "tokens de renovação ficam registrados por dispositivo, o que permite tanto derrubar tudo quanto, numa " +
+                "tela de \"dispositivos conectados\", derrubar só o celular roubado.",
+            },
+          },
+        }),
+        concept({
+          order: 70,
+          title: "OAuth 2.0",
+          requires: ["Token-Based Authentication"],
+          note: "papéis, Authorization Code + PKCE; autorização delegada, não login",
+          summary:
+            "O protocolo que permite a uma aplicação agir em nome de uma pessoa em outro serviço, com o consentimento " +
+            "dela e sem receber a sua senha — por meio de um token de acesso com escopo limitado, emitido pelo " +
+            "servidor de autorização daquele serviço.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "OAuth 2.0 resolve a autorização delegada: um app de agenda quer ler os seus eventos do Google Calendar " +
+                "sem conhecer a sua senha do Google. Há quatro papéis: o dono do recurso (a pessoa), o cliente (o app), o " +
+                "servidor de autorização (quem autentica a pessoa e emite tokens) e o servidor de recursos (a API com os " +
+                "dados). O fluxo recomendado hoje para quase todos os clientes é o Authorization Code com PKCE: o app " +
+                "redireciona a pessoa ao servidor de autorização, ela faz login e consente com os escopos pedidos, volta " +
+                "ao app com um código de uso único, e o app troca esse código por um token de acesso. O PKCE garante que " +
+                "só quem iniciou o fluxo consegue trocar o código.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "OAuth delega acesso, e não identidade: o token diz o que o app pode fazer em nome de alguém, com escopo " +
+                "e prazo — para saber quem é a pessoa, usa-se o OpenID Connect, a camada construída sobre ele.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "flow",
+              label: "O app redireciona ao servidor de autorização; a pessoa faz login e consente; volta ao app com um código; o app troca o código e o verificador PKCE por um token; o app chama a API com o token",
+              steps: [
+                { lines: ["App", "redireciona"] },
+                { lines: ["Login e", "consentimento"] },
+                { lines: ["Volta com", "código"] },
+                { lines: ["Troca código", "por token"] },
+                { lines: ["Chama", "a API"] },
+              ],
+            },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "pkce.js",
+              code: [
+                "import { randomBytes, createHash } from \"node:crypto\";",
+                "",
+                "// 1. O app gera um segredo (verifier) e envia só o hash dele (challenge) no início do fluxo",
+                "const codeVerifier = randomBytes(32).toString(\"base64url\");   // 43 caracteres",
+                "const codeChallenge = createHash(\"sha256\").update(codeVerifier).digest(\"base64url\");",
+                "const state = randomBytes(16).toString(\"base64url\");           // protege o retorno contra CSRF",
+                "",
+                "const authorizeUrl = new URL(\"https://auth.provider.test/authorize\");",
+                "authorizeUrl.search = new URLSearchParams({",
+                "  response_type: \"code\",",
+                "  client_id: \"agenda-app\",",
+                "  redirect_uri: \"https://agenda.test/callback\",",
+                "  scope: \"calendar.read\",",
+                "  state,",
+                "  code_challenge: codeChallenge,",
+                "  code_challenge_method: \"S256\",",
+                "}).toString();",
+                "",
+                "// 2. Na volta (callback), o app confere o state e troca o código, provando que tem o verifier",
+                "async function exchangeCode(code, returnedState, { fetch }) {",
+                "  if (returnedState !== state) throw new Error(\"state não confere\");",
+                "  const response = await fetch(\"https://auth.provider.test/token\", {",
+                "    method: \"POST\",",
+                "    headers: { \"content-type\": \"application/x-www-form-urlencoded\" },",
+                "    body: new URLSearchParams({",
+                "      grant_type: \"authorization_code\",",
+                "      code,",
+                "      redirect_uri: \"https://agenda.test/callback\",",
+                "      client_id: \"agenda-app\",",
+                "      code_verifier: codeVerifier,",
+                "    }),",
+                "  });",
+                "  return response.json();   // { access_token, token_type: \"Bearer\", expires_in, scope, refresh_token? }",
+                "}",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Quem interceptar o código no redirecionamento não consegue trocá-lo: falta o `code_verifier`, que nunca " +
+                "saiu do app. O `state` faz o app recusar um retorno que ele não iniciou.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Quando um app precisa acessar dados de uma pessoa em outro serviço (agenda, arquivos, repositórios) sem pedir a senha dela.",
+                "Para dar a integrações de terceiros acesso limitado por escopo à sua própria API, revogável pela pessoa.",
+                "Com o fluxo Client Credentials, para um serviço acessar outro em nome próprio, sem uma pessoa envolvida.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Para \"entrar com o Google\" sozinho, sem OpenID Connect: o token de acesso não é uma prova de identidade para o seu app.",
+                "Os fluxos antigos Implicit e Resource Owner Password Credentials não são mais recomendados; use Authorization Code com PKCE.",
+                "Um `redirect_uri` aceito por prefixo ou por coringa permite desviar o código para outro endereço; o servidor deve exigir a URL exata cadastrada.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "O state recusa o retorno que o app não iniciou",
+              context: "Sem ele, um atacante pode fazer a vítima concluir um fluxo com a conta do atacante.",
+              code: {
+                language: "javascript",
+                filename: "state.js",
+                code: [
+                  "import { randomBytes } from \"node:crypto\";",
+                  "",
+                  "const pending = new Map();   // na sessão do navegador: state → { codeVerifier, returnTo }",
+                  "",
+                  "function startLogin(session) {",
+                  "  const state = randomBytes(16).toString(\"base64url\");",
+                  "  session.oauth = { state, codeVerifier: randomBytes(32).toString(\"base64url\") };",
+                  "  return state;",
+                  "}",
+                  "",
+                  "function checkCallback(session, query) {",
+                  "  const expected = session.oauth?.state;",
+                  "  delete session.oauth;                            // cada state vale uma vez",
+                  "  if (!expected || query.state !== expected) return { status: 400, error: \"state inválido\" };",
+                  "  return { ok: true };",
+                  "}",
+                  "",
+                  "const session = {};",
+                  "const state = startLogin(session);",
+                  "checkCallback(session, { code: \"abc\", state }).ok;                      // true",
+                  "checkCallback({}, { code: \"codigo-do-atacante\", state: \"qualquer\" }).error;   // \"state inválido\"",
+                ].join("\n"),
+              },
+              explanation:
+                "Sem o `state`, um atacante inicia o fluxo com a conta dele e envia à vítima o link de retorno com o " +
+                "código; o app da vítima fica ligado à conta do atacante, e o que ela salvar vai para lá. Guardar o " +
+                "`state` na sessão e exigi-lo de volta garante que o retorno pertence a um fluxo iniciado ali.",
+            },
+            {
+              title: "OAuth não é login",
+              context: "Um token de acesso diz o que o app pode fazer, e não quem está usando o app.",
+              code: {
+                language: "text",
+                filename: "not-login.txt",
+                code: [
+                  "Errado: \"entrar com o Provedor\" usando só OAuth",
+                  "  1. o app recebe um access_token do provedor",
+                  "  2. chama GET https://api.provider.test/me e usa o id devolvido como login",
+                  "",
+                  "  Problema: qualquer app que tenha recebido um token dessa pessoa (um joguinho qualquer)",
+                  "  pode apresentá-lo ao seu app — o token não foi emitido PARA o seu app, e nada prova isso.",
+                  "",
+                  "Certo: OpenID Connect",
+                  "  o provedor devolve também um id_token, assinado, com aud = client_id do SEU app,",
+                  "  nonce do SEU fluxo e o identificador da pessoa (sub).",
+                ].join("\n"),
+              },
+              explanation:
+                "O token de acesso foi feito para a API do provedor, e não para o seu app; aceitá-lo como prova de " +
+                "identidade permite que um token obtido por outro app seja usado para entrar no seu. O OpenID Connect " +
+                "acrescenta o `id_token`, emitido especificamente para o seu app.",
+            },
+            {
+              title: "Escopos: pedir só o necessário",
+              context: "O escopo limita o que o token permite, e aparece para a pessoa na tela de consentimento.",
+              code: {
+                language: "javascript",
+                filename: "scopes.js",
+                code: [
+                  "// App que só mostra os próximos eventos",
+                  "const scopesNeeded = [\"calendar.events.read\"];",
+                  "",
+                  "// No servidor de recursos, cada rota exige o escopo correspondente",
+                  "function requireScope(tokenClaims, needed) {",
+                  "  const granted = new Set(String(tokenClaims.scope ?? \"\").split(\" \"));",
+                  "  return granted.has(needed) ? null : { status: 403, headers: { \"www-authenticate\": `Bearer error=\"insufficient_scope\", scope=\"${needed}\"` } };",
+                  "}",
+                  "",
+                  "requireScope({ scope: \"calendar.events.read\" }, \"calendar.events.read\");           // null — permitido",
+                  "requireScope({ scope: \"calendar.events.read\" }, \"calendar.events.write\").status;   // 403",
+                ].join("\n"),
+              },
+              explanation:
+                "Pedir escopos amplos \"por via das dúvidas\" assusta a pessoa na tela de consentimento e aumenta o estrago " +
+                "se o token vazar. Do lado da API, conferir o escopo em cada rota é o que faz o limite valer.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O callback de login de um app integra com um provedor OAuth, mas não guarda nem confere o `state` e não " +
+              "usa PKCE. Numa auditoria, apontaram que um código interceptado poderia ser trocado por outra pessoa.",
+            problemCode: {
+              language: "javascript",
+              filename: "callback.js",
+              code: [
+                "async function startAuthorization() {",
+                "  const url = new URL(\"https://auth.provider.test/authorize\");",
+                "  url.search = new URLSearchParams({ response_type: \"code\", client_id: \"app\", redirect_uri: \"https://app.test/callback\", scope: \"files.read\" }).toString();",
+                "  return url.toString();",
+                "}",
+                "",
+                "async function callback(query, { fetch }) {",
+                "  const response = await fetch(\"https://auth.provider.test/token\", {",
+                "    method: \"POST\",",
+                "    body: new URLSearchParams({ grant_type: \"authorization_code\", code: query.code, client_id: \"app\", redirect_uri: \"https://app.test/callback\" }),",
+                "  });",
+                "  return response.json();",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Acrescente `state` e PKCE (S256): gere e guarde os dois na sessão ao iniciar, confira o `state` no " +
+              "retorno e envie o `code_verifier` na troca. Teste com um servidor de tokens falso que confere o PKCE.",
+            hint:
+              "`code_challenge = base64url(sha256(code_verifier))`. O servidor falso deve recalcular o challenge a " +
+              "partir do verifier recebido e comparar.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "callback.fixed.js",
+                code: [
+                  "import { randomBytes, createHash } from \"node:crypto\";",
+                  "",
+                  "const challengeOf = (verifier) => createHash(\"sha256\").update(verifier).digest(\"base64url\");",
+                  "",
+                  "function startAuthorization(session) {",
+                  "  session.oauth = { state: randomBytes(16).toString(\"base64url\"), codeVerifier: randomBytes(32).toString(\"base64url\") };",
+                  "  const url = new URL(\"https://auth.provider.test/authorize\");",
+                  "  url.search = new URLSearchParams({",
+                  "    response_type: \"code\", client_id: \"app\", redirect_uri: \"https://app.test/callback\", scope: \"files.read\",",
+                  "    state: session.oauth.state, code_challenge: challengeOf(session.oauth.codeVerifier), code_challenge_method: \"S256\",",
+                  "  }).toString();",
+                  "  return url;",
+                  "}",
+                  "",
+                  "async function callback(session, query, { fetch }) {",
+                  "  const pending = session.oauth;",
+                  "  delete session.oauth;",
+                  "  if (!pending || query.state !== pending.state) throw new Error(\"state inválido\");",
+                  "  const response = await fetch(\"https://auth.provider.test/token\", {",
+                  "    method: \"POST\",",
+                  "    body: new URLSearchParams({ grant_type: \"authorization_code\", code: query.code, client_id: \"app\",",
+                  "      redirect_uri: \"https://app.test/callback\", code_verifier: pending.codeVerifier }),",
+                  "  });",
+                  "  return response.json();",
+                  "}",
+                  "",
+                  "// Servidor de tokens falso: guarda o challenge do código emitido e confere o verifier na troca",
+                  "const issuedCodes = new Map();",
+                  "const fakeFetch = async (_url, { body }) => {",
+                  "  const entry = issuedCodes.get(body.get(\"code\"));",
+                  "  const ok = entry && challengeOf(body.get(\"code_verifier\") ?? \"\") === entry.challenge;",
+                  "  return { json: async () => (ok ? { access_token: \"tok\", token_type: \"Bearer\" } : { error: \"invalid_grant\" }) };",
+                  "};",
+                  "",
+                  "const session = {};",
+                  "const url = startAuthorization(session);",
+                  "issuedCodes.set(\"code-123\", { challenge: url.searchParams.get(\"code_challenge\") });",
+                  "await callback(session, { code: \"code-123\", state: url.searchParams.get(\"state\") }, { fetch: fakeFetch });   // { access_token: \"tok\", ... }",
+                  "",
+                  "// Quem interceptou o código, sem o verifier:",
+                  "const other = {};",
+                  "startAuthorization(other);",
+                  "await callback(other, { code: \"code-123\", state: other.oauth.state }, { fetch: fakeFetch });   // { error: \"invalid_grant\" }",
+                ].join("\n"),
+              },
+              explanation:
+                "O `state` amarra o retorno a um fluxo iniciado nesta sessão, e o PKCE amarra a troca do código a quem " +
+                "gerou o desafio. Um código interceptado, sozinho, não vale nada: o verifier nunca saiu do app, e o " +
+                "servidor de tokens recusa a troca sem ele.",
+            },
+          },
+        }),
+        concept({
+          order: 80,
+          title: "OpenID Connect (OIDC)",
+          requires: ["OAuth 2.0"],
+          note: "camada de identidade sobre OAuth; id_token",
+          summary:
+            "Uma camada de identidade sobre o OAuth 2.0: além do token de acesso, o provedor devolve um `id_token` — " +
+            "um JWT assinado, emitido para o seu app, que diz quem é a pessoa (`sub`), quem a autenticou (`iss`) e " +
+            "quando.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "O OpenID Connect usa o mesmo fluxo do OAuth (Authorization Code com PKCE), pedindo o escopo `openid`, e " +
+                "acrescenta o `id_token`. Esse token é um JWT assinado pelo provedor, com claims padronizadas: `iss` (o " +
+                "provedor), `sub` (o identificador da pessoa naquele provedor), `aud` (o `client_id` do seu app), `exp` e " +
+                "`iat`, `nonce` (o valor que o seu app enviou no início) e, conforme os escopos, dados de perfil como " +
+                "`email` e `name`. O provedor publica um documento de descoberta com os seus endereços e as chaves " +
+                "públicas (JWKS) para verificar a assinatura. É o que está por trás de \"Entrar com Google\", \"Entrar com " +
+                "Microsoft\" e dos provedores corporativos de identidade.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "O `id_token` é a prova de login para o seu app: ele só vale depois de verificar assinatura, `iss`, `aud` " +
+                "(o seu `client_id`), `exp` e `nonce` — e a pessoa é identificada pelo par (`iss`, `sub`), e não pelo " +
+                "e-mail.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "id-token.js",
+              code: [
+                "import { generateKeyPairSync, createSign, createVerify } from \"node:crypto\";",
+                "",
+                "// O provedor assina com a chave privada; o app verifica com a pública (normalmente buscada no JWKS)",
+                "const { privateKey, publicKey } = generateKeyPairSync(\"rsa\", { modulusLength: 2048 });",
+                "const enc = (value) => Buffer.from(JSON.stringify(value)).toString(\"base64url\");",
+                "",
+                "function providerIssueIdToken(claims) {",
+                "  const input = `${enc({ alg: \"RS256\", typ: \"JWT\", kid: \"k1\" })}.${enc(claims)}`;",
+                "  return `${input}.${createSign(\"RSA-SHA256\").update(input).sign(privateKey, \"base64url\")}`;",
+                "}",
+                "",
+                "function verifyIdToken(token, { issuer, clientId, nonce, now = Math.floor(Date.now() / 1000) }) {",
+                "  const [header, body, signature] = token.split(\".\");",
+                "  if (JSON.parse(Buffer.from(header, \"base64url\")).alg !== \"RS256\") throw new Error(\"algoritmo inesperado\");",
+                "  if (!createVerify(\"RSA-SHA256\").update(`${header}.${body}`).verify(publicKey, signature, \"base64url\")) throw new Error(\"assinatura inválida\");",
+                "  const claims = JSON.parse(Buffer.from(body, \"base64url\"));",
+                "  if (claims.iss !== issuer) throw new Error(\"emissor inesperado\");",
+                "  if (claims.aud !== clientId) throw new Error(\"token emitido para outro app\");",
+                "  if (claims.exp <= now) throw new Error(\"expirado\");",
+                "  if (claims.nonce !== nonce) throw new Error(\"nonce não confere\");",
+                "  return { issuer: claims.iss, subject: claims.sub, email: claims.email, emailVerified: claims.email_verified === true };",
+                "}",
+                "",
+                "const now = Math.floor(Date.now() / 1000);",
+                "const idToken = providerIssueIdToken({",
+                "  iss: \"https://id.provider.test\", sub: \"248289761001\", aud: \"devatlas-web\", nonce: \"n-0S6_WzA2Mj\",",
+                "  iat: now, exp: now + 300, email: \"ana@example.test\", email_verified: true,",
+                "});",
+                "verifyIdToken(idToken, { issuer: \"https://id.provider.test\", clientId: \"devatlas-web\", nonce: \"n-0S6_WzA2Mj\" });",
+                "// { issuer: \"https://id.provider.test\", subject: \"248289761001\", email: \"ana@example.test\", emailVerified: true }",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O `nonce` cumpre para o `id_token` o papel que o `state` cumpre para o retorno: o app o gera, guarda na " +
+                "sessão e confere, o que impede reaproveitar um `id_token` capturado em outro login.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Para \"entrar com\" um provedor externo (Google, Microsoft, GitHub com OIDC, Apple) sem guardar senhas.",
+                "Para centralizar o login de vários sistemas de uma empresa num provedor de identidade próprio (Keycloak, Auth0, Entra ID, Okta).",
+                "Quando o app precisa de uma identidade verificável e de alguns dados de perfil, com o consentimento da pessoa.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "O `id_token` é para o app que fez o login, e não para chamar APIs; as APIs recebem o token de acesso.",
+                "O e-mail pode mudar e, em alguns provedores, não ser verificado; usá-lo como identificador permite tomar contas.",
+                "Depender de um provedor externo põe o login do seu sistema na mão dele: quedas e mudanças de política do provedor passam a ser problemas seus.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "A descoberta: tudo o que o app precisa, num endereço",
+              context: "O provedor publica os seus endpoints e chaves num documento padrão.",
+              code: {
+                language: "text",
+                filename: "discovery.txt",
+                code: [
+                  "GET https://id.provider.test/.well-known/openid-configuration",
+                  "",
+                  "{",
+                  "  \"issuer\": \"https://id.provider.test\",",
+                  "  \"authorization_endpoint\": \"https://id.provider.test/authorize\",",
+                  "  \"token_endpoint\": \"https://id.provider.test/token\",",
+                  "  \"userinfo_endpoint\": \"https://id.provider.test/userinfo\",",
+                  "  \"jwks_uri\": \"https://id.provider.test/.well-known/jwks.json\",",
+                  "  \"scopes_supported\": [\"openid\", \"email\", \"profile\"],",
+                  "  \"id_token_signing_alg_values_supported\": [\"RS256\"],",
+                  "  \"code_challenge_methods_supported\": [\"S256\"]",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "As bibliotecas de OIDC só precisam do `issuer`: a partir dele, descobrem onde autenticar, onde trocar o " +
+                "código e onde buscar as chaves. A troca de chaves do provedor (rotação) acontece no `jwks_uri`, sem " +
+                "nenhuma mudança no app.",
+            },
+            {
+              title: "O id_token fica no app; a API recebe o access_token",
+              context: "Cada token tem um destinatário, escrito no `aud`.",
+              code: {
+                language: "text",
+                filename: "which-token.txt",
+                code: [
+                  "Resposta do endpoint de token, num login OIDC:",
+                  "  id_token      aud = \"devatlas-web\"    → para o app: quem é a pessoa. Verificado uma vez, no login.",
+                  "  access_token  aud = \"https://api.devatlas.test\"  → para a API: o que o app pode fazer.",
+                  "  refresh_token                          → para renovar o access_token.",
+                  "",
+                  "Enviar o id_token para a API é um erro comum: a API deveria recusá-lo, porque o aud",
+                  "não é ela, e ele não carrega escopos.",
+                ].join("\n"),
+              },
+              explanation:
+                "Usar o `id_token` como token de API mistura prova de login com autorização de acesso. Com cada token no " +
+                "seu lugar, a API verifica o `aud` e recusa tudo que não foi emitido para ela.",
+            },
+            {
+              title: "sub, e não o e-mail",
+              context: "O identificador estável da pessoa é o par emissor + sujeito.",
+              code: {
+                language: "javascript",
+                filename: "account-key.js",
+                code: [
+                  "// Chave da conta vinculada ao provedor externo",
+                  "const accountKey = (identity) => `${identity.issuer}|${identity.subject}`;",
+                  "",
+                  "const links = new Map([[\"https://id.provider.test|248289761001\", { userId: 7 }]]);",
+                  "",
+                  "// A pessoa trocou o e-mail no provedor: o login continua achando a mesma conta",
+                  "links.get(accountKey({ issuer: \"https://id.provider.test\", subject: \"248289761001\", email: \"ana.nova@example.test\" }));   // { userId: 7 }",
+                  "",
+                  "// Outro provedor, mesmo sub por coincidência: contas diferentes",
+                  "links.get(accountKey({ issuer: \"https://outro.provider.test\", subject: \"248289761001\" }));   // undefined",
+                ].join("\n"),
+              },
+              explanation:
+                "O `sub` é único e estável dentro de um provedor, e a combinação com o `iss` é única entre provedores. O " +
+                "e-mail é um dado de perfil: pode mudar, pode ser reciclado e, em alguns provedores, é informado sem " +
+                "verificação.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O login com provedores externos vincula a conta pelo e-mail do `id_token`: se já existe um usuário com " +
+              "aquele e-mail, entra nele. Um pesquisador mostrou que, num provedor que permite escolher o e-mail sem " +
+              "verificá-lo, dava para entrar na conta de qualquer pessoa.",
+            problemCode: {
+              language: "javascript",
+              filename: "link-account.js",
+              code: [
+                "const users = new Map([[7, { id: 7, email: \"ana@example.test\" }]]);",
+                "const findUserByEmail = (email) => [...users.values()].find((u) => u.email === email);",
+                "",
+                "function loginWithProvider(identity) {",
+                "  // identity = resultado de verifyIdToken: { issuer, subject, email, emailVerified }",
+                "  return findUserByEmail(identity.email) ?? null;",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Vincule as contas pelo par (`issuer`, `subject`). Só use o e-mail para sugerir um vínculo com uma conta " +
+              "existente se ele estiver verificado, e mesmo assim exigindo que a pessoa prove ser dona da conta local.",
+            hint:
+              "Mantenha uma tabela de vínculos `issuer|subject → userId`. Sem vínculo, um e-mail verificado que " +
+              "coincide leva a uma confirmação, e não ao login direto.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "link-account.fixed.js",
+                code: [
+                  "const links = new Map();   // \"issuer|subject\" → userId",
+                  "",
+                  "function loginWithProvider(identity) {",
+                  "  const key = `${identity.issuer}|${identity.subject}`;",
+                  "  const linkedUserId = links.get(key);",
+                  "  if (linkedUserId) return { status: \"logged_in\", user: users.get(linkedUserId) };",
+                  "",
+                  "  const existing = identity.emailVerified ? findUserByEmail(identity.email) : undefined;",
+                  "  if (existing) {",
+                  "    // não entra direto: pede a senha (ou um código por e-mail) da conta local antes de vincular",
+                  "    return { status: \"confirm_link\", userId: existing.id, pendingLink: key };",
+                  "  }",
+                  "  return { status: \"new_account\", pendingLink: key };",
+                  "}",
+                  "",
+                  "function confirmLink(pendingLink, userId, proofOk) {",
+                  "  if (!proofOk) return false;",
+                  "  links.set(pendingLink, userId);",
+                  "  return true;",
+                  "}",
+                  "",
+                  "const attacker = { issuer: \"https://frouxo.provider.test\", subject: \"x1\", email: \"ana@example.test\", emailVerified: false };",
+                  "loginWithProvider(attacker).status;   // \"new_account\" — e-mail não verificado não encontra a conta da Ana",
+                  "",
+                  "const ana = { issuer: \"https://id.provider.test\", subject: \"248289761001\", email: \"ana@example.test\", emailVerified: true };",
+                  "const step = loginWithProvider(ana);  // { status: \"confirm_link\", userId: 7, ... }",
+                  "confirmLink(step.pendingLink, step.userId, true);",
+                  "loginWithProvider(ana).status;        // \"logged_in\"",
+                ].join("\n"),
+              },
+              explanation:
+                "A identidade externa passou a ser o par (`iss`, `sub`), que o provedor garante e que ninguém escolhe. O " +
+                "e-mail, quando verificado, só serve para oferecer um vínculo, e o vínculo exige uma prova ligada à conta " +
+                "local; assim, controlar um e-mail num provedor frouxo não dá acesso a nada.",
+            },
+          },
+        }),
+        concept({
+          order: 90,
+          title: "Single Sign-On (SSO)",
+          requires: ["Authentication vs Authorization"],
+          note: "IdP, SAML (menção) × OIDC",
+          summary:
+            "Fazer login uma vez num provedor de identidade central (IdP) e, com essa autenticação, entrar em vários " +
+            "sistemas sem digitar a senha em cada um — com as contas, senhas e políticas de acesso geridas num só " +
+            "lugar.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "No SSO, os sistemas (provedores de serviço, ou SPs) não autenticam as pessoas por conta própria: eles as " +
+                "enviam ao provedor de identidade (IdP) da organização, que autentica uma vez e mantém uma sessão " +
+                "própria. Os logins seguintes, em outros sistemas, encontram essa sessão e voltam aprovados sem pedir " +
+                "nada. Os protocolos mais usados são o SAML 2.0, baseado em XML e comum em sistemas corporativos mais " +
+                "antigos, e o OpenID Connect, baseado em JSON e JWT. Para a organização, o ganho está em gerir num lugar " +
+                "só as contas, a política de senhas, o MFA e, principalmente, o desligamento: desativar a pessoa no IdP " +
+                "corta o acesso a todos os sistemas.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "O valor do SSO está na gestão central: um lugar para entrar, um lugar para exigir MFA e um lugar para " +
+                "desligar alguém — e cada sistema continua responsável por decidir o que cada pessoa pode fazer dentro " +
+                "dele.",
+            },
+            { type: "heading", text: "Por que importa" },
+            {
+              type: "paragraph",
+              text:
+                "Sem SSO, cada sistema tem as suas senhas, que as pessoas repetem, e cada desligamento exige lembrar de " +
+                "todos os sistemas em que a pessoa tinha conta. Com SSO, é também o recurso que clientes corporativos " +
+                "exigem de um produto SaaS: eles querem que os seus funcionários entrem pelo IdP da empresa, com as " +
+                "regras da empresa.",
+            },
+            { type: "heading", text: "Na prática" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "jit-provisioning.js",
+              code: [
+                "// Ao receber uma identidade verificada do IdP (OIDC), o sistema cria ou atualiza o usuário",
+                "// na hora do login (provisionamento just-in-time) e traduz os grupos do IdP em papéis locais",
+                "const users = new Map();   // \"iss|sub\" → usuário local",
+                "const GROUP_TO_ROLE = { \"devatlas-admins\": \"admin\", \"devatlas-editors\": \"editor\" };",
+                "",
+                "function onSsoLogin(identity, { allowedIssuer }) {",
+                "  if (identity.issuer !== allowedIssuer) return { status: 403, error: \"IdP não autorizado para esta organização\" };",
+                "  const key = `${identity.issuer}|${identity.subject}`;",
+                "  const roles = identity.groups.map((group) => GROUP_TO_ROLE[group]).filter(Boolean);",
+                "  const user = users.get(key) ?? { key, createdAt: new Date().toISOString() };",
+                "  Object.assign(user, { name: identity.name, email: identity.email, roles: roles.length ? roles : [\"viewer\"] });",
+                "  users.set(key, user);",
+                "  return { status: 200, user };",
+                "}",
+                "",
+                "onSsoLogin(",
+                "  { issuer: \"https://idp.empresa.test\", subject: \"u-981\", name: \"Ana Souza\", email: \"ana@empresa.test\", groups: [\"devatlas-editors\", \"todos\"] },",
+                "  { allowedIssuer: \"https://idp.empresa.test\" }",
+                ").user.roles;   // [\"editor\"] — os papéis vêm do IdP a cada login",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Atualizar os papéis a cada login faz uma mudança de grupo no IdP chegar ao sistema no próximo acesso. " +
+                "Para o desligamento valer sem esperar um login, os sistemas costumam receber avisos do IdP, por exemplo " +
+                "via SCIM, o padrão de provisionamento de usuários.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "Confiar em qualquer IdP que envie uma identidade válida: cada organização deve estar amarrada ao seu IdP (emissor e, no SAML, o certificado).",
+                "Achar que o logout do sistema desloga do IdP: a sessão do IdP continua, e o próximo \"entrar\" volta sem pedir senha.",
+                "Criar usuários só no primeiro login e nunca atualizar papéis nem desativar: o sistema passa a divergir do IdP.",
+                "Deixar um login local com senha ativo \"por garantia\" para contas que deveriam entrar só pelo SSO, o que contorna o MFA e o desligamento central.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "SAML e OIDC",
+              context: "Os dois fazem SSO; diferem em formato, transporte e público.",
+              code: {
+                language: "text",
+                filename: "saml-vs-oidc.txt",
+                code: [
+                  "                        SAML 2.0                              OpenID Connect",
+                  "formato                 XML assinado (assertion)             JSON; id_token é um JWT",
+                  "transporte              POST de formulário pelo navegador    redirecionamentos + chamada ao endpoint de token",
+                  "configuração            troca de metadados XML e             discovery (.well-known) + client_id",
+                  "                        certificados entre IdP e SP",
+                  "onde aparece            SSO corporativo, sistemas legados    apps modernos, mobile, \"entrar com\"",
+                  "também faz autorização  não                                  sim, via OAuth 2.0 (access_token)",
+                  "armadilhas conhecidas   validação de assinatura XML          validação de aud/nonce/iss",
+                  "                        (XML signature wrapping)",
+                ].join("\n"),
+              },
+              explanation:
+                "Para um sistema novo, o OIDC é mais simples de implementar e serve também para mobile. O SAML continua " +
+                "necessário porque muitas empresas o usam no IdP; produtos SaaS corporativos costumam oferecer os dois, " +
+                "sempre com bibliotecas maduras, porque validar XML assinado à mão é notoriamente arriscado.",
+            },
+            {
+              title: "Descobrir o IdP pelo domínio do e-mail",
+              context:
+                "Com vários clientes corporativos, cada um com o seu IdP, o login precisa saber para onde mandar a " +
+                "pessoa.",
+              code: {
+                language: "javascript",
+                filename: "idp-routing.js",
+                code: [
+                  "const ORGS = [",
+                  "  { domain: \"empresa.test\", idp: \"https://idp.empresa.test\", enforceSso: true },",
+                  "  { domain: \"startup.test\", idp: \"https://login.startup.test\", enforceSso: false },",
+                  "];",
+                  "",
+                  "function loginRoute(email) {",
+                  "  const domain = email.split(\"@\").pop().toLowerCase();",
+                  "  const org = ORGS.find((o) => o.domain === domain);",
+                  "  if (!org) return { method: \"password\" };",
+                  "  return { method: \"sso\", idp: org.idp, passwordAllowed: !org.enforceSso };",
+                  "}",
+                  "",
+                  "loginRoute(\"ana@empresa.test\");      // { method: \"sso\", idp: \"https://idp.empresa.test\", passwordAllowed: false }",
+                  "loginRoute(\"carla@gmail.test\");      // { method: \"password\" }",
+                ].join("\n"),
+              },
+              explanation:
+                "A tela de login pede o e-mail primeiro e decide o caminho. Para organizações que exigem SSO, o login por " +
+                "senha fica desligado para os seus domínios, o que garante que as regras do IdP (MFA, desligamento) " +
+                "valham também no seu produto. O domínio precisa ter sido comprovado pela organização.",
+            },
+            {
+              title: "Logout único é difícil",
+              context: "Sair de um sistema não encerra a sessão no IdP nem nos outros sistemas.",
+              code: {
+                language: "text",
+                filename: "single-logout.txt",
+                code: [
+                  "Ana está logada no IdP e em 3 sistemas (A, B, C), cada um com a sua sessão local.",
+                  "",
+                  "Logout em A     → encerra só a sessão de A. Clicar em \"entrar\" em A volta logado (a sessão do IdP existe).",
+                  "Logout no IdP   → encerra a sessão do IdP. A, B e C continuam logados até as suas sessões vencerem,",
+                  "                  a menos que implementem o logout coordenado:",
+                  "                    OIDC: RP-initiated logout + back-channel logout (o IdP avisa cada sistema)",
+                  "                    SAML: Single Logout (SLO), com mensagens a cada SP",
+                  "",
+                  "Na prática: sessões locais com prazo razoável, logout coordenado onde o IdP suporta,",
+                  "e desligamento (desativar a conta) via SCIM ou aviso do IdP.",
+                ].join("\n"),
+              },
+              explanation:
+                "O SSO facilita entrar em tudo de uma vez, mas sair de tudo de uma vez exige que cada sistema aceite ser " +
+                "avisado pelo IdP. Como esse aviso nem sempre é implementado, o prazo das sessões locais continua sendo a " +
+                "garantia de que o acesso termina.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Um produto SaaS acabou de ganhar SSO por OIDC para clientes corporativos. Na primeira versão, qualquer " +
+              "login pelo SSO cria o usuário como administrador da organização indicada num parâmetro da URL de login.",
+            problemCode: {
+              language: "javascript",
+              filename: "sso-v1.js",
+              code: [
+                "const users = new Map();",
+                "",
+                "function onSsoLogin(identity, query) {",
+                "  // identity vem de um id_token verificado; query vem da URL de login",
+                "  const user = { email: identity.email, org: query.org, role: \"admin\" };",
+                "  users.set(identity.email, user);",
+                "  return user;",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Corrija o fluxo: a organização vem da configuração do IdP (e não da URL), o usuário é identificado por " +
+              "(`iss`, `sub`), o papel vem dos grupos do IdP com um padrão mínimo, e um IdP não cadastrado é recusado.",
+            hint: "Mantenha um mapa `issuer → { orgId, groupRoles }`. A URL não participa da decisão.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "sso-v1.fixed.js",
+                code: [
+                  "const ORG_BY_ISSUER = new Map([",
+                  "  [\"https://idp.empresa.test\", { orgId: \"empresa\", groupRoles: { \"saas-admins\": \"admin\", \"saas-users\": \"member\" } }],",
+                  "]);",
+                  "const users = new Map();   // \"iss|sub\" → usuário",
+                  "",
+                  "function onSsoLogin(identity) {",
+                  "  const config = ORG_BY_ISSUER.get(identity.issuer);",
+                  "  if (!config) return { status: 403, error: \"IdP não cadastrado\" };",
+                  "  const roles = (identity.groups ?? []).map((g) => config.groupRoles[g]).filter(Boolean);",
+                  "  const key = `${identity.issuer}|${identity.subject}`;",
+                  "  const user = { key, email: identity.email, org: config.orgId, role: roles.includes(\"admin\") ? \"admin\" : roles.length ? \"member\" : \"viewer\" };",
+                  "  users.set(key, user);",
+                  "  return { status: 200, user };",
+                  "}",
+                  "",
+                  "onSsoLogin({ issuer: \"https://idp.empresa.test\", subject: \"u-1\", email: \"ana@empresa.test\", groups: [\"saas-users\"] }).user;",
+                  "// { key: \"https://idp.empresa.test|u-1\", email: \"ana@empresa.test\", org: \"empresa\", role: \"member\" }",
+                  "onSsoLogin({ issuer: \"https://idp.qualquer.test\", subject: \"x\", email: \"eu@qualquer.test\", groups: [\"saas-admins\"] }).status;   // 403",
+                ].join("\n"),
+              },
+              explanation:
+                "A organização e os papéis saem da configuração confiável do IdP, e não de algo que o navegador envia. Um " +
+                "IdP não cadastrado não entra, e alguém sem grupo mapeado recebe o menor papel possível, em vez do maior.",
+            },
+          },
+        }),
+        concept({
+          order: 100,
+          title: "Multi-Factor Authentication (MFA)",
+          requires: ["Authentication vs Authorization"],
+          note: "fatores; TOTP, WebAuthn/passkeys (menção)",
+          summary:
+            "Exigir, no login, provas de duas ou mais categorias diferentes — algo que a pessoa sabe (senha), algo " +
+            "que ela tem (celular, chave de segurança) ou algo que ela é (biometria) —, para que o vazamento de uma " +
+            "delas não baste para entrar na conta.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Autenticação multifator combina fatores de categorias diferentes: conhecimento (senha, PIN), posse (um " +
+                "app autenticador, uma chave física, um celular) e inerência (digital, rosto). Duas senhas são o mesmo " +
+                "fator; senha mais um código gerado no celular são dois. O fator de posse mais comum é o TOTP: o app e o " +
+                "servidor compartilham um segredo, e a cada 30 segundos os dois calculam o mesmo código de 6 dígitos a " +
+                "partir do segredo e da hora. Os métodos mais fortes, WebAuthn e passkeys, usam criptografia de chave " +
+                "pública ligada ao endereço do site, o que os torna resistentes a phishing.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "MFA faz o roubo de uma senha deixar de bastar — mas nem todo segundo fator protege igual: códigos por " +
+                "SMS e TOTP podem ser capturados por um site falso, enquanto WebAuthn e passkeys não funcionam fora do " +
+                "site verdadeiro.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "totp.js",
+              code: [
+                "import { createHmac } from \"node:crypto\";",
+                "",
+                "// TOTP (RFC 6238): HMAC do segredo com o número do intervalo de 30 s, truncado em N dígitos",
+                "function totp(secret, timeSeconds, { step = 30, digits = 6 } = {}) {",
+                "  const counter = Buffer.alloc(8);",
+                "  counter.writeBigUInt64BE(BigInt(Math.floor(timeSeconds / step)));",
+                "  const mac = createHmac(\"sha1\", secret).update(counter).digest();",
+                "  const offset = mac[mac.length - 1] & 0x0f;",
+                "  const code = (mac.readUInt32BE(offset) & 0x7fffffff) % 10 ** digits;",
+                "  return String(code).padStart(digits, \"0\");",
+                "}",
+                "",
+                "// Vetores de teste da própria RFC 6238 (SHA-1, 8 dígitos)",
+                "const secret = Buffer.from(\"12345678901234567890\");",
+                "totp(secret, 59, { digits: 8 });           // \"94287082\"",
+                "totp(secret, 1111111109, { digits: 8 });   // \"07081804\"",
+                "totp(secret, 59);                          // \"287082\" — os mesmos cálculos, com 6 dígitos",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "O segredo é gerado pelo servidor no cadastro do MFA e passado ao app autenticador, normalmente por um QR " +
+                "code (`otpauth://totp/...`). Depois disso, os dois lados calculam os códigos sozinhos, sem rede: por " +
+                "isso o relógio do celular e o do servidor precisam estar razoavelmente acertados.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Em toda conta com acesso a dados ou dinheiro de outras pessoas: administradores, equipes internas, contas de clientes com pagamentos.",
+                "Em ações sensíveis (trocar e-mail, senha ou os próprios fatores), mesmo com uma sessão já aberta.",
+                "Com WebAuthn/passkeys como opção preferida quando o público e os dispositivos permitirem, pela resistência a phishing.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "SMS como segundo fator é o mais fraco: o número pode ser transferido para outro chip (SIM swap) e o código, interceptado ou pedido por engano.",
+                "TOTP e códigos por SMS não impedem um site falso que repassa, na hora, a senha e o código para o site verdadeiro.",
+                "Sem um caminho de recuperação (códigos de uso único, outro fator cadastrado), perder o celular vira perder a conta, e o suporte vira a porta de entrada dos golpes.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Verificar com tolerância e sem reuso",
+              context: "O servidor aceita o intervalo atual e os vizinhos, e recusa um código que já foi usado.",
+              code: {
+                language: "javascript",
+                filename: "verify-totp.js",
+                code: [
+                  "// (usa a função totp do exemplo anterior)",
+                  "function verifyTotp(user, code, now = Math.floor(Date.now() / 1000)) {",
+                  "  const current = Math.floor(now / 30);",
+                  "  for (const drift of [-1, 0, 1]) {                           // aceita ±30 s de diferença de relógio",
+                  "    const step = current + drift;",
+                  "    if (step <= (user.lastTotpStep ?? -1)) continue;           // já usado: impede reaproveitar o código",
+                  "    if (totp(user.totpSecret, step * 30) === code) {",
+                  "      user.lastTotpStep = step;",
+                  "      return true;",
+                  "    }",
+                  "  }",
+                  "  return false;",
+                  "}",
+                  "",
+                  "const user = { totpSecret: Buffer.from(\"12345678901234567890\") };",
+                  "const code = totp(user.totpSecret, 1_000_000);",
+                  "verifyTotp(user, code, 1_000_010);   // true",
+                  "verifyTotp(user, code, 1_000_015);   // false — o mesmo código, de novo, dentro do mesmo intervalo",
+                ].join("\n"),
+              },
+              explanation:
+                "A tolerância de um intervalo para cada lado absorve relógios um pouco fora de hora e o tempo de digitar. " +
+                "Guardar o último intervalo aceito impede que um código observado por cima do ombro, ou capturado, seja " +
+                "usado de novo nos segundos em que ainda vale.",
+            },
+            {
+              title: "Os fatores e o phishing",
+              context: "O que acontece quando a pessoa digita tudo num site falso idêntico ao verdadeiro.",
+              code: {
+                language: "text",
+                filename: "phishing.txt",
+                code: [
+                  "Site falso (proxy) entre a pessoa e o site verdadeiro, repassando tudo em tempo real:",
+                  "",
+                  "senha                 capturada e usada                                  → não protege",
+                  "SMS                   o código é digitado no site falso e repassado      → não protege",
+                  "TOTP (app)            o código é digitado no site falso e repassado      → não protege",
+                  "push \"aprovar?\"       a pessoa aprova o login que o atacante iniciou     → protege pouco (fadiga de push)",
+                  "WebAuthn / passkey    a assinatura inclui o domínio; no site falso,       → protege",
+                  "                      a credencial do site verdadeiro simplesmente não",
+                  "                      é oferecida pelo navegador",
+                ].join("\n"),
+              },
+              explanation:
+                "SMS e TOTP resolvem o caso comum, que é o vazamento de senhas, mas não o phishing em tempo real. " +
+                "WebAuthn e passkeys amarram a credencial ao domínio no próprio navegador, e por isso um site parecido " +
+                "não recebe nada que funcione no verdadeiro.",
+            },
+            {
+              title: "O segundo fator no fluxo de login",
+              context: "Depois da senha certa, a sessão ainda não está completa.",
+              code: {
+                language: "javascript",
+                filename: "mfa-flow.js",
+                code: [
+                  "function afterPassword(user, sessions) {",
+                  "  const id = crypto.randomUUID();",
+                  "  // sessão \"pendente\": só permite enviar o segundo fator, por poucos minutos",
+                  "  sessions.set(id, { userId: user.id, stage: user.mfaEnabled ? \"mfa_pending\" : \"authenticated\", expiresAt: Date.now() + 5 * 60 * 1000 });",
+                  "  return id;",
+                  "}",
+                  "",
+                  "function afterSecondFactor(sessionId, ok, sessions) {",
+                  "  const session = sessions.get(sessionId);",
+                  "  if (!session || session.stage !== \"mfa_pending\" || session.expiresAt < Date.now() || !ok) return false;",
+                  "  sessions.delete(sessionId);                                   // troca o id ao elevar o nível da sessão",
+                  "  sessions.set(crypto.randomUUID(), { userId: session.userId, stage: \"authenticated\", amr: [\"pwd\", \"otp\"] });",
+                  "  return true;",
+                  "}",
+                  "",
+                  "const sessions = new Map();",
+                  "const pending = afterPassword({ id: 7, mfaEnabled: true }, sessions);",
+                  "sessions.get(pending).stage;                       // \"mfa_pending\" — ainda não acessa nada",
+                  "afterSecondFactor(pending, true, sessions);        // true",
+                  "[...sessions.values()].map((s) => s.stage);        // [\"authenticated\"]",
+                ].join("\n"),
+              },
+              explanation:
+                "Acertar a senha leva a um estado intermediário, que não abre nenhuma rota além da do segundo fator e " +
+                "expira em minutos. Ao concluir, a sessão ganha um id novo e registra os métodos usados (`amr`), o que " +
+                "permite a regras de acesso exigirem MFA para certas ações.",
+            },
+          ],
+          exercise: {
+            problem:
+              "O cadastro de MFA do app não oferece nenhuma forma de recuperação. Pessoas que trocam de celular sem " +
+              "transferir o app autenticador ficam sem acesso, e o suporte passou a desativar o MFA por e-mail, o que " +
+              "virou alvo de golpes.",
+            problemCode: {
+              language: "javascript",
+              filename: "recovery.js",
+              code: [
+                "function enableMfa(user, totpSecret) {",
+                "  user.totpSecret = totpSecret;",
+                "  user.mfaEnabled = true;",
+                "  // falta: uma forma de entrar sem o celular",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Gere 10 códigos de recuperação no cadastro do MFA: mostrados uma única vez, guardados só como hash, " +
+              "válidos uma vez cada. Implemente o uso de um código no lugar do TOTP.",
+            hint:
+              "Códigos aleatórios de uns 10 caracteres têm entropia suficiente para um SHA-256 bastar. Ao usar um, " +
+              "remova o hash da lista.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "recovery.fixed.js",
+                code: [
+                  "import { randomBytes, createHash } from \"node:crypto\";",
+                  "",
+                  "const sha256 = (value) => createHash(\"sha256\").update(value).digest(\"hex\");",
+                  "const normalize = (code) => code.replace(/[\\s-]/g, \"\").toLowerCase();",
+                  "",
+                  "function enableMfa(user, totpSecret) {",
+                  "  user.totpSecret = totpSecret;",
+                  "  user.mfaEnabled = true;",
+                  "  const codes = Array.from({ length: 10 }, () => {",
+                  "    const raw = randomBytes(5).toString(\"hex\");            // 10 caracteres hexadecimais: 40 bits",
+                  "    return `${raw.slice(0, 5)}-${raw.slice(5)}`;           // \"a3f9c-07b2e\", fácil de copiar",
+                  "  });",
+                  "  user.recoveryCodeHashes = codes.map((code) => sha256(normalize(code)));",
+                  "  return codes;   // exibidos uma vez; a pessoa guarda num lugar seguro",
+                  "}",
+                  "",
+                  "function useRecoveryCode(user, code) {",
+                  "  const hash = sha256(normalize(code));",
+                  "  const index = user.recoveryCodeHashes.indexOf(hash);",
+                  "  if (index === -1) return false;",
+                  "  user.recoveryCodeHashes.splice(index, 1);   // uso único",
+                  "  return true;",
+                  "}",
+                  "",
+                  "const user = {};",
+                  "const codes = enableMfa(user, randomBytes(20));",
+                  "useRecoveryCode(user, codes[0]);                  // true",
+                  "useRecoveryCode(user, codes[0]);                  // false — já usado",
+                  "useRecoveryCode(user, codes[1].toUpperCase());    // true — maiúsculas e hífen não importam",
+                  "user.recoveryCodeHashes.length;                   // 8",
+                ].join("\n"),
+              },
+              explanation:
+                "Os códigos de recuperação são um fator de posse guardado pela própria pessoa, e tiram do suporte a " +
+                "decisão de desativar o MFA, que era o ponto fraco. Guardados só como hash e válidos uma vez, eles não " +
+                "viram uma senha extra: cada um abre a conta uma única vez, e o app deve avisar quando restarem poucos.",
+            },
+          },
+        }),
       ],
     }),
     module({
