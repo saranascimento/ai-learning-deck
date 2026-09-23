@@ -20596,11 +20596,1140 @@ export default area({
         "RBAC → ABAC → permission-based → Principle of Least Privilege (canônico do roadmap) → resource ownership. " +
         "Story pequena mas coerente (authz ≠ authn).",
       concepts: [
-        concept({ order: 10, title: "Role-Based Access Control (RBAC)", note: "papéis → permissões → usuários" }),
-        concept({ order: 20, title: "Attribute-Based Access Control (ABAC)", note: "políticas sobre atributos (usuário/recurso/ambiente); mais flexível, mais complexo" }),
-        concept({ order: 30, title: "Permission-Based Authorization", note: "checagem fina no ponto de uso" }),
-        concept({ order: 40, title: "Principle of Least Privilege", note: "canônico do roadmap — Cloud Security / Least Privilege in Cloud e AI Engineering / AI Safety revisitam com Requires para cá" }),
-        concept({ order: 50, title: "Resource Ownership", note: "'é seu?'; multi-tenancy; IDOR liga com Application Security / Broken Access Control" }),
+        concept({
+          order: 10,
+          title: "Role-Based Access Control (RBAC)",
+          note: "papéis → permissões → usuários",
+          summary:
+            "Organizar o acesso em papéis (roles) — como leitor, editor e administrador —, cada um com um conjunto de " +
+            "permissões, e atribuir papéis às pessoas, em vez de dar permissões a cada pessoa diretamente.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "No controle de acesso baseado em papéis, as permissões não são dadas às pessoas, e sim a papéis que " +
+                "refletem funções: `viewer` pode ler, `editor` pode ler e alterar, `admin` pode também gerir membros e " +
+                "cobrança. Cada pessoa recebe um ou mais papéis e herda as permissões deles. Quando alguém muda de " +
+                "função, troca-se o papel, e não uma lista de permissões; quando surge uma permissão nova, ela é " +
+                "acrescentada aos papéis que devem tê-la. Os papéis podem ser globais ou valer dentro de um escopo, como " +
+                "uma organização ou um projeto.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "O código pergunta por permissões (\"pode editar documentos?\"), e não por papéis (\"é editor?\"): os papéis " +
+                "são só a forma de agrupar permissões, e podem mudar sem que as verificações espalhadas pelo sistema " +
+                "precisem mudar.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "rbac.js",
+              code: [
+                "const ROLE_PERMISSIONS = {",
+                "  viewer: [\"documents:read\"],",
+                "  editor: [\"documents:read\", \"documents:write\"],",
+                "  admin: [\"documents:read\", \"documents:write\", \"members:manage\", \"billing:manage\"],",
+                "};",
+                "",
+                "// Papéis por escopo: a mesma pessoa pode ser admin num projeto e viewer em outro",
+                "const memberships = [",
+                "  { userId: 7, projectId: \"p1\", roles: [\"admin\"] },",
+                "  { userId: 7, projectId: \"p2\", roles: [\"viewer\"] },",
+                "  { userId: 8, projectId: \"p1\", roles: [\"editor\"] },",
+                "];",
+                "",
+                "function permissionsOf(userId, projectId) {",
+                "  const roles = memberships.filter((m) => m.userId === userId && m.projectId === projectId).flatMap((m) => m.roles);",
+                "  return new Set(roles.flatMap((role) => ROLE_PERMISSIONS[role] ?? []));",
+                "}",
+                "",
+                "const can = (userId, projectId, permission) => permissionsOf(userId, projectId).has(permission);",
+                "",
+                "can(7, \"p1\", \"members:manage\");   // true  — admin em p1",
+                "can(7, \"p2\", \"documents:write\");  // false — só viewer em p2",
+                "can(8, \"p1\", \"documents:write\");  // true  — editor em p1",
+                "can(8, \"p2\", \"documents:read\");   // false — não é membro de p2",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Quando o time de produto decidir que editores também podem gerir membros, a mudança é uma linha em " +
+                "`ROLE_PERMISSIONS`; nenhuma rota que pergunta por `members:manage` precisa ser alterada.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Quando as pessoas se agrupam em funções estáveis e parecidas, como na maioria dos produtos SaaS e sistemas internos.",
+                "Quando administradores sem conhecimento técnico precisam atribuir acesso: escolher um papel é mais claro do que marcar dezenas de permissões.",
+                "Como base, combinada com a posse do recurso (\"é seu?\") e, quando necessário, com regras por atributo.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Regras que dependem do recurso ou do contexto (\"só os documentos do seu departamento\", \"só em horário comercial\") não cabem em papéis; tentar encaixá-las cria um papel para cada combinação.",
+                "Papéis sozinhos não dizem de quem é cada recurso: um `editor` pode editar documentos, mas não os de outra organização.",
+                "Papéis criados para uma pessoa só, ou com permissões demais \"para garantir\", voltam aos problemas que o RBAC queria evitar.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "A explosão de papéis",
+              context: "Cada exceção vira um papel novo, até ninguém saber qual dar.",
+              code: {
+                language: "text",
+                filename: "role-explosion.txt",
+                code: [
+                  "Começo:        viewer, editor, admin",
+                  "+ 6 meses:     editor-sem-apagar, editor-financeiro, admin-sem-cobranca,",
+                  "               viewer-com-exportacao, editor-sp, editor-rj, editor-rj-sem-apagar, ...",
+                  "               47 papéis, e o suporte pergunta \"qual papel eu dou para a Carla?\"",
+                  "",
+                  "Sinais de que o problema não é de papéis:",
+                  "  - o papel carrega um lugar, um departamento ou um cliente no nome (editor-sp)",
+                  "    → atributo do usuário e do recurso: regra por atributo (ABAC) ou posse",
+                  "  - o papel é o de outro, \"menos uma coisa\"",
+                  "    → permissões mais finas, e papéis montados a partir delas",
+                ].join("\n"),
+              },
+              explanation:
+                "RBAC funciona enquanto os papéis descrevem funções. Quando eles começam a descrever lugares, clientes ou " +
+                "exceções, a informação que falta é um atributo, e a regra deve olhar para ele em vez de multiplicar " +
+                "papéis.",
+            },
+            {
+              title: "Hierarquia de papéis",
+              context: "Um papel pode incluir outro, e as permissões se somam.",
+              code: {
+                language: "javascript",
+                filename: "hierarchy.js",
+                code: [
+                  "const ROLES = {",
+                  "  viewer: { inherits: [], permissions: [\"documents:read\"] },",
+                  "  editor: { inherits: [\"viewer\"], permissions: [\"documents:write\"] },",
+                  "  admin: { inherits: [\"editor\"], permissions: [\"members:manage\", \"billing:manage\"] },",
+                  "};",
+                  "",
+                  "function effectivePermissions(role, seen = new Set()) {",
+                  "  if (seen.has(role)) return new Set();   // protege contra ciclos na configuração",
+                  "  seen.add(role);",
+                  "  const { inherits, permissions } = ROLES[role];",
+                  "  return new Set([...permissions, ...inherits.flatMap((parent) => [...effectivePermissions(parent, seen)])]);",
+                  "}",
+                  "",
+                  "[...effectivePermissions(\"admin\")].sort();",
+                  "// [\"billing:manage\", \"documents:read\", \"documents:write\", \"members:manage\"]",
+                ].join("\n"),
+              },
+              explanation:
+                "Com herança, cada papel declara só o que acrescenta, e uma permissão dada ao `viewer` chega " +
+                "automaticamente aos de cima. Hierarquias rasas são fáceis de entender; hierarquias profundas ou com " +
+                "herança múltipla tornam difícil responder \"de onde vem esta permissão?\".",
+            },
+            {
+              title: "O papel não diz de quem é o recurso",
+              context: "Ser editor permite editar documentos; falta saber quais.",
+              code: {
+                language: "javascript",
+                filename: "role-and-scope.js",
+                code: [
+                  "const documents = new Map([[\"d1\", { id: \"d1\", projectId: \"p1\" }], [\"d9\", { id: \"d9\", projectId: \"p9\" }]]);",
+                  "",
+                  "function canEditDocument(userId, documentId) {",
+                  "  const doc = documents.get(documentId);",
+                  "  if (!doc) return false;",
+                  "  // a permissão é verificada NO PROJETO DO DOCUMENTO, e não em qualquer projeto da pessoa",
+                  "  return can(userId, doc.projectId, \"documents:write\");",
+                  "}",
+                  "",
+                  "canEditDocument(8, \"d1\");   // true  — editor em p1, e o documento é de p1",
+                  "canEditDocument(8, \"d9\");   // false — editor em p1 não vale para um documento de p9",
+                ].join("\n"),
+              },
+              explanation:
+                "Perguntar \"a pessoa tem `documents:write` em algum lugar?\" deixaria um editor de um projeto alterar " +
+                "documentos de todos os outros. A permissão sempre é conferida no escopo do recurso acessado.",
+            },
+          ],
+          exercise: {
+            problem:
+              "As rotas de um app de gestão de tarefas verificam papéis diretamente, e cada uma lista os papéis de um " +
+              "jeito. Ao criar o papel `manager`, o time precisou alterar 23 arquivos e esqueceu dois.",
+            problemCode: {
+              language: "javascript",
+              filename: "tasks.js",
+              code: [
+                "// Espalhado pelas rotas:",
+                "const canCreateTask = (user) => user.role === \"admin\" || user.role === \"member\";",
+                "const canDeleteTask = (user) => user.role === \"admin\";",
+                "const canViewReports = (user) => user.role === \"admin\" || user.role === \"member\";   // member não deveria",
+                "const canInvite = (user) => [\"admin\"].includes(user.role);",
+                "",
+                "// Regra desejada:",
+                "//   guest   — ver tarefas",
+                "//   member  — ver e criar tarefas",
+                "//   manager — tudo do member + apagar tarefas + ver relatórios",
+                "//   admin   — tudo do manager + convidar pessoas",
+              ].join("\n"),
+            },
+            task:
+              "Centralize as permissões num mapa de papéis com herança, escreva uma função `can(user, permission)` e " +
+              "reescreva as quatro verificações em termos de permissões. Mostre que o `member` deixa de ver relatórios.",
+            hint:
+              "Nomeie as permissões pela ação (`tasks:create`, `reports:view`...), declare o que cada papel acrescenta " +
+              "e calcule as permissões efetivas somando os papéis herdados.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "tasks.fixed.js",
+                code: [
+                  "const ROLES = {",
+                  "  guest: { inherits: [], permissions: [\"tasks:view\"] },",
+                  "  member: { inherits: [\"guest\"], permissions: [\"tasks:create\"] },",
+                  "  manager: { inherits: [\"member\"], permissions: [\"tasks:delete\", \"reports:view\"] },",
+                  "  admin: { inherits: [\"manager\"], permissions: [\"members:invite\"] },",
+                  "};",
+                  "",
+                  "const expand = (role) => [...ROLES[role].permissions, ...ROLES[role].inherits.flatMap(expand)];",
+                  "const PERMISSIONS = Object.fromEntries(Object.keys(ROLES).map((role) => [role, new Set(expand(role))]));",
+                  "const can = (user, permission) => PERMISSIONS[user.role]?.has(permission) ?? false;",
+                  "",
+                  "const canCreateTask = (user) => can(user, \"tasks:create\");",
+                  "const canDeleteTask = (user) => can(user, \"tasks:delete\");",
+                  "const canViewReports = (user) => can(user, \"reports:view\");",
+                  "const canInvite = (user) => can(user, \"members:invite\");",
+                  "",
+                  "canViewReports({ role: \"member\" });    // false — o erro antigo foi corrigido",
+                  "canViewReports({ role: \"manager\" });   // true",
+                  "canDeleteTask({ role: \"admin\" });      // true — herdado de manager",
+                  "can({ role: \"desconhecido\" }, \"tasks:view\");   // false — papel inexistente não ganha nada",
+                ].join("\n"),
+              },
+              explanation:
+                "As rotas passaram a perguntar por permissões, e a relação entre papéis e permissões vive num lugar só. " +
+                "Criar ou mudar um papel é uma alteração no mapa, verificável de uma vez, e um papel desconhecido cai em " +
+                "\"nenhuma permissão\" em vez de passar despercebido.",
+            },
+          },
+        }),
+        concept({
+          order: 20,
+          title: "Attribute-Based Access Control (ABAC)",
+          note: "políticas sobre atributos (usuário/recurso/ambiente); mais flexível, mais complexo",
+          summary:
+            "Decidir o acesso por políticas que avaliam atributos — de quem pede (departamento, nível), do recurso " +
+            "(dono, classificação), da ação e do contexto (horário, rede) —, o que expressa regras que papéis " +
+            "sozinhos não conseguem.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "No controle de acesso baseado em atributos, a decisão é o resultado de políticas que olham para quatro " +
+                "coisas: o sujeito (quem pede: departamento, cargo, nível de acesso, papéis), o recurso (o que é " +
+                "acessado: dono, departamento, classificação, status), a ação (ler, alterar, aprovar) e o ambiente " +
+                "(horário, rede, dispositivo). Uma política como \"analistas podem ler relatórios do próprio departamento " +
+                "cuja classificação não passe do seu nível\" vira uma regra sobre atributos, sem um papel para cada " +
+                "departamento e nível. O preço é que as decisões ficam menos óbvias de prever e de explicar.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "ABAC expressa regras que dependem do recurso e do contexto sem multiplicar papéis — mas cada política " +
+                "precisa ser legível, testada e capaz de dizer por que negou, porque \"acesso negado\" sem motivo é " +
+                "impossível de depurar.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "abac.js",
+              code: [
+                "// Políticas: cada uma diz a que ação se aplica, uma condição e o efeito",
+                "const POLICIES = [",
+                "  {",
+                "    id: \"read-own-department\",",
+                "    action: \"report:read\",",
+                "    effect: \"allow\",",
+                "    when: ({ subject, resource }) => subject.department === resource.department && subject.clearance >= resource.classification,",
+                "  },",
+                "  {",
+                "    id: \"finance-reads-all\",",
+                "    action: \"report:read\",",
+                "    effect: \"allow\",",
+                "    when: ({ subject }) => subject.department === \"finance\" && subject.clearance >= 3,",
+                "  },",
+                "  {",
+                "    id: \"no-access-outside-network\",",
+                "    action: \"*\",",
+                "    effect: \"deny\",",
+                "    when: ({ environment }) => !environment.corporateNetwork,",
+                "  },",
+                "];",
+                "",
+                "function decide(request) {",
+                "  const applicable = POLICIES.filter((p) => (p.action === \"*\" || p.action === request.action) && p.when(request));",
+                "  const deny = applicable.find((p) => p.effect === \"deny\");",
+                "  if (deny) return { allowed: false, reason: deny.id };                       // uma negação vence qualquer permissão",
+                "  const allow = applicable.find((p) => p.effect === \"allow\");",
+                "  return allow ? { allowed: true, reason: allow.id } : { allowed: false, reason: \"nenhuma política permite\" };",
+                "}",
+                "",
+                "const report = { department: \"sales\", classification: 2 };",
+                "const ana = { department: \"sales\", clearance: 2 };",
+                "decide({ action: \"report:read\", subject: ana, resource: report, environment: { corporateNetwork: true } });",
+                "// { allowed: true, reason: \"read-own-department\" }",
+                "decide({ action: \"report:read\", subject: ana, resource: report, environment: { corporateNetwork: false } });",
+                "// { allowed: false, reason: \"no-access-outside-network\" }",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Duas regras de combinação tornam o resultado previsível: sem nenhuma política que permita, a resposta é " +
+                "não (negar por padrão), e uma política de negação vence qualquer permissão. A decisão também devolve o " +
+                "motivo, que vai para o log e para quem precisa depurar.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Quando o acesso depende de propriedades do recurso, como departamento, região, classificação ou status do documento.",
+                "Quando o contexto importa: horário, rede, tipo de dispositivo, nível de autenticação (com ou sem MFA).",
+                "Em sistemas com muitas combinações que, em RBAC, virariam dezenas de papéis quase iguais.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Para regras simples e estáveis, papéis são mais fáceis de entender, de administrar e de auditar do que um conjunto de políticas.",
+                "Responder \"quem pode acessar este documento?\" ou \"o que esta pessoa pode ver?\" é difícil, porque a resposta depende de avaliar as políticas para cada combinação.",
+                "Políticas que dependem de atributos desatualizados ou mal cadastrados dão respostas erradas sem nenhum erro aparente.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "A mesma política, na listagem",
+              context:
+                "Checar item por item depois de buscar tudo não escala; a regra precisa virar um filtro na consulta.",
+              code: {
+                language: "javascript",
+                filename: "policy-as-filter.js",
+                code: [
+                  "import { DatabaseSync } from \"node:sqlite\";",
+                  "const db = new DatabaseSync(\":memory:\");",
+                  "db.exec(`",
+                  "  CREATE TABLE reports (id INTEGER PRIMARY KEY, title TEXT, department TEXT, classification INTEGER);",
+                  "  INSERT INTO reports (title, department, classification) VALUES",
+                  "    ('Metas Q3', 'sales', 1), ('Comissões', 'sales', 3), ('Folha', 'finance', 3), ('Leads', 'sales', 2);",
+                  "`);",
+                  "",
+                  "// A política \"read-own-department\" traduzida para SQL",
+                  "function readableReports(subject) {",
+                  "  return db",
+                  "    .prepare(\"SELECT title FROM reports WHERE department = ? AND classification <= ? ORDER BY id\")",
+                  "    .all(subject.department, subject.clearance)",
+                  "    .map((row) => row.title);",
+                  "}",
+                  "",
+                  "readableReports({ department: \"sales\", clearance: 2 });   // [\"Metas Q3\", \"Leads\"]",
+                ].join("\n"),
+              },
+              explanation:
+                "Para mostrar um item, basta avaliar a política sobre ele. Para listar, a política precisa virar uma " +
+                "condição da consulta; do contrário, o sistema busca tudo e filtra na memória, o que é lento e fácil de " +
+                "esquecer em uma das telas. Motores de política como o OPA e o Cedar ajudam justamente a gerar esses " +
+                "filtros a partir das regras.",
+            },
+            {
+              title: "Atributos do ambiente",
+              context: "A mesma pessoa e o mesmo recurso podem ter respostas diferentes conforme o contexto.",
+              code: {
+                language: "javascript",
+                filename: "environment.js",
+                code: [
+                  "const approveWireTransfer = ({ subject, resource, environment }) => {",
+                  "  if (!subject.roles.includes(\"finance\")) return { allowed: false, reason: \"não é do financeiro\" };",
+                  "  if (resource.amountCents > 5_000_000 && !environment.authMethods.includes(\"mfa\")) {",
+                  "    return { allowed: false, reason: \"valores acima de R$ 50 mil exigem login com MFA\" };",
+                  "  }",
+                  "  const hour = environment.now.getUTCHours() - 3;   // horário de Brasília (UTC−3)",
+                  "  if (hour < 8 || hour >= 20) return { allowed: false, reason: \"fora do horário de aprovação\" };",
+                  "  return { allowed: true, reason: \"ok\" };",
+                  "};",
+                  "",
+                  "const bruno = { roles: [\"finance\"] };",
+                  "approveWireTransfer({ subject: bruno, resource: { amountCents: 8_000_000 }, environment: { authMethods: [\"pwd\"], now: new Date(\"2026-09-23T15:00:00Z\") } }).reason;",
+                  "// \"valores acima de R$ 50 mil exigem login com MFA\"",
+                ].join("\n"),
+              },
+              explanation:
+                "O ambiente permite regras de risco: operações grandes exigem um login mais forte, e aprovações só " +
+                "acontecem no horário em que alguém pode conferir. Nenhuma delas seria expressável como papel.",
+            },
+            {
+              title: "Políticas fora do código",
+              context: "Linguagens de política separam as regras do código da aplicação.",
+              code: {
+                language: "text",
+                filename: "cedar-policy.txt",
+                code: [
+                  "// Cedar (linguagem de políticas usada pelo Amazon Verified Permissions)",
+                  "permit (",
+                  "  principal,",
+                  "  action == Action::\"readReport\",",
+                  "  resource",
+                  ")",
+                  "when {",
+                  "  principal.department == resource.department &&",
+                  "  principal.clearance >= resource.classification",
+                  "};",
+                  "",
+                  "forbid (principal, action, resource)",
+                  "unless { context.corporateNetwork };",
+                  "",
+                  "A aplicação pergunta ao motor: \"principal X pode fazer a ação Y no recurso Z, neste contexto?\"",
+                  "e recebe permitir/negar, com as políticas que determinaram a decisão.",
+                ].join("\n"),
+              },
+              explanation:
+                "Com as regras numa linguagem própria, elas podem ser revisadas, versionadas e testadas separadamente do " +
+                "código, e às vezes analisadas por ferramentas (\"existe alguma política que deixe um estagiário ver a " +
+                "folha?\"). Para poucas regras, funções no próprio código, bem testadas, costumam bastar.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Um sistema de documentos jurídicos precisa da regra: advogados leem documentos dos casos em que estão " +
+              "alocados; sócios leem todos os do seu escritório; ninguém lê documentos com sigilo \"restrito\" sem ter " +
+              "sido nomeado no próprio documento. Hoje existe só o papel `lawyer`, que lê tudo.",
+            problemCode: {
+              language: "javascript",
+              filename: "legal-docs.js",
+              code: [
+                "const canRead = (user, doc) => user.roles.includes(\"lawyer\") || user.roles.includes(\"partner\");",
+                "",
+                "// user: { id, roles, office, cases: [caseId] }",
+                "// doc:  { id, office, caseId, secrecy: \"normal\" | \"restricted\", namedUserIds: [userId] }",
+              ].join("\n"),
+            },
+            task:
+              "Escreva a regra como uma função de política sobre os atributos, que devolva `{ allowed, reason }`, com a " +
+              "regra de sigilo vencendo as outras. Teste pelo menos quatro casos.",
+            hint:
+              "Avalie primeiro a negação (sigilo restrito sem nomeação), depois as permissões (sócio do mesmo " +
+              "escritório, advogado do caso) e, por fim, negue por padrão.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "legal-docs.fixed.js",
+                code: [
+                  "function canRead(user, doc) {",
+                  "  if (doc.secrecy === \"restricted\" && !doc.namedUserIds.includes(user.id)) {",
+                  "    return { allowed: false, reason: \"sigilo restrito: só as pessoas nomeadas\" };",
+                  "  }",
+                  "  if (user.roles.includes(\"partner\") && user.office === doc.office) {",
+                  "    return { allowed: true, reason: \"sócio do escritório\" };",
+                  "  }",
+                  "  if (user.roles.includes(\"lawyer\") && user.office === doc.office && user.cases.includes(doc.caseId)) {",
+                  "    return { allowed: true, reason: \"advogado alocado no caso\" };",
+                  "  }",
+                  "  return { allowed: false, reason: \"nenhuma regra permite\" };",
+                  "}",
+                  "",
+                  "const doc = { id: 1, office: \"sp\", caseId: \"c-10\", secrecy: \"normal\", namedUserIds: [] };",
+                  "const restricted = { ...doc, id: 2, secrecy: \"restricted\", namedUserIds: [7] };",
+                  "const ana = { id: 7, roles: [\"lawyer\"], office: \"sp\", cases: [\"c-10\"] };",
+                  "const bruno = { id: 8, roles: [\"lawyer\"], office: \"sp\", cases: [\"c-99\"] };",
+                  "const carla = { id: 9, roles: [\"partner\"], office: \"sp\", cases: [] };",
+                  "",
+                  "canRead(ana, doc).allowed;          // true  — alocada no caso",
+                  "canRead(bruno, doc).allowed;        // false — mesmo escritório, outro caso",
+                  "canRead(carla, doc).allowed;        // true  — sócia do escritório",
+                  "canRead(carla, restricted).reason;  // \"sigilo restrito: só as pessoas nomeadas\" — nem a sócia",
+                  "canRead(ana, restricted).allowed;   // true  — nomeada no documento",
+                ].join("\n"),
+              },
+              explanation:
+                "A regra combina atributos de três fontes: da pessoa (papéis, escritório, casos), do documento " +
+                "(escritório, caso, sigilo) e da relação entre eles (nomeação). A ordem de avaliação faz o sigilo valer " +
+                "para todos, inclusive sócios, e o motivo devolvido explica cada decisão num log de auditoria.",
+            },
+          },
+        }),
+        concept({
+          order: 30,
+          title: "Permission-Based Authorization",
+          note: "checagem fina no ponto de uso",
+          summary:
+            "Verificar, em cada ponto do código que executa uma ação protegida, se a identidade tem a permissão " +
+            "específica para ela (`invoices:approve`), de forma declarada, centralizada e sempre no servidor.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Autorização por permissões é a forma de aplicar as regras no código: cada ação protegida declara a " +
+                "permissão que exige, e uma verificação central decide, antes de executar, se a identidade tem essa " +
+                "permissão. As permissões são finas e nomeadas pela ação (`recurso:ação`, como `invoices:read` e " +
+                "`invoices:approve`), e podem vir de papéis, de atributos ou de concessões diretas. O ponto de uso é o " +
+                "servidor: esconder um botão na interface ajuda a pessoa, mas não protege nada, porque a requisição pode " +
+                "ser feita sem a interface.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Toda ação protegida declara a permissão que exige, e o servidor confere antes de executar — a interface " +
+                "pode esconder botões por conveniência, mas quem garante a regra é sempre a verificação no servidor.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "require-permission.js",
+              code: [
+                "// Cada rota declara a permissão que exige; um único ponto confere",
+                "const routes = [",
+                "  { method: \"GET\", path: \"/invoices\", permission: \"invoices:read\", handler: () => ({ status: 200, body: [] }) },",
+                "  { method: \"POST\", path: \"/invoices/approve\", permission: \"invoices:approve\", handler: () => ({ status: 200 }) },",
+                "  { method: \"GET\", path: \"/health\", permission: null, handler: () => ({ status: 200 }) },   // pública, de propósito",
+                "];",
+                "",
+                "function dispatch(req) {",
+                "  const route = routes.find((r) => r.method === req.method && r.path === req.path);",
+                "  if (!route) return { status: 404 };",
+                "  if (route.permission) {",
+                "    if (!req.user) return { status: 401 };",
+                "    if (!req.user.permissions.includes(route.permission)) return { status: 403, body: { missing: route.permission } };",
+                "  }",
+                "  return route.handler(req);",
+                "}",
+                "",
+                "const analyst = { permissions: [\"invoices:read\"] };",
+                "dispatch({ method: \"GET\", path: \"/invoices\", user: analyst }).status;           // 200",
+                "dispatch({ method: \"POST\", path: \"/invoices/approve\", user: analyst }).status;  // 403",
+                "dispatch({ method: \"GET\", path: \"/health\" }).status;                            // 200",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Declarar a permissão junto da rota torna possível responder \"quem pode fazer o quê\" lendo uma lista, e " +
+                "também testar automaticamente que nenhuma rota ficou sem permissão por esquecimento.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Em toda API ou tela com ações de sensibilidades diferentes: ler, criar, aprovar, exportar, administrar.",
+                "Como camada de aplicação sobre RBAC ou ABAC: as rotas perguntam por permissões, e o modelo que as concede pode mudar sem mexer nelas.",
+                "Para mostrar ou esconder elementos da interface a partir das mesmas permissões, evitando botões que só levariam a um erro.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "A permissão da ação não basta quando o recurso tem dono: `invoices:read` não significa ler as faturas de outra empresa.",
+                "Permissões finas demais, uma para cada campo e botão, tornam a administração tão difícil quanto a explosão de papéis.",
+                "Verificações só na interface, ou só no gateway para parte das rotas, deixam caminhos alternativos (outra rota, um job, uma chamada interna) desprotegidos.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Esconder o botão não é proteger",
+              context: "A interface é uma conveniência; a requisição pode ser feita sem ela.",
+              code: {
+                language: "javascript",
+                filename: "ui-vs-server.js",
+                code: [
+                  "// Na interface: esconde o que a pessoa não pode fazer",
+                  "const showApproveButton = (user) => user.permissions.includes(\"invoices:approve\");",
+                  "",
+                  "// Mas qualquer pessoa logada pode, pelo console do navegador ou por um script:",
+                  "//   await fetch(\"/invoices/42/approve\", { method: \"POST\" });",
+                  "// Se o servidor não conferir, a fatura é aprovada.",
+                  "",
+                  "// No servidor, a mesma permissão, obrigatoriamente",
+                  "function approveInvoice(req, invoices) {",
+                  "  if (!req.user?.permissions.includes(\"invoices:approve\")) return { status: 403 };",
+                  "  invoices.get(req.params.id).status = \"approved\";",
+                  "  return { status: 200 };",
+                  "}",
+                ].join("\n"),
+              },
+              explanation:
+                "A verificação na interface evita mostrar ações que vão falhar; a do servidor é a que impede a ação. As " +
+                "duas usam a mesma permissão, o que mantém a interface coerente com o que o servidor permite.",
+            },
+            {
+              title: "Um teste que pega a rota esquecida",
+              context: "Com as permissões declaradas, dá para verificar todas as rotas de uma vez.",
+              code: {
+                language: "javascript",
+                filename: "routes.test.js",
+                code: [
+                  "import { test } from \"node:test\";",
+                  "import assert from \"node:assert/strict\";",
+                  "",
+                  "const routes = [",
+                  "  { method: \"GET\", path: \"/invoices\", permission: \"invoices:read\" },",
+                  "  { method: \"POST\", path: \"/invoices/export\", permission: undefined },   // alguém esqueceu",
+                  "  { method: \"GET\", path: \"/health\", permission: null, public: true },",
+                  "];",
+                  "",
+                  "test(\"toda rota declara uma permissão, ou é marcada como pública\", () => {",
+                  "  const missing = routes.filter((r) => !r.public && !r.permission).map((r) => `${r.method} ${r.path}`);",
+                  "  assert.deepEqual(missing, []);   // falha: [\"POST /invoices/export\"]",
+                  "});",
+                ].join("\n"),
+              },
+              explanation:
+                "O teste transforma \"esquecer a verificação\" num erro de build. Rotas públicas precisam ser marcadas de " +
+                "propósito, o que também deixa claro, numa revisão de código, quando alguém torna pública uma rota nova.",
+            },
+            {
+              title: "O servidor informa o que a interface pode mostrar",
+              context: "Em vez de replicar as regras no front-end, o servidor devolve as permissões efetivas.",
+              code: {
+                language: "javascript",
+                filename: "me-permissions.js",
+                code: [
+                  "// GET /me — as permissões efetivas de quem está logado, calculadas pelo servidor",
+                  "function me(req, { effectivePermissions }) {",
+                  "  return {",
+                  "    status: 200,",
+                  "    body: { id: req.user.id, name: req.user.name, permissions: [...effectivePermissions(req.user)].sort() },",
+                  "  };",
+                  "}",
+                  "",
+                  "me({ user: { id: 7, name: \"Ana\" } }, { effectivePermissions: () => new Set([\"invoices:read\", \"invoices:approve\"]) }).body;",
+                  "// { id: 7, name: \"Ana\", permissions: [\"invoices:approve\", \"invoices:read\"] }",
+                ].join("\n"),
+              },
+              explanation:
+                "A interface decide o que mostrar a partir da lista que o servidor calculou, sem conhecer papéis, herança " +
+                "ou políticas. Quando as regras mudam, só o servidor muda, e a interface acompanha.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Numa API de RH, a rota de exportar a folha de pagamento em CSV foi criada às pressas e só confere se a " +
+              "pessoa está logada. Qualquer funcionário consegue baixar os salários de todos.",
+            problemCode: {
+              language: "javascript",
+              filename: "hr-api.js",
+              code: [
+                "const routes = [",
+                "  { method: \"GET\", path: \"/employees\", permission: \"employees:read\" },",
+                "  { method: \"GET\", path: \"/payroll\", permission: \"payroll:read\" },",
+                "  { method: \"GET\", path: \"/payroll/export\", handler: () => ({ status: 200, body: \"nome,salario\\n...\" }) },   // sem permissão",
+                "];",
+                "",
+                "function dispatch(req) {",
+                "  const route = routes.find((r) => r.method === req.method && r.path === req.path);",
+                "  if (!req.user) return { status: 401 };",
+                "  if (route.permission && !req.user.permissions.includes(route.permission)) return { status: 403 };",
+                "  return route.handler ? route.handler(req) : { status: 200 };",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Proteja a exportação com uma permissão própria, mais restrita que a leitura, e mude o `dispatch` para " +
+              "que uma rota sem permissão declarada seja recusada, a menos que esteja marcada como pública.",
+            hint: "Negue por padrão: a ausência de `permission` deve resultar em 403, e não em acesso liberado.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "hr-api.fixed.js",
+                code: [
+                  "const routes = [",
+                  "  { method: \"GET\", path: \"/employees\", permission: \"employees:read\" },",
+                  "  { method: \"GET\", path: \"/payroll\", permission: \"payroll:read\" },",
+                  "  { method: \"GET\", path: \"/payroll/export\", permission: \"payroll:export\", handler: () => ({ status: 200, body: \"nome,salario\\n...\" }) },",
+                  "  { method: \"GET\", path: \"/health\", public: true },",
+                  "];",
+                  "",
+                  "function dispatch(req) {",
+                  "  const route = routes.find((r) => r.method === req.method && r.path === req.path);",
+                  "  if (!route) return { status: 404 };",
+                  "  if (route.public) return route.handler ? route.handler(req) : { status: 200 };",
+                  "  if (!req.user) return { status: 401 };",
+                  "  if (!route.permission) return { status: 403, body: { error: \"rota sem permissão declarada\" } };   // nega por padrão",
+                  "  if (!req.user.permissions.includes(route.permission)) return { status: 403 };",
+                  "  return route.handler ? route.handler(req) : { status: 200 };",
+                  "}",
+                  "",
+                  "const employee = { permissions: [\"employees:read\"] };",
+                  "const hrAnalyst = { permissions: [\"employees:read\", \"payroll:read\"] };",
+                  "const hrManager = { permissions: [\"employees:read\", \"payroll:read\", \"payroll:export\"] };",
+                  "dispatch({ method: \"GET\", path: \"/payroll/export\", user: employee }).status;    // 403",
+                  "dispatch({ method: \"GET\", path: \"/payroll/export\", user: hrAnalyst }).status;   // 403 — ler não é exportar",
+                  "dispatch({ method: \"GET\", path: \"/payroll/export\", user: hrManager }).status;   // 200",
+                ].join("\n"),
+              },
+              explanation:
+                "A exportação ganhou uma permissão própria, porque tirar todos os salários do sistema de uma vez é mais " +
+                "grave que consultá-los na tela. A mudança no `dispatch` é a mais importante: uma rota esquecida passa a " +
+                "falhar fechada, com 403, em vez de ficar aberta.",
+            },
+          },
+        }),
+        concept({
+          order: 40,
+          title: "Principle of Least Privilege",
+          note: "canônico do roadmap — Cloud Security / Least Privilege in Cloud e AI Engineering / AI Safety revisitam com Requires para cá",
+          summary:
+            "Dar a cada pessoa, serviço ou processo só as permissões necessárias para a sua tarefa, pelo tempo " +
+            "necessário e no escopo necessário — para que um erro, uma conta invadida ou um componente comprometido " +
+            "cause o menor estrago possível.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "O princípio do menor privilégio diz que todo agente — uma pessoa, um serviço, um job, uma chave de API, " +
+                "um agente de IA com ferramentas — deve ter exatamente as permissões de que precisa para a sua função, e " +
+                "nada além. Ele tem três dimensões: o quê (só as ações necessárias, como ler sem poder apagar), onde (só " +
+                "os recursos necessários, como um bucket e não todos) e por quanto tempo (acesso temporário para tarefas " +
+                "pontuais, em vez de permanente). Ele não impede que algo dê errado; limita o tamanho do estrago quando " +
+                "der: a credencial vazada de um serviço que só lê uma tabela não apaga o banco.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Menor privilégio é limitar o raio de dano: pergunte, para cada credencial, \"se ela vazar amanhã, o que " +
+                "alguém consegue fazer com ela?\" — e reduza a resposta ao mínimo que a tarefa exige.",
+            },
+            { type: "heading", text: "Por que importa" },
+            {
+              type: "paragraph",
+              text:
+                "A maior parte dos incidentes graves não vem de uma falha única, e sim de uma falha pequena combinada com " +
+                "permissões grandes: um script de relatório com a senha de administrador do banco, uma chave de CI com " +
+                "acesso a toda a conta da nuvem, um funcionário que mudou de área e manteve os acessos antigos. O menor " +
+                "privilégio transforma cada uma dessas falhas num problema contido.",
+            },
+            { type: "heading", text: "Na prática" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "audit-privileges.js",
+              code: [
+                "// Compara o que cada credencial PODE fazer com o que ela DE FATO fez nos últimos 90 dias",
+                "const granted = {",
+                "  \"svc-reports\": [\"orders:read\", \"customers:read\", \"orders:write\", \"customers:delete\"],",
+                "  \"svc-checkout\": [\"orders:write\", \"payments:create\"],",
+                "  \"ana (suporte)\": [\"customers:read\", \"customers:write\", \"refunds:create\", \"admin:*\"],",
+                "};",
+                "",
+                "const usedLast90Days = {",
+                "  \"svc-reports\": [\"orders:read\", \"customers:read\"],",
+                "  \"svc-checkout\": [\"orders:write\", \"payments:create\"],",
+                "  \"ana (suporte)\": [\"customers:read\", \"customers:write\"],",
+                "};",
+                "",
+                "const excess = Object.fromEntries(",
+                "  Object.entries(granted)",
+                "    .map(([who, perms]) => [who, perms.filter((p) => !(usedLast90Days[who] ?? []).includes(p))])",
+                "    .filter(([, unused]) => unused.length)",
+                ");",
+                "",
+                "excess;",
+                "// { \"svc-reports\": [\"orders:write\", \"customers:delete\"], \"ana (suporte)\": [\"refunds:create\", \"admin:*\"] }",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "A lista mostra onde cortar: um serviço de relatórios que pode apagar clientes, e uma pessoa do suporte " +
+                "com acesso administrativo que ninguém lembra de ter dado. Permissões concedidas e nunca usadas são o " +
+                "candidato mais seguro a remover.",
+            },
+            { type: "heading", text: "Armadilhas" },
+            {
+              type: "list",
+              items: [
+                "Dar permissões amplas \"para não travar ninguém\" e prometer ajustar depois: sem revisão periódica, o depois não chega.",
+                "Acumular acessos: quem muda de função mantém os antigos e ganha os novos; revise acessos em cada mudança de área e em cada desligamento.",
+                "Compartilhar uma credencial entre vários serviços obriga a dar a ela a soma das permissões de todos, e impede saber quem fez o quê.",
+                "Aplicar o princípio só a pessoas: serviços, pipelines de CI, chaves de API e agentes com ferramentas são os que mais acumulam permissões sem ninguém olhar.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "O banco de dados também tem usuários",
+              context: "Cada serviço conecta com um usuário que só pode o que ele faz.",
+              code: {
+                language: "text",
+                filename: "db-grants.sql",
+                code: [
+                  "-- Serviço de relatórios: só leitura, e só das tabelas de que precisa",
+                  "CREATE ROLE svc_reports LOGIN PASSWORD '...';",
+                  "GRANT SELECT ON orders, order_items, products TO svc_reports;",
+                  "",
+                  "-- Aplicação: lê e escreve dados, mas não altera o esquema nem apaga tabelas",
+                  "CREATE ROLE app LOGIN PASSWORD '...';",
+                  "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO app;",
+                  "",
+                  "-- Migrações: um usuário separado, usado só no pipeline de deploy",
+                  "CREATE ROLE migrator LOGIN PASSWORD '...';",
+                  "GRANT CREATE ON SCHEMA public TO migrator;",
+                  "",
+                  "-- Nenhum serviço conecta como o dono do banco (superusuário).",
+                ].join("\n"),
+              },
+              explanation:
+                "Uma falha de injeção de SQL no serviço de relatórios, com esse usuário, lê algumas tabelas; com o " +
+                "usuário dono do banco, apagaria tudo. Separar o usuário das migrações impede que a aplicação em execução " +
+                "consiga alterar o esquema.",
+            },
+            {
+              title: "Acesso temporário no lugar de permanente",
+              context: "Tarefas raras, como investigar um problema em produção, não justificam um acesso para sempre.",
+              code: {
+                language: "javascript",
+                filename: "just-in-time.js",
+                code: [
+                  "const grants = [];   // { who, permission, expiresAt, reason, approvedBy }",
+                  "",
+                  "function requestAccess(who, permission, { minutes, reason, approvedBy }) {",
+                  "  if (!approvedBy || approvedBy === who) throw new Error(\"precisa da aprovação de outra pessoa\");",
+                  "  grants.push({ who, permission, reason, approvedBy, expiresAt: Date.now() + minutes * 60_000 });",
+                  "}",
+                  "",
+                  "const hasAccess = (who, permission, now = Date.now()) =>",
+                  "  grants.some((g) => g.who === who && g.permission === permission && g.expiresAt > now);",
+                  "",
+                  "requestAccess(\"ana\", \"prod-db:read\", { minutes: 60, reason: \"INC-4812: pedidos duplicados\", approvedBy: \"bruno\" });",
+                  "hasAccess(\"ana\", \"prod-db:read\");                              // true",
+                  "hasAccess(\"ana\", \"prod-db:read\", Date.now() + 61 * 60_000);   // false — expirou sozinho",
+                ].join("\n"),
+              },
+              explanation:
+                "O acesso existe só durante a investigação, com um motivo e um aprovador registrados. Ninguém precisa " +
+                "lembrar de revogar, e o registro responde depois por que aquela pessoa acessou produção naquele dia.",
+            },
+            {
+              title: "Credencial com escopo mínimo",
+              context: "Uma chave de API para uma integração só precisa do que a integração faz.",
+              code: {
+                language: "javascript",
+                filename: "scoped-key.js",
+                code: [
+                  "// Integração que só publica pedidos novos num ERP: não precisa ler clientes nem estornar pagamentos",
+                  "const erpKey = {",
+                  "  scopes: [\"orders:read\"],",
+                  "  allowedIps: [\"203.0.113.10\"],   // o servidor do ERP",
+                  "  expiresAt: \"2027-03-31\",        // revisão obrigatória na renovação",
+                  "};",
+                  "",
+                  "const allows = (key, scope, ip) => key.scopes.includes(scope) && key.allowedIps.includes(ip);",
+                  "allows(erpKey, \"orders:read\", \"203.0.113.10\");      // true",
+                  "allows(erpKey, \"customers:read\", \"203.0.113.10\");   // false",
+                  "allows(erpKey, \"orders:read\", \"198.51.100.7\");      // false — a chave vazou e está sendo usada de outro lugar",
+                ].join("\n"),
+              },
+              explanation:
+                "Cada limite reduz o estrago de um vazamento: o escopo restringe as ações, a lista de IPs restringe de " +
+                "onde, e a validade força uma revisão periódica. A mesma lógica vale para chaves de nuvem, tokens de CI e " +
+                "as ferramentas dadas a agentes de IA.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Numa revisão de acessos, o time exportou as permissões de cada conta e o registro de uso dos últimos 90 " +
+              "dias. É preciso gerar a lista do que remover, priorizando o que for mais perigoso.",
+            problemCode: {
+              language: "javascript",
+              filename: "access-review.js",
+              code: [
+                "const accounts = [",
+                "  { id: \"ci-deploy\", granted: [\"deploy:prod\", \"db:migrate\", \"secrets:read\", \"iam:admin\"] },",
+                "  { id: \"svc-email\", granted: [\"users:read\", \"users:write\", \"emails:send\"] },",
+                "  { id: \"carla\", granted: [\"tickets:read\", \"tickets:write\", \"billing:refund\", \"users:delete\"] },",
+                "];",
+                "",
+                "const usage = {",
+                "  \"ci-deploy\": [\"deploy:prod\", \"db:migrate\", \"secrets:read\"],",
+                "  \"svc-email\": [\"users:read\", \"emails:send\"],",
+                "  carla: [\"tickets:read\", \"tickets:write\"],",
+                "};",
+                "",
+                "const DANGEROUS = [\"iam:admin\", \"users:delete\", \"billing:refund\"];",
+              ].join("\n"),
+            },
+            task:
+              "Liste, por conta, as permissões concedidas e não usadas, marque as perigosas e ordene o resultado com as " +
+              "perigosas primeiro.",
+            hint:
+              "Filtre `granted` pelo que não aparece em `usage`; depois achate numa lista de `{ account, permission, " +
+              "dangerous }` e ordene por `dangerous`.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "access-review.fixed.js",
+                code: [
+                  "const toRemove = accounts",
+                  "  .flatMap(({ id, granted }) =>",
+                  "    granted",
+                  "      .filter((permission) => !(usage[id] ?? []).includes(permission))",
+                  "      .map((permission) => ({ account: id, permission, dangerous: DANGEROUS.includes(permission) }))",
+                  "  )",
+                  "  .sort((a, b) => Number(b.dangerous) - Number(a.dangerous));",
+                  "",
+                  "toRemove.map((r) => `${r.dangerous ? \"⚠ \" : \"\"}${r.account}: ${r.permission}`);",
+                  "// [\"⚠ ci-deploy: iam:admin\", \"⚠ carla: billing:refund\", \"⚠ carla: users:delete\", \"svc-email: users:write\"]",
+                ].join("\n"),
+              },
+              explanation:
+                "A conta de CI com `iam:admin` é o caso mais grave: quem comprometer o pipeline pode criar contas e dar a " +
+                "si mesmo qualquer acesso. Remover primeiro o que é perigoso e não usado reduz o risco sem quebrar nada, " +
+                "porque ninguém dependia dessas permissões nos últimos 90 dias.",
+            },
+          },
+        }),
+        concept({
+          order: 50,
+          title: "Resource Ownership",
+          note: "'é seu?'; multi-tenancy; IDOR liga com Application Security / Broken Access Control",
+          summary:
+            "Conferir, a cada acesso, se o recurso pertence a quem pede — ou à organização dela, num sistema com " +
+            "vários clientes (multi-tenancy) —, de preferência filtrando a própria consulta pelo dono, para que um id " +
+            "de outra pessoa simplesmente não encontre nada.",
+          content: [
+            { type: "heading", text: "Conceito" },
+            {
+              type: "paragraph",
+              text:
+                "Permissões dizem o que uma pessoa pode fazer com um tipo de recurso; a posse diz com quais recursos. Uma " +
+                "pessoa com `invoices:read` pode ler faturas — as suas, ou as da sua empresa, e não as de todos os " +
+                "clientes do sistema. Em sistemas multi-tenant, em que várias organizações compartilham o mesmo banco, " +
+                "cada linha pertence a um tenant, e toda consulta precisa ser limitada ao tenant de quem pede. A forma " +
+                "mais segura é colocar o dono na própria consulta (`WHERE id = ? AND tenant_id = ?`), numa camada por " +
+                "onde todo acesso passa, em vez de buscar pelo id e conferir depois.",
+            },
+            {
+              type: "callout",
+              title: "Ideia principal",
+              text:
+                "Filtre pelo dono na consulta, e não depois dela: se o `tenant_id` de quem pede faz parte de toda busca, " +
+                "um id de outra organização não encontra nada — e não há verificação para esquecer.",
+            },
+            { type: "heading", text: "Como funciona" },
+            {
+              type: "code",
+              language: "javascript",
+              filename: "tenant-scoped.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "db.exec(`",
+                "  CREATE TABLE invoices (id INTEGER PRIMARY KEY, tenant_id INTEGER NOT NULL, customer TEXT, total_cents INTEGER);",
+                "  CREATE INDEX idx_invoices_tenant ON invoices(tenant_id, id);",
+                "  INSERT INTO invoices VALUES (1, 10, 'Loja Azul', 5000), (2, 20, 'Padaria Sol', 12000), (3, 10, 'Loja Azul', 800);",
+                "`);",
+                "",
+                "// Um repositório criado para um tenant: toda consulta já sai limitada a ele",
+                "function invoicesFor(tenantId) {",
+                "  return {",
+                "    findById: (id) => db.prepare(\"SELECT id, customer, total_cents FROM invoices WHERE id = ? AND tenant_id = ?\").get(id, tenantId) ?? null,",
+                "    list: () => db.prepare(\"SELECT id, customer, total_cents FROM invoices WHERE tenant_id = ? ORDER BY id\").all(tenantId),",
+                "  };",
+                "}",
+                "",
+                "// O tenant vem da identidade autenticada, e nunca da URL ou do corpo",
+                "const repo = invoicesFor(10);",
+                "repo.findById(1)?.customer;   // \"Loja Azul\"",
+                "repo.findById(2);             // null — a fatura 2 existe, mas é de outro tenant: responde-se 404",
+                "repo.list().length;           // 2",
+              ].join("\n"),
+            },
+            {
+              type: "paragraph",
+              text:
+                "Quem usa o repositório não tem como esquecer o filtro, porque não existe uma função que busque sem ele. " +
+                "Responder 404 para o recurso de outro tenant, em vez de 403, evita confirmar que aquele id existe.",
+            },
+            { type: "heading", text: "Quando usar" },
+            {
+              type: "list",
+              items: [
+                "Em toda rota que recebe um identificador de recurso vindo do cliente (`/invoices/:id`, `?orderId=`), sem exceção.",
+                "Em sistemas multi-tenant, em todas as consultas, inclusive listagens, buscas, exportações e relatórios.",
+                "Em jobs e filas que processam dados de clientes, para que uma mensagem com o id errado não misture dados de organizações diferentes.",
+              ],
+            },
+            { type: "heading", text: "Quando não usar / Limitações" },
+            {
+              type: "list",
+              items: [
+                "Recursos compartilhados (um documento com colaboradores, uma pasta pública) não cabem em \"um dono só\": a verificação passa a consultar uma tabela de compartilhamentos.",
+                "Filtro na aplicação depende de todo acesso passar pela camada certa; consultas escritas à mão em outros lugares escapam dele.",
+                "Operações administrativas e de suporte, que atravessam tenants de propósito, precisam de um caminho separado, com permissão própria e registro de auditoria.",
+              ],
+            },
+          ],
+          examples: [
+            {
+              title: "Buscar pelo id e esquecer de conferir",
+              context:
+                "O erro mais comum: a rota confere que a pessoa está logada e tem a permissão, e busca só pelo id.",
+              code: {
+                language: "javascript",
+                filename: "missing-owner-check.js",
+                code: [
+                  "// (usa o banco do exemplo anterior)",
+                  "function getInvoiceWrong(req) {",
+                  "  if (!req.user.permissions.includes(\"invoices:read\")) return { status: 403 };",
+                  "  return { status: 200, body: db.prepare(\"SELECT * FROM invoices WHERE id = ?\").get(req.params.id) };",
+                  "}",
+                  "",
+                  "// Um usuário do tenant 10 troca o número na URL: /invoices/2",
+                  "getInvoiceWrong({ user: { tenantId: 10, permissions: [\"invoices:read\"] }, params: { id: 2 } }).body.customer;",
+                  "// \"Padaria Sol\" — a fatura de outra empresa",
+                ].join("\n"),
+              },
+              explanation:
+                "A pessoa estava autenticada e tinha a permissão certa; faltou perguntar se aquela fatura era dela. Essa " +
+                "falha, conhecida como IDOR, está entre as mais comuns em APIs, e é tratada em detalhe no módulo de " +
+                "segurança de aplicações. Ids aleatórios dificultam adivinhar, mas não substituem a verificação.",
+            },
+            {
+              title: "Row-Level Security: o banco aplica o filtro",
+              context: "No PostgreSQL, uma política na tabela limita as linhas visíveis a cada conexão.",
+              code: {
+                language: "text",
+                filename: "rls.sql",
+                code: [
+                  "ALTER TABLE invoices ENABLE ROW LEVEL SECURITY;",
+                  "ALTER TABLE invoices FORCE ROW LEVEL SECURITY;   -- vale também para o dono da tabela",
+                  "",
+                  "CREATE POLICY tenant_isolation ON invoices",
+                  "  USING (tenant_id = current_setting('app.tenant_id')::int)",
+                  "  WITH CHECK (tenant_id = current_setting('app.tenant_id')::int);",
+                  "",
+                  "-- A aplicação define o tenant no início de cada transação:",
+                  "BEGIN;",
+                  "SET LOCAL app.tenant_id = '10';",
+                  "SELECT * FROM invoices WHERE id = 2;   -- nenhuma linha: a política esconde as do tenant 20",
+                  "COMMIT;",
+                ].join("\n"),
+              },
+              explanation:
+                "Com RLS, mesmo uma consulta escrita sem o filtro só vê as linhas do tenant definido para a conexão, e " +
+                "`WITH CHECK` impede gravar linhas em outro tenant. É uma segunda camada, e não um substituto do filtro " +
+                "na aplicação: o risco passa a ser esquecer de definir o tenant, ou usar um usuário que ignore a " +
+                "política.",
+            },
+            {
+              title: "Dono e colaboradores",
+              context: "Quando um recurso é compartilhado, a posse vira uma relação.",
+              code: {
+                language: "javascript",
+                filename: "sharing.js",
+                code: [
+                  "const documents = new Map([[\"d1\", { id: \"d1\", ownerId: 7 }]]);",
+                  "const shares = [{ documentId: \"d1\", userId: 8, access: \"read\" }, { documentId: \"d1\", userId: 9, access: \"write\" }];",
+                  "",
+                  "function accessTo(userId, documentId) {",
+                  "  const doc = documents.get(documentId);",
+                  "  if (!doc) return null;",
+                  "  if (doc.ownerId === userId) return \"owner\";",
+                  "  return shares.find((s) => s.documentId === documentId && s.userId === userId)?.access ?? null;",
+                  "}",
+                  "",
+                  "const canWrite = (userId, documentId) => [\"owner\", \"write\"].includes(accessTo(userId, documentId));",
+                  "",
+                  "canWrite(7, \"d1\");   // true  — dona",
+                  "canWrite(8, \"d1\");   // false — só leitura",
+                  "canWrite(9, \"d1\");   // true  — compartilhado com escrita",
+                  "accessTo(10, \"d1\");  // null  — sem relação com o documento",
+                ].join("\n"),
+              },
+              explanation:
+                "A pergunta deixa de ser \"é o dono?\" e passa a ser \"que relação esta pessoa tem com este recurso?\". " +
+                "Sistemas que crescem nessa direção (pastas, times, herança de acesso) costumam adotar um modelo baseado " +
+                "em relações, como o do Google Zanzibar e de ferramentas como o OpenFGA.",
+            },
+          ],
+          exercise: {
+            problem:
+              "Um SaaS de agendamentos atende várias clínicas no mesmo banco. A rota de cancelar consulta recebe o id " +
+              "da URL e cancela, depois de conferir a permissão `appointments:cancel`. Uma clínica conseguiu cancelar " +
+              "consultas de outra.",
+            problemCode: {
+              language: "javascript",
+              filename: "appointments.js",
+              code: [
+                "import { DatabaseSync } from \"node:sqlite\";",
+                "const db = new DatabaseSync(\":memory:\");",
+                "db.exec(`",
+                "  CREATE TABLE appointments (id INTEGER PRIMARY KEY, clinic_id INTEGER NOT NULL, patient TEXT, status TEXT NOT NULL DEFAULT 'scheduled');",
+                "  INSERT INTO appointments (clinic_id, patient) VALUES (1, 'Ana'), (2, 'Bruno'), (1, 'Carla');",
+                "`);",
+                "",
+                "function cancelAppointment(req) {",
+                "  if (!req.user.permissions.includes(\"appointments:cancel\")) return { status: 403 };",
+                "  const result = db.prepare(\"UPDATE appointments SET status = 'cancelled' WHERE id = ?\").run(req.params.id);",
+                "  return result.changes ? { status: 204 } : { status: 404 };",
+                "}",
+              ].join("\n"),
+            },
+            task:
+              "Corrija a rota para que ela só cancele consultas da clínica de quem pede, respondendo 404 para as de " +
+              "outras clínicas, e crie um repositório por clínica para que as outras rotas não repitam o problema.",
+            hint:
+              "O `clinic_id` vem de `req.user`. Coloque-o no `WHERE` do `UPDATE`: `changes` igual a 0 cobre tanto o id " +
+              "inexistente quanto o de outra clínica.",
+            solution: {
+              code: {
+                language: "javascript",
+                filename: "appointments.fixed.js",
+                code: [
+                  "function appointmentsFor(clinicId) {",
+                  "  return {",
+                  "    cancel: (id) => db.prepare(\"UPDATE appointments SET status = 'cancelled' WHERE id = ? AND clinic_id = ?\").run(id, clinicId).changes === 1,",
+                  "    findById: (id) => db.prepare(\"SELECT id, patient, status FROM appointments WHERE id = ? AND clinic_id = ?\").get(id, clinicId) ?? null,",
+                  "  };",
+                  "}",
+                  "",
+                  "function cancelAppointment(req) {",
+                  "  if (!req.user.permissions.includes(\"appointments:cancel\")) return { status: 403 };",
+                  "  const repo = appointmentsFor(req.user.clinicId);   // a clínica vem da identidade autenticada",
+                  "  return repo.cancel(req.params.id) ? { status: 204 } : { status: 404 };",
+                  "}",
+                  "",
+                  "const reception = { clinicId: 1, permissions: [\"appointments:cancel\"] };",
+                  "cancelAppointment({ user: reception, params: { id: 2 } }).status;   // 404 — consulta da clínica 2",
+                  "cancelAppointment({ user: reception, params: { id: 3 } }).status;   // 204",
+                  "db.prepare(\"SELECT id, status FROM appointments ORDER BY id\").all();",
+                  "// [{ id: 1, status: \"scheduled\" }, { id: 2, status: \"scheduled\" }, { id: 3, status: \"cancelled\" }]",
+                ].join("\n"),
+              },
+              explanation:
+                "O `UPDATE` passou a exigir as duas coisas ao mesmo tempo: o id pedido e a clínica de quem pede. Uma " +
+                "consulta de outra clínica se comporta como inexistente, e a verificação e a alteração acontecem no mesmo " +
+                "comando, sem janela entre elas. O repositório por clínica faz o filtro ser o único caminho disponível " +
+                "para as outras rotas.",
+            },
+          },
+        }),
       ],
     }),
     module({

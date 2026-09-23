@@ -1535,6 +1535,11 @@ for (const area of model.areas()) {
     "openid-connect-oidc",
     "single-sign-on-sso",
     "multi-factor-authentication-mfa",
+    "role-based-access-control-rbac",
+    "attribute-based-access-control-abac",
+    "permission-based-authorization",
+    "principle-of-least-privilege",
+    "resource-ownership",
   ];
   record(
     "Concept — cobertura de blocos (renderer ↔ dataset)",
