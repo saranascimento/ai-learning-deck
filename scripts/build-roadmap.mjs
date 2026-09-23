@@ -1752,10 +1752,10 @@ for (const area of model.areas()) {
   record(g, "modo estrito: nenhum Concept com conteúdo legado", legacySlugs.length === 0, list(legacySlugs));
 }
 
-// ---- 17c. destaque «Ideia principal» — uma conclusão, curta -----
+// ---- 17c. Definição (summary) e destaque «Ideia principal» — uma frase cada -----
 {
   const g = "Ideia principal";
-  // Modo relatório (revisão em andamento): mede, mas ainda não falha.
+  // Modo estrito: a Definição diz o que é, e a Ideia principal fixa uma conclusão; ambas numa frase curta.
   const strip = (s) => s.replace(/`[^`]*`/g, "X");
   const long = [];
   const multi = [];
@@ -1784,8 +1784,13 @@ for (const area of model.areas()) {
         if (c.summary.trim().split(/\s+/).length > 30) defLong.push(c.slug);
         if (/[—;]/.test(strip(c.summary))) defChained.push(c.slug);
       }
-  record(g, `relatório Definição: >30 palavras: ${defLong.length} · com «—»/«;»: ${defChained.length}`, true);
-  record(g, `relatório: ${total} destaques · >30 palavras: ${long.length} · 2+ frases: ${multi.length} · 2+ conectores: ${chained.length} · título ≠ «Ideia principal»: ${untitled.length}`, true);
+  const list = (arr) => arr.join(", ");
+  record(g, `Definição com no máximo 30 palavras (${defLong.length} fora)`, defLong.length === 0, list(defLong));
+  record(g, `Definição sem emenda com «—» ou «;» (${defChained.length} fora)`, defChained.length === 0, list(defChained));
+  record(g, `${total} destaques com o título «Ideia principal»`, untitled.length === 0, list(untitled));
+  record(g, `destaque com no máximo 30 palavras (${long.length} fora)`, long.length === 0, list(long));
+  record(g, `destaque em uma única frase (${multi.length} fora)`, multi.length === 0, list(multi));
+  record(g, `destaque sem encadear ideias com 2+ «:» «;» «—» (${chained.length} fora)`, chained.length === 0, list(chained));
 }
 
 // ---- 18. relações R2 — geradas nas Concept Pages ↔ dataset -----
