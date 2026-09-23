@@ -4427,24 +4427,23 @@ export default area({
           requires: ["Testing Fundamentals / Unit Testing"],
           note: "tornar o bug confiável antes de investigar — um teste que falha é a repro ideal",
           summary:
-            "Tornar um bug confiável e repetível antes de investigar sua causa — sem uma reprodução confiável, " +
-            "qualquer tentativa de correção é só um palpite.",
+            "Reproduction é conseguir fazer um bug acontecer de forma confiável, sempre que necessário, antes de " +
+            "investigar a causa.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Reproduction é o passo de conseguir fazer um bug acontecer de forma confiável, sob controle, " +
-                "sempre que necessário — em vez de depender de esperar que ele aconteça de novo por acaso. Um " +
-                "bug \"reproduzido\" tem passos conhecidos (ou uma entrada conhecida) que, seguidos, disparam o " +
-                "comportamento incorreto de forma consistente.",
+                "Em vez de esperar que ele aconteça de novo por acaso, você passa a ter controle sobre ele. Um bug " +
+                "\"reproduzido\" tem passos conhecidos (ou uma entrada conhecida) que, seguidos, disparam o comportamento " +
+                "incorreto de forma consistente.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Reproduction transforma um bug incerto em um experimento repetível — sem essa base, qualquer " +
-                "tentativa de correção é um palpite sem forma de confirmar se de fato resolveu o problema.",
+                "Se o bug não aparece mais depois da sua mudança, só uma reprodução confiável diz se você o corrigiu ou " +
+                "se ele só não voltou por acaso.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -4582,25 +4581,21 @@ export default area({
           requires: ["Reproduction"],
           note: "método científico: hipótese → previsão → teste",
           summary:
-            "Aplicar o método científico à depuração: formular uma hipótese sobre a causa do bug, prever o que " +
-            "ela implicaria, testar essa previsão — e repetir, descartando ou confirmando hipóteses uma de cada vez.",
+            "Hypothesis-Driven Debugging é investigar um bug testando, uma de cada vez, hipóteses explícitas sobre a " +
+            "sua causa.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Hypothesis-Driven Debugging é a prática de investigar um bug formulando hipóteses explícitas " +
-                "sobre sua causa, cada uma testável: \"eu acho que o problema é X; se for X, então observar Y " +
-                "deveria confirmar isso\". Em vez de mudar código aleatoriamente na esperança de que algo " +
-                "resolva, cada passo é uma pergunta específica com uma resposta que confirma ou descarta uma hipótese.",
+                "Cada hipótese vem com uma previsão: \"eu acho que o problema é X; se for X, então observar Y deveria " +
+                "confirmar isso\". Em vez de mudar código aleatoriamente na esperança de que algo resolva, cada passo é " +
+                "uma pergunta específica com uma resposta que confirma ou descarta uma hipótese.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Hypothesis-Driven Debugging aplica hipótese → previsão → teste de forma iterativa, garantindo " +
-                "que cada mudança seja guiada por evidência, não por tentativa e erro — ao final, você sabe por " +
-                "que o bug acontecia, não só que parou.",
+              text: "Ao fim de uma boa depuração, você sabe por que o bug acontecia, e não só que ele parou.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -4749,26 +4744,20 @@ export default area({
           requires: ["Programming Foundations / Memory & Runtime / Call Stack"],
           note: "ler a pilha de chamadas no ponto da falha — é uma renderização do call stack",
           collision: "≠ Call Stack (Epic 01 / Memory & Runtime) · ≠ Stack ADT (Epic 01 / Data Structures)",
-          summary:
-            "A pilha de chamadas capturada no momento exato de uma falha — uma renderização legível do Call " +
-            "Stack que mostra, função por função, o caminho que levou até o erro.",
+          summary: "Um Stack Trace é a lista das chamadas de função que estavam ativas no momento em que um erro ocorreu.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Um stack trace é a lista de chamadas de função ativas no momento em que um erro ocorreu, da " +
-                "mais recente (onde o erro aconteceu) até a mais antiga (o ponto de entrada que iniciou toda a " +
-                "cadeia). É, na prática, uma fotografia do call stack naquele instante — cada linha mostra uma " +
-                "função, e geralmente o arquivo e o número da linha onde ela chamou a próxima.",
+                "Ela vai da chamada mais recente (onde o erro aconteceu) até a mais antiga (o ponto de entrada que " +
+                "iniciou toda a cadeia). É, na prática, uma fotografia do call stack naquele instante — cada linha mostra " +
+                "uma função, e geralmente o arquivo e o número da linha onde ela chamou a próxima.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Um stack trace mostra a cadeia exata de chamadas até o ponto da falha — uma renderização " +
-                "gratuita do call stack no momento do erro, que transforma \"algo deu errado\" em \"isto deu " +
-                "errado, chamado por isto, chamado por isto\".",
+              text: "Antes de adivinhar onde está o problema, leia o stack trace inteiro, e não só a primeira linha.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -4929,27 +4918,21 @@ export default area({
           requires: ["Programming Foundations / Memory & Runtime / Call Stack"],
           note: "pausar a execução para inspecionar estado/frames. Complementa Stack Trace",
           summary:
-            "Um ponto marcado no código onde a execução pausa completamente, permitindo inspecionar o valor de " +
-            "cada variável e o estado exato do programa naquele instante — sem precisar prever de antemão o que " +
-            "um print mostraria.",
+            "Um Breakpoint é um ponto marcado no código onde a execução para por completo quando o programa roda sob " +
+            "um debugger.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Um breakpoint é um ponto marcado numa linha de código onde, ao rodar sob um debugger, a " +
-                "execução para completamente. Com o programa pausado, é possível inspecionar o valor de " +
-                "qualquer variável visível naquele escopo, percorrer o call stack completo (ver o estado de " +
-                "cada função que chamou a atual), e avançar a execução linha por linha (step) para observar " +
-                "exatamente como o estado muda.",
+                "Com o programa pausado, é possível inspecionar o valor de qualquer variável visível naquele escopo, " +
+                "percorrer o call stack completo (ver o estado de cada função que chamou a atual) e avançar a execução " +
+                "linha por linha (step) para observar exatamente como o estado muda.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Um breakpoint pausa a execução num ponto exato, dando acesso completo ao estado do programa " +
-                "naquele instante — a ferramenta certa para observar como e por que um valor chega errado, não " +
-                "só onde um erro foi lançado.",
+              text: "Use um breakpoint quando o problema não é um erro lançado, e sim um valor que chega errado.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -5088,27 +5071,20 @@ export default area({
           title: "Binary Search Debugging",
           requires: ["Programming Foundations / Algorithms & Complexity / Binary Search", "Hypothesis-Driven Debugging"],
           note: "bisseccionar o espaço de código/entrada para localizar",
-          summary:
-            "Localizar a causa de um bug bisseccionando repetidamente o espaço de possibilidades — código, " +
-            "histórico ou dados — em vez de inspecionar tudo sequencialmente do início ao fim.",
+          summary: "Binary Search Debugging é localizar a causa de um bug dividindo o espaço de busca ao meio a cada teste.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Binary Search Debugging aplica a mesma ideia de Binary Search (Área 1, Algorithms & " +
-                "Complexity) para localizar a causa de um bug: em vez de investigar sequencialmente do início " +
-                "ao fim de um trecho grande de código (ou de um conjunto grande de dados), você testa o ponto " +
-                "médio, decide de que lado está o problema, e repete só naquela metade — reduzindo o espaço de " +
-                "busca pela metade a cada passo.",
+                "É a mesma ideia de Binary Search (Área 1, Algorithms & Complexity): em vez de investigar sequencialmente " +
+                "do início ao fim de um trecho grande de código (ou de um conjunto grande de dados), você testa o ponto " +
+                "médio, decide de que lado está o problema e repete só naquela metade.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Binary Search Debugging bisseciona o espaço de possibilidades — código, histórico de commits, " +
-                "ou dados — testando o meio a cada passo, reduzindo uma investigação sequencial de N passos " +
-                "para log₂(N) testes.",
+              text: "Num espaço de busca grande, testar o meio rende mais do que olhar tudo em ordem.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -5277,25 +5253,24 @@ export default area({
           requires: ["Binary Search Debugging", "Software Craft / Git"],
           note: "busca binária automatizada sobre o histórico de commits. Canônico aqui — Bisect no Epic 03 / Git é revisita/referência",
           summary:
-            "A busca binária automatizada sobre o histórico de commits: em vez de bisseccionar código ou dados " +
-            "manualmente, o Git testa commits sucessivos até isolar exatamente qual commit introduziu um bug.",
+            "Git Bisect é a ferramenta do Git que faz uma busca binária no histórico de commits para achar o que " +
+            "introduziu um bug.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "git bisect é uma ferramenta do Git que aplica Binary Search Debugging diretamente sobre o " +
-                "histórico de commits. Você informa um commit \"bom\" (onde o bug não existia) e um commit " +
-                "\"ruim\" (onde o bug existe); o Git faz checkout automaticamente do commit no meio desse " +
-                "intervalo, você testa se o bug está presente ali, informa o resultado (good ou bad), e o Git " +
-                "bissecciona de novo — repetindo até isolar o commit exato que introduziu o problema.",
+                "Você informa um commit \"bom\" (onde o bug não existia) e um commit \"ruim\" (onde o bug existe); o Git faz " +
+                "checkout automaticamente do commit no meio desse intervalo, você testa se o bug está presente ali, " +
+                "informa o resultado (good ou bad), e o Git divide o intervalo de novo — repetindo até isolar o commit " +
+                "exato.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "git bisect automatiza Binary Search Debugging sobre o histórico de commits: informa um bom e " +
-                "um mau, testa o meio repetidamente, e isola o commit exato que introduziu o bug em log₂(N) passos.",
+                "Mil commits entre o \"funcionava\" e o \"quebrou\" viram uns dez testes, e com `git bisect run` nem esses " +
+                "são manuais.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -5437,27 +5412,24 @@ export default area({
           note: "ir além do sintoma; 5 Whys — teste de hipótese iterativo",
           revisit: ["Platform / Reliability Engineering"],
           summary:
-            "Continuar investigando além do primeiro sintoma óbvio até chegar à causa real e mais profunda de " +
-            "um problema — perguntando \"por quê\" repetidamente em vez de corrigir só o que aparece na superfície.",
+            "Root Cause Analysis é seguir investigando além do primeiro sintoma até chegar à causa real de um " +
+            "problema.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Root Cause Analysis (RCA) é a prática de não parar a investigação no primeiro sintoma " +
-                "encontrado, mas continuar perguntando \"por que isso aconteceu?\" repetidamente até chegar à " +
-                "causa real e mais profunda — muitas vezes uma decisão de design, um processo, ou uma suposição " +
-                "incorreta, não só a linha de código onde o sintoma apareceu. A técnica dos \"5 Whys\" é a " +
-                "versão mais conhecida: perguntar \"por quê\" cinco vezes seguidas, cada resposta alimentando a " +
-                "próxima pergunta.",
+                "A pergunta \"por que isso aconteceu?\" se repete até chegar à causa mais profunda — muitas vezes uma " +
+                "decisão de design, um processo, ou uma suposição incorreta, não só a linha de código onde o sintoma " +
+                "apareceu. A técnica dos \"5 Whys\" é a versão mais conhecida: perguntar \"por quê\" cinco vezes seguidas, " +
+                "cada resposta alimentando a próxima pergunta.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Root Cause Analysis vai além do sintoma perguntando \"por quê\" repetidamente até chegar a uma " +
-                "causa acionável e profunda o bastante para que corrigi-la evite a recorrência — não só faça o " +
-                "sintoma atual desaparecer.",
+                "Pare de perguntar \"por quê\" quando chegar a uma causa que você consegue corrigir e que, corrigida, " +
+                "impede o problema de voltar.",
             },
             { type: "heading", text: "Por que importa" },
             {
