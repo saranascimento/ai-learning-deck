@@ -1989,25 +1989,20 @@ export default area({
           requires: ["Design Heuristics / DRY"],
           note: "o smell = a violação visível do princípio",
           collision: "≠ DRY (Design Heuristics) — manifestação concreta × princípio abstrato",
-          summary:
-            "O sinal visível de que o mesmo conhecimento foi escrito mais de uma vez: trechos copiados ou quase " +
-            "idênticos que precisam ser alterados juntos — a violação de DRY vista no código pronto.",
+          summary: "Duplicate Code é o code smell de blocos de código iguais, ou quase iguais, em mais de um lugar.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Duplicate Code é o code smell mais reconhecível: blocos de código iguais, ou quase iguais com " +
-                "uma pequena variação, em mais de um lugar. Um smell não é um bug — o código funciona —, é um " +
-                "sintoma na estrutura que indica que vale investigar. DRY é o princípio (não repita conhecimento); " +
-                "Duplicate Code é como essa violação aparece quando você olha o código.",
+                "Um smell não é um bug — o código funciona —, é um sintoma na estrutura que indica que vale investigar. " +
+                "DRY é o princípio (não repita conhecimento); Duplicate Code é como essa violação aparece quando você " +
+                "olha o código.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Duplicate Code é o sintoma de DRY violado: quando dois trechos precisam mudar juntos, eles " +
-                "deveriam ser um só — mas só quando a semelhança é de conhecimento, não de coincidência.",
+              text: "Cada cópia é mais um lugar onde a próxima correção pode ser esquecida.",
             },
             { type: "heading", text: "Por que é um problema" },
             {
@@ -2215,25 +2210,20 @@ export default area({
           order: 20,
           title: "Long Method",
           note: "função grande demais para entender de uma vez",
-          summary:
-            "Uma função que cresceu tanto que não dá para entender de uma vez: faz várias coisas, exige rolar a " +
-            "tela e costuma ter comentários separando \"seções\" — sinal de que precisa ser dividida.",
+          summary: "Long Method é o code smell de uma função grande demais para ser compreendida de relance.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Long Method (ou Long Function) é o smell de uma função grande demais para ser compreendida de " +
-                "relance. O número de linhas é só um indicador; o problema de fato é que ela reúne várias tarefas, " +
-                "vários níveis de abstração e muitas variáveis locais que o leitor precisa manter na cabeça. É a " +
-                "violação, vista no código, do que Functions (módulo Clean Code) recomenda.",
+                "O número de linhas é só um indicador; o problema de fato é que ela reúne várias tarefas, vários níveis " +
+                "de abstração e muitas variáveis locais que o leitor precisa manter na cabeça. É a violação, vista no " +
+                "código, do que Functions (módulo Clean Code) recomenda.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Se você precisa de comentários para marcar seções dentro de uma função, cada seção provavelmente " +
-                "quer ser uma função com esse nome.",
+              text: "Depois de dividida, uma função longa deve se ler como um índice das partes que ela coordena.",
             },
             { type: "heading", text: "Por que é um problema" },
             {
@@ -2443,24 +2433,21 @@ export default area({
           title: "Long Parameter List",
           note: "relaciona-se com Function Arguments (Clean Code) e Introduce Parameter Object (Refactoring) — trio intencional: escrever bem → reconhecer violação → corrigir",
           summary:
-            "Uma função com parâmetros demais: chamadas difíceis de ler, fáceis de errar na ordem e sinal de que " +
-            "os dados deveriam viajar juntos ou a função faz mais do que deveria.",
+            "Long Parameter List é o code smell de uma função que recebe mais argumentos do que se consegue manter na " +
+            "cabeça.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Long Parameter List é o smell de funções que recebem mais argumentos do que se consegue manter " +
-                "na cabeça — em geral, mais de três ou quatro. É a violação vista no código do que Function " +
-                "Arguments (módulo Clean Code) recomenda escrever; os três Concepts formam uma sequência: escrever " +
-                "bem, reconhecer a violação e corrigir (com Introduce Parameter Object, no módulo Refactoring).",
+                "Em geral, isso começa a partir de três ou quatro. É a violação vista no código do que Function Arguments " +
+                "(módulo Clean Code) recomenda escrever; os três Concepts formam uma sequência: escrever bem, reconhecer " +
+                "a violação e corrigir (com Introduce Parameter Object, no módulo Refactoring).",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Muitos parâmetros costumam esconder um conceito sem nome (dados que andam juntos) ou uma função que " +
-                "faz demais — ache qual dos dois é antes de simplesmente reordenar os argumentos.",
+              text: "Parâmetros que sempre aparecem juntos são um conceito do domínio que ainda não ganhou nome.",
             },
             { type: "heading", text: "Por que é um problema" },
             {
@@ -2634,25 +2621,20 @@ export default area({
           title: "Large Class",
           requires: ["Programming Foundations / Programming Fundamentals / Cohesion"],
           note: "sintoma concreto de baixa coesão",
-          summary:
-            "Uma classe que acumulou responsabilidades demais — muitos campos e métodos sem relação entre si — " +
-            "o sintoma concreto de baixa coesão, e o ponto de partida para dividi-la.",
+          summary: "Large Class é o code smell de uma classe com campos, métodos e razões para mudar demais.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Large Class é o smell de uma classe grande demais: muitos campos, muitos métodos, muitas " +
-                "razões para mudar. Como Cohesion (módulo Programming Fundamentals) mede o quanto as partes de uma " +
-                "classe pertencem juntas, uma classe grande normalmente é o sintoma de baixa coesão: vários " +
-                "assuntos diferentes acabaram morando no mesmo lugar.",
+                "Como Cohesion (módulo Programming Fundamentals) mede o quanto as partes de uma classe pertencem juntas, " +
+                "uma classe grande normalmente é o sintoma de baixa coesão: vários assuntos diferentes acabaram morando " +
+                "no mesmo lugar.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Se grupos diferentes de métodos usam grupos diferentes de campos, você tem mais de uma classe " +
-                "morando no mesmo arquivo — separe-as.",
+              text: "Uma classe que toda mudança precisa tocar vira ponto de conflito para o time inteiro.",
             },
             { type: "heading", text: "Por que é um problema" },
             {
@@ -2868,24 +2850,20 @@ export default area({
           requires: ["Programming Foundations / Programming Fundamentals / Coupling"],
           note: "sintoma concreto de acoplamento excessivo",
           summary:
-            "Um método que usa mais os dados de outro objeto do que os do próprio — sinal de que o comportamento " +
-            "está no lugar errado e de acoplamento excessivo entre as duas classes.",
+            "Feature Envy é o code smell de um método que usa mais os dados de outro objeto do que os do seu próprio.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Feature Envy é o smell de um método que parece \"invejar\" outra classe: gasta a maior parte do " +
-                "tempo lendo e manipulando dados de outro objeto (vários getters ou campos dele), e quase " +
-                "nada do objeto onde mora. É o sintoma concreto de acoplamento excessivo (Coupling, módulo " +
-                "Programming Fundamentals): duas classes conhecem detalhes demais uma da outra.",
+                "Ele parece \"invejar\" outra classe: gasta a maior parte do tempo lendo e manipulando campos dela, e quase " +
+                "nada do objeto onde mora. É o sintoma concreto de acoplamento excessivo (Coupling, módulo Programming " +
+                "Fundamentals): duas classes conhecem detalhes demais uma da outra.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Se um método usa mais os dados de outra classe do que os da sua, ele provavelmente pertence a " +
-                "essa outra classe — leve o comportamento para perto dos dados.",
+              text: "Quando a regra mora perto dos dados, todo cliente usa a mesma versão dela.",
             },
             { type: "heading", text: "Por que é um problema" },
             {
@@ -3075,24 +3053,20 @@ export default area({
           title: "Primitive Obsession",
           note: "usar primitivos onde um tipo/objeto próprio comunicaria melhor a intenção",
           summary:
-            "Usar strings e números soltos para representar conceitos do domínio (dinheiro, e-mail, CPF) em vez " +
-            "de tipos próprios — o que espalha validação e permite misturar valores que não deveriam se misturar.",
+            "Primitive Obsession é o hábito de representar conceitos do domínio com tipos primitivos, como string e " +
+            "number, em vez de tipos próprios.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Primitive Obsession é o hábito de representar conceitos do domínio com tipos primitivos — string, " +
-                "number, boolean — em vez de criar um tipo próprio. Um e-mail, um valor em reais, um CPF, um " +
-                "intervalo de datas: todos viram simples strings ou números, e o significado e as regras ficam " +
-                "só na cabeça de quem programa.",
+                "Um e-mail, um valor em reais, um CPF, um intervalo de datas: todos viram simples strings ou números, e o " +
+                "significado e as regras ficam só na cabeça de quem programa.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Se um valor tem regras, formato ou significado próprio, ele merece um tipo próprio — em vez de " +
-                "ser uma string ou um número que todo mundo precisa lembrar de validar.",
+              text: "Valide uma vez, na criação do tipo, e todo código que recebe esse tipo pode confiar nele.",
             },
             { type: "heading", text: "Por que é um problema" },
             {
