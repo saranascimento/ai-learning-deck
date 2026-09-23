@@ -9508,8 +9508,7 @@ export default area({
               type: "callout",
               title: "Ideia principal",
               text:
-                "O histórico ramificado do merge é mais difícil de ler, mas conta a verdade sobre o trabalho feito em " +
-                "paralelo.",
+                "Merge nunca reescreve commits existentes, por isso é seguro em branches que outras pessoas também usam.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -10085,8 +10084,7 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Resolver um conflito raramente é escolher um lado, e quase sempre é combinar o que cada mudança queria.",
+              text: "Todo conflito é uma pergunta sobre intenção, e só quem entende as duas mudanças pode respondê-la.",
             },
             { type: "heading", text: "Por que importa" },
             {
