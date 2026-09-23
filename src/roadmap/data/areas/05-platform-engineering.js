@@ -20400,27 +20400,25 @@ export default area({
           title: "Role-Based Access Control (RBAC)",
           note: "papéis → permissões → usuários",
           summary:
-            "Organizar o acesso em papéis (roles) — como leitor, editor e administrador —, cada um com um conjunto de " +
-            "permissões, e atribuir papéis às pessoas, em vez de dar permissões a cada pessoa diretamente.",
+            "RBAC (Role-Based Access Control) é organizar o acesso em papéis, cada um com um conjunto de permissões, " +
+            "e atribuir papéis às pessoas.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "No controle de acesso baseado em papéis, as permissões não são dadas às pessoas, e sim a papéis que " +
-                "refletem funções: `viewer` pode ler, `editor` pode ler e alterar, `admin` pode também gerir membros e " +
-                "cobrança. Cada pessoa recebe um ou mais papéis e herda as permissões deles. Quando alguém muda de " +
-                "função, troca-se o papel, e não uma lista de permissões; quando surge uma permissão nova, ela é " +
-                "acrescentada aos papéis que devem tê-la. Os papéis podem ser globais ou valer dentro de um escopo, como " +
-                "uma organização ou um projeto.",
+                "As permissões não são dadas às pessoas diretamente, e sim a papéis que refletem funções: `viewer` pode " +
+                "ler, `editor` pode ler e alterar, `admin` pode também gerir membros e cobrança. Cada pessoa recebe um ou " +
+                "mais papéis e herda as permissões deles. Quando alguém muda de função, troca-se o papel, e não uma lista " +
+                "de permissões; quando surge uma permissão nova, ela é acrescentada aos papéis que devem tê-la. Os papéis " +
+                "podem ser globais ou valer dentro de um escopo, como uma organização ou um projeto.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "O código pergunta por permissões (\"pode editar documentos?\"), e não por papéis (\"é editor?\"): os papéis " +
-                "são só a forma de agrupar permissões, e podem mudar sem que as verificações espalhadas pelo sistema " +
-                "precisem mudar.",
+                "No código, pergunte se a pessoa pode fazer a ação, e não qual é o papel dela, para que os papéis mudem " +
+                "sem mexer nas verificações.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -20624,27 +20622,24 @@ export default area({
           title: "Attribute-Based Access Control (ABAC)",
           note: "políticas sobre atributos (usuário/recurso/ambiente); mais flexível, mais complexo",
           summary:
-            "Decidir o acesso por políticas que avaliam atributos — de quem pede (departamento, nível), do recurso " +
-            "(dono, classificação), da ação e do contexto (horário, rede) —, o que expressa regras que papéis " +
-            "sozinhos não conseguem.",
+            "ABAC (Attribute-Based Access Control) é decidir o acesso por políticas que avaliam atributos de quem " +
+            "pede, do recurso, da ação e do contexto.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "No controle de acesso baseado em atributos, a decisão é o resultado de políticas que olham para quatro " +
-                "coisas: o sujeito (quem pede: departamento, cargo, nível de acesso, papéis), o recurso (o que é " +
-                "acessado: dono, departamento, classificação, status), a ação (ler, alterar, aprovar) e o ambiente " +
-                "(horário, rede, dispositivo). Uma política como \"analistas podem ler relatórios do próprio departamento " +
-                "cuja classificação não passe do seu nível\" vira uma regra sobre atributos, sem um papel para cada " +
-                "departamento e nível. O preço é que as decisões ficam menos óbvias de prever e de explicar.",
+                "A decisão olha para quatro coisas: o sujeito (quem pede: departamento, cargo, nível de acesso, papéis), " +
+                "o recurso (o que é acessado: dono, departamento, classificação, status), a ação (ler, alterar, aprovar) " +
+                "e o ambiente (horário, rede, dispositivo). Uma política como \"analistas podem ler relatórios do próprio " +
+                "departamento cuja classificação não passe do seu nível\" vira uma regra sobre atributos, sem um papel " +
+                "para cada departamento e nível. O preço é que as decisões ficam menos óbvias de prever e de explicar.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "ABAC expressa regras que dependem do recurso e do contexto sem multiplicar papéis — mas cada política " +
-                "precisa ser legível, testada e capaz de dizer por que negou, porque \"acesso negado\" sem motivo é " +
+                "Toda política ABAC precisa conseguir dizer por que negou, porque um \"acesso negado\" sem motivo é " +
                 "impossível de depurar.",
             },
             { type: "heading", text: "Como funciona" },
@@ -20872,26 +20867,24 @@ export default area({
           title: "Permission-Based Authorization",
           note: "checagem fina no ponto de uso",
           summary:
-            "Verificar, em cada ponto do código que executa uma ação protegida, se a identidade tem a permissão " +
-            "específica para ela (`invoices:approve`), de forma declarada, centralizada e sempre no servidor.",
+            "Permission-Based Authorization é conferir, antes de cada ação protegida, se a identidade tem a permissão " +
+            "específica que ela exige.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Autorização por permissões é a forma de aplicar as regras no código: cada ação protegida declara a " +
-                "permissão que exige, e uma verificação central decide, antes de executar, se a identidade tem essa " +
-                "permissão. As permissões são finas e nomeadas pela ação (`recurso:ação`, como `invoices:read` e " +
-                "`invoices:approve`), e podem vir de papéis, de atributos ou de concessões diretas. O ponto de uso é o " +
-                "servidor: esconder um botão na interface ajuda a pessoa, mas não protege nada, porque a requisição pode " +
-                "ser feita sem a interface.",
+                "Cada ação protegida declara a permissão que exige, e uma verificação central decide, antes de executar, " +
+                "se a identidade a tem. As permissões são finas e nomeadas pela ação (`recurso:ação`, como " +
+                "`invoices:read` e `invoices:approve`), e podem vir de papéis, de atributos ou de concessões diretas. O " +
+                "ponto de uso é o servidor: esconder um botão na interface ajuda a pessoa, mas não protege nada, porque a " +
+                "requisição pode ser feita sem a interface.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Toda ação protegida declara a permissão que exige, e o servidor confere antes de executar — a interface " +
-                "pode esconder botões por conveniência, mas quem garante a regra é sempre a verificação no servidor.",
+                "Esconder um botão é conveniência, e não segurança: a regra só vale se o servidor conferir a permissão.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -21092,27 +21085,25 @@ export default area({
           title: "Principle of Least Privilege",
           note: "canônico do roadmap — Cloud Security / Least Privilege in Cloud e AI Engineering / AI Safety revisitam com Requires para cá",
           summary:
-            "Dar a cada pessoa, serviço ou processo só as permissões necessárias para a sua tarefa, pelo tempo " +
-            "necessário e no escopo necessário — para que um erro, uma conta invadida ou um componente comprometido " +
-            "cause o menor estrago possível.",
+            "O Principle of Least Privilege é dar a cada agente só as permissões necessárias para a sua tarefa, no " +
+            "escopo e pelo tempo necessários.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "O princípio do menor privilégio diz que todo agente — uma pessoa, um serviço, um job, uma chave de API, " +
-                "um agente de IA com ferramentas — deve ter exatamente as permissões de que precisa para a sua função, e " +
-                "nada além. Ele tem três dimensões: o quê (só as ações necessárias, como ler sem poder apagar), onde (só " +
-                "os recursos necessários, como um bucket e não todos) e por quanto tempo (acesso temporário para tarefas " +
-                "pontuais, em vez de permanente). Ele não impede que algo dê errado; limita o tamanho do estrago quando " +
-                "der: a credencial vazada de um serviço que só lê uma tabela não apaga o banco.",
+                "Agente é uma pessoa, um serviço, um job, uma chave de API, um agente de IA com ferramentas. O princípio " +
+                "tem três dimensões: o quê (só as ações necessárias, como ler sem poder apagar), onde (só os recursos " +
+                "necessários, como um bucket e não todos) e por quanto tempo (acesso temporário para tarefas pontuais, em " +
+                "vez de permanente). Ele não impede que algo dê errado; limita o tamanho do estrago quando der: a " +
+                "credencial vazada de um serviço que só lê uma tabela não apaga o banco.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Menor privilégio é limitar o raio de dano: pergunte, para cada credencial, \"se ela vazar amanhã, o que " +
-                "alguém consegue fazer com ela?\" — e reduza a resposta ao mínimo que a tarefa exige.",
+                "Para cada credencial, pergunte o que alguém conseguiria fazer com ela se vazasse amanhã, e reduza isso " +
+                "ao mínimo.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -21308,9 +21299,8 @@ export default area({
           title: "Resource Ownership",
           note: "'é seu?'; multi-tenancy; IDOR liga com Application Security / Broken Access Control",
           summary:
-            "Conferir, a cada acesso, se o recurso pertence a quem pede — ou à organização dela, num sistema com " +
-            "vários clientes (multi-tenancy) —, de preferência filtrando a própria consulta pelo dono, para que um id " +
-            "de outra pessoa simplesmente não encontre nada.",
+            "Resource Ownership é conferir, a cada acesso, se o recurso pertence a quem pede ou à organização dessa " +
+            "pessoa.",
           content: [
             { type: "heading", text: "Conceito" },
             {
@@ -21327,8 +21317,8 @@ export default area({
               type: "callout",
               title: "Ideia principal",
               text:
-                "Filtre pelo dono na consulta, e não depois dela: se o `tenant_id` de quem pede faz parte de toda busca, " +
-                "um id de outra organização não encontra nada — e não há verificação para esquecer.",
+                "Com o dono dentro da consulta, um id de outra organização simplesmente não encontra nada, e não há " +
+                "verificação para esquecer.",
             },
             { type: "heading", text: "Como funciona" },
             {
