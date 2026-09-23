@@ -1008,9 +1008,9 @@ for (const area of model.areas()) {
     set("noResumoCard", F(!html.includes("concept-resumo") && !html.includes("Resumo ainda não disponível") && !html.includes("detail-block"), "sem card de Resumo nem detail-block", s));
     if (concept.summary) {
       withLedeSummary++;
-      set("ledeSummary", F(html.includes(`<p class="page-head__lede">${renderInline(concept.summary)}</p>`), "texto de abertura = summary", s));
+      set("ledeSummary", F(html.includes(`<p class="page-head__label">Definição</p><p class="page-head__lede">${renderInline(concept.summary)}</p>`), "texto de abertura = summary, com rótulo Definição", s));
     } else if (concept.note) {
-      set("ledeNote", F(html.includes(`<p class="page-head__lede">${escapeHtml(concept.note)}</p>`), "texto de abertura = note quando não há summary", s));
+      set("ledeNote", F(html.includes(`<p class="page-head__lede">${escapeHtml(concept.note)}</p>`) && !html.includes("page-head__label"), "texto de abertura = note (sem rótulo) quando não há summary", s));
     } else {
       set("noLede", F(!html.includes('class="page-head__lede"'), "sem texto de abertura quando não há summary nem note", s));
     }
@@ -1175,7 +1175,7 @@ for (const area of model.areas()) {
   P("crumbCurrent", "breadcrumb: Concept atual = aria-current, sem self-link");
   P("chips", "classificações == dataset");
   P("noResumoCard", "sem card de Resumo nem detail-block");
-  if (flags.ledeSummary !== undefined) P("ledeSummary", "texto de abertura = summary quando há");
+  if (flags.ledeSummary !== undefined) P("ledeSummary", "texto de abertura = summary (rótulo Definição) quando há");
   if (flags.ledeNote !== undefined) P("ledeNote", "texto de abertura = note quando não há summary");
   if (flags.noLede !== undefined) P("noLede", "sem texto de abertura quando não há summary nem note");
   P("requiresHeading", "Pré-requisitos sempre presente (coluna direita)");
@@ -1774,6 +1774,17 @@ for (const area of model.areas()) {
         if (text.split(/[.!?](?:\s+|$)(?=[A-ZÁÉÍÓÚÂÊÔÃÕÇX]|$)/).filter((s) => s.trim()).length > 1) multi.push(c.slug);
         if ((text.match(/[:;—]/g) || []).length >= 2) chained.push(c.slug);
       }
+  // Definição (summary): uma frase direta, sem emenda com «—».
+  const defLong = [];
+  const defChained = [];
+  for (const a of model.areas())
+    for (const m of model.modules(a))
+      for (const c of model.concepts(m)) {
+        if (!(c.content || []).length || !c.summary) continue;
+        if (c.summary.trim().split(/\s+/).length > 30) defLong.push(c.slug);
+        if (/[—;]/.test(strip(c.summary))) defChained.push(c.slug);
+      }
+  record(g, `relatório Definição: >30 palavras: ${defLong.length} · com «—»/«;»: ${defChained.length}`, true);
   record(g, `relatório: ${total} destaques · >30 palavras: ${long.length} · 2+ frases: ${multi.length} · 2+ conectores: ${chained.length} · título ≠ «Ideia principal»: ${untitled.length}`, true);
 }
 

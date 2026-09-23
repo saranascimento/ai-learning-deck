@@ -113,6 +113,21 @@
   width: 1em;
   height: 1em;
 }
+.page-head__definition {
+  margin-top: 0.25rem;
+}
+.page-head__label {
+  margin: 0 0 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--area-color, var(--color-text-muted));
+}
+.page-head__definition .page-head__lede {
+  margin-top: 0;
+  color: var(--color-text);
+}
 .page-head__lede {
   max-width: 48rem;
   margin: 0.25rem 0 0;

@@ -290,7 +290,7 @@ export function renderConcept(vm) {
   const readingTime = minutes
     ? `<span class="doc-meta">${icon("clock", "doc-meta__icon")}<span>${minutes} min de leitura</span></span>`
     : "";
-  // Texto de abertura: o resumo; sem resumo, a nota curta do termo (quando houver).
+  // Texto de abertura: o resumo (a definição); sem resumo, a nota curta do termo (quando houver).
   const lede = concept.summary ? renderInline(concept.summary) : concept.note ? escapeHtml(concept.note) : "";
 
   const header = [
@@ -300,7 +300,12 @@ export function renderConcept(vm) {
     '              <div class="doc-actions" data-actions-slot=""></div>',
     "            </div>",
     `            <div class="doc-chips"><div class="markers" role="group" aria-label="Classificações">${renderChipList(concept, {})}</div>${readingTime}</div>`,
-    ...(lede ? [`            <p class="page-head__lede">${lede}</p>`] : []),
+    // O resumo é a definição direta do termo (rótulo «Definição»); a note de fallback vai sem rótulo.
+    ...(concept.summary
+      ? [`            <div class="page-head__definition"><p class="page-head__label">Definição</p><p class="page-head__lede">${lede}</p></div>`]
+      : lede
+        ? [`            <p class="page-head__lede">${lede}</p>`]
+        : []),
     "          </header>",
   ].join("\n");
 
