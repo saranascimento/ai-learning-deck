@@ -224,6 +224,22 @@ function mount(slot) {
     run();
   }
   input.addEventListener("input", run);
+
+  // Clicar fora da busca, ou sair dela com Tab, fecha a lista; o texto fica no campo, e voltar a
+  // ele reabre os resultados.
+  const close = () => {
+    list.hidden = true;
+  };
+  document.addEventListener("pointerdown", (ev) => {
+    if (!wrap.contains(ev.target)) close();
+  });
+  wrap.addEventListener("focusout", (ev) => {
+    if (!wrap.contains(ev.relatedTarget)) close();
+  });
+  input.addEventListener("focus", () => {
+    if (input.value.trim() && list.childElementCount) list.hidden = false;
+  });
+
   input.addEventListener("keydown", (ev) => {
     const first = list.querySelector("a");
     if (ev.key === "ArrowDown" && first) {
