@@ -11208,25 +11208,22 @@ export default area({
           order: 10,
           title: "README",
           note: "ponto de entrada de um repositório/projeto",
-          summary:
-            "O primeiro documento que quem chega a um projeto lê: diz o que ele é, como instalá-lo e rodá-lo, como " +
-            "usá-lo e como contribuir — o suficiente para começar em poucos minutos.",
+          summary: "O README é o arquivo na raiz de um repositório que apresenta o projeto a quem chega.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "O README é o arquivo na raiz de um repositório (geralmente README.md) que funciona como a porta de " +
-                "entrada do projeto. É a primeira coisa que aparece em plataformas como o GitHub e, para muita gente, " +
-                "a única documentação que será lida. Seu objetivo é responder rapidamente: o que é isto, para que " +
+                "Geralmente se chama README.md. É a primeira coisa que aparece em plataformas como o GitHub e, para muita " +
+                "gente, a única documentação que será lida. Seu objetivo é responder rapidamente: o que é isto, para que " +
                 "serve, como eu começo?",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "O README responde \"o que é, como rodo, como uso\" em minutos — e só vale se os passos escritos " +
-                "funcionarem de fato.",
+                "O teste de um README é entregá-lo a quem nunca viu o projeto e ver se a pessoa chega ao funcionando " +
+                "sozinha.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -11430,25 +11427,22 @@ export default area({
           title: "Changelog",
           note: "registro por mudança",
           summary:
-            "O registro, organizado por versão, das mudanças relevantes de um projeto — escrito para quem o usa, " +
-            "para que saiba o que mudou, o que corrigiu e o que pode quebrar antes de atualizar.",
+            "O Changelog é a lista das mudanças relevantes de cada versão de um projeto, da mais recente para a mais " +
+            "antiga.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "O changelog (CHANGELOG.md) é a lista de mudanças notáveis de cada versão de um projeto, da mais recente " +
-                "para a mais antiga. Ele responde à pergunta de quem usa o software: \"o que mudou desde a versão que eu " +
-                "tenho?\". Uma convenção muito usada, o Keep a Changelog, agrupa as entradas em categorias: Added " +
-                "(novidades), Changed (mudanças), Deprecated (marcado como obsoleto), Removed (removido), Fixed " +
-                "(correções) e Security (segurança).",
+                "Costuma ficar num arquivo CHANGELOG.md e responde à pergunta de quem usa o software: \"o que mudou desde " +
+                "a versão que eu tenho?\". Uma convenção muito usada, o Keep a Changelog, agrupa as entradas em " +
+                "categorias: Added (novidades), Changed (mudanças), Deprecated (marcado como obsoleto), Removed " +
+                "(removido), Fixed (correções) e Security (segurança).",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "O changelog é escrito para quem usa, não para quem desenvolve: diga o que mudou para eles, agrupado " +
-                "por versão, e destaque tudo o que pode quebrar.",
+              text: "O número da versão diz o quanto mudou, e só o changelog diz o quê.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -11646,24 +11640,23 @@ export default area({
           title: "ADR",
           note: "Architecture Decision Record — registro por decisão",
           summary:
-            "Um documento curto que registra uma decisão de arquitetura — o contexto, o que foi decidido e suas " +
-            "consequências — para que o porquê não se perca quando as pessoas e a memória mudarem.",
+            "Um ADR (Architecture Decision Record) é um registro curto de uma decisão de arquitetura, com o contexto, " +
+            "a escolha e as consequências.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Um ADR (Architecture Decision Record) é um registro curto de uma única decisão importante: qual " +
-                "problema havia (contexto), o que se decidiu, por quê, e o que isso implica (consequências). Costuma ser um " +
-                "arquivo de texto no próprio repositório, numerado em sequência (docs/adr/0007-usar-postgresql.md), " +
-                "com um status: proposto, aceito, rejeitado ou substituído.",
+                "Cada ADR trata de uma única decisão importante: qual problema havia, o que se decidiu, por quê e o que " +
+                "isso implica. Costuma ser um arquivo de texto no próprio repositório, numerado em sequência " +
+                "(docs/adr/0007-usar-postgresql.md), com um status: proposto, aceito, rejeitado ou substituído.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "O ADR guarda o porquê de uma decisão importante junto ao código — curto, sobre uma decisão só e " +
-                "nunca reescrito: quando a decisão muda, um novo ADR substitui o antigo.",
+                "Sem o porquê registrado, a próxima pessoa não sabe se uma escolha estranha foi deliberada ou um " +
+                "acidente.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -11864,24 +11857,23 @@ export default area({
           title: "RFC",
           note: "proposta pré-decisão para mudanças maiores",
           summary:
-            "Um documento de proposta, escrito antes de tomar uma decisão de peso, que expõe o problema e a solução " +
-            "sugerida para receber críticas e construir consenso — e que, aceito, gera o registro de decisão.",
+            "Um RFC (Request for Comments) é uma proposta escrita para uma mudança significativa, compartilhada antes " +
+            "de a implementação começar.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Um RFC (Request for Comments, \"pedido de comentários\") é uma proposta escrita para uma mudança " +
-                "significativa, compartilhada antes de a implementação começar. Ele descreve o problema, a solução " +
-                "proposta, as alternativas e os riscos, e convida as pessoas afetadas a comentar. É uma ferramenta " +
-                "de decisão coletiva: o objetivo é discutir a ideia enquanto ela ainda é barata de mudar.",
+                "Ele descreve o problema, a solução proposta, as alternativas e os riscos, e convida as pessoas afetadas " +
+                "a comentar. É uma ferramenta de decisão coletiva: o objetivo é discutir a ideia enquanto ela ainda é " +
+                "barata de mudar.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "O RFC é a conversa antes da decisão: escreva-o para mudanças grandes e difíceis de reverter, deixe " +
-                "as pessoas afetadas comentarem e, aceito, registre a decisão em um ADR.",
+                "Quanto mais gente uma mudança afeta e mais difícil ela é de desfazer, mais vale discutir antes de " +
+                "escrever código.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -12075,25 +12067,20 @@ export default area({
           order: 50,
           title: "Runbook",
           note: "documentação operacional. Ponte futura para Platform / Reliability Engineering (Postmortem) — sem Requires (Epic 05 ainda não aprovado)",
-          summary:
-            "Um guia passo a passo para operar um sistema e responder a problemas conhecidos — escrito para ser " +
-            "seguido sob pressão, por quem talvez nunca tenha visto aquele componente.",
+          summary: "Um Runbook é um guia passo a passo para operar um sistema e responder aos problemas conhecidos dele.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Um runbook é a documentação operacional de um sistema: instruções concretas para tarefas repetíveis " +
-                "(fazer um deploy, rotacionar uma chave, reiniciar um serviço) e para responder a alertas e " +
-                "incidentes conhecidos. Enquanto o README ensina a usar e desenvolver, o runbook ensina a operar " +
-                "e a consertar quando algo dá errado.",
+                "Ele traz instruções concretas para tarefas repetíveis (fazer um deploy, rotacionar uma chave, reiniciar " +
+                "um serviço) e para responder a alertas e incidentes conhecidos. Enquanto o README ensina a usar e " +
+                "desenvolver, o runbook ensina a operar e a consertar quando algo dá errado.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Escreva o runbook para a pessoa cansada, às três da manhã, que nunca viu o sistema: comandos " +
-                "exatos, passos em ordem e um ponto claro de escalonamento.",
+              text: "Escreva o runbook para a pessoa cansada, às três da manhã, que nunca viu aquele sistema.",
             },
             { type: "heading", text: "Por que importa" },
             {
