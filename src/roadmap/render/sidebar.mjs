@@ -6,6 +6,9 @@
  * links (sem a lista de Concepts), o que mantém o peso da página pequeno; as outras Áreas
  * ficam num <details> no fim.
  *
+ * No topo, fora do menu (visível mesmo com o menu fechado no celular), o espaço da busca:
+ * `[data-search-slot]` vazio, preenchido por enhance/search.js.
+ *
  * Tudo é HTML: o menu é um <details class="doc-menu"> fechado. No desktop o CSS mostra o
  * conteúdo e esconde o botão (::details-content, com @supports); no celular ele é um
  * botão "Menu" que abre e fecha — sem JavaScript em nenhum dos casos.
@@ -40,6 +43,7 @@ export function renderSidebar({ area, modules, otherAreas }) {
 
   return [
     `    <aside class="doc-sidebar" aria-label="Menu da Área" style="--area-color: ${escapeAttr(area.color)}">`,
+    '      <div class="doc-search" data-search-slot=""></div>',
     '      <details class="doc-menu">',
     `        <summary class="doc-menu__toggle"><span>Menu</span><span class="doc-menu__area">${escapeHtml(area.title)}</span></summary>`,
     `        <nav aria-label="Módulos de ${escapeAttr(area.title)}">`,

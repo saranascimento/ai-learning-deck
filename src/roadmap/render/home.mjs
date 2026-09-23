@@ -30,16 +30,18 @@ import { escapeHtml, escapeAttr } from "./partials.mjs";
  *                   moduleCount, conceptCount, href }
  *   decks[]     : { title, url }   (rodapé de aprofundamento; [] = sem rodapé)
  *   stylesheets : hrefs de CSS já resolvidos
+ *   scripts     : hrefs de <script type="module"> (a busca)
  *
  * A Home é a raiz: sem header global (`siteHeader: false`), logo sem homeHref/
  * homeLabel/navLabel — só o rodapé do site usa `footerText`.
  */
-export function renderHome({ product, areas, decks = [], stylesheets = [] }) {
+export function renderHome({ product, areas, decks = [], stylesheets = [], scripts = [] }) {
   const main = [
     '      <header class="masthead">',
     `        <h1 class="masthead__title">${escapeHtml(product.name)}</h1>`,
     `        <p class="masthead__subtitle">${escapeHtml(product.tagline)}</p>`,
     "      </header>",
+    '      <div class="home-search" data-search-slot=""></div>',
     '      <ul class="area-grid" aria-label="Áreas do DevAtlas">',
     ...areas.map(renderAreaCard),
     "      </ul>",
@@ -52,6 +54,7 @@ export function renderHome({ product, areas, decks = [], stylesheets = [] }) {
     stylesheets,
     main,
     siteHeader: false,
+    scripts,
   });
 }
 

@@ -34,7 +34,7 @@ import { escapeHtml, escapeAttr, num, renderChipList } from "./partials.mjs";
  *   homeHref   : href relativo da Home a partir desta página
  *   stylesheets: hrefs de CSS já resolvidos para a profundidade desta página
  */
-export function renderModule({ product, area, module, concepts, requires = [], homeHref, stylesheets, sidebar }) {
+export function renderModule({ product, area, module, concepts, requires = [], homeHref, stylesheets, sidebar, scripts = [] }) {
   const kicker = ("Módulo " + num(module.index)).toUpperCase();
 
   const rows = concepts.map((c) => {
@@ -95,6 +95,7 @@ export function renderModule({ product, area, module, concepts, requires = [], h
     footerText: product.footerText,
     stylesheets,
     sidebar: sidebar ? renderSidebar(sidebar) : "",
+    scripts,
     main,
   });
 }

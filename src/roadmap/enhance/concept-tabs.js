@@ -32,7 +32,8 @@
  *   - "Neste conteúdo" destaca a seção que está na tela (aria-current="location");
  *   - botão Compartilhar no cabeçalho ([data-actions-slot]) copia o link da página;
  *     sem JS o slot fica vazio (e oculto por CSS);
- *   - o menu lateral rola (só ele) até o Concept atual quando a lista é longa.
+ *   - o menu lateral rola (só ele) até o Concept atual quando a lista é longa;
+ *   - a busca (./search.js) é importada daqui.
  *
  * Porte 1:1 de src/roadmap/ui/concept-tabs.js (o enhancement da SPA) na parte
  * de tabs, com duas diferenças mínimas: (1) auto-executa e trata TODOS os
@@ -42,6 +43,8 @@
  * Sem persistência nesta fase (localStorage / hash / query / memória da
  * última aba = fora da v0).
  */
+
+import "./search.js"; // busca no menu lateral — importada aqui para a página seguir com um único <script>
 
 const TAB_LABELS = { conteudo: "Conteúdo", exemplos: "Exemplos", exercicio: "Exercícios" };
 

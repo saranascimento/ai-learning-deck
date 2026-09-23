@@ -8,8 +8,13 @@
  * R3.5.7: as 668 Concept Pages ganham UM <script type="module"> apontando para
  * `assets/concept-tabs.js` (copiado de src/roadmap/enhance/ para dentro do
  * preview). Progressive enhancement: sem JS a Área de estudo é 3 seções
- * sequenciais visíveis; com JS vira APG Tabs. Home/Area/Module/404 continuam
- * 100% sem <script>.
+ * sequenciais visíveis; com JS vira APG Tabs.
+ *
+ * Layout de documentação (2026-09-22): menu lateral em HTML puro nas Areas,
+ * Modules e Concepts; busca (`assets/search.js` + `assets/search-index.json`,
+ * gerado aqui) como o único <script> da Home, Areas e Modules — nas Concept
+ * Pages ela vem por import dentro de concept-tabs.js. O 404 segue sem <script>.
+ * Sem JS a busca não aparece; a navegação pelo menu continua completa.
  *
  * Requisitos: Node >= 22.7 (detecção de sintaxe ESM sem package.json). Zero
  * dependências. Só escreve dentro de build/ (gitignored). Não toca na SPA.
@@ -18,7 +23,7 @@
  * Exit: 0 se todas as invariantes obrigatórias passarem; != 0 caso contrário
  *       (nesse caso o preview NÃO é escrito).
  */
-import { mkdirSync, writeFileSync, copyFileSync, existsSync } from "node:fs";
+import { mkdirSync, writeFileSync, copyFileSync, existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { roadmap, roadmapMeta } from "../src/roadmap/data/index.js";
@@ -266,6 +271,17 @@ function sidebarFor(pagePath, area, currentModule = null, currentConcept = null)
 const ENHANCE_SRC = "src/roadmap/enhance/concept-tabs.js";
 const ENHANCE_DEST = "assets/concept-tabs.js";
 
+// Busca (layout de documentação, etapa 3): search.js carregado pela Home, Areas e Modules; nas
+// Concept Pages ele é importado por concept-tabs.js (continua 1 <script> por página). O índice é
+// gerado aqui e fica ao lado do script (assets/search-index.json).
+const SEARCH_SRC = "src/roadmap/enhance/search.js";
+const SEARCH_DEST = "assets/search.js";
+const SEARCH_INDEX_DEST = "assets/search-index.json";
+const onlySearchScript = (html, logicalPath) => {
+  const tags = html.match(/<script\b[^>]*>/g) || [];
+  return tags.length === 1 && tags[0] === `<script type="module" src="${assetHrefFor(logicalPath, SEARCH_DEST)}">`;
+};
+
 // hrefs de CSS na profundidade da página: Home/404 (logical "/") → "css/…";
 // Area (logical "/areas/<slug>/") → "../../css/…". Sem base absoluta.
 function stylesheetsFor(logicalPath) {
@@ -305,6 +321,7 @@ const indexHtml = renderHome({
   areas: areaVM,
   decks: deckVM,
   stylesheets: STYLESHEETS,
+  scripts: [assetHrefFor(HOME_PATH, SEARCH_DEST)],
 });
 
 const notFoundHtml = renderDocument({
@@ -326,7 +343,7 @@ const notFoundHtml = renderDocument({
 // contentinfo — por isso as contagens miram o site-header / site-footer).
 // siteHeader:false → a Home (raiz) não emite <header class="site-header"> nem o
 // link site-header__home; começa direto no <main>. 404 e páginas internas mantêm.
-function landmarkChecks(label, html, { siteHeader = true } = {}) {
+function landmarkChecks(label, html, { siteHeader = true, search = false } = {}) {
   const g = "Shell (" + label + ")";
   record(g, "doctype minúsculo", html.startsWith("<!doctype html>"));
   record(g, 'lang="pt-BR"', html.includes('<html lang="pt-BR">'));
@@ -350,11 +367,12 @@ function landmarkChecks(label, html, { siteHeader = true } = {}) {
   record(g, "exatamente um <footer class=\"site-footer\">", (html.match(/<footer class="site-footer">/g) || []).length === 1);
   record(g, "exatamente um <h1>", (html.match(/<h1[\s>]/g) || []).length === 1);
   record(g, "sem aria-live", !html.includes("aria-live"));
-  record(g, "sem <script>", !html.toLowerCase().includes("<script"));
+  if (search) record(g, "só a busca: 1 <script type=module> = assets/search.js", onlySearchScript(html, HOME_PATH));
+  else record(g, "sem <script>", !html.toLowerCase().includes("<script"));
   record(g, "_shell.css referenciado", html.includes("css/roadmap/_shell.css"));
   record(g, "assets/links sem base absoluta, sem hash-route", !/(?:href|src)="(?:\/|https?:|#\/)/.test(html) && !html.includes("/ai-learning-deck/"));
 }
-landmarkChecks("index.html", indexHtml, { siteHeader: false });
+landmarkChecks("index.html", indexHtml, { siteHeader: false, search: true });
 landmarkChecks("404.html", notFoundHtml);
 
 // ---- 9. validação da Home real --------------------------------------
@@ -411,7 +429,8 @@ landmarkChecks("404.html", notFoundHtml);
   record(g, "sem href de hash (#/)", !indexHtml.includes("#/"));
   record(g, "sem rota /roadmap/ em <a href>", ![...indexHtml.matchAll(/<a\b[^>]*\bhref="([^"]*)"/g)].some((m) => m[1].includes("/roadmap/")));
   record(g, "sem href absoluto (leading /) nem /ai-learning-deck/", !/href="\//.test(indexHtml) && !indexHtml.includes("/ai-learning-deck/"));
-  record(g, "sem <script> — navegação 100% HTML nativo", !indexHtml.toLowerCase().includes("<script"));
+  record(g, "navegação 100% HTML; único <script> = a busca (assets/search.js)", onlySearchScript(indexHtml, HOME_PATH));
+  record(g, "espaço da busca entre o título e as Áreas", /<\/header>\n      <div class="home-search" data-search-slot=""><\/div>\n      <ul class="area-grid"/.test(indexHtml));
   record(g, "sem handler inline (on*=)", !/<[a-z][^>]*\son[a-z]+=/i.test(indexHtml));
   record(g, "sem aria-live", !indexHtml.includes("aria-live"));
 
@@ -464,6 +483,7 @@ const areaPages = model.areas().map((area, i) => {
     homeHref: relativize(areaPath, HOME_PATH), // "../../"
     stylesheets: [...stylesheetsFor(areaPath), extraCss(areaPath, SIDEBAR_CSS)],
     sidebar: sidebarFor(areaPath, area),
+    scripts: [assetHrefFor(areaPath, SEARCH_DEST)],
   });
   return { area, file: filePathFor(area), html, mods };
 });
@@ -579,7 +599,7 @@ const areaPages = model.areas().map((area, i) => {
         !navHrefs.some((h) => h.startsWith("/") || h.startsWith("http")) && !html.includes("/ai-learning-deck/"),
         "sem href de navegação absoluto / base fixa"
       ) && noAbsOk;
-    noScriptOk = push(!html.toLowerCase().includes("<script"), "sem <script>") && noScriptOk;
+    noScriptOk = push(onlySearchScript(html, pathFor(area)), "só a busca como <script>") && noScriptOk;
     noAriaLiveOk = push(!html.includes("aria-live"), "sem aria-live") && noAriaLiveOk;
   });
 
@@ -598,7 +618,7 @@ const areaPages = model.areas().map((area, i) => {
   record(g, "zero hash-route (#/) em <a href> (7/7)", noHashOk);
   record(g, "zero rota /roadmap/ em <a href> — css/roadmap/ não conta (7/7)", noRoadmapRouteOk);
   record(g, "zero href de navegação absoluto / /ai-learning-deck/ (7/7)", noAbsOk);
-  record(g, "zero <script> (7/7)", noScriptOk);
+  record(g, "único <script> = a busca (assets/search.js) (7/7)", noScriptOk);
   record(g, "zero aria-live (7/7)", noAriaLiveOk);
   if (fails.length) record(g, "falhas detalhadas", false, fails.slice(0, 20).join(" | "));
 }
@@ -639,6 +659,7 @@ for (const area of model.areas()) {
       homeHref: relativize(modPath, HOME_PATH), // "../../../../"
       stylesheets: [...stylesheetsFor(modPath), extraCss(modPath, SIDEBAR_CSS)],
       sidebar: sidebarFor(modPath, area, module),
+      scripts: [assetHrefFor(modPath, SEARCH_DEST)],
     });
     modulePages.push({ area, module, file: filePathFor(module), html, requiresVM });
   });
@@ -752,7 +773,7 @@ for (const area of model.areas()) {
         "sem href de navegação absoluto / base fixa",
         s
       ) && flags.noAbsOk;
-    flags.noScriptOk = F(!html.toLowerCase().includes("<script"), "sem <script>", s) && flags.noScriptOk;
+    flags.noScriptOk = F(onlySearchScript(html, pathFor(module)), "só a busca como <script>", s) && flags.noScriptOk;
     flags.noAriaLiveOk = F(!html.includes("aria-live"), "sem aria-live", s) && flags.noAriaLiveOk;
     flags.noHandlerOk = F(!/<[a-z][^>]*\son[a-z]+=/i.test(html), "sem handler inline (on*=)", s) && flags.noHandlerOk;
   });
@@ -780,7 +801,7 @@ for (const area of model.areas()) {
   record(g, "zero hash-route (#/) em <a href> (89/89)", flags.noHashOk);
   record(g, "zero rota /roadmap/ em <a href> — css/roadmap/ não conta (89/89)", flags.noRoadmapOk);
   record(g, "zero href de navegação absoluto / /ai-learning-deck/ (89/89)", flags.noAbsOk);
-  record(g, "zero <script> (89/89)", flags.noScriptOk);
+  record(g, "único <script> = a busca (assets/search.js) (89/89)", flags.noScriptOk);
   record(g, "zero aria-live (89/89)", flags.noAriaLiveOk);
   record(g, "zero handler inline (89/89)", flags.noHandlerOk);
   if (fails.length) record(g, "falhas detalhadas", false, fails.slice(0, 25).join(" | "));
@@ -1745,7 +1766,7 @@ for (const area of model.areas()) {
     ...modulePages.map((p) => ["Module " + p.module.slug, p.html]),
   ];
   record(g, "Home / 404 / 7 Areas / 89 Modules SEM concept-tabs", others.every(([, h]) => !h.includes("concept-tabs")));
-  record(g, "Home / 404 / 7 Areas / 89 Modules SEM qualquer <script>", others.every(([, h]) => !h.toLowerCase().includes("<script")));
+  record(g, "404 SEM <script>; Home / 7 Areas / 89 Modules só com a busca", !notFoundHtml.toLowerCase().includes("<script") && others.every(([, h]) => h === notFoundHtml || /<script\b[^>]*src="[^"]*assets\/search\.js"/.test(h)));
 
   // 19d. o href relativo, resolvido a partir de um dir de Concept, aponta p/ o path lógico do asset
   const sampleConcept = conceptPages[0].concept;
@@ -1804,7 +1825,13 @@ for (const area of model.areas()) {
   record(g, 'exatamente 1 aria-current="page" = a própria página', bad.current.length === 0, list(bad.current));
   record(g, "todo link do menu aponta para uma página gerada", bad.hrefs.length === 0, list(bad.hrefs));
   record(g, "«Outras Áreas» com as 6 demais", bad.others.length === 0, list(bad.others));
-  record(g, "menu é HTML puro: <details> fechado, sem open nem script", [...areaPages, ...modulePages].every((p) => !/<script/i.test(p.html)) && [...areaPages, ...modulePages, ...conceptPages].every((p) => p.html.includes('<details class="doc-menu">')));
+  record(
+    g,
+    "menu é HTML puro: <details> fechado, sem script nem handler (a única <script> de Área/Módulo é a busca)",
+    [...areaPages, ...modulePages, ...conceptPages].every((p) => p.html.includes('<details class="doc-menu">') && asideOf(p.html).every((a) => !/<script|\son[a-z]+=/i.test(a))) &&
+      areaPages.every((p) => onlySearchScript(p.html, pathFor(p.area))) &&
+      modulePages.every((p) => onlySearchScript(p.html, pathFor(p.module)))
+  );
   record(g, "Home e 404 sem menu lateral", !indexHtml.includes("doc-sidebar") && !notFoundHtml.includes("doc-sidebar"));
   record(
     g,
@@ -1813,6 +1840,60 @@ for (const area of model.areas()) {
   );
   const heaviest = Math.max(...conceptPages.map((p) => Buffer.byteLength(p.html)));
   record(g, `peso: maior página de Concept ${Math.round(heaviest / 1024)} KB (menu só com o Módulo atual aberto)`, heaviest < 200 * 1024);
+}
+
+// ---- 21. busca (layout de documentação, etapa 3) ------------------------
+// Índice: uma entrada por Área, Módulo e Concept. u = caminho a partir da raiz do site (sem "/" inicial).
+const searchIndex = [];
+for (const area of model.areas()) {
+  const u = (node) => pathFor(node).replace(/^\//, "");
+  searchIndex.push({ k: "area", t: area.title, a: area.title, m: "", s: area.summary || "", x: "", u: u(area) });
+  for (const module of model.modules(area)) {
+    searchIndex.push({ k: "module", t: module.title, a: area.title, m: module.title, s: module.summary || "", x: "", u: u(module) });
+    for (const concept of model.concepts(module)) {
+      searchIndex.push({
+        k: "concept",
+        t: concept.title,
+        a: area.title,
+        m: module.title,
+        s: concept.summary || "",
+        x: [concept.note || "", ...(concept.subtopics || [])].join(" · "),
+        u: u(concept),
+        ...(concept.revisitOf ? { r: 1 } : {}),
+      });
+    }
+  }
+}
+const searchIndexJson = JSON.stringify(searchIndex);
+{
+  const g = "Busca";
+  const generated = new Set([...areaPages, ...modulePages, ...conceptPages].map((p) => p.file));
+  record(g, `fonte ${SEARCH_SRC} existe`, existsSync(join(ROOT, SEARCH_SRC)));
+  record(g, `índice: 1 entrada por Área, Módulo e Concept (${searchIndex.length} = 7 + 89 + 668)`, searchIndex.length === 7 + 89 + 668);
+  record(g, "todo link do índice aponta para uma página gerada", searchIndex.every((e) => generated.has(e.u + "index.html")));
+  record(g, `revisitas marcadas no índice (${searchIndex.filter((e) => e.r).length} = dataset 15)`, searchIndex.filter((e) => e.r).length === 15);
+  record(g, `peso do índice: ${Math.round(Buffer.byteLength(searchIndexJson) / 1024)} KB (carregado só ao focar a busca)`, Buffer.byteLength(searchIndexJson) < 400 * 1024);
+  record(g, "espaço da busca no topo do menu lateral, fora do <details> do menu (764 páginas)", [...areaPages, ...modulePages, ...conceptPages].every((p) => p.html.includes('<div class="doc-search" data-search-slot=""></div>\n      <details class="doc-menu">')));
+  record(g, "Concept Pages: a busca vem por import em concept-tabs.js (1 <script> por página)", readFileSync(join(ROOT, ENHANCE_SRC), "utf8").includes('import "./search.js";'));
+  // ranking e tolerância a erro de digitação, com o índice real
+  const { search, prepare } = await import("../" + SEARCH_SRC);
+  const prepared = prepare(searchIndex);
+  const first = (q) => search(prepared, q)[0]?.t;
+  for (const [q, want] of [
+    ["polymorphism", "Polymorphism"],
+    ["polymorhpism", "Polymorphism"],
+    ["polimorphism", "Polymorphism"],
+    ["encapsulaton", "Encapsulation"],
+    ["closure", "Closure"],
+    ["normalizaçao", "Normalization"],
+    ["event loop", "Event Loop"],
+    ["dependency injection", "Dependency Injection"],
+  ]) {
+    expect(g, `busca «${q}» → 1º resultado`, first(q), want);
+  }
+  record(g, "consulta sem correspondência → nenhum resultado", search(prepared, "xyzwq").length === 0);
+  record(g, "palavra curta não puxa começo de palavra parecido («join» ↛ Single Point of Failure)", !search(prepared, "join").some((e) => e.t === "Single Point of Failure"));
+  record(g, "revisita aparece depois do Concept original («entity»)", search(prepared, "entity").slice(0, 2).map((e) => !!e.r).join(",") === "false,true");
 }
 
 // ---- relatório ---------------------------------------------------------
@@ -1849,7 +1930,10 @@ if (failed === 0) {
   console.log(`  copiado: build/preview/css/ (${CSS_FILES.length + 2} arquivos CSS)`);
   mkdirSync(join(PREVIEW_DIR, dirname(ENHANCE_DEST)), { recursive: true });
   copyFileSync(join(ROOT, ENHANCE_SRC), join(PREVIEW_DIR, ENHANCE_DEST));
-  assetOk = existsSync(join(PREVIEW_DIR, ENHANCE_DEST));
+  copyFileSync(join(ROOT, SEARCH_SRC), join(PREVIEW_DIR, SEARCH_DEST));
+  writeFileSync(join(PREVIEW_DIR, SEARCH_INDEX_DEST), searchIndexJson);
+  console.log(`  copiado: build/preview/${SEARCH_DEST} + escrito ${SEARCH_INDEX_DEST} (busca)`);
+  assetOk = existsSync(join(PREVIEW_DIR, ENHANCE_DEST)) && existsSync(join(PREVIEW_DIR, SEARCH_DEST)) && existsSync(join(PREVIEW_DIR, SEARCH_INDEX_DEST));
   console.log(`  copiado: build/preview/${ENHANCE_DEST} (enhancement de tabs; só as Concept Pages carregam)${assetOk ? "" : "  ✗ AUSENTE"}`);
   writeFileSync(join(PREVIEW_DIR, "index.html"), indexHtml);
   writeFileSync(join(PREVIEW_DIR, "404.html"), notFoundHtml);
