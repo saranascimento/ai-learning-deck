@@ -9662,27 +9662,22 @@ export default area({
           order: 10,
           title: "Domain",
           note: "framing da Story — o problema/negócio que o software modela",
-          summary:
-            "A área de negócio, ou o problema do mundo real, que o software resolve — com as suas regras, o seu " +
-            "vocabulário e as pessoas que a conhecem a fundo. É o assunto, e não a tecnologia.",
+          summary: "Domain é a área de negócio, ou o problema do mundo real, que o software resolve.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "O domínio é o campo de atividade sobre o qual o software trabalha: logística, saúde, seguros, uma " +
-                "biblioteca, um e-commerce. Ele existe antes do código e independe dele, com as suas regras (\"um " +
-                "pedido enviado não pode ser cancelado\"), os seus conceitos e os seus especialistas. O domínio é o " +
-                "espaço do problema; o software é uma das soluções possíveis. Um domínio grande costuma se dividir em " +
-                "subdomínios: o principal (core), que diferencia o negócio, os de apoio e os genéricos, que servem a " +
-                "qualquer empresa.",
+                "Logística, saúde, seguros, uma biblioteca, um e-commerce: o domínio existe antes do código e independe " +
+                "dele, com as suas regras (\"um pedido enviado não pode ser cancelado\"), os seus conceitos e os seus " +
+                "especialistas. O domínio é o espaço do problema; o software é uma das soluções possíveis. Um domínio " +
+                "grande costuma se dividir em subdomínios: o principal (core), que diferencia o negócio, os de apoio e os " +
+                "genéricos, que servem a qualquer empresa.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Antes de modelar o software, entenda o negócio: o domínio é o problema a resolver, e o código é " +
-                "apenas a forma de resolvê-lo.",
+              text: "A regra de negócio vem da conversa com quem conhece o domínio, e não de uma decisão técnica.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -9852,25 +9847,22 @@ export default area({
           requires: ["Domain"],
           note: "o modelo de objetos que captura os conceitos e as regras do negócio",
           summary:
-            "Uma representação, feita de objetos com dados e comportamento, dos conceitos e das regras do domínio — " +
-            "não o esquema do banco nem uma tela, mas o próprio entendimento do negócio expresso em código.",
+            "Domain Model é a representação, em código, dos conceitos e das regras do domínio que importam para " +
+            "resolver o problema.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "O modelo de domínio é a versão simplificada do domínio que o software carrega: os conceitos que " +
-                "importam (empréstimo, sócio, exemplar), as relações entre eles e as regras que valem. Ele é " +
-                "selecionado, e não completo: inclui só o que ajuda a resolver o problema. Em DDD, o modelo vive no " +
-                "código, com objetos que juntam dados e regras (Rich Domain Model), e não em um diagrama separado, " +
-                "nem no esquema do banco.",
+                "Ele é a versão simplificada do domínio que o software carrega: os conceitos (empréstimo, sócio, " +
+                "exemplar), as relações entre eles e as regras que valem. É selecionado, e não completo: inclui só o que " +
+                "ajuda a resolver o problema. Em DDD, o modelo vive no código, com objetos que juntam dados e regras " +
+                "(Rich Domain Model), e não em um diagrama separado, nem no esquema do banco.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "O modelo é o entendimento do negócio expresso em código: objetos com dados e regras que falam a " +
-                "língua do domínio, e não uma cópia das tabelas.",
+              text: "Um bom modelo de domínio pode ser lido por um especialista do negócio, e não só por quem programa.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -10051,25 +10043,24 @@ export default area({
           requires: ["Domain Model"],
           note: "vocabulário compartilhado entre dev e negócio",
           summary:
-            "Um vocabulário único, construído em conjunto por desenvolvedores e especialistas do negócio, usado nas " +
-            "conversas, na documentação e nos nomes do código, sem tradução entre eles.",
+            "Ubiquitous Language é o vocabulário único que a equipe técnica e a de negócio usam para falar do " +
+            "domínio, nas conversas e no código.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Ubiquitous Language (linguagem onipresente) é o conjunto de termos que a equipe inteira, técnica e de " +
-                "negócio, usa para falar do domínio, e que aparece exatamente igual nas reuniões, nos requisitos, nos " +
-                "testes e nos nomes de classes e métodos. Quando o especialista diz \"aprovar o empréstimo\", o código " +
-                "tem `approveLoan()`, e não `updateStatus(3)`. A linguagem é construída em conjunto, refinada com o " +
-                "tempo, e é a base do Domain Model.",
+                "Os termos aparecem exatamente iguais nas reuniões, nos requisitos, nos testes e nos nomes de classes e " +
+                "métodos. Quando o especialista diz \"aprovar o empréstimo\", o código tem `approveLoan()`, e não " +
+                "`updateStatus(3)`. A linguagem é construída em conjunto, refinada com o tempo, e é a base do Domain " +
+                "Model.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Uma só língua para conversar e para programar: os mesmos termos do negócio aparecem no código, e " +
-                "nenhuma tradução fica entre as duas coisas.",
+                "Toda vez que alguém precisa traduzir entre o que o negócio diz e o que o código diz, um mal-entendido " +
+                "pode entrar.",
             },
             { type: "heading", text: "Como fazer" },
             {
@@ -10262,25 +10253,24 @@ export default area({
           ],
           note: "cluster de objetos tratado como uma unidade de consistência",
           summary:
-            "Um grupo de entidades e objetos de valor tratado como uma unidade: as regras que envolvem o conjunto " +
-            "valem sempre dentro dessa fronteira, e ele é gravado inteiro, em uma única transação.",
+            "Um Aggregate é um grupo de entidades e objetos de valor tratado como uma unidade, que precisa estar " +
+            "consistente como um todo.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Um Aggregate é um agrupamento de objetos, entidades e objetos de valor, que precisa ser consistente " +
-                "como um todo: um pedido e as suas linhas, por exemplo. As regras que atravessam vários desses objetos " +
-                "(\"o total do pedido não pode passar do limite\") são garantidas dentro da fronteira do agregado. " +
-                "Cada agregado é carregado e gravado por inteiro em uma única transação, e o que está fora dele é " +
-                "alcançado apenas por referência (o `customerId`), e não pelo objeto.",
+                "Um exemplo é um pedido e as suas linhas. As regras que atravessam vários desses objetos (\"o total do " +
+                "pedido não pode passar do limite\") são garantidas dentro da fronteira do agregado. Cada agregado é " +
+                "carregado e gravado por inteiro em uma única transação, e o que está fora dele é alcançado apenas por " +
+                "referência (o `customerId`), e não pelo objeto.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Um agregado é a fronteira de consistência: o que precisa estar coerente ao mesmo tempo fica dentro " +
-                "dele, e o resto do sistema fala com ele como uma unidade.",
+                "Desenhe o agregado a partir das regras que precisam valer a todo instante, e não a partir de quem se " +
+                "relaciona com quem.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -10466,25 +10456,23 @@ export default area({
           requires: ["Aggregate"],
           note: "a única porta de entrada do Aggregate",
           summary:
-            "A entidade principal de um agregado, e a única que o resto do sistema pode referenciar: todo acesso " +
-            "aos objetos internos passa por ela, que garante as regras do conjunto.",
+            "O Aggregate Root é a entidade principal de um agregado, a única que o resto do sistema pode referenciar.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Em cada agregado, uma entidade é a raiz (Aggregate Root). O código externo só guarda referências à " +
-                "raiz e só pede coisas a ela; os objetos internos, como as linhas de um pedido, não são acessados " +
-                "diretamente. A raiz aplica as regras a cada mudança e devolve, quando necessário, cópias ou visões " +
-                "somente leitura do que está dentro. É também a unidade que o repositório carrega e grava (Repository " +
-                "Pattern): um repositório por raiz.",
+                "O código externo só guarda referências à raiz e só pede coisas a ela; os objetos internos, como as " +
+                "linhas de um pedido, não são acessados diretamente. A raiz aplica as regras a cada mudança e devolve, " +
+                "quando necessário, cópias ou visões somente leitura do que está dentro. É também a unidade que o " +
+                "repositório carrega e grava (Repository Pattern): um repositório por raiz.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "O agregado tem uma única porta de entrada: a raiz. Quem quiser alterar algo dentro dele fala com a " +
-                "raiz, que protege as regras.",
+                "Se algum código consegue alterar uma linha do pedido sem passar pelo pedido, a raiz não está protegendo " +
+                "nada.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -10695,8 +10683,8 @@ export default area({
           requires: ["Domain Model"],
           note: "comportamento de domínio que não pertence a nenhuma Entity/Value Object",
           summary:
-            "Uma operação do domínio que não pertence naturalmente a nenhuma entidade ou objeto de valor, " +
-            "geralmente porque envolve vários deles — sem estado próprio e nomeada na linguagem do negócio.",
+            "Um Domain Service é uma operação do domínio que não pertence a nenhuma entidade ou objeto de valor, sem " +
+            "estado e com nome do negócio.",
           content: [
             { type: "heading", text: "Conceito" },
             {
@@ -10704,17 +10692,14 @@ export default area({
               text:
                 "Nem todo comportamento de domínio cabe em uma entidade. Transferir dinheiro entre duas contas, ou " +
                 "calcular um preço com regras de várias origens, não é responsabilidade de uma conta nem de um produto " +
-                "isolado. Para esses casos, DDD propõe o Domain Service: um objeto sem estado, com um nome do domínio " +
-                "(`FundsTransfer`, `PricingPolicy`), que contém a regra de negócio da operação. Não é o mesmo que o " +
-                "Service Layer: aquele orquestra o caso de uso (repositórios, transações, e-mail), e este contém " +
-                "regra de negócio.",
+                "isolado. Para esses casos, DDD propõe um objeto sem estado, com um nome do domínio (`FundsTransfer`, " +
+                "`PricingPolicy`), que contém a regra de negócio da operação. Não é o mesmo que o Service Layer: aquele " +
+                "orquestra o caso de uso (repositórios, transações, e-mail), e este contém regra de negócio.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Quando uma regra do negócio não pertence a um único objeto, ela vira um serviço de domínio: sem " +
-                "estado, com nome do negócio e só regra, sem infraestrutura.",
+              text: "Um Domain Service aplica a regra, mas cada objeto envolvido continua protegendo o próprio estado.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -10904,25 +10889,22 @@ export default area({
           requires: ["Domain Model"],
           note: "algo relevante que aconteceu no domínio",
           summary:
-            "O registro imutável de algo relevante que aconteceu no domínio, nomeado no passado — como `PedidoConfirmado` " +
-            "— que permite a outras partes do sistema reagirem sem acoplamento com quem o gerou.",
+            "Um Domain Event é o registro imutável de um fato relevante que já aconteceu no domínio, nomeado no " +
+            "passado.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Um Domain Event descreve um fato do negócio que já ocorreu: `OrderPlaced`, `PaymentReceived`, " +
-                "`MemberSuspended`. Como é um fato, é imutável e nomeado no passado, com os dados necessários para " +
-                "entender o que aconteceu. O agregado o registra quando o fato ocorre, e outras partes do sistema, " +
-                "de outros agregados ou contextos, reagem a ele. É o Observer em escala de domínio, e o caminho para " +
-                "manter a consistência entre agregados sem acoplá-los.",
+                "Exemplos são `OrderPlaced`, `PaymentReceived` e `MemberSuspended`, cada um com os dados necessários para " +
+                "entender o que aconteceu. O agregado o registra quando o fato ocorre, e outras partes do sistema, de " +
+                "outros agregados ou contextos, reagem a ele. É o Observer em escala de domínio, e o caminho para manter " +
+                "a consistência entre agregados sem acoplá-los.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Quando algo relevante acontece, registre um fato, no passado, com a linguagem do negócio: quem se " +
-                "interessa reage a ele, sem que quem o gerou precise conhecê-lo.",
+              text: "Nomeie o evento no passado, como um fato consumado, e não como uma ordem para alguém fazer algo.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -11127,25 +11109,24 @@ export default area({
           requires: ["Ubiquitous Language"],
           note: "capstone — a fronteira dentro da qual o modelo (e a linguagem) é consistente",
           summary:
-            "A fronteira explícita dentro da qual um modelo de domínio, e a sua linguagem, é consistente e tem um " +
-            "só significado — fora dela, os mesmos termos podem significar outra coisa.",
+            "Um Bounded Context é a fronteira dentro da qual um modelo de domínio é único e cada termo tem um só " +
+            "significado.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Em um negócio grande, um único modelo para tudo não funciona: \"cliente\" significa coisas diferentes " +
-                "para vendas, para suporte e para o financeiro. Um Bounded Context é a fronteira dentro da qual um " +
-                "modelo é único e coerente: cada termo tem um só significado, e a Ubiquitous Language é consistente. " +
-                "Cada contexto tem o seu próprio modelo, e muitas vezes o seu próprio time, código e banco. As " +
-                "fronteiras seguem o negócio e a linguagem, e não as camadas técnicas.",
+                "Em um negócio grande, um único modelo para tudo não funciona: \"cliente\" significa coisas diferentes para " +
+                "vendas, para suporte e para o financeiro. Dentro de cada contexto, a Ubiquitous Language é consistente. " +
+                "Cada contexto tem o seu próprio modelo, e muitas vezes o seu próprio time, código e banco. As fronteiras " +
+                "seguem o negócio e a linguagem, e não as camadas técnicas.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Não busque um modelo único para a empresa toda: divida o domínio em contextos, cada um com um modelo " +
-                "e uma linguagem coerentes dentro da sua fronteira.",
+                "Quando a mesma palavra significa coisas diferentes para duas áreas, é sinal de dois contextos, e não de " +
+                "um modelo maior.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -11322,27 +11303,24 @@ export default area({
           title: "Context Mapping",
           requires: ["Bounded Context"],
           note: "capstone final — relação entre Bounded Contexts; ponte para Architecture / Architectural Styles",
-          summary:
-            "O mapa das relações entre os Bounded Contexts — quem depende de quem, e de que forma —, com padrões " +
-            "como Anti-Corruption Layer, Customer/Supplier e Shared Kernel para organizar cada integração.",
+          summary: "Context Mapping é o mapa das relações entre os Bounded Contexts: quem depende de quem e de que forma.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
                 "Os contextos delimitados não vivem isolados: um consome dados do outro, e as equipes precisam se " +
-                "coordenar. O Context Mapping descreve essas relações de forma explícita e escolhe um padrão para cada " +
-                "uma. Entre os mais usados: Customer/Supplier (o contexto a montante atende às necessidades do a " +
-                "jusante), Conformist (o a jusante adota o modelo do outro como está), Anti-Corruption Layer (uma " +
-                "camada tradutora protege o modelo próprio), Shared Kernel (um pedaço pequeno do modelo é " +
-                "compartilhado) e Separate Ways (não há integração).",
+                "coordenar. O mapa torna essas relações explícitas e escolhe um padrão para cada uma. Entre os mais " +
+                "usados: Customer/Supplier (o contexto a montante atende às necessidades do a jusante), Conformist (o a " +
+                "jusante adota o modelo do outro como está), Anti-Corruption Layer (uma camada tradutora protege o modelo " +
+                "próprio), Shared Kernel (um pedaço pequeno do modelo é compartilhado) e Separate Ways (não há " +
+                "integração).",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Cada integração entre contextos é uma decisão de design: torne a relação explícita e escolha o " +
-                "quanto o seu modelo aceita ser influenciado pelo do outro.",
+                "Cada integração entre contextos é uma escolha sobre o quanto o modelo do outro pode influenciar o seu.",
             },
             { type: "heading", text: "Como funciona" },
             {
