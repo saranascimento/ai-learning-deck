@@ -218,7 +218,8 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text: "O critério para dividir uma função é o propósito, e não o número de linhas.",
+              text:
+                "Dividida por propósito, cada parte da função passa a poder ser testada sem montar o cenário das outras.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -623,7 +624,8 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text: "Com as saídas resolvidas no topo, a última linha da função mostra o que ela de fato faz.",
+              text:
+                "Leia as guardas como a lista de casos em que a função desiste, e o resto como o que ela promete fazer.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -823,7 +825,7 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text: "Um comentário que diz o que o código faz envelhece, e um que diz por quê continua valendo.",
+              text: "Ninguém testa comentários, então um comentário que ficou para trás mente sem que nada avise.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -2002,7 +2004,9 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text: "Cada cópia é mais um lugar onde a próxima correção pode ser esquecida.",
+              text:
+                "Duplicação se revela na hora de mudar: se uma alteração exige caçar ocorrências, o conhecimento está " +
+                "espalhado.",
             },
             { type: "heading", text: "Por que é um problema" },
             {
@@ -3286,9 +3290,7 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Código que só recebe acréscimos fica mais caro a cada funcionalidade, e refatorar é o que segura esse " +
-                "custo.",
+              text: "O objetivo de refatorar não é deixar o código bonito, é deixar a próxima mudança barata.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -3504,7 +3506,7 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text: "Um comentário explicando o que um bloco faz é o nome da função que ainda não foi extraída.",
+              text: "Uma função extraída com um bom nome pode ser testada e reaproveitada sozinha.",
             },
             { type: "heading", text: "Como fazer" },
             {
@@ -4561,7 +4563,7 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text: "Um módulo `utils` que só cresce é sinal de funções que ainda não encontraram o seu assunto.",
+              text: "Mover uma função é barato e reversível, então ela não precisa acertar o lugar na primeira vez.",
             },
             { type: "heading", text: "Como fazer" },
             {
@@ -4772,9 +4774,7 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Como cada guarda preserva o comportamento, dá para parar a refatoração em qualquer ponto com o código " +
-                "funcionando.",
+              text: "Transforme um caso excepcional por vez em guarda, rodando os testes entre um passo e outro.",
             },
             { type: "heading", text: "Como fazer" },
             {
@@ -6316,7 +6316,7 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text: "Se o código decide o que fazer lendo o texto da mensagem de erro, está faltando um tipo de erro.",
+              text: "Com tipo e dados próprios no erro, a mensagem fica livre para ser reescrita sem quebrar ninguém.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -7754,7 +7754,8 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text: "Um bom comentário diz o que incomoda, por que incomoda e qual caminho você sugere.",
+              text:
+                "Marque se cada comentário bloqueia o merge ou é só uma sugestão, para o autor saber o que é obrigatório.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -8336,8 +8337,7 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "A parte difícil do SemVer não é somar um ao número, é reconhecer com honestidade o que é uma quebra.",
+              text: "Com SemVer, quem depende da sua biblioteca decide se pode atualizar só olhando o número.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -11440,7 +11440,8 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text: "O número da versão diz o quanto mudou, e só o changelog diz o quê.",
+              text:
+                "Escreva a entrada do changelog no momento da mudança, quando ainda se sabe o que ela muda para quem usa.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -11652,9 +11653,7 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Sem o porquê registrado, a próxima pessoa não sabe se uma escolha estranha foi deliberada ou um " +
-                "acidente.",
+              text: "Registre também as alternativas descartadas, ou a mesma discussão vai acontecer de novo.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -11870,8 +11869,7 @@ export default area({
               type: "callout",
               title: "Ideia principal",
               text:
-                "Quanto mais gente uma mudança afeta e mais difícil ela é de desfazer, mais vale discutir antes de " +
-                "escrever código.",
+                "Discutir uma proposta antes de implementar custa horas, e descobrir o problema depois custa semanas.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -12078,7 +12076,7 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text: "Escreva o runbook para a pessoa cansada, às três da manhã, que nunca viu aquele sistema.",
+              text: "Um bom runbook traz comandos prontos para copiar, e não instruções que pressupõem contexto.",
             },
             { type: "heading", text: "Por que importa" },
             {
