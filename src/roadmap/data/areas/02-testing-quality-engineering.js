@@ -3008,26 +3008,22 @@ export default area({
           requires: ["Testing Fundamentals / Integration Testing", "Testing Fundamentals / E2E Testing"],
           note: "como distribuir tipos de teste (unit ≫ integration ≫ e2e) — as camadas são esses tipos",
           summary:
-            "Um modelo que orienta a proporção entre os tipos de teste de um sistema: muitos unit tests rápidos " +
-            "e baratos na base, menos integration tests no meio, e poucos E2E tests caros no topo.",
+            "O Test Pyramid é um modelo de como distribuir os testes de um sistema entre as camadas de unidade, " +
+            "integração e E2E.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Test Pyramid é um modelo visual — proposto por Mike Cohn — que representa como distribuir o " +
-                "esforço de teste entre as diferentes camadas: uma base larga de unit tests (muitos, rápidos, " +
-                "baratos), uma camada intermediária de integration tests (menos numerosos, mais lentos), e um " +
-                "topo estreito de E2E tests (poucos, os mais lentos e caros de todos). A forma de pirâmide " +
-                "comunica a proporção esperada, não um número exato.",
+                "Proposto por Mike Cohn, ele mostra uma base larga de unit tests (muitos, rápidos, baratos), uma camada " +
+                "intermediária de integration tests (menos numerosos, mais lentos) e um topo estreito de E2E tests " +
+                "(poucos, os mais lentos e caros de todos). A forma de pirâmide comunica a proporção esperada, não um " +
+                "número exato.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "O Test Pyramid orienta a proporção entre tipos de teste — muitos unit tests na base, menos " +
-                "integration no meio, poucos E2E no topo — porque cada camada abaixo é mais rápida, mais barata " +
-                "e mais precisa que a de cima.",
+              text: "Cada camada prova uma coisa diferente, e a pirâmide só diz quanto investir em cada uma.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -3171,27 +3167,22 @@ export default area({
           note: "% de código exercitado pelos testes. Cuidado com \"coverage as a target\" (Goodhart)",
           subtopics: ["line", "statement", "branch", "path coverage"],
           revisit: ["CI/CD Pipeline", "Software Craft / Code Review"],
-          summary:
-            "A porcentagem do código-fonte que é de fato executada quando a suíte de testes roda — uma métrica " +
-            "útil para achar código não testado, perigosa quando vira meta em si mesma.",
+          summary: "Code Coverage é a porcentagem do código que de fato é executada quando a suíte de testes roda.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Code Coverage mede que fração do código-fonte é executada durante a suíte de testes, " +
-                "geralmente expressa em porcentagem. Existem variações do que exatamente é medido: line coverage " +
-                "(linhas executadas), statement coverage (instruções executadas), branch coverage (cada ramo de " +
-                "um if/else exercitado) e path coverage (cada caminho possível através do código) — cada uma " +
-                "mais rigorosa que a anterior.",
+                "Existem variações do que exatamente é medido: line coverage (linhas executadas), statement coverage " +
+                "(instruções executadas), branch coverage (cada ramo de um if/else exercitado) e path coverage (cada " +
+                "caminho possível através do código) — cada uma mais rigorosa que a anterior.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Code Coverage mede que fração do código roda durante os testes — útil para achar pontos cegos, " +
-                "mas mede execução, não correção; perseguir um número alto sem cuidar da qualidade das " +
-                "assertions é otimizar a métrica errada.",
+                "Coverage baixo mostra onde falta teste, mas coverage alto não prova que os testes verificam alguma " +
+                "coisa.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -3348,27 +3339,21 @@ export default area({
           requires: ["Test Doubles", "Programming Foundations / Programming Fundamentals / Coupling"],
           note: "propriedades do código que permitem testá-lo (seams, injeção de dependência, poucos colaboradores)",
           revisit: ["Functional Programming / Pure Functions (o caso ideal)", "Software Design / Dependency Injection & IoC (DI é aplicação da testabilidade)"],
-          summary:
-            "As propriedades de um código que determinam quão fácil (ou difícil) é escrever testes para ele — " +
-            "poucos colaboradores, dependências injetáveis, pontos de costura onde um dublê pode entrar.",
+          summary: "Testability é o quanto um código é fácil de testar, algo que depende das escolhas de design dele.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Testability é a qualidade de um código ser fácil de testar: poucas dependências acopladas " +
-                "internamente, pontos onde uma dependência pode ser trocada por um dublê (\"seams\", costuras), " +
-                "funções que recebem o que precisam como parâmetro em vez de buscar de variáveis globais ou " +
-                "instanciar colaboradores internamente. Código testável permite escrever um teste de unidade " +
-                "rápido; código não testável exige contorcer o teste (ou desistir de testar aquele trecho).",
+                "Código testável tem poucas dependências acopladas internamente, pontos onde uma dependência pode ser " +
+                "trocada por um dublê (\"seams\", costuras) e funções que recebem o que precisam como parâmetro em vez de " +
+                "buscar de variáveis globais ou instanciar colaboradores internamente. Ele permite escrever um teste de " +
+                "unidade rápido; código não testável exige contorcer o teste (ou desistir de testar aquele trecho).",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Testability é a propriedade de um código permitir a entrada de dublês e o controle de suas " +
-                "dependências — resultado de decisões de design (seams, injeção de dependência, poucos " +
-                "colaboradores), não uma característica dos testes em si.",
+              text: "Um código fácil de testar quase sempre é, também, um código com baixo Coupling.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -3501,26 +3486,21 @@ export default area({
           requires: ["Testing Fundamentals / Test Fixture", "Programming Foundations / Concurrency / Shared State"],
           note: "testes não dependem uns dos outros nem de estado compartilhado; ordem-agnósticos",
           summary:
-            "A propriedade de um teste não depender de nenhum outro teste, nem de estado deixado para trás — " +
-            "cada teste passa (ou falha) da mesma forma, não importa em que ordem a suíte roda.",
+            "Test Isolation é a garantia de que um teste não depende de nenhum outro teste nem do estado que ele " +
+            "deixou.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Test Isolation é a garantia de que um teste não depende do resultado, da ordem de execução ou " +
-                "do estado deixado por outro teste. Um teste isolado pode rodar sozinho, em qualquer posição da " +
-                "suíte, em paralelo com outros, e ainda assim produzir o mesmo resultado. A falta de isolamento " +
-                "aparece quando um teste só passa se rodar depois de outro específico, ou quando rodar a suíte " +
-                "inteira duas vezes seguidas dá resultados diferentes.",
+                "Um teste isolado pode rodar sozinho, em qualquer posição da suíte, em paralelo com outros, e ainda assim " +
+                "produzir o mesmo resultado. A falta de isolamento aparece quando um teste só passa se rodar depois de " +
+                "outro específico, ou quando rodar a suíte inteira duas vezes seguidas dá resultados diferentes.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Test Isolation garante que um teste não depende de nenhum outro nem de estado deixado para " +
-                "trás — o mesmo resultado, em qualquer ordem, sozinho ou junto de toda a suíte, o que também é " +
-                "o que torna a paralelização segura.",
+              text: "Se um teste só passa numa certa ordem, o problema é estado compartilhado, e não o teste que falhou.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -3690,27 +3670,20 @@ export default area({
           title: "Flaky Tests",
           requires: ["Test Isolation", "Programming Foundations / Concurrency / Race Condition"],
           note: "testes não determinísticos: corrida, tempo, ordem, rede",
-          summary:
-            "Um teste que às vezes passa e às vezes falha, sem que o código sob teste tenha mudado — um " +
-            "sintoma de não determinismo escondido em corrida, tempo, ordem ou rede.",
+          summary: "Um Flaky Test é um teste que às vezes passa e às vezes falha, sem que o código sob teste tenha mudado.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Um teste flaky é aquele cujo resultado varia entre execuções do mesmo código, sem que nada " +
-                "relevante tenha mudado: às vezes passa, às vezes falha, de forma aparentemente aleatória. " +
-                "Diferente de um teste que falha consistentemente (sinal de um bug real), um flaky test mina a " +
-                "confiança na suíte inteira — ninguém sabe se uma falha é um bug de verdade ou \"só aquele " +
-                "teste de novo\".",
+                "O resultado varia entre execuções de forma aparentemente aleatória. Diferente de um teste que falha " +
+                "consistentemente (sinal de um bug real), um flaky test mina a confiança na suíte inteira — ninguém sabe " +
+                "se uma falha é um bug de verdade ou \"só aquele teste de novo\".",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Um flaky test passa ou falha de forma inconsistente porque depende de algo não controlado — " +
-                "corrida assíncrona, tempo, ordem ou rede — e corrigi-lo significa eliminar essa fonte de não " +
-                "determinismo, não só re-rodar até passar.",
+              text: "Um teste flaky custa mais que a própria falha, porque ensina o time a ignorar falhas reais.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -3853,26 +3826,21 @@ export default area({
           note: "re-executar testes para impedir que bugs corrigidos voltem",
           revisit: ["AI Engineering / AI Evaluation / Regression Evaluation"],
           summary:
-            "Re-executar a suíte de testes existente depois de uma mudança, para confirmar que nenhum " +
-            "comportamento que já funcionava — incluindo bugs já corrigidos — voltou a quebrar.",
+            "Regression Testing é rodar de novo os testes existentes depois de uma mudança para garantir que nada que " +
+            "funcionava quebrou.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Regression Testing é a prática de rodar novamente testes já existentes depois de uma mudança " +
-                "no código, para garantir que nada que já funcionava passou a falhar. O termo \"regressão\" vem " +
-                "exatamente disso: o sistema regrediu, voltou a ter um problema que já tinha sido resolvido " +
-                "antes. Não é um tipo novo de teste — é o reuso disciplinado de unit, integration e E2E tests " +
+                "O termo \"regressão\" vem exatamente disso: o sistema regrediu, voltou a ter um problema que já tinha sido " +
+                "resolvido antes. Não é um tipo novo de teste — é o reuso disciplinado de unit, integration e E2E tests " +
                 "já escritos, rodados de novo a cada mudança.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Regression Testing é reexecutar a suíte existente a cada mudança para garantir que nada que já " +
-                "funcionava quebrou — e, quando nasce de um bug real corrigido, garante especificamente que " +
-                "aquele problema não volta a acontecer.",
+              text: "A suíte de regressão é a memória do sistema: ela lembra de cada bug que já foi corrigido.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -4030,27 +3998,24 @@ export default area({
           note: "gerar muitas entradas a partir de propriedades/invariantes, em vez de exemplos",
           revisit: ["Functional Programming / Pure Functions (onde funciona melhor)"],
           summary:
-            "Em vez de escrever exemplos específicos de entrada e saída, descrever uma propriedade que deve " +
-            "valer para qualquer entrada — e deixar a ferramenta gerar centenas de entradas aleatórias tentando " +
-            "quebrá-la.",
+            "Property-Based Testing é testar uma propriedade que deve valer para qualquer entrada, com entradas " +
+            "geradas automaticamente.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Property-based testing inverte a forma tradicional de escrever um teste: em vez de escolher " +
-                "exemplos específicos (\"reverse([1,2,3]) deveria devolver [3,2,1]\"), você descreve uma " +
-                "propriedade — um invariante que deve ser verdade para qualquer entrada válida (\"reverter uma " +
-                "lista duas vezes deveria devolver a lista original\") — e uma ferramenta gera automaticamente " +
-                "centenas ou milhares de entradas aleatórias, tentando encontrar uma que quebre essa propriedade.",
+                "Em vez de escolher exemplos específicos (\"reverse([1,2,3]) deveria devolver [3,2,1]\"), você descreve um " +
+                "invariante que deve ser verdade para qualquer entrada válida (\"reverter uma lista duas vezes deveria " +
+                "devolver a lista original\"), e uma ferramenta gera centenas ou milhares de entradas aleatórias tentando " +
+                "encontrar uma que o quebre.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Property-based testing descreve uma propriedade que deve valer para qualquer entrada e deixa a " +
-                "ferramenta gerar muitas entradas tentando quebrá-la — encontrando casos extremos que testes " +
-                "baseados em exemplos específicos tendem a deixar passar.",
+                "A ferramenta testa os casos em que você não pensou, que são justamente os que você também esqueceu na " +
+                "implementação.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -4244,27 +4209,24 @@ export default area({
           collision: "≠ Contract (Epic 01 / PF) · ≠ API Contract (Platform / API)",
           revisit: ["Platform / API (API Contract)", "Architecture / Service Communication (consumer-driven contracts)"],
           summary:
-            "Verificar que um provedor de uma API e seus consumidores concordam sobre o formato da interface " +
-            "entre eles — sem precisar rodar os dois sistemas inteiros juntos para descobrir uma incompatibilidade.",
+            "Contract Testing é verificar se o provedor e o consumidor de uma API concordam sobre o formato da " +
+            "comunicação entre eles.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Contract testing verifica que dois serviços que se comunicam — um provedor (que expõe uma " +
-                "API) e um consumidor (que a chama) — concordam sobre o formato dessa comunicação: quais campos " +
-                "existem, quais tipos têm, quais são obrigatórios. Em vez de subir os dois serviços reais " +
-                "juntos para um teste de integração completo, cada lado testa separadamente contra um " +
-                "\"contrato\" compartilhado — um documento (geralmente gerado automaticamente) que descreve " +
-                "exatamente o que é esperado.",
+                "O contrato diz quais campos existem, quais tipos têm e quais são obrigatórios. Em vez de subir os dois " +
+                "serviços reais juntos para um teste de integração completo, cada lado testa separadamente contra esse " +
+                "contrato compartilhado — um documento (geralmente gerado automaticamente) que descreve exatamente o que " +
+                "é esperado.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Contract Testing verifica que provedor e consumidor concordam sobre a interface entre eles, " +
-                "cada lado testado isoladamente contra um contrato compartilhado — pegando incompatibilidades " +
-                "de formato sem o custo de subir o sistema inteiro.",
+                "Com um contrato compartilhado, uma mudança que quebra o consumidor falha no build do provedor, e não em " +
+                "produção.",
             },
             { type: "heading", text: "Por que importa" },
             {
