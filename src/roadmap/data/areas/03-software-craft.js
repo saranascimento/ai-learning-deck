@@ -5675,26 +5675,23 @@ export default area({
           isNew: true,
           note: "framing agnóstico de linguagem: erro (conceito) × exceção (mecanismo específico)",
           summary:
-            "Erro é a situação em que uma operação não consegue cumprir o que promete; exceção é apenas um dos " +
-            "mecanismos (ao lado de códigos de retorno e valores de resultado) que algumas linguagens oferecem " +
-            "para sinalizá-lo.",
+            "Errors vs Exceptions é a diferença entre o conceito de falha, o erro, e um dos mecanismos para " +
+            "sinalizá-lo, a exceção.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Um erro é um conceito: o momento em que uma operação não consegue fazer o que seu contrato " +
-                "promete — o arquivo não existe, o dado é inválido, a rede caiu. Uma exceção é um mecanismo: uma " +
-                "forma específica (throw/catch) que certas linguagens oferecem para sinalizar e tratar erros, " +
-                "interrompendo o fluxo normal. Confundir os dois leva a achar que \"tratar erros\" é sinônimo de " +
-                "\"usar try/catch\".",
+                "Um erro é o momento em que uma operação não consegue fazer o que seu contrato promete — o arquivo não " +
+                "existe, o dado é inválido, a rede caiu. Uma exceção é uma forma específica (throw/catch) que certas " +
+                "linguagens oferecem para sinalizar e tratar erros, interrompendo o fluxo normal. Confundir os dois leva " +
+                "a achar que \"tratar erros\" é sinônimo de \"usar try/catch\".",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Erro é o conceito, exceção é um dos mecanismos — primeiro decida que tipo de falha é (esperada, " +
-                "bug ou apenas ausência), depois escolha como sinalizá-la.",
+                "Primeiro decida que tipo de falha é, esperada, bug ou só ausência, e só depois escolha como sinalizá-la.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -5876,25 +5873,23 @@ export default area({
           requires: ["Errors vs Exceptions"],
           note: "throw/catch, hierarquia de exceções",
           summary:
-            "O mecanismo de sinalizar um erro interrompendo o fluxo normal (throw) e tratá-lo em outro ponto do " +
-            "código (catch) — com cuidado para capturar só o que se sabe tratar.",
+            "Uma Exception é um objeto que representa uma falha e interrompe o fluxo normal até ser capturado por um " +
+            "catch.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Uma exceção é um objeto que representa uma falha e interrompe a execução normal: quem detecta o " +
-                "problema faz throw, o fluxo salta para fora das funções em curso e só para quando encontra um " +
-                "catch que o trate — ou derruba o programa, se ninguém tratar. O bloco finally executa " +
-                "sempre, com ou sem erro, e serve para liberar recursos. Na maioria das linguagens, as exceções " +
-                "formam uma hierarquia de tipos (Error → TypeError, RangeError…).",
+                "Quem detecta o problema faz throw, o fluxo salta para fora das funções em curso e só para quando " +
+                "encontra um catch que o trate — ou derruba o programa, se ninguém tratar. O bloco finally executa " +
+                "sempre, com ou sem erro, e serve para liberar recursos. Na maioria das linguagens, as exceções formam " +
+                "uma hierarquia de tipos (Error → TypeError, RangeError…).",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Capture só o que sabe tratar, nunca engula um erro em silêncio, e use finally para liberar " +
-                "recursos — o resto deve subir.",
+                "A exceção existe para o caminho feliz ficar legível, então mantenha o try pequeno e o catch específico.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -6094,25 +6089,21 @@ export default area({
           requires: ["Programming Foundations / Memory & Runtime / Call Stack"],
           note: "o erro sobe pela pilha de chamadas",
           summary:
-            "Um erro sobe pela pilha de chamadas até ser tratado — e cada camada por onde passa decide se trata, " +
-            "acrescenta contexto ou simplesmente deixa subir.",
+            "Error Propagation é o caminho que uma falha percorre entre o ponto onde acontece e o ponto onde é " +
+            "tratada.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Propagação de erro é o caminho que a falha percorre entre onde acontece e onde é tratada. Com " +
-                "exceções, o erro sobe pela pilha de chamadas (Call Stack, módulo Memory & Runtime): cada " +
-                "função que não o captura é abandonada, até que uma camada acima o trate. Com resultados " +
-                "explícitos, o erro é devolvido de função em função. Em ambos os casos, o ponto essencial é " +
-                "decidir em qual camada agir.",
+                "Com exceções, o erro sobe pela pilha de chamadas (Call Stack, módulo Memory & Runtime): cada função que " +
+                "não o captura é abandonada, até que uma camada acima o trate. Com resultados explícitos, o erro é " +
+                "devolvido de função em função. Em ambos os casos, o ponto essencial é decidir em qual camada agir.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Deixe o erro subir até a camada que tem contexto para agir — no caminho, acrescente informação se " +
-                "ajudar, mas trate uma única vez.",
+              text: "A camada que descobre a falha e a camada que sabe o que fazer com ela raramente são a mesma.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -6311,24 +6302,21 @@ export default area({
           requires: ["Exceptions"],
           note: "tipos de erro com significado de domínio",
           summary:
-            "Criar seus próprios tipos de erro para falhas do domínio (saldo insuficiente, pedido não " +
-            "encontrado), para que o código possa distinguir e tratar cada situação sem interpretar mensagens de texto.",
+            "Um Custom Error é um tipo de erro próprio da aplicação, que representa uma falha com significado no " +
+            "domínio.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Um erro personalizado é uma classe que estende o tipo base de erro da linguagem e representa uma " +
-                "falha com significado no domínio da aplicação — InsufficientFundsError, OrderNotFoundError. " +
-                "Além da mensagem, ela pode carregar dados úteis (o saldo atual, o id procurado) e um código " +
-                "estável para uso em respostas de API ou em logs.",
+                "Ele estende o tipo base de erro da linguagem — InsufficientFundsError, OrderNotFoundError. Além da " +
+                "mensagem, pode carregar dados úteis (o saldo atual, o id procurado) e um código estável para uso em " +
+                "respostas de API ou em logs.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Crie tipos de erro quando o código precisar reagir de forma diferente a cada falha — decidir " +
-                "pelo tipo, nunca pelo texto da mensagem.",
+              text: "Se o código decide o que fazer lendo o texto da mensagem de erro, está faltando um tipo de erro.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -6559,24 +6547,23 @@ export default area({
           requires: ["Programming Foundations / Programming Fundamentals / Contract"],
           note: "pré-condição violada → falhar imediatamente",
           summary:
-            "Detectar e sinalizar um problema o mais cedo possível, no ponto onde ele surge, em vez de deixar " +
-            "dados inválidos seguirem adiante e causarem um erro obscuro em outro lugar.",
+            "Fail Fast é detectar e sinalizar um problema no ponto onde ele surge, em vez de deixar o dado inválido " +
+            "seguir adiante.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Fail Fast é a prática de verificar as condições necessárias logo no início — argumentos " +
-                "válidos, configuração completa, estado esperado — e falhar imediatamente, com uma mensagem " +
-                "clara, quando alguma delas for violada. Ela aplica a ideia de Contract (módulo Programming " +
-                "Fundamentals): se uma pré-condição do contrato foi quebrada, o chamador é avisado na hora.",
+                "Na prática, isso é verificar as condições necessárias logo no início — argumentos válidos, configuração " +
+                "completa, estado esperado — e falhar imediatamente, com uma mensagem clara, quando alguma delas for " +
+                "violada. É a ideia de Contract (módulo Programming Fundamentals): se uma pré-condição do contrato foi " +
+                "quebrada, o chamador é avisado na hora.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Se algo está errado, avise imediatamente e antes de causar efeitos — o erro fica perto da causa " +
-                "e nenhum dado ruim se espalha.",
+                "Valide tudo antes do primeiro efeito colateral, para que uma falha nunca deixe o trabalho pela metade.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -6754,21 +6741,22 @@ export default area({
           title: "Result Pattern",
           note: "erro como valor de retorno explícito, não efeito colateral — revisita Programming Foundations / Functional Programming (Side Effects/Pure Functions)",
           summary:
-            "Em vez de lançar uma exceção, a função devolve um valor que diz se deu certo ou errado — tornando a " +
-            "possibilidade de falha parte explícita da assinatura e obrigando o chamador a tratá-la.",
+            "O Result Pattern é devolver um objeto que representa sucesso (Ok) ou falha (Err), em vez de lançar uma " +
+            "exceção.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "O Result Pattern é um padrão que encapsula o resultado de uma operação em um objeto, que pode representar sucesso (Ok) " +
-                "ou falha (Err). Ele evita o uso de exceções para o fluxo de controle, tornando o código mais explícito, previsível e " +
+                "Ele evita o uso de exceções para o fluxo de controle, tornando o código mais explícito, previsível e " +
                 "fácil de testar.",
             },
             {
               type: "callout",
-              title: "Por que isso é importante?",
-              text: "Tratamento de erro deixa de ser um caso excepcional e passa a fazer parte do fluxo normal do código.",
+              title: "Ideia principal",
+              text:
+                "Com um Result, a possibilidade de falha aparece na assinatura, e quem chama não consegue fingir que ela " +
+                "não existe.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -6952,25 +6940,21 @@ export default area({
           title: "Error Boundaries",
           note: "conter a falha para não propagar em cascata — definição agnóstica de framework. Ponte futura para Architecture / Resilience Patterns (sem Requires — Epic 06 ainda não aprovado)",
           summary:
-            "Pontos deliberados do sistema que capturam falhas de uma parte e as contêm — devolvendo uma resposta " +
-            "segura ou um comportamento degradado — para que um erro local não derrube tudo.",
+            "Um Error Boundary é um ponto do código que envolve uma unidade de trabalho e impede que uma falha dentro " +
+            "dela se espalhe.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Um error boundary (fronteira de erro) é um ponto do código que envolve uma unidade de trabalho " +
-                "— uma requisição, um item de um lote, um componente independente — e captura qualquer falha " +
-                "que ocorra dentro dela, impedindo que se espalhe para o resto do sistema. Em vez de cada " +
-                "função tratar tudo, define-se onde a falha para. O termo é usado aqui em sentido geral, sem " +
-                "depender de nenhum framework.",
+                "A unidade pode ser uma requisição, um item de um lote, um componente independente. Em vez de cada função " +
+                "tratar tudo, define-se onde a falha para. O termo é usado aqui em sentido geral, sem depender de nenhum " +
+                "framework.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Defina onde a falha para: uma fronteira por unidade de trabalho contém o erro, registra e segue — " +
-                "sem esconder o que aconteceu.",
+              text: "Escolha de antemão onde cada falha para, em vez de deixar que ela suba até derrubar tudo.",
             },
             { type: "heading", text: "Por que importa" },
             {
