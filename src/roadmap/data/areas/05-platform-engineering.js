@@ -6473,26 +6473,25 @@ export default area({
           subtopics: ["SDL", "scalars/object/enum/input types", "nullability", "schema como contrato"],
           note: "consolidada (A13) — absorve Nullability",
           summary:
-            "O contrato de uma API GraphQL: um esquema tipado, escrito em SDL, que declara os tipos, os campos " +
-            "e o que pode ser nulo — e que cliente e servidor usam como fonte única de verdade.",
+            "O GraphQL Schema é o contrato tipado de uma API GraphQL, escrito em SDL, que declara os tipos, os campos " +
+            "e o que pode ser nulo.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "GraphQL é uma linguagem de consulta para APIs, e tudo nela parte do esquema (schema), escrito na " +
-                "SDL (Schema Definition Language). O esquema declara os tipos que existem, os campos de cada um e como " +
-                "eles se relacionam. Os tipos escalares (`Int`, `Float`, `String`, `Boolean`, `ID`) são as folhas, os " +
+                "GraphQL é uma linguagem de consulta para APIs, e tudo nela parte do esquema, escrito na SDL (Schema " +
+                "Definition Language). Os tipos escalares (`Int`, `Float`, `String`, `Boolean`, `ID`) são as folhas, os " +
                 "tipos de objeto agrupam campos, os enums restringem valores, e os tipos de entrada (`input`) descrevem " +
-                "os argumentos complexos. O servidor só executa o que o esquema permite, e o cliente só pede o que " +
-                "ele declara: é a forma mais forte de API Contract.",
+                "os argumentos complexos. O servidor só executa o que o esquema permite, e o cliente só pede o que ele " +
+                "declara: é a forma mais forte de API Contract.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "O esquema é o contrato tipado da API: define o que pode ser pedido, o formato de cada resposta e o " +
-                "que pode faltar — e ferramentas e validações nascem dele.",
+                "Marque um campo como não nulo só quando puder garantir isso sempre, porque tirar a garantia depois " +
+                "quebra os clientes.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -6726,25 +6725,25 @@ export default area({
           subtopics: ["query (leitura)", "mutation (escrita)", "subscription (tempo real — revisita WebSocket)"],
           note: "consolidada (A14)",
           summary:
-            "Os três tipos de operação do GraphQL: query para ler, mutation para escrever e subscription para " +
-            "receber eventos em tempo real — cada um começando em um tipo raiz do esquema.",
+            "Query, Mutation e Subscription são os três tipos de operação do GraphQL: ler, escrever e receber eventos " +
+            "em tempo real.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Toda requisição GraphQL é uma operação de um de três tipos. Query lê dados, e não deveria ter efeitos " +
+                "Toda requisição GraphQL é uma operação de um desses tipos. Query lê dados, e não deveria ter efeitos " +
                 "colaterais. Mutation altera dados, e é a que muda o estado do sistema. Subscription abre um fluxo de " +
                 "longa duração em que o servidor envia resultados a cada evento, em geral sobre WebSocket (Web " +
-                "Fundamentals). É a mesma separação de Command-Query Separation, aplicada à API: leitura de um lado, " +
-                "escrita de outro. Uma operação pode receber variáveis, valores tipados enviados junto da consulta.",
+                "Fundamentals). É a mesma separação de Command-Query Separation, aplicada à API. Uma operação pode " +
+                "receber variáveis, valores tipados enviados junto da consulta.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Ler, escrever e assistir são operações distintas com regras de execução diferentes: consultas podem " +
-                "rodar em paralelo, mutações rodam em série, e subscrições permanecem abertas.",
+                "Os campos de uma query podem rodar em paralelo e os de uma mutation rodam em série, então a escrita " +
+                "nunca vai numa query.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -6952,27 +6951,22 @@ export default area({
           title: "Resolver",
           requires: ["GraphQL Schema & Type System"],
           note: "função por campo; resolver chain",
-          summary:
-            "A função que devolve o valor de um campo do esquema: o servidor executa uma consulta chamando o " +
-            "resolver de cada campo pedido, do topo para as folhas, passando o resultado de um ao próximo.",
+          summary: "Um Resolver é a função que devolve o valor de um campo do esquema GraphQL.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "O esquema diz o que existe, e os resolvers dizem de onde vem cada valor. Cada campo tem um resolver: " +
-                "uma função `(parent, args, context, info)` que devolve o valor do campo. `parent` é o resultado do " +
-                "resolver do campo pai, `args` são os argumentos da consulta, `context` é um objeto compartilhado " +
-                "durante a requisição (usuário, conexões, loaders), e `info` descreve a consulta. Quando não há um " +
-                "resolver explícito, o padrão devolve `parent[nomeDoCampo]`. A execução percorre a consulta em " +
-                "cadeia: o resolver de `order` devolve o pedido, e o de `order.customer` recebe esse pedido.",
+                "O esquema diz o que existe, e os resolvers dizem de onde vem cada valor. Cada resolver recebe `(parent, " +
+                "args, context, info)`: `parent` é o resultado do resolver do campo pai, `args` são os argumentos da " +
+                "consulta, `context` é um objeto compartilhado durante a requisição (usuário, conexões, loaders), e " +
+                "`info` descreve a consulta. Quando não há um resolver explícito, o padrão devolve `parent[nomeDoCampo]`. " +
+                "A execução percorre a consulta em cadeia, do topo para as folhas.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Cada campo pedido é resolvido por uma função própria, e o resultado de um alimenta o resolver dos " +
-                "campos filhos: só o que a consulta pediu é executado.",
+              text: "Como cada campo tem o seu resolver, um campo que ninguém pediu nunca custa nada.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -7179,26 +7173,23 @@ export default area({
           subtopics: ["DataLoader"],
           note: "estratégia vendor-agnostic de mitigação do N+1: batching + cache por request",
           summary:
-            "Agrupar as buscas feitas durante uma mesma requisição em uma só (batching) e guardar os resultados só " +
-            "pela duração dela (cache por requisição) — o que o DataLoader faz para resolver o N+1 em GraphQL.",
+            "Batching é juntar as buscas feitas durante uma requisição numa só, e o cache por requisição guarda os " +
+            "resultados só enquanto ela dura.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Em GraphQL, cada item de uma lista pode disparar o seu próprio resolver, e um resolver que busca o " +
-                "autor de um post faz uma consulta por post: o N+1 (Database Performance). A solução é o batching: em " +
-                "vez de buscar cada autor na hora, o resolver pede o autor a um carregador (DataLoader), que junta todos " +
-                "os pedidos feitos no mesmo ciclo do Event Loop e os executa em uma única consulta (`WHERE id IN (...)`). " +
-                "O mesmo carregador guarda os resultados pela duração da requisição, e uma chave pedida duas vezes é " +
-                "buscada uma só vez.",
+                "Em GraphQL, cada item de uma lista pode disparar o seu próprio resolver, e um resolver que busca o autor " +
+                "de um post faz uma consulta por post: o N+1 (Database Performance). Com batching, o resolver pede o " +
+                "autor a um carregador (DataLoader), que junta todos os pedidos feitos no mesmo ciclo do Event Loop e os " +
+                "executa em uma única consulta (`WHERE id IN (...)`). O mesmo carregador guarda os resultados pela " +
+                "duração da requisição, e uma chave pedida duas vezes é buscada uma só vez.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Não busque um por um: colete as chaves pedidas em um mesmo instante, busque todas de uma vez e " +
-                "distribua os resultados — dentro de uma única requisição.",
+              text: "Com batching, cem autores pedidos numa lista viram uma consulta só, em vez de cem.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -7402,26 +7393,25 @@ export default area({
           requires: ["Resolver"],
           note: "custo/profundidade, limites, timeout — superfície de ataque DoS",
           summary:
-            "Como conter o custo das consultas GraphQL: como o cliente decide o formato da consulta, é preciso " +
-            "limitar profundidade, tamanho e custo estimado, antes que uma única requisição consuma o servidor.",
+            "Query Complexity é a medida do custo de uma consulta GraphQL, usada para recusar as caras demais antes " +
+            "de executá-las.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Em REST, o servidor decide o que cada endpoint faz. Em GraphQL, é o cliente quem monta a consulta, e " +
-                "uma única requisição pode ser enormemente cara: relações circulares aninhadas (`autor { posts { autor " +
-                "{ posts ... } } }`), listas grandes, ou centenas de campos repetidos com aliases. Sem controle, uma " +
+                "Em REST, o servidor decide o que cada endpoint faz. Em GraphQL, é o cliente quem monta a consulta, e uma " +
+                "única requisição pode ser enormemente cara: relações circulares aninhadas (`autor { posts { autor { " +
+                "posts ... } } }`), listas grandes, ou centenas de campos repetidos com aliases. Sem controle, uma " +
                 "requisição bem construída esgota o servidor, o que a torna uma superfície de negação de serviço. Os " +
-                "limites de complexidade recusam, antes de executar, as consultas caras demais. Difere do Rate " +
-                "Limiting, que controla quantas requisições chegam, e não o custo de cada uma.",
+                "limites costumam ser de profundidade, de tamanho e de custo estimado. Difere do Rate Limiting, que " +
+                "controla quantas requisições chegam.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "O cliente escolhe a forma da consulta, então o servidor precisa medir o custo dela antes de executar " +
-                "e recusar o que passar do limite.",
+                "Contar requisições não protege uma API GraphQL, porque uma só consulta pode custar o mesmo que milhares.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -7629,26 +7619,25 @@ export default area({
           requires: ["API Fundamentals / REST", "GraphQL Schema & Type System"],
           note: "quando cada um; over/under-fetching; caching; tooling",
           summary:
-            "As trocas entre os dois estilos: GraphQL deixa o cliente pedir exatamente o que precisa em uma " +
-            "chamada, e REST aproveita melhor o cache e a simplicidade do HTTP — a escolha depende do caso.",
+            "GraphQL vs REST é a escolha entre deixar o cliente descrever a forma da resposta e deixar o servidor " +
+            "definir recursos com formato fixo.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
                 "REST organiza a API em recursos, cada um com o seu endereço, e o servidor decide o formato de cada " +
-                "resposta. GraphQL expõe um esquema tipado em um único endpoint, e o cliente descreve a forma da " +
-                "resposta. Isso resolve dois problemas de REST: o over-fetching (o endpoint devolve mais campos do " +
-                "que a tela usa) e o under-fetching (uma tela precisa de várias chamadas para juntar os dados). Em " +
-                "troca, GraphQL perde parte do que o HTTP dá de graça, como o cache por URL, e traz novos cuidados, " +
-                "como a complexidade das consultas.",
+                "resposta. GraphQL expõe um esquema tipado em um único endpoint, e o cliente descreve o que quer. Isso " +
+                "resolve dois problemas de REST: o over-fetching (o endpoint devolve mais campos do que a tela usa) e o " +
+                "under-fetching (uma tela precisa de várias chamadas para juntar os dados). Em troca, GraphQL perde parte " +
+                "do que o HTTP dá de graça, como o cache por URL, e traz novos cuidados, como a complexidade das " +
+                "consultas.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Nenhum é melhor em tudo: GraphQL compensa quando os clientes variam muito e os dados formam um grafo; " +
-                "REST compensa quando os recursos são simples e o cache HTTP é valioso.",
+                "GraphQL compensa quando muitos clientes diferentes precisam de recortes diferentes dos mesmos dados.",
             },
             { type: "heading", text: "Como funciona" },
             {
