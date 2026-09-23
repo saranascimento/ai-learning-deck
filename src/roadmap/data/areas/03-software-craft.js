@@ -3274,25 +3274,21 @@ export default area({
           title: "Refactoring",
           isNew: true,
           note: "guarda-chuva: transformação que preserva comportamento; \"duas camadas\" (adicionar feature × refatorar), por que fazer, quando não fazer",
-          summary:
-            "Mudar a estrutura interna do código sem alterar o que ele faz por fora — em passos pequenos e " +
-            "seguros — para que a próxima mudança fique mais barata e menos arriscada.",
+          summary: "Refactoring é mudar a estrutura interna do código sem alterar o comportamento que ele tem por fora.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Refactoring é a transformação do código que melhora sua estrutura interna preservando o " +
-                "comportamento observável: as mesmas entradas continuam produzindo as mesmas saídas e efeitos. " +
-                "Não é reescrever, e não é corrigir bugs nem adicionar funcionalidade — é reorganizar, em passos " +
-                "pequenos, o que já funciona.",
+                "As mesmas entradas continuam produzindo as mesmas saídas e efeitos. Não é reescrever, e não é corrigir " +
+                "bugs nem adicionar funcionalidade — é reorganizar, em passos pequenos, o que já funciona.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Refatorar é mudar a estrutura sem mudar o comportamento, em passos pequenos, sempre separado " +
-                "de adicionar funcionalidade — o objetivo é tornar a próxima mudança barata.",
+                "Código que só recebe acréscimos fica mais caro a cada funcionalidade, e refatorar é o que segura esse " +
+                "custo.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -3495,25 +3491,20 @@ export default area({
           title: "Extract Function",
           requires: ["Refactoring"],
           note: "extrair função — dar nome e função própria a um trecho de código",
-          summary:
-            "Tirar um trecho de código de dentro de uma função e dar a ele uma função própria com um nome que " +
-            "explica o que faz — a técnica que corrige funções longas e trechos duplicados.",
+          summary: "Extract Function é mover um trecho de código para uma função nova, com um nome que diz a intenção dele.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Extract Function pega um fragmento de código e o move para uma função nova, substituindo o " +
-                "fragmento original por uma chamada a ela. O nome da função deve dizer o que o trecho faz (a " +
-                "intenção), não como faz. É a técnica de refatoração mais usada e a correção padrão para os smells " +
-                "Long Method e Duplicate Code.",
+                "O trecho original é substituído por uma chamada a essa função. O nome deve dizer o que o trecho faz, não " +
+                "como faz. É a técnica de refatoração mais usada e a correção padrão para os smells Long Method e " +
+                "Duplicate Code.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Extraia quando puder dar ao trecho um nome que diga sua intenção — as variáveis lidas viram " +
-                "parâmetros, as alteradas viram o retorno.",
+              text: "Um comentário explicando o que um bloco faz é o nome da função que ainda não foi extraída.",
             },
             { type: "heading", text: "Como fazer" },
             {
@@ -3724,23 +3715,22 @@ export default area({
           requires: ["Refactoring"],
           note: "extrair variável — dar nome a uma expressão complexa ou repetida",
           summary:
-            "Dar um nome, por meio de uma variável local, a uma expressão complexa ou repetida — para que o " +
-            "código explique o que a expressão representa em vez de só como é calculada.",
+            "Extract Variable é substituir uma expressão por uma variável local cujo nome explica o que ela " +
+            "significa.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Extract Variable substitui uma expressão (ou parte dela) por uma variável local com um nome " +
-                "que explica o seu significado. Também é chamada de \"variável explicativa\": ela não muda o que o " +
-                "código calcula, apenas torna visível a intenção por trás do cálculo.",
+                "Também é chamada de \"variável explicativa\": ela não muda o que o código calcula, apenas torna visível a " +
+                "intenção por trás do cálculo.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Se uma expressão precisa de esforço para ser entendida, dê nome ao seu resultado — a variável " +
-                "explica o porquê que a expressão sozinha esconde.",
+                "Uma condição longa dividida em variáveis nomeadas passa a ser lida como uma frase, e cada parte pode ser " +
+                "inspecionada.",
             },
             { type: "heading", text: "Como fazer" },
             {
@@ -3916,24 +3906,21 @@ export default area({
           requires: ["Refactoring"],
           note: "renomear — corrigir um nome que não reflete mais o que a coisa é ou faz",
           summary:
-            "Trocar o nome de uma variável, função, classe ou arquivo por outro que descreva melhor o que ela é — " +
-            "a refatoração mais simples e uma das que mais aumenta a clareza.",
+            "Rename é a refatoração que troca o nome de um elemento do código e atualiza todos os lugares que o usam.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Rename é a refatoração que muda o nome de um elemento do código (variável, função, classe, " +
-                "módulo, arquivo) e atualiza todos os lugares que o usam, sem alterar o comportamento. Se Naming " +
-                "(módulo Clean Code) trata de escolher bons nomes na primeira vez, Rename trata de corrigi-los " +
-                "depois — porque o entendimento sobre o problema evolui e os nomes precisam acompanhar.",
+                "Vale para variáveis, funções, classes, módulos e arquivos, sem alterar o comportamento. Se Naming " +
+                "(módulo Clean Code) trata de escolher bons nomes na primeira vez, Rename trata de corrigi-los depois — " +
+                "porque o entendimento sobre o problema evolui e os nomes precisam acompanhar.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Renomear é barato e vale muito: quando o nome deixa de refletir o que a coisa é ou faz, corrija-o " +
-                "com a ferramenta do editor, não com um busca-e-substitui às cegas.",
+                "Um nome que ficou para trás depois de uma mudança passa a mentir, e cada leitura seguinte paga por isso.",
             },
             { type: "heading", text: "Como fazer" },
             {
@@ -4110,25 +4097,22 @@ export default area({
           title: "Inline Function",
           requires: ["Refactoring"],
           note: "operação inversa de Extract Function — ensinada em par por ordem de estudo, não por Requires",
-          summary:
-            "Substituir a chamada de uma função pelo próprio corpo dela e remover a função — o inverso de Extract " +
-            "Function, útil quando a indireção não acrescenta clareza.",
+          summary: "Inline Function é trocar as chamadas de uma função pelo corpo dela e remover a função.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Inline Function é a operação inversa de Extract Function: em vez de mover um trecho para uma " +
-                "função, você traz o corpo da função de volta para onde ela é chamada e apaga a função. Serve " +
-                "quando a função é tão simples que o corpo é tão claro quanto o nome, ou quando um conjunto de " +
-                "funções está mal dividido e vale desfazer a divisão antes de reorganizar.",
+                "É a operação inversa de Extract Function. Serve quando a função é tão simples que o corpo é tão claro " +
+                "quanto o nome, ou quando um conjunto de funções está mal dividido e vale desfazer a divisão antes de " +
+                "reorganizar.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Uma função só ganha seu lugar se o nome acrescenta algo que o corpo não diz — quando não " +
-                "acrescenta, incorpore-a de volta.",
+                "Toda função obriga quem lê a pular para outro lugar, então ela precisa pagar esse salto com um nome que " +
+                "ensine algo.",
             },
             { type: "heading", text: "Como fazer" },
             {
@@ -4321,24 +4305,21 @@ export default area({
           requires: ["Code Smells / Large Class"],
           note: "corrige a baixa coesão diagnosticada por Large Class",
           summary:
-            "Dividir uma classe que faz demais criando uma nova para as responsabilidades que se agrupam, movendo " +
-            "campos e métodos para ela — a correção do smell Large Class.",
+            "Extract Class é criar uma classe nova e mover para ela um grupo coeso de campos e métodos de uma classe " +
+            "grande demais.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Extract Class cria uma classe nova e move para ela um grupo coeso de campos e métodos que estavam " +
-                "em uma classe grande demais. A classe original passa a se relacionar com a nova por composição. " +
-                "É a resposta ao smell Large Class: onde a coesão era baixa (vários assuntos em um lugar), " +
-                "passam a existir duas classes com um assunto cada.",
+                "A classe original passa a se relacionar com a nova por composição. É a resposta ao smell Large Class: " +
+                "onde a coesão era baixa (vários assuntos em um lugar), passam a existir duas classes com um assunto " +
+                "cada.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Se um grupo de campos e métodos forma um assunto próprio dentro de uma classe grande, dê a ele uma " +
-                "classe — e mova em passos pequenos, com os testes verdes a cada um.",
+              text: "Depois da extração, cada regra nova daquele assunto já tem um lugar natural para ser escrita.",
             },
             { type: "heading", text: "Como fazer" },
             {
@@ -4566,24 +4547,21 @@ export default area({
           requires: ["Refactoring"],
           note: "mover função — levar o comportamento para perto dos dados que ele usa",
           summary:
-            "Mover uma função para a classe ou módulo onde estão os dados ou o contexto que ela usa — para que " +
-            "comportamento e dados fiquem juntos e o acoplamento entre as partes diminua.",
+            "Move Function é levar uma função para o lugar onde ela faz mais sentido, perto dos dados ou do assunto " +
+            "que usa.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Move Function leva uma função (ou método) de onde ela está para um lugar onde faz mais sentido: a " +
-                "classe cujos dados ela usa, o módulo do assunto a que pertence, ou o escopo em que é realmente " +
-                "usada. É a correção clássica para o smell Feature Envy, e também serve para reorganizar módulos " +
-                "conforme o entendimento do domínio evolui.",
+                "Esse lugar pode ser a classe cujos dados ela usa, o módulo do assunto a que pertence, ou o escopo em que " +
+                "é realmente usada. É a correção clássica para o smell Feature Envy, e também serve para reorganizar " +
+                "módulos conforme o entendimento do domínio evolui.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Coloque cada função perto dos dados e do assunto de que ela depende — e, se não estiver claro, mova " +
-                "e observe: mover é barato e reversível.",
+              text: "Um módulo `utils` que só cresce é sinal de funções que ainda não encontraram o seu assunto.",
             },
             { type: "heading", text: "Como fazer" },
             {
@@ -4779,24 +4757,24 @@ export default area({
           requires: ["Clean Code / Guard Clauses"],
           note: "a técnica mecânica que produz o estilo já ensinado em Clean Code",
           summary:
-            "A receita passo a passo para transformar uma função cheia de ifs aninhados em uma sequência de " +
-            "guard clauses, mantendo o comportamento — a técnica que produz o estilo de Guard Clauses.",
+            "Replace Nested Conditional with Guard Clauses é a refatoração que transforma ifs aninhados numa " +
+            "sequência de retornos antecipados.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Enquanto Guard Clauses (módulo Clean Code) descreve o estilo — tratar casos excepcionais no topo e " +
-                "sair cedo —, esta refatoração é a mecânica para chegar lá a partir de um código existente com " +
-                "condicionais aninhadas. Ela transforma, um caso de cada vez, os ramos excepcionais em retornos " +
-                "antecipados, deixando o caminho principal no nível base.",
+                "Enquanto Guard Clauses (módulo Clean Code) descreve o estilo — tratar casos excepcionais no topo e sair " +
+                "cedo —, esta refatoração é a mecânica para chegar lá a partir de um código existente. Ela transforma, um " +
+                "caso de cada vez, os ramos excepcionais em retornos antecipados, deixando o caminho principal no nível " +
+                "base.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Inverta a condição mais externa, retorne cedo, rode os testes e repita — cada passo é seguro, e o " +
-                "aninhamento desaparece aos poucos.",
+                "Como cada guarda preserva o comportamento, dá para parar a refatoração em qualquer ponto com o código " +
+                "funcionando.",
             },
             { type: "heading", text: "Como fazer" },
             {
@@ -5016,24 +4994,21 @@ export default area({
           requires: ["Programming Foundations / Programming Fundamentals / Polymorphism"],
           note: "aplica o mecanismo já ensinado em Programming Foundations",
           summary:
-            "Trocar um if/switch que decide o comportamento conforme o tipo de algo por classes diferentes que " +
-            "implementam o mesmo método — o comportamento passa a ser escolhido pelo objeto, não por condições.",
+            "Replace Conditional with Polymorphism é trocar um switch que escolhe o comportamento pelo tipo por " +
+            "classes que implementam o mesmo método.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Replace Conditional with Polymorphism substitui uma estrutura condicional (um switch ou uma " +
-                "cadeia de if/else) que escolhe o comportamento com base no tipo ou categoria de um valor por um " +
-                "conjunto de classes, cada uma com o mesmo método e a sua própria versão do comportamento. É a " +
-                "aplicação prática do Polymorphism (módulo Programming Fundamentals) como refatoração.",
+                "Cada classe carrega a sua própria versão do comportamento, e a escolha passa a ser feita pelo objeto, " +
+                "não por condições. É a aplicação prática do Polymorphism (módulo Programming Fundamentals) como " +
+                "refatoração.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Se o mesmo switch por tipo se repete em vários lugares, faça cada tipo carregar o seu " +
-                "comportamento — um caso novo passa a ser uma classe nova, não uma edição espalhada.",
+              text: "O switch por tipo não some, ele passa a existir num lugar só: onde o objeto certo é criado.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -5259,25 +5234,21 @@ export default area({
           requires: ["Code Smells / Long Parameter List"],
           note: "corrige o smell diagnosticado antes",
           summary:
-            "Agrupar parâmetros que sempre viajam juntos em um único objeto com nome — a correção do smell Long " +
-            "Parameter List, que também cria um lugar para o comportamento que pertence àqueles dados.",
+            "Introduce Parameter Object é substituir um grupo de parâmetros que andam juntos por um objeto que os " +
+            "representa.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Introduce Parameter Object substitui um grupo de parâmetros que aparecem juntos por um objeto " +
-                "que os representa. É a correção padrão para Long Parameter List: fecha o ciclo iniciado em " +
-                "Function Arguments (escrever bem) e no smell (reconhecer a violação). O ganho é maior do que " +
-                "encurtar a assinatura: o grupo ganha um nome de conceito, e esse conceito pode receber " +
-                "comportamento.",
+                "É a correção padrão para Long Parameter List: fecha o ciclo iniciado em Function Arguments (escrever " +
+                "bem) e no smell (reconhecer a violação). O ganho é maior do que encurtar a assinatura: o grupo ganha um " +
+                "nome de conceito, e esse conceito pode receber comportamento.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Dados que viajam juntos merecem um nome — e, com o nome, um lugar para o comportamento que os " +
-                "envolve: validações e cálculos que estavam espalhados passam a viver ali.",
+              text: "Se o novo objeto nunca ganhar comportamento, você só encurtou a assinatura, sem ganho de projeto.",
             },
             { type: "heading", text: "Como fazer" },
             {
@@ -5484,24 +5455,21 @@ export default area({
           requires: ["Testing & Quality Engineering / Testing Fundamentals"],
           note: "fecha a Story: só se refatora com segurança havendo rede de testes",
           summary:
-            "Refatorar em ciclos curtos com uma rede de testes automatizados como garantia: sem testes verdes " +
-            "antes e depois de cada passo, não há como saber se o comportamento foi preservado.",
+            "Refactoring with Tests é refatorar em ciclos curtos, rodando os testes antes e depois de cada passo " +
+            "pequeno.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "A definição de refatoração exige que o comportamento não mude — e a única forma confiável de " +
-                "saber disso é com testes automatizados. Refactoring with Tests é a prática de refatorar dentro " +
-                "de um ciclo curto: rodar os testes (verdes), fazer um passo pequeno, rodar de novo. Se ficarem " +
-                "vermelhos, o último passo — e só ele — é o culpado, e pode ser desfeito.",
+                "A definição de refatoração exige que o comportamento não mude — e a única forma confiável de saber disso " +
+                "é com testes automatizados. Se os testes ficarem vermelhos, o último passo — e só ele — é o culpado, e " +
+                "pode ser desfeito.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Teste verde, passo pequeno, teste verde — sem testes, refatorar é palpite; com eles, é um " +
-                "procedimento seguro que se pode desfazer a qualquer momento.",
+              text: "Passos pequenos existem para que um teste vermelho aponte um único culpado.",
             },
             { type: "heading", text: "Por que importa" },
             {
