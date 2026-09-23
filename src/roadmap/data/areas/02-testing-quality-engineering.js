@@ -2646,9 +2646,7 @@ export default area({
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "No TDD, o teste é a primeira pessoa a usar o seu código, e isso força a pensar na interface antes da " +
-                "implementação.",
+              text: "Em TDD, nenhuma linha de produção existe sem um teste que antes falhou por falta dela.",
             },
             { type: "heading", text: "Por que importa" },
             {
