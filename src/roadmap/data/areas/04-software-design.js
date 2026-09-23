@@ -4910,25 +4910,24 @@ export default area({
           title: "Factory Method",
           note: "delega a decisão de qual classe instanciar",
           summary:
-            "Define um método responsável por criar um objeto e deixa que subclasses (ou a configuração) decidam qual " +
-            "classe concreta instanciar, de modo que o código que o usa dependa só do contrato do produto.",
+            "Factory Method é um padrão de criação em que um método decide qual classe concreta instanciar, e quem " +
+            "usa só conhece o contrato do produto.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Factory Method é um padrão de criação em que uma classe declara um método para criar objetos, o " +
-                "\"método fábrica\", mas deixa que as subclasses decidam qual classe concreta ele instancia. O código " +
-                "que precisa do objeto chama o método e trabalha com o resultado através do contrato (Program to an " +
-                "Interface), sem usar `new` com uma classe específica. É uma aplicação direta de Encapsulate What " +
+                "A classe declara o \"método fábrica\", e as subclasses (ou a configuração) decidem o que ele cria. O " +
+                "código que precisa do objeto chama o método e trabalha com o resultado através do contrato (Program to " +
+                "an Interface), sem usar `new` com uma classe específica. É uma aplicação direta de Encapsulate What " +
                 "Varies: o que varia, qual tipo criar, fica isolado em um único ponto.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Quem usa o objeto não decide qual classe criar: chama um método fábrica, e é ele que escolhe — e " +
-                "pode ser trocado sem alterar quem usa.",
+                "Com o método fábrica, um produto novo é uma subclasse nova, e a operação que usa o produto nunca precisa " +
+                "ser editada.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -5128,25 +5127,23 @@ export default area({
           requires: ["Factory Method"],
           note: "uma fábrica de factory methods relacionados — não dá para entender sem o anterior",
           summary:
-            "Uma interface para criar famílias inteiras de objetos relacionados, sem especificar as classes " +
-            "concretas — e que garante que os produtos de uma mesma família sejam usados juntos.",
+            "Abstract Factory é um padrão de criação que oferece uma interface para criar famílias inteiras de " +
+            "objetos relacionados.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Abstract Factory estende o Factory Method: em vez de um método que cria um produto, é uma fábrica com " +
-                "vários métodos que criam produtos de uma mesma família (o botão e o campo de texto de um tema, o " +
-                "banco e a fila de um mesmo provedor). Cada família tem a sua fábrica concreta, e o código cliente " +
-                "recebe uma fábrica qualquer e usa só os contratos. Assim os produtos combinam entre si: não há como " +
-                "misturar um botão de um tema com um campo de outro.",
+                "Ele estende o Factory Method: em vez de um método que cria um produto, é uma fábrica com vários métodos " +
+                "que criam produtos de uma mesma família (o botão e o campo de texto de um tema, o banco e a fila de um " +
+                "mesmo provedor). Cada família tem a sua fábrica concreta, e o código cliente recebe uma fábrica qualquer " +
+                "e usa só os contratos.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Uma fábrica por família: quem usa recebe uma fábrica e obtém produtos que foram feitos para " +
-                "funcionar juntos, sem saber a qual família pertencem.",
+                "Com uma fábrica por família, é impossível misturar por engano o botão de um tema com o campo de outro.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -5334,24 +5331,23 @@ export default area({
           title: "Builder",
           note: "construção passo a passo de objetos com muitas opções",
           summary:
-            "Separa a construção de um objeto complexo da sua representação final, montando-o passo a passo e " +
-            "validando o resultado antes de entregá-lo.",
+            "Builder é um padrão de criação que monta um objeto complexo em passos nomeados e só o entrega pronto no " +
+            "final.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Builder é um padrão de criação para objetos com muitas partes ou opções. Em vez de um construtor " +
-                "com uma lista longa de parâmetros (a maioria opcionais), um objeto auxiliar, o builder, recebe as " +
-                "escolhas em passos com nomes claros e, ao final, produz o objeto pronto com `build()`. O código de " +
-                "quem constrói fica legível, e o objeto final pode ser imutável e validado uma única vez.",
+                "Ele serve para objetos com muitas partes ou opções. Em vez de um construtor com uma lista longa de " +
+                "parâmetros (a maioria opcionais), um objeto auxiliar, o builder, recebe as escolhas em passos com nomes " +
+                "claros e, ao final, produz o objeto pronto com `build()`. O código de quem constrói fica legível, e o " +
+                "objeto final pode ser imutável e validado uma única vez.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Monte o objeto complexo em passos com nomes claros e só entregue o resultado no fim, já validado, " +
-                "em vez de um construtor com uma lista longa de parâmetros.",
+                "Um Builder concentra as regras de montagem no `build()`, então nenhum objeto inválido chega a existir.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -5540,26 +5536,23 @@ export default area({
           order: 40,
           title: "Prototype",
           note: "criar novos objetos copiando um objeto existente",
-          summary:
-            "Cria novos objetos copiando um objeto existente (o protótipo), em vez de instanciá-los do zero — útil " +
-            "quando a criação é cara ou o objeto já vem configurado.",
+          summary: "Prototype é um padrão de criação em que um objeto novo nasce da cópia de outro, já configurado.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Prototype é um padrão de criação em que um novo objeto nasce da cópia de outro, o protótipo, que já " +
-                "está configurado. Quem precisa de um objeto novo pede uma cópia ao modelo e ajusta o que for " +
-                "diferente, sem repetir a configuração e sem conhecer a classe concreta. Não é o mesmo que a cadeia de " +
-                "protótipos do JavaScript, embora a linguagem tenha esse nome por um motivo parecido: objetos criados a " +
-                "partir de outros objetos.",
+                "O objeto copiado é o protótipo. Quem precisa de um objeto novo pede uma cópia ao modelo e ajusta o que " +
+                "for diferente, sem repetir a configuração e sem conhecer a classe concreta. Não é o mesmo que a cadeia " +
+                "de protótipos do JavaScript, embora a linguagem tenha esse nome por um motivo parecido: objetos criados " +
+                "a partir de outros objetos.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Para criar um objeto parecido com outro, copie-o e ajuste o que muda — desde que a cópia não " +
-                "compartilhe, por engano, o estado interno do original.",
+                "Um `clone()` só é seguro se cada referência interna também for copiada, ou a cópia passa a alterar o " +
+                "modelo.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -5750,15 +5743,14 @@ export default area({
           title: "Singleton",
           note: "uma única instância — e por que ele costuma ser evitado",
           summary:
-            "Garante que uma classe tenha uma única instância e oferece um ponto de acesso global a ela — um padrão " +
-            "simples, mas que costuma esconder dependências e dificultar testes.",
+            "Singleton é um padrão de criação que garante uma única instância de uma classe e oferece um acesso " +
+            "global a ela.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Singleton restringe a criação de uma classe a uma única instância e fornece um acesso global a ela. " +
-                "Serve para recursos que fazem sentido uma vez só por programa, como a configuração carregada, um " +
+                "Ele serve para recursos que fazem sentido uma vez só por programa, como a configuração carregada, um " +
                 "logger ou um pool de conexões. É o mais conhecido dos padrões de criação e também o mais criticado, " +
                 "porque o acesso global é, na prática, estado global compartilhado.",
             },
@@ -5766,8 +5758,8 @@ export default area({
               type: "callout",
               title: "Ideia principal",
               text:
-                "Precisar de uma só instância é uma coisa; forçar um acesso global a ela é outra. Muitas vezes o " +
-                "que se quer é uma instância única, criada no ponto de composição e injetada, e não um Singleton.",
+                "O problema do Singleton não é ter uma instância só, é qualquer código poder alcançá-la sem declarar que " +
+                "depende dela.",
             },
             { type: "heading", text: "Como funciona" },
             {
