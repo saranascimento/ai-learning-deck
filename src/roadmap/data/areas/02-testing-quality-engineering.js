@@ -2632,25 +2632,23 @@ export default area({
           requires: ["Testing Fundamentals / Arrange-Act-Assert"],
           note: "disciplina test-first; por que TDD dirige o design; benefícios e custos",
           summary:
-            "Escrever o teste antes do código que ele testa — uma disciplina que usa o próprio ato de testar " +
-            "para guiar o design da solução, não só para verificá-la depois de pronta.",
+            "Test-Driven Development é a disciplina de escrever o teste de um comportamento antes do código que o " +
+            "implementa.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Test-Driven Development (TDD) é uma disciplina de desenvolvimento em que o teste de um " +
-                "comportamento é escrito antes do código de produção que o implementa. Em vez de \"escrever a " +
-                "função, depois testar\", a ordem se inverte: escrever um teste que descreve o comportamento " +
-                "esperado (e que, nesse momento, falha — porque o código ainda não existe), e só então escrever " +
-                "o código mínimo necessário para fazer esse teste passar.",
+                "A ordem \"escrever a função, depois testar\" se inverte: primeiro vem um teste que descreve o " +
+                "comportamento esperado (e que, nesse momento, falha — porque o código ainda não existe), e só então o " +
+                "código mínimo necessário para fazer esse teste passar.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "TDD inverte a ordem tradicional: o teste vem primeiro, e o código de produção existe só para " +
-                "fazê-lo passar — uma disciplina que usa o teste para guiar o design, não só para verificá-lo depois.",
+                "No TDD, o teste é a primeira pessoa a usar o seu código, e isso força a pensar na interface antes da " +
+                "implementação.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -2800,26 +2798,24 @@ export default area({
             "o loop concreto: teste mínimo que falha → código mínimo que passa → melhorar com a barra verde. " +
             "Passo \"Refactor\": aprofundamento posterior em Epic 03 / Software Craft / Refactoring — pointer, não Requires.",
           summary:
-            "O loop concreto de três passos que dá vida ao TDD: escrever um teste mínimo que falha (Red), " +
-            "escrever o código mínimo que o faz passar (Green), melhorar o código com a segurança da barra " +
-            "verde (Refactor) — e repetir.",
+            "Red-Green-Refactor é o ciclo de três passos do TDD: ver um teste falhar, fazê-lo passar e melhorar o " +
+            "código.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Red-Green-Refactor é o ciclo operacional concreto por trás do TDD: Red — escrever um teste " +
-                "para um comportamento que ainda não existe, e vê-lo falhar (a \"barra vermelha\"); Green — " +
-                "escrever o código mais simples possível que faz esse teste passar (a \"barra verde\"), mesmo " +
-                "que a implementação não seja elegante; Refactor — com o teste passando como rede de segurança, " +
-                "melhorar a estrutura do código sem mudar seu comportamento externo.",
+                "Red: escrever um teste para um comportamento que ainda não existe, e vê-lo falhar (a \"barra vermelha\"). " +
+                "Green: escrever o código mais simples possível que faz esse teste passar (a \"barra verde\"), mesmo que a " +
+                "implementação não seja elegante. Refactor: com o teste passando como rede de segurança, melhorar a " +
+                "estrutura do código sem mudar seu comportamento externo.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Red-Green-Refactor é o motor operacional do TDD: falhar de propósito, passar com o mínimo, " +
-                "depois melhorar em segurança — um passo de cada vez, nunca os três ao mesmo tempo.",
+                "Faça um passo de cada vez: nunca melhore o código com a barra vermelha nem acrescente comportamento " +
+                "durante o Refactor.",
             },
             { type: "heading", text: "Por que importa" },
             {
