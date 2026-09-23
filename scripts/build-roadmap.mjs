@@ -1752,6 +1752,31 @@ for (const area of model.areas()) {
   record(g, "modo estrito: nenhum Concept com conteúdo legado", legacySlugs.length === 0, list(legacySlugs));
 }
 
+// ---- 17c. destaque «Ideia principal» — uma conclusão, curta -----
+{
+  const g = "Ideia principal";
+  // Modo relatório (revisão em andamento): mede, mas ainda não falha.
+  const strip = (s) => s.replace(/`[^`]*`/g, "X");
+  const long = [];
+  const multi = [];
+  const chained = [];
+  const untitled = [];
+  let total = 0;
+  for (const a of model.areas())
+    for (const m of model.modules(a))
+      for (const c of model.concepts(m)) {
+        const callout = (c.content || []).find((b) => b.type === "callout");
+        if (!callout) continue;
+        total++;
+        if (callout.title !== "Ideia principal") untitled.push(c.slug);
+        const text = strip(callout.text);
+        if (callout.text.trim().split(/\s+/).length > 30) long.push(c.slug);
+        if (text.split(/[.!?](?:\s+|$)(?=[A-ZÁÉÍÓÚÂÊÔÃÕÇX]|$)/).filter((s) => s.trim()).length > 1) multi.push(c.slug);
+        if ((text.match(/[:;—]/g) || []).length >= 2) chained.push(c.slug);
+      }
+  record(g, `relatório: ${total} destaques · >30 palavras: ${long.length} · 2+ frases: ${multi.length} · 2+ conectores: ${chained.length} · título ≠ «Ideia principal»: ${untitled.length}`, true);
+}
+
 // ---- 18. relações R2 — geradas nas Concept Pages ↔ dataset -----
 {
   const g = "Relações R2 (Concept ↔ dataset ↔ físico)";
