@@ -25,24 +25,23 @@ export default area({
           title: "Client-Server Model",
           note: "ponto de entrada",
           summary:
-            "A divisão de papéis em que um cliente inicia pedidos e um servidor os atende — a base de quase tudo na " +
-            "web, de um navegador acessando um site a um serviço chamando outro.",
+            "O Client-Server Model é a divisão de papéis em que um cliente faz pedidos pela rede e um servidor os " +
+            "atende.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "No modelo cliente-servidor, dois papéis conversam pela rede: o cliente faz pedidos, e o servidor " +
-                "espera por eles e responde. São papéis, e não tipos de máquina: um navegador, um aplicativo de " +
-                "celular ou outro serviço podem ser clientes, e o mesmo programa pode ser servidor para uns e cliente " +
-                "de outros. Quem inicia a conversa é sempre o cliente, e o servidor só responde ao que lhe é pedido.",
+                "São papéis, e não tipos de máquina: um navegador, um aplicativo de celular ou outro serviço podem ser " +
+                "clientes, e o mesmo programa pode ser servidor para uns e cliente de outros. Quem inicia a conversa é " +
+                "sempre o cliente, e o servidor espera e só responde ao que lhe é pedido.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "O cliente pergunta, o servidor responde: quem pede está do lado de fora, e por isso o servidor " +
-                "nunca deve confiar no que o cliente envia.",
+                "Tudo o que chega do cliente pode ter sido alterado, então o servidor recalcula e valida em vez de " +
+                "confiar.",
             },
             { type: "heading", text: "Por que importa" },
             {
@@ -219,16 +218,15 @@ export default area({
           subtopics: ["request/response", "protocolo stateless"],
           note: "absorve Request & Response do rascunho",
           summary:
-            "O protocolo de aplicação da web: o cliente envia uma requisição com método, endereço, cabeçalhos e " +
-            "corpo opcional, e o servidor devolve uma resposta com status, cabeçalhos e corpo — sem guardar memória entre uma e outra.",
+            "HTTP (HyperText Transfer Protocol) é o protocolo que define o formato das requisições e respostas " +
+            "trocadas entre cliente e servidor na web.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "HTTP (HyperText Transfer Protocol) define o formato das mensagens trocadas entre cliente e servidor. " +
-                "Uma requisição tem uma linha inicial (método, alvo e versão), cabeçalhos, uma linha em branco e um " +
-                "corpo opcional. A resposta tem uma linha de status, cabeçalhos e um corpo. O protocolo é sem estado " +
+                "Uma requisição tem uma linha inicial (método, alvo e versão), cabeçalhos, uma linha em branco e um corpo " +
+                "opcional. A resposta tem uma linha de status, cabeçalhos e um corpo. O protocolo é sem estado " +
                 "(stateless): cada requisição é independente, e o servidor não se lembra das anteriores, a menos que o " +
                 "cliente envie algo que as ligue, como um cookie.",
             },
@@ -236,8 +234,7 @@ export default area({
               type: "callout",
               title: "Ideia principal",
               text:
-                "Cada requisição HTTP é uma conversa completa em si: leva tudo de que o servidor precisa, e o " +
-                "servidor responde sem depender do que veio antes.",
+                "Nas versões 2 e 3 o formato vira binário, mas quem entende uma mensagem HTTP em texto entende todas.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -432,25 +429,23 @@ export default area({
           requires: ["HTTP"],
           note: "GET/POST/PUT/PATCH/DELETE; safe & idempotent methods",
           summary:
-            "Os verbos que dizem o que se quer fazer com um recurso — ler, criar, substituir, alterar, apagar — e " +
-            "as garantias de cada um: se é seguro (não altera nada) e se é idempotente (repetir dá o mesmo efeito).",
+            "HTTP Methods são os verbos de uma requisição que dizem o que se quer fazer com um recurso e que " +
+            "garantias a operação oferece.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "O método de uma requisição HTTP expressa a intenção sobre o recurso indicado no endereço. Além do " +
-                "significado, cada método carrega garantias que clientes, proxies e navegadores usam: um método " +
-                "seguro (safe) não deve alterar o estado do servidor, e um método idempotente pode ser repetido " +
-                "sem que o efeito mude além da primeira vez. Isso decide, por exemplo, o que pode ser repetido " +
-                "automaticamente depois de uma falha de rede.",
+                "Ler, criar, substituir, alterar ou apagar: cada método expressa uma intenção sobre o recurso indicado no " +
+                "endereço. Além do significado, carrega garantias que clientes, proxies e navegadores usam: um método " +
+                "seguro (safe) não deve alterar o estado do servidor, e um método idempotente pode ser repetido sem que o " +
+                "efeito mude além da primeira vez. Isso decide, por exemplo, o que pode ser repetido automaticamente " +
+                "depois de uma falha de rede.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "O método diz a intenção e as garantias: GET só lê, e PUT e DELETE podem ser repetidos sem risco; " +
-                "POST, não, e por isso repetir um POST pode duplicar o efeito.",
+              text: "Antes de repetir uma requisição automaticamente, confira se o método dela é idempotente.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -663,24 +658,22 @@ export default area({
           requires: ["HTTP"],
           note: "classes 1xx–5xx",
           summary:
-            "Os números de três dígitos com que o servidor resume o resultado de uma requisição — sucesso, " +
-            "redirecionamento, erro do cliente ou erro do servidor —, organizados em cinco classes.",
+            "HTTP Status Codes são os números de três dígitos com que o servidor resume o resultado de uma " +
+            "requisição.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Toda resposta HTTP começa com um código de status, e o primeiro dígito indica a classe: 1xx " +
-                "(informativos), 2xx (sucesso), 3xx (redirecionamento), 4xx (erro do cliente: o pedido está errado) " +
-                "e 5xx (erro do servidor: o pedido era válido, e algo falhou). Clientes, proxies e ferramentas de " +
-                "monitoramento decidem o que fazer com a resposta com base no código, sem precisar ler o corpo.",
+                "O primeiro dígito indica a classe: 1xx (informativos), 2xx (sucesso), 3xx (redirecionamento), 4xx (erro " +
+                "do cliente: o pedido está errado) e 5xx (erro do servidor: o pedido era válido, e algo falhou). " +
+                "Clientes, proxies e ferramentas de monitoramento decidem o que fazer com a resposta com base no código, " +
+                "sem precisar ler o corpo.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "O código de status é o resumo que as máquinas leem: escolha o mais específico e honesto, pois " +
-                "cliente, cache e monitoramento se baseiam nele.",
+              text: "Um erro devolvido com status 200 engana o cache, o cliente e o monitoramento ao mesmo tempo.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -860,25 +853,22 @@ export default area({
           requires: ["HTTP"],
           note: "metadados da requisição e da resposta",
           summary:
-            "Os pares nome-valor que acompanham toda requisição e resposta HTTP e descrevem o conteúdo, o cliente, " +
-            "o cache, a autenticação e a forma como a mensagem deve ser tratada.",
+            "HTTP Headers são os pares nome-valor que acompanham requisições e respostas e dizem como a mensagem deve " +
+            "ser interpretada e tratada.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Cabeçalhos são metadados: dizem como interpretar e tratar a mensagem, sem fazer parte do conteúdo. " +
-                "Os nomes não diferenciam maiúsculas de minúsculas. Alguns descrevem o corpo (`Content-Type`, " +
-                "`Content-Length`), outros negociam o formato (`Accept`), identificam quem pede (`Authorization`, " +
-                "`User-Agent`, `Origin`), controlam o cache (`Cache-Control`, `ETag`) ou guardam o estado do cliente " +
-                "(`Cookie`, `Set-Cookie`).",
+                "Cabeçalhos são metadados, sem fazer parte do conteúdo, e os seus nomes não diferenciam maiúsculas de " +
+                "minúsculas. Alguns descrevem o corpo (`Content-Type`, `Content-Length`), outros negociam o formato " +
+                "(`Accept`), identificam quem pede (`Authorization`, `User-Agent`, `Origin`), controlam o cache " +
+                "(`Cache-Control`, `ETag`) ou guardam o estado do cliente (`Cookie`, `Set-Cookie`).",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "O corpo diz o quê, os cabeçalhos dizem como: formato, idioma, cache, identidade e segurança " +
-                "viajam nos cabeçalhos, e boa parte do comportamento da web depende deles.",
+              text: "Quando uma resposta se comporta de um jeito estranho, olhe os cabeçalhos antes do corpo.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -1057,26 +1047,22 @@ export default area({
           subtopics: ["HTTP/1.1: keep-alive, pipelining, head-of-line blocking", "HTTP/2: multiplexing, HPACK, server push", "HTTP/3: QUIC sobre UDP, 0-RTT, migração de conexão"],
           note: "consolidada (A1)",
           summary:
-            "Como o HTTP foi reduzindo a latência sem mudar a sua semântica: do texto sobre uma conexão por pedido " +
-            "no 1.1, ao multiplexamento binário do HTTP/2, e ao HTTP/3 sobre QUIC e UDP.",
+            "HTTP Evolution é a mudança do transporte do HTTP entre as versões 1.1, 2 e 3, sem mudança na semântica " +
+            "do protocolo.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "A semântica do HTTP, métodos, status e cabeçalhos, é a mesma nas três versões. O que muda é como as " +
-                "mensagens são transportadas. O HTTP/1.1 usa texto e reaproveita conexões TCP (keep-alive), mas " +
-                "responde a um pedido por vez em cada conexão. O HTTP/2 é binário e multiplexa vários pedidos " +
-                "simultâneos em uma única conexão, com compressão de cabeçalhos (HPACK). O HTTP/3 troca o TCP pelo " +
-                "QUIC, sobre UDP, para eliminar o bloqueio que perdas de pacotes causam no TCP.",
+                "Métodos, status e cabeçalhos significam o mesmo nas três versões. O HTTP/1.1 usa texto e reaproveita " +
+                "conexões TCP (keep-alive), mas responde a um pedido por vez em cada conexão. O HTTP/2 é binário e " +
+                "multiplexa vários pedidos simultâneos em uma única conexão, com compressão de cabeçalhos (HPACK). O " +
+                "HTTP/3 troca o TCP pelo QUIC, sobre UDP, para eliminar o bloqueio que perdas de pacotes causam no TCP.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Cada versão ataca um gargalo do transporte: reaproveitar conexões (1.1), enviar várias requisições " +
-                "em uma conexão (2) e não deixar uma perda de pacote bloquear todas (3) — sem mudar o que os " +
-                "métodos e os status significam.",
+              text: "Mudar de versão do HTTP não exige mudar a sua API, porque só o transporte muda.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -1256,24 +1242,23 @@ export default area({
           note: "Task própria (decisão 4, exceção). Application Security / Encryption at Rest & in Transit aponta para cá",
           revisit: ["Platform / Application Security / Encryption at Rest & in Transit"],
           summary:
-            "O protocolo que protege a comunicação na rede: criptografa o tráfego, garante que ele não foi alterado " +
-            "e comprova, por certificado, que o servidor é quem diz ser — o T do HTTPS.",
+            "TLS (Transport Layer Security) é o protocolo que protege uma conexão de rede, e o HTTPS é o HTTP sobre " +
+            "ele.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "TLS (Transport Layer Security) é a camada de segurança sobre a conexão. Ele dá três garantias: " +
-                "confidencialidade (ninguém no caminho lê o conteúdo), integridade (ninguém o altera sem ser notado) " +
-                "e autenticação do servidor, por meio de um certificado. HTTPS é simplesmente HTTP sobre TLS. Sem " +
-                "TLS, senhas e cookies trafegam em texto, legíveis por qualquer rede intermediária.",
+                "Ele dá três garantias: confidencialidade (ninguém no caminho lê o conteúdo), integridade (ninguém o " +
+                "altera sem ser notado) e autenticação do servidor, por meio de um certificado. Sem TLS, senhas e cookies " +
+                "trafegam em texto, legíveis por qualquer rede intermediária.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "TLS criptografa o tráfego e prova a identidade do servidor: o cliente combina uma chave com quem " +
-                "de fato é o dono do domínio, e nenhuma rede no meio consegue ler ou alterar a conversa.",
+                "Criptografar não basta: sem conferir o certificado, você pode estar falando em segredo com a pessoa " +
+                "errada.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -1454,26 +1439,24 @@ export default area({
           requires: ["Client-Server Model"],
           note: "resolução, registros, TTL de DNS",
           collision: "≠ TTL de cache (Caching) ≠ TTL de pacote IP",
-          summary:
-            "O sistema que traduz nomes legíveis, como `loja.exemplo.com`, em endereços IP — uma base de dados " +
-            "distribuída e hierárquica, com respostas guardadas em cache por um tempo definido (TTL).",
+          summary: "DNS (Domain Name System) é o sistema que traduz nomes, como `loja.exemplo.com`, em endereços IP.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Para conectar a um servidor, é preciso o endereço IP dele, e as pessoas usam nomes. O DNS (Domain " +
-                "Name System) faz a tradução. É uma base distribuída e hierárquica: a raiz aponta para os servidores " +
-                "de cada domínio de topo (`.com`, `.br`), que apontam para os servidores autoritativos do domínio, que " +
-                "sabem a resposta. O cliente não percorre essa cadeia: pergunta a um resolvedor recursivo, que faz o " +
-                "trabalho e guarda o resultado em cache pelo TTL indicado.",
+                "Para conectar a um servidor, é preciso o endereço IP dele, e as pessoas usam nomes. O DNS é uma base " +
+                "distribuída e hierárquica: a raiz aponta para os servidores de cada domínio de topo (`.com`, `.br`), que " +
+                "apontam para os servidores autoritativos do domínio, que sabem a resposta. O cliente não percorre essa " +
+                "cadeia: pergunta a um resolvedor recursivo, que faz o trabalho e guarda o resultado em cache pelo TTL " +
+                "indicado.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "O DNS transforma nome em endereço e guarda as respostas em cache: o TTL de cada registro é o quanto " +
-                "uma resposta pode ficar desatualizada antes de ser consultada de novo.",
+                "Antes de trocar o IP de um servidor, baixe o TTL do registro, ou clientes continuarão indo ao endereço " +
+                "antigo.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -1654,25 +1637,25 @@ export default area({
           subtopics: ["TCP: 3-way handshake, ordenação, retransmissão, controle de fluxo/congestão", "UDP: sem conexão, sem garantia, baixo overhead (DNS, streaming, QUIC)"],
           note: "consolidada (A2)",
           summary:
-            "Os dois protocolos de transporte da internet: o TCP entrega tudo, na ordem e sem perdas, ao custo de " +
-            "espera; o UDP envia pacotes soltos, rápido e sem garantias — cada um serve a um tipo de problema.",
+            "TCP vs UDP é a escolha entre o protocolo de transporte que entrega tudo, na ordem, e o que envia pacotes " +
+            "soltos, sem garantias.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Abaixo do HTTP, dois protocolos levam os dados entre os programas. O TCP é orientado a conexão: " +
-                "cliente e servidor fazem um handshake de três passos (SYN, SYN-ACK, ACK), e a partir daí o TCP " +
-                "garante que os bytes cheguem completos e na ordem, retransmitindo o que se perde, com controle de " +
-                "fluxo e de congestionamento. O UDP não tem conexão: cada datagrama é enviado por conta própria, sem " +
-                "confirmação, e pode se perder, duplicar ou chegar fora de ordem.",
+                "Os dois ficam abaixo do HTTP. O TCP é orientado a conexão: cliente e servidor fazem um handshake de três " +
+                "passos (SYN, SYN-ACK, ACK), e a partir daí o TCP garante que os bytes cheguem completos e na ordem, " +
+                "retransmitindo o que se perde, com controle de fluxo e de congestionamento. O UDP não tem conexão: cada " +
+                "datagrama é enviado por conta própria, sem confirmação, e pode se perder, duplicar ou chegar fora de " +
+                "ordem.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "TCP entrega tudo, na ordem, mas espera quando algo se perde; UDP entrega rápido, sem garantia: " +
-                "a escolha depende do que o seu caso tolera perder.",
+                "Escolha pelo que o seu caso tolera: um arquivo não pode perder um byte, e uma chamada de voz não pode " +
+                "esperar.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -1868,26 +1851,22 @@ export default area({
           order: 100,
           title: "URL Anatomy",
           note: "scheme/host/port/path/query/fragment",
-          summary:
-            "As partes de um endereço web — esquema, host, porta, caminho, consulta e fragmento — e o que cada uma " +
-            "significa para o navegador, para o servidor e para a segurança.",
+          summary: "URL Anatomy são as partes de um endereço web: esquema, host, porta, caminho, consulta e fragmento.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Uma URL identifica um recurso e diz como alcançá-lo. Ela é composta por partes, cada uma com um " +
-                "papel: o esquema (`https`) diz o protocolo, o host (`loja.exemplo.com`) diz quem atende, a porta " +
-                "(`443`) diz onde, o caminho (`/produtos/1`) diz qual recurso, a consulta (`?cor=azul`) traz " +
-                "parâmetros, e o fragmento (`#detalhes`) aponta para um trecho dentro da página. A combinação de " +
-                "esquema, host e porta é a origem, base das regras de segurança do navegador.",
+                "Uma URL identifica um recurso e diz como alcançá-lo, e cada parte tem um papel: o esquema (`https`) diz " +
+                "o protocolo, o host (`loja.exemplo.com`) diz quem atende, a porta (`443`) diz onde, o caminho " +
+                "(`/produtos/1`) diz qual recurso, a consulta (`?cor=azul`) traz parâmetros, e o fragmento (`#detalhes`) " +
+                "aponta para um trecho dentro da página. A combinação de esquema, host e porta é a origem, base das " +
+                "regras de segurança do navegador.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Uma URL é um endereço estruturado: cada parte responde a uma pergunta diferente, e tratá-la como " +
-                "texto solto é a origem de bugs de codificação e de segurança.",
+              text: "Trate a URL como uma estrutura com partes nomeadas, e não como um texto qualquer.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -2064,25 +2043,24 @@ export default area({
           requires: ["HTTP Headers"],
           note: "atributos Secure/HttpOnly/SameSite",
           summary:
-            "Pequenos dados que o servidor pede ao navegador para guardar e que o navegador devolve automaticamente " +
-            "em cada requisição ao mesmo site — a forma de dar memória a um protocolo sem estado.",
+            "Um Cookie é um par nome-valor que o servidor pede ao navegador para guardar e que o navegador devolve " +
+            "nas requisições seguintes ao mesmo site.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Um cookie é um par nome-valor que o servidor envia no cabeçalho `Set-Cookie` e que o navegador " +
-                "guarda e devolve no cabeçalho `Cookie` em todas as requisições seguintes ao site correspondente. É a " +
-                "principal forma de ligar requisições separadas ao mesmo visitante, como em um login ou em um " +
-                "carrinho. Atributos controlam o comportamento: por quanto tempo vale, para quais caminhos e domínios, " +
-                "e como o navegador deve protegê-lo.",
+                "O servidor o envia no cabeçalho `Set-Cookie`, e o navegador o devolve no cabeçalho `Cookie`. É a " +
+                "principal forma de ligar requisições separadas ao mesmo visitante, como em um login ou em um carrinho. " +
+                "Atributos controlam o comportamento: por quanto tempo vale, para quais caminhos e domínios, e como o " +
+                "navegador deve protegê-lo.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "O cookie é enviado automaticamente pelo navegador: por isso os seus atributos de segurança " +
-                "(`Secure`, `HttpOnly`, `SameSite`) decidem quem consegue lê-lo e em que situações ele viaja.",
+                "Como o navegador envia o cookie sozinho, os atributos dele são a única forma de controlar quando isso " +
+                "acontece.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -2256,25 +2234,23 @@ export default area({
           note: "estado do usuário guardado no servidor, ligado por um identificador",
           collision: "≠ Session-Based Authentication (Authentication) — mecanismo de estado × uso para identidade",
           summary:
-            "O estado de um visitante mantido no servidor e ligado ao navegador por um identificador aleatório, " +
-            "guardado em um cookie — o que dá memória a um protocolo sem estado.",
+            "Uma Session é o estado de um visitante guardado no servidor e ligado ao navegador por um identificador " +
+            "aleatório num cookie.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Como o HTTP não guarda memória entre requisições, o servidor cria uma sessão: um registro com o " +
-                "estado do visitante (o carrinho, as preferências, quem está logado), identificado por um ID longo e " +
-                "aleatório. O ID vai para o navegador em um cookie, e a cada requisição o servidor o usa para " +
-                "encontrar o registro. Os dados ficam no servidor, e o navegador só carrega a chave. É um mecanismo " +
-                "de estado; usá-lo para identificar usuários é o tema de Session-Based Authentication.",
+                "Como o HTTP não guarda memória entre requisições, o servidor cria um registro com o estado do visitante " +
+                "(o carrinho, as preferências, quem está logado), identificado por um ID longo e aleatório. A cada " +
+                "requisição, o servidor usa o ID que chega no cookie para encontrar o registro. Os dados ficam no " +
+                "servidor, e o navegador só carrega a chave. É um mecanismo de estado; usá-lo para identificar usuários é " +
+                "o tema de Session-Based Authentication.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "O navegador guarda só um identificador aleatório, e o estado real fica no servidor: perder ou " +
-                "invalidar a sessão é apagar um registro.",
+              text: "Na sessão, o navegador carrega só a chave, e tudo o que importa fica onde o usuário não alcança.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -2490,25 +2466,23 @@ export default area({
           title: "Same-Origin Policy",
           requires: ["URL Anatomy"],
           note: "a regra do navegador que isola origens diferentes",
-          summary:
-            "A regra de segurança do navegador que impede uma página de ler dados de outra origem — a base que " +
-            "isola um site de outro e que o CORS existe para relaxar de forma controlada.",
+          summary: "A Same-Origin Policy é a regra do navegador que impede uma página de ler dados de outra origem.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "A origem de uma página é a combinação de esquema, host e porta. A Same-Origin Policy (SOP) faz o " +
-                "navegador isolar as origens: o código de uma página só pode ler as respostas, o DOM e o " +
-                "armazenamento de outras páginas da mesma origem. Sem ela, qualquer site que você abre poderia ler, " +
-                "com o seu login ativo, o seu e-mail ou o seu banco em outra aba.",
+                "A origem de uma página é a combinação de esquema, host e porta. O navegador isola as origens: o código " +
+                "de uma página só pode ler as respostas, o DOM e o armazenamento de outras páginas da mesma origem. Sem " +
+                "essa regra, qualquer site que você abre poderia ler, com o seu login ativo, o seu e-mail ou o seu banco " +
+                "em outra aba.",
             },
             {
               type: "callout",
               title: "Ideia principal",
               text:
-                "Duas páginas são da mesma origem só se esquema, host e porta forem iguais: fora disso, uma não " +
-                "pode ler o que a outra carregou, a menos que o servidor permita (CORS).",
+                "Mudar só a porta ou trocar http por https já cria outra origem, com o mesmo isolamento de um site " +
+                "diferente.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -2668,25 +2642,22 @@ export default area({
           requires: ["Same-Origin Policy"],
           note: "preflight, headers Access-Control-*",
           summary:
-            "O mecanismo pelo qual um servidor diz ao navegador quais outras origens podem ler as suas respostas, " +
-            "relaxando de forma controlada a Same-Origin Policy, por meio de cabeçalhos `Access-Control-*`.",
+            "CORS (Cross-Origin Resource Sharing) é o mecanismo pelo qual um servidor diz ao navegador quais outras " +
+            "origens podem ler as suas respostas.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "CORS (Cross-Origin Resource Sharing) é a forma de o servidor autorizar leituras entre origens. O " +
-                "navegador envia o cabeçalho `Origin` com a requisição, e o servidor responde se essa origem é " +
-                "permitida, no `Access-Control-Allow-Origin`. Se a resposta não trouxer a permissão, o navegador " +
-                "descarta o resultado. Para requisições que poderiam causar efeitos, ele faz antes uma consulta de " +
-                "reconhecimento (preflight) com o método `OPTIONS`.",
+                "Ele relaxa a Same-Origin Policy de forma controlada. O navegador envia o cabeçalho `Origin` com a " +
+                "requisição, e o servidor responde se essa origem é permitida, no `Access-Control-Allow-Origin`. Se a " +
+                "resposta não trouxer a permissão, o navegador descarta o resultado. Para requisições que poderiam causar " +
+                "efeitos, ele faz antes uma consulta de reconhecimento (preflight) com o método `OPTIONS`.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "O CORS é o servidor autorizando o navegador a entregar a resposta a uma outra origem: quem aplica a " +
-                "regra é o navegador, e não o servidor.",
+              text: "Um erro de CORS é o navegador protegendo o usuário, e a correção é no servidor, e não no front-end.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -2886,25 +2857,22 @@ export default area({
           note: "canal full-duplex — revisita Programming Foundations / Asynchronous Programming (event loop)",
           revisit: ["Programming Foundations / Asynchronous Programming"],
           summary:
-            "Um canal de comunicação persistente e bidirecional sobre uma única conexão, iniciado por um pedido HTTP " +
-            "e mantido aberto — o servidor e o cliente podem enviar mensagens a qualquer momento.",
+            "WebSocket é um canal persistente e bidirecional sobre uma única conexão, em que cliente e servidor " +
+            "enviam mensagens a qualquer momento.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "No HTTP tradicional, é sempre o cliente que pergunta. O WebSocket muda isso: depois de um " +
-                "handshake, a conexão TCP permanece aberta e os dois lados podem enviar mensagens quando quiserem " +
-                "(full-duplex), sem novo pedido a cada vez. O handshake é um pedido HTTP com o cabeçalho " +
-                "`Upgrade: websocket`, respondido com o status `101 Switching Protocols`. A partir daí, os dados " +
-                "trafegam em quadros, e não mais em requisições e respostas.",
+                "No HTTP tradicional, é sempre o cliente que pergunta. Com WebSocket, depois de um handshake, a conexão " +
+                "TCP permanece aberta e os dois lados falam quando quiserem (full-duplex), sem novo pedido a cada vez. O " +
+                "handshake é um pedido HTTP com o cabeçalho `Upgrade: websocket`, respondido com o status `101 Switching " +
+                "Protocols`. A partir daí, os dados trafegam em quadros, e não mais em requisições e respostas.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Uma conexão que fica aberta e em que os dois lados falam quando quiserem: é o que torna possível " +
-                "um servidor enviar dados ao cliente sem que ele tenha perguntado.",
+              text: "Use WebSocket quando o cliente também precisa falar a qualquer momento, e não só ouvir o servidor.",
             },
             { type: "heading", text: "Como funciona" },
             {
@@ -3104,25 +3072,21 @@ export default area({
           note: "streaming — revisita Programming Foundations / Asynchronous Programming / Promise. AI Engineering / Model Inference / Streaming aponta para cá",
           revisit: ["Programming Foundations / Asynchronous Programming / Promise", "AI Engineering / Model Inference / Streaming"],
           summary:
-            "Um fluxo de eventos do servidor para o cliente sobre uma resposta HTTP que fica aberta — simples, com " +
-            "reconexão automática, e a base do streaming de respostas de modelos de linguagem.",
+            "Server-Sent Events é uma forma de o servidor enviar eventos ao cliente continuamente, por uma resposta " +
+            "HTTP que fica aberta.",
           content: [
             { type: "heading", text: "Conceito" },
             {
               type: "paragraph",
               text:
-                "Server-Sent Events é uma forma de o servidor enviar dados ao cliente continuamente, por uma única " +
-                "resposta HTTP que não termina. A resposta tem o tipo `text/event-stream`, e cada evento é um bloco " +
-                "de texto terminado por uma linha em branco. No navegador, a classe `EventSource` abre a conexão, " +
-                "entrega os eventos e reconecta sozinha se ela cair, informando o último id recebido para o servidor " +
-                "retomar de onde parou.",
+                "A resposta tem o tipo `text/event-stream`, e cada evento é um bloco de texto terminado por uma linha em " +
+                "branco. No navegador, a classe `EventSource` abre a conexão, entrega os eventos e reconecta sozinha se " +
+                "ela cair, informando o último id recebido para o servidor retomar de onde parou.",
             },
             {
               type: "callout",
               title: "Ideia principal",
-              text:
-                "Uma resposta HTTP que nunca termina: o servidor escreve eventos conforme eles acontecem, e o " +
-                "cliente os lê à medida que chegam — só em uma direção, e sem protocolo novo.",
+              text: "Se só o servidor precisa falar, SSE resolve com HTTP comum, sem o custo de manter um WebSocket.",
             },
             { type: "heading", text: "Como funciona" },
             {
